@@ -1,0 +1,116 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://schemas.openctem.io/ctis/v1/dependency.json",
+    "title": "CTIS Dependency",
+    "description": "Software component or library dependency (SBOM)",
+    "type": "object",
+    "required": [
+        "name",
+        "version"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Unique identifier for the dependency"
+        },
+        "name": {
+            "type": "string",
+            "description": "Component name"
+        },
+        "version": {
+            "type": "string",
+            "description": "Component version"
+        },
+        "type": {
+            "type": "string",
+            "description": "Component type (library, application, framework)"
+        },
+        "ecosystem": {
+            "type": "string",
+            "description": "Package ecosystem (npm, maven, pypi, go, etc.)"
+        },
+        "purl": {
+            "type": "string",
+            "description": "Package URL (PURL) identifier"
+        },
+        "licenses": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "List of licenses"
+        },
+        "relationship": {
+            "type": "string",
+            "description": "Relationship to the project (direct, transitive)"
+        },
+        "depends_on": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "List of dependency IDs this component depends on"
+        },
+        "path": {
+            "type": "string",
+            "description": "File path where defined (manifest file)"
+        },
+        "location": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "line": {
+                    "type": "integer"
+                },
+                "column": {
+                    "type": "integer"
+                }
+            },
+            "description": "Primary location in the file (deprecated, use locations)"
+        },
+        "locations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "File path"
+                    },
+                    "start_line": {
+                        "type": "integer",
+                        "description": "Start line number"
+                    },
+                    "end_line": {
+                        "type": "integer",
+                        "description": "End line number"
+                    },
+                    "start_column": {
+                        "type": "integer",
+                        "description": "Start column number"
+                    },
+                    "end_column": {
+                        "type": "integer",
+                        "description": "End column number"
+                    }
+                }
+            },
+            "description": "All locations where this dependency is defined"
+        },
+        "uid": {
+            "type": "string",
+            "description": "Unique identifier from scanner (e.g., Trivy UID)"
+        },
+        "target_index": {
+            "type": "integer",
+            "description": "Index of the target asset in the report's targets array"
+        },
+        "properties": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Custom properties"
+        }
+    }
+}

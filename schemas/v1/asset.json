@@ -1,0 +1,456 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.openctem.io/ctis/v1/asset.json",
+  "title": "CTIS Asset",
+  "description": "Asset schema for CTEM Ingest Schema",
+  "type": "object",
+  "required": ["type", "value"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier within the report"
+    },
+    "type": {
+      "$ref": "#/$defs/AssetType"
+    },
+    "value": {
+      "type": "string",
+      "description": "Primary value (domain name, IP address, contract address, etc.)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Asset description"
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Categorization tags"
+    },
+    "criticality": {
+      "$ref": "#/$defs/Criticality"
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Confidence score (0-100)"
+    },
+    "discovered_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When asset was discovered"
+    },
+    "technical": {
+      "$ref": "#/$defs/AssetTechnical"
+    },
+    "related_assets": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Related asset IDs within this report"
+    },
+    "compliance": {
+      "$ref": "#/$defs/AssetCompliance"
+    },
+    "services": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/ServiceInfo"},
+      "description": "Services running on this asset (CTEM)"
+    },
+    "is_internet_accessible": {
+      "type": "boolean",
+      "description": "Is the asset directly accessible from the internet (CTEM)"
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "AssetType": {
+      "type": "string",
+      "enum": [
+        "domain",
+        "subdomain",
+        "ip_address",
+        "certificate",
+        "website",
+        "web_application",
+        "api",
+        "mobile_app",
+        "service",
+        "repository",
+        "cloud_account",
+        "compute",
+        "storage",
+        "database",
+        "serverless",
+        "container_registry",
+        "host",
+        "container",
+        "kubernetes",
+        "kubernetes_cluster",
+        "kubernetes_namespace",
+        "network",
+        "vpc",
+        "subnet",
+        "load_balancer",
+        "firewall",
+        "iam_user",
+        "iam_role",
+        "service_account",
+        "http_service",
+        "open_port",
+        "discovered_url",
+        "smart_contract",
+        "wallet",
+        "token",
+        "nft_collection",
+        "defi_protocol",
+        "blockchain",
+        "unclassified",
+        "other"
+      ],
+      "description": "Asset type. Note: 'other' is deprecated - use 'unclassified' instead."
+    },
+    "Criticality": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"],
+      "description": "Asset criticality level"
+    },
+    "AssetTechnical": {
+      "type": "object",
+      "description": "Type-specific technical details",
+      "properties": {
+        "domain": {"$ref": "#/$defs/DomainTechnical"},
+        "ip_address": {"$ref": "#/$defs/IPAddressTechnical"},
+        "repository": {"$ref": "#/$defs/RepositoryTechnical"},
+        "certificate": {"$ref": "#/$defs/CertificateTechnical"},
+        "cloud": {"$ref": "#/$defs/CloudTechnical"},
+        "service": {"$ref": "#/$defs/ServiceTechnical"},
+        "web3": {"$ref": "web3-asset.json"}
+      }
+    },
+    "DomainTechnical": {
+      "type": "object",
+      "properties": {
+        "registrar": {"type": "string"},
+        "registered_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "nameservers": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "dns_records": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DNSRecord"}
+        },
+        "whois": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
+    "DNSRecord": {
+      "type": "object",
+      "required": ["type", "name", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SOA", "PTR", "SRV"]
+        },
+        "name": {"type": "string"},
+        "value": {"type": "string"},
+        "ttl": {"type": "integer", "minimum": 0}
+      }
+    },
+    "IPAddressTechnical": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "integer",
+          "enum": [4, 6]
+        },
+        "hostname": {"type": "string"},
+        "asn": {"type": "integer"},
+        "asn_org": {"type": "string"},
+        "country": {"type": "string", "maxLength": 2},
+        "city": {"type": "string"},
+        "ports": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/PortInfo"}
+        },
+        "geolocation": {"$ref": "#/$defs/Geolocation"}
+      }
+    },
+    "PortInfo": {
+      "type": "object",
+      "required": ["port"],
+      "properties": {
+        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "protocol": {"type": "string", "enum": ["tcp", "udp"]},
+        "state": {"type": "string", "enum": ["open", "filtered", "closed"]},
+        "service": {"type": "string"},
+        "banner": {"type": "string"},
+        "version": {"type": "string"}
+      }
+    },
+    "Geolocation": {
+      "type": "object",
+      "required": ["latitude", "longitude"],
+      "properties": {
+        "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+        "longitude": {"type": "number", "minimum": -180, "maximum": 180},
+        "accuracy": {"type": "number", "minimum": 0}
+      }
+    },
+    "RepositoryTechnical": {
+      "type": "object",
+      "properties": {
+        "platform": {"type": "string", "enum": ["github", "gitlab", "bitbucket", "azure_devops"]},
+        "owner": {"type": "string"},
+        "name": {"type": "string"},
+        "default_branch": {"type": "string"},
+        "visibility": {"type": "string", "enum": ["public", "private", "internal"]},
+        "url": {"type": "string", "format": "uri"},
+        "clone_url": {"type": "string", "format": "uri"},
+        "languages": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        },
+        "stars": {"type": "integer", "minimum": 0},
+        "forks": {"type": "integer", "minimum": 0},
+        "last_commit_sha": {"type": "string"},
+        "last_commit_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "CertificateTechnical": {
+      "type": "object",
+      "properties": {
+        "serial_number": {"type": "string"},
+        "subject_cn": {"type": "string"},
+        "sans": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "issuer_cn": {"type": "string"},
+        "issuer_org": {"type": "string"},
+        "not_before": {"type": "string", "format": "date-time"},
+        "not_after": {"type": "string", "format": "date-time"},
+        "signature_algorithm": {"type": "string"},
+        "key_algorithm": {"type": "string"},
+        "key_size": {"type": "integer"},
+        "fingerprint": {"type": "string"},
+        "self_signed": {"type": "boolean"},
+        "expired": {"type": "boolean"},
+        "wildcard": {"type": "boolean"}
+      }
+    },
+    "CloudTechnical": {
+      "type": "object",
+      "properties": {
+        "provider": {"type": "string", "enum": ["aws", "gcp", "azure", "alibaba", "oracle"]},
+        "account_id": {"type": "string"},
+        "region": {"type": "string"},
+        "zone": {"type": "string"},
+        "resource_type": {"type": "string"},
+        "resource_id": {"type": "string"},
+        "arn": {"type": "string"},
+        "tags": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
+    "AssetCompliance": {
+      "type": "object",
+      "description": "CTEM compliance context for an asset",
+      "properties": {
+        "frameworks": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Compliance frameworks this asset is in scope for: PCI-DSS, HIPAA, SOC2, GDPR, ISO27001"
+        },
+        "data_classification": {
+          "type": "string",
+          "enum": ["public", "internal", "confidential", "restricted", "secret"],
+          "description": "Data classification level"
+        },
+        "pii_exposed": {
+          "type": "boolean",
+          "description": "Asset contains Personally Identifiable Information"
+        },
+        "phi_exposed": {
+          "type": "boolean",
+          "description": "Asset contains Protected Health Information"
+        },
+        "regulatory_owner": {
+          "type": "string",
+          "description": "Regulatory owner email/username"
+        }
+      }
+    },
+    "ServiceInfo": {
+      "type": "object",
+      "description": "Network service discovered on an asset (CTEM)",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Port number"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": ["tcp", "udp"],
+          "description": "Transport protocol"
+        },
+        "service_type": {
+          "type": "string",
+          "description": "Service type: http, https, ssh, ftp, mysql, postgresql, etc."
+        },
+        "product": {
+          "type": "string",
+          "description": "Product name: Apache, nginx, OpenSSH, etc."
+        },
+        "version": {
+          "type": "string",
+          "description": "Product version"
+        },
+        "banner": {
+          "type": "string",
+          "description": "Service banner"
+        },
+        "cpe": {
+          "type": "string",
+          "description": "Common Platform Enumeration identifier"
+        },
+        "is_public": {
+          "type": "boolean",
+          "description": "Is this service publicly accessible from the internet"
+        },
+        "tls_enabled": {
+          "type": "boolean",
+          "description": "TLS enabled"
+        },
+        "tls_version": {
+          "type": "string",
+          "description": "TLS version: TLS 1.2, TLS 1.3"
+        },
+        "state": {
+          "type": "string",
+          "enum": ["active", "inactive", "filtered"],
+          "description": "Service state"
+        }
+      }
+    },
+    "ServiceTechnical": {
+      "type": "object",
+      "description": "Technical details for network services (SSH, SMTP, FTP, DNS, HTTP, database services, etc.)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Service name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Service version"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Port number"
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Application-layer protocol: http, https, ssh, smtp, ftp, dns, ldap, smb, rdp, mysql, postgresql, mongodb, redis, etc.",
+          "examples": ["http", "https", "ssh", "smtp", "ftp", "dns", "ldap", "smb", "rdp", "mysql", "postgresql", "mongodb", "redis", "telnet", "snmp"]
+        },
+        "transport": {
+          "type": "string",
+          "enum": ["tcp", "udp"],
+          "description": "Transport protocol"
+        },
+        "tls": {
+          "type": "boolean",
+          "description": "SSL/TLS enabled"
+        },
+        "tls_version": {
+          "type": "string",
+          "enum": ["ssl3", "tls1.0", "tls1.1", "tls1.2", "tls1.3"],
+          "description": "TLS version"
+        },
+        "tls_cert_subject": {
+          "type": "string",
+          "description": "TLS certificate subject"
+        },
+        "tls_cert_issuer": {
+          "type": "string",
+          "description": "TLS certificate issuer"
+        },
+        "tls_cert_expiry": {
+          "type": "string",
+          "format": "date-time",
+          "description": "TLS certificate expiry date"
+        },
+        "banner": {
+          "type": "string",
+          "description": "Service banner/fingerprint"
+        },
+        "product": {
+          "type": "string",
+          "description": "Product name (e.g., OpenSSH, nginx, Apache, Postfix)"
+        },
+        "cpe": {
+          "type": "string",
+          "description": "Common Platform Enumeration (CPE) identifier"
+        },
+        "extra_info": {
+          "type": "string",
+          "description": "Additional service information"
+        },
+        "state": {
+          "type": "string",
+          "enum": ["open", "filtered", "closed"],
+          "description": "Service state"
+        },
+        "auth_required": {
+          "type": "boolean",
+          "description": "Authentication required"
+        },
+        "auth_methods": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Supported authentication methods (e.g., password, publickey for SSH)"
+        },
+        "default_credentials": {
+          "type": "boolean",
+          "description": "Default credentials detected"
+        },
+        "anonymous_access": {
+          "type": "boolean",
+          "description": "Anonymous access allowed (for FTP, SMB, etc.)"
+        },
+        "response_time_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Response time in milliseconds"
+        },
+        "last_seen": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last seen timestamp"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Protocol-specific details (HTTP headers, SMTP extensions, SSH algorithms, etc.)"
+        }
+      }
+    }
+  }
+}
