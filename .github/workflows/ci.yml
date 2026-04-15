@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.22', '1.23', '1.26']
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Verify zero external dependencies
+        run: |
+          DEPS=$(go list -m all 2>/dev/null | grep -v "github.com/openctemio/ctis" | wc -l)
+          if [ "$DEPS" -gt 1 ]; then
+            echo "ERROR: ctis module must have zero external dependencies"
+            go list -m all
+            exit 1
+          fi
+          echo "Zero external dependencies confirmed"
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Check coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+          echo "Total coverage: ${COVERAGE}%"
+          if [ "$(echo "$COVERAGE < 50" | bc)" -eq 1 ]; then
+            echo "WARNING: Coverage below 50%"
+          fi
+
+      - name: Upload coverage
+        if: matrix.go-version == '1.26'
+        uses: codecov/codecov-action@v6
+        with:
+          files: ./coverage.out
+        continue-on-error: true
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Check formatting
+        run: |
+          UNFORMATTED=$(gofmt -l .)
+          if [ -n "$UNFORMATTED" ]; then
+            echo "Files not formatted:"
+            echo "$UNFORMATTED"
+            exit 1
+          fi
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+        continue-on-error: true
+
+  schema-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate JSON schemas
+        run: |
+          ERRORS=0
+          for f in schemas/v1/*.json; do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "INVALID JSON: $f"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          EXPECTED="asset.json dependency.json finding.json report.json web3-asset.json web3-finding.json"
+          for name in $EXPECTED; do
+            if [ ! -f "schemas/v1/$name" ]; then
+              echo "MISSING: schemas/v1/$name"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          if [ $ERRORS -gt 0 ]; then
+            exit 1
+          fi
+          echo "All 6 schemas valid"
+
+  build-compat:
+    name: Cross-platform build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: Build
+        run: go build -v ./...
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
