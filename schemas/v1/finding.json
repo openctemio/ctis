@@ -1,0 +1,747 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.openctem.io/ctis/v1/finding.json",
+  "title": "CTIS Finding",
+  "description": "Security finding schema for CTEM Ingest Schema",
+  "type": "object",
+  "required": ["type", "title", "severity"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier within the report"
+    },
+    "type": {
+      "$ref": "#/$defs/FindingType"
+    },
+    "title": {
+      "type": "string",
+      "description": "Short title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description"
+    },
+    "message": {
+      "type": "string",
+      "description": "Primary message to display (the main human-readable finding message). If not set, title will be used as the message."
+    },
+    "severity": {
+      "$ref": "#/$defs/Severity"
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Confidence score (0-100)"
+    },
+    "impact": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low"],
+      "description": "Impact level for risk assessment"
+    },
+    "likelihood": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "Likelihood level for risk assessment"
+    },
+    "category": {
+      "type": "string",
+      "description": "Finding category/class"
+    },
+    "vulnerability_class": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Vulnerability classes (e.g., SQL Injection, XSS)"
+    },
+    "subcategory": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Subcategories (e.g., audit, vuln, secure default)"
+    },
+    "rule_id": {
+      "type": "string",
+      "description": "Rule/check ID that detected this finding"
+    },
+    "rule_name": {
+      "type": "string",
+      "description": "Rule name"
+    },
+    "asset_ref": {
+      "type": "string",
+      "description": "Reference to asset ID within this report"
+    },
+    "asset_value": {
+      "type": "string",
+      "description": "Direct asset value (if not using asset_ref)"
+    },
+    "asset_type": {
+      "type": "string",
+      "description": "Asset type (if using asset_value)"
+    },
+    "location": {
+      "$ref": "#/$defs/FindingLocation"
+    },
+    "vulnerability": {
+      "$ref": "#/$defs/VulnerabilityDetails"
+    },
+    "secret": {
+      "$ref": "#/$defs/SecretDetails"
+    },
+    "misconfiguration": {
+      "$ref": "#/$defs/MisconfigurationDetails"
+    },
+    "compliance": {
+      "$ref": "#/$defs/ComplianceDetails"
+    },
+    "web3": {
+      "$ref": "web3-finding.json"
+    },
+    "remediation": {
+      "$ref": "#/$defs/Remediation"
+    },
+    "references": {
+      "type": "array",
+      "items": {"type": "string", "format": "uri"},
+      "description": "Reference URLs"
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "fingerprint": {
+      "type": "string",
+      "description": "Primary fingerprint for deduplication"
+    },
+    "partial_fingerprints": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "Contributing identity components for fingerprint calculation"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Groups logically identical results across runs"
+    },
+    "baseline_state": {
+      "type": "string",
+      "enum": ["new", "unchanged", "updated", "absent"],
+      "description": "Status relative to previous scan (SARIF baselineState)"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["not_applicable", "pass", "fail", "review", "open", "informational"],
+      "description": "Evaluation state of the finding (SARIF kind)"
+    },
+    "rank": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Priority/importance score (0-100, SARIF rank)"
+    },
+    "occurrence_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of times this result was observed"
+    },
+    "related_locations": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/FindingLocation"},
+      "description": "Additional locations related to this finding"
+    },
+    "stacks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/StackTrace"},
+      "description": "Call stacks relevant to the finding"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/Attachment"},
+      "description": "Relevant artifacts or evidence files"
+    },
+    "work_item_uris": {
+      "type": "array",
+      "items": {"type": "string", "format": "uri"},
+      "description": "URIs of work items (issues, tickets) associated with this finding"
+    },
+    "hosted_viewer_uri": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI to view this finding in a hosted viewer"
+    },
+    "status": {
+      "$ref": "#/$defs/FindingStatus"
+    },
+    "data_flow": {
+      "$ref": "#/$defs/DataFlow"
+    },
+    "suppression": {
+      "$ref": "#/$defs/Suppression"
+    },
+    "exposure": {
+      "$ref": "#/$defs/FindingExposure"
+    },
+    "remediation_context": {
+      "$ref": "#/$defs/RemediationContext"
+    },
+    "business_impact": {
+      "$ref": "#/$defs/BusinessImpact"
+    },
+    "author": {
+      "type": "string",
+      "description": "Git author name"
+    },
+    "author_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Git author email"
+    },
+    "commit_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Git commit date"
+    },
+    "first_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "FindingType": {
+      "type": "string",
+      "enum": ["vulnerability", "secret", "misconfiguration", "compliance", "web3"],
+      "description": "Finding type"
+    },
+    "Severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"],
+      "description": "Severity level"
+    },
+    "FindingStatus": {
+      "type": "string",
+      "enum": ["open", "resolved", "suppressed", "false_positive", "accepted_risk", "in_progress"],
+      "description": "Finding status"
+    },
+    "FindingLocation": {
+      "type": "object",
+      "description": "Location information for code-based findings",
+      "properties": {
+        "path": {"type": "string", "description": "File path"},
+        "start_line": {"type": "integer", "minimum": 1, "description": "Start line (1-indexed)"},
+        "end_line": {"type": "integer", "minimum": 1},
+        "start_column": {"type": "integer", "minimum": 1},
+        "end_column": {"type": "integer", "minimum": 1},
+        "snippet": {"type": "string", "description": "Code snippet"},
+        "context_snippet": {"type": "string", "description": "Broader context snippet"},
+        "branch": {"type": "string", "description": "Git branch"},
+        "commit_sha": {"type": "string", "description": "Git commit SHA"},
+        "logical_location": {"$ref": "#/$defs/LogicalLocation"}
+      }
+    },
+    "LogicalLocation": {
+      "type": "object",
+      "description": "Logical location within code structure",
+      "properties": {
+        "name": {"type": "string", "description": "Symbol name (function, class, method)"},
+        "kind": {
+          "type": "string",
+          "enum": ["function", "method", "class", "module", "namespace", "type", "property"],
+          "description": "Symbol kind"
+        },
+        "fully_qualified_name": {"type": "string", "description": "Fully qualified name"}
+      }
+    },
+    "DataFlow": {
+      "type": "object",
+      "description": "Taint tracking data flow from source to sink (SARIF codeFlows)",
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DataFlowLocation"},
+          "description": "Taint source locations (where untrusted data enters)"
+        },
+        "intermediates": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DataFlowLocation"},
+          "description": "Intermediate propagation steps"
+        },
+        "sinks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DataFlowLocation"},
+          "description": "Taint sink locations (where data reaches dangerous function)"
+        },
+        "sanitizers": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DataFlowLocation"},
+          "description": "Sanitizer locations (where data is cleaned/escaped)"
+        },
+        "tainted": {
+          "type": "boolean",
+          "description": "Whether data is still tainted at the sink (false if properly sanitized)"
+        },
+        "taint_type": {
+          "type": "string",
+          "enum": ["user_input", "file_read", "env_var", "network", "database", "header", "cookie", "session", "argv", "external"],
+          "description": "Type of taint origin"
+        },
+        "vulnerability_type": {
+          "type": "string",
+          "enum": ["sql_injection", "xss", "command_injection", "path_traversal", "ssrf", "ldap_injection", "xpath_injection", "code_injection", "template_injection", "deserialization", "open_redirect", "log_injection", "header_injection", "xxe", "regex_dos"],
+          "description": "Vulnerability type this flow leads to"
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Flow confidence score (0-100)"
+        },
+        "interprocedural": {
+          "type": "boolean",
+          "description": "Whether flow crosses function boundaries"
+        },
+        "cross_file": {
+          "type": "boolean",
+          "description": "Whether data flows across multiple files"
+        },
+        "call_path": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Call graph path (function names in order)"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Human-readable summary of the flow"
+        }
+      }
+    },
+    "DataFlowLocation": {
+      "type": "object",
+      "description": "Location in data flow trace (SARIF threadFlowLocation)",
+      "properties": {
+        "path": {"type": "string", "description": "File path"},
+        "line": {"type": "integer", "minimum": 1, "description": "Line number (1-indexed)"},
+        "end_line": {"type": "integer", "minimum": 1, "description": "End line for multi-line spans"},
+        "column": {"type": "integer", "minimum": 1, "description": "Column number (1-indexed)"},
+        "end_column": {"type": "integer", "minimum": 1, "description": "End column"},
+        "content": {"type": "string", "description": "Code content at this location"},
+        "label": {"type": "string", "description": "Variable or expression name being tracked"},
+        "index": {"type": "integer", "minimum": 0, "description": "Step index in the flow (0-indexed)"},
+        "type": {
+          "type": "string",
+          "enum": ["source", "sink", "propagator", "sanitizer", "transform"],
+          "description": "Location type in the flow"
+        },
+        "function": {"type": "string", "description": "Function/method name containing this location"},
+        "class": {"type": "string", "description": "Class/struct name (if applicable)"},
+        "module": {"type": "string", "description": "Module/namespace"},
+        "operation": {
+          "type": "string",
+          "description": "Operation performed: assignment, call, return, parameter, concat, etc."
+        },
+        "called_function": {"type": "string", "description": "For function calls: the function being called"},
+        "parameter_index": {"type": "integer", "minimum": 0, "description": "For parameters: the parameter index (0-indexed)"},
+        "taint_state": {
+          "type": "string",
+          "enum": ["tainted", "sanitized", "unknown"],
+          "description": "Taint state at this location"
+        },
+        "transformation": {
+          "type": "string",
+          "description": "Transformation applied: encode, decode, escape, hash, encrypt, etc."
+        },
+        "notes": {"type": "string", "description": "Notes for human understanding"}
+      }
+    },
+    "Suppression": {
+      "type": "object",
+      "description": "Finding suppression information",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["suppressed", "accepted", "under_review"],
+          "description": "Suppression state"
+        },
+        "reason": {"type": "string", "description": "Reason for suppression"},
+        "justification": {"type": "string", "description": "Detailed justification"},
+        "suppressed_by": {"type": "string", "description": "Who suppressed (user/email)"},
+        "suppressed_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time", "description": "When suppression expires"}
+      }
+    },
+    "VulnerabilityDetails": {
+      "type": "object",
+      "description": "Vulnerability-specific details",
+      "properties": {
+        "cve_id": {
+          "type": "string",
+          "pattern": "^CVE-\\d{4}-\\d+$",
+          "description": "CVE identifier"
+        },
+        "cwe_id": {
+          "type": "string",
+          "pattern": "^CWE-\\d+$",
+          "description": "Primary CWE identifier"
+        },
+        "cwe_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^CWE-\\d+$"},
+          "description": "All related CWE identifiers"
+        },
+        "owasp_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^A\\d{2}:\\d{4}"},
+          "description": "OWASP Top 10 identifiers (e.g., A01:2021, A03:2021)"
+        },
+        "asvs": {
+          "$ref": "#/$defs/ASVSInfo"
+        },
+        "cvss_version": {
+          "type": "string",
+          "enum": ["2.0", "3.0", "3.1", "4.0"]
+        },
+        "cvss_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "cvss_vector": {"type": "string"},
+        "cvss_source": {
+          "type": "string",
+          "enum": ["nvd", "ghsa", "redhat", "bitnami", "vendor"],
+          "description": "Source of CVSS score"
+        },
+        "package": {"type": "string", "description": "Affected package"},
+        "purl": {"type": "string", "description": "Package URL (purl spec)"},
+        "affected_version": {"type": "string"},
+        "fixed_version": {"type": "string"},
+        "ecosystem": {
+          "type": "string",
+          "enum": ["npm", "pip", "maven", "gradle", "nuget", "cargo", "go", "composer", "rubygems", "hex", "pub", "swift", "cocoapods"]
+        },
+        "dependency_path": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Dependency path from root to vulnerable package"
+        },
+        "exploit_available": {"type": "boolean"},
+        "exploit_maturity": {
+          "type": "string",
+          "enum": ["none", "poc", "functional", "weaponized"]
+        },
+        "in_cisa_kev": {"type": "boolean", "description": "In CISA Known Exploited Vulnerabilities"},
+        "epss_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "epss_percentile": {"type": "number", "minimum": 0, "maximum": 100, "description": "EPSS percentile ranking"},
+        "cpe": {"type": "string"},
+        "published_at": {"type": "string", "format": "date-time", "description": "Vulnerability published date"},
+        "modified_at": {"type": "string", "format": "date-time", "description": "Vulnerability last modified date"},
+        "data_source": {
+          "$ref": "#/$defs/VulnDataSource"
+        },
+        "severity_source": {"type": "string", "description": "Source of severity rating (nvd, ghsa, redhat, etc.)"},
+        "vendor_severity": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 5},
+          "description": "Per-vendor severity mapping (vendor name -> severity level 1-5)"
+        },
+        "layer": {
+          "$ref": "#/$defs/ContainerLayer"
+        },
+        "avd_id": {"type": "string", "pattern": "^AVD-[A-Z]+-\\d+$", "description": "Aqua Vulnerability Database ID"},
+        "vuln_status": {
+          "type": "string",
+          "enum": ["affected", "fixed", "under_investigation", "will_not_fix"],
+          "description": "Vulnerability status"
+        }
+      }
+    },
+    "VulnDataSource": {
+      "type": "object",
+      "description": "Vulnerability data source information",
+      "properties": {
+        "id": {"type": "string", "description": "Data source ID (nvd, ghsa, osv, etc.)"},
+        "name": {"type": "string", "description": "Data source name"},
+        "url": {"type": "string", "format": "uri", "description": "Data source URL"}
+      }
+    },
+    "ASVSInfo": {
+      "type": "object",
+      "description": "OWASP ASVS (Application Security Verification Standard) compliance info",
+      "properties": {
+        "section": {
+          "type": "string",
+          "description": "ASVS section (e.g., V2: Authentication)"
+        },
+        "control_id": {
+          "type": "string",
+          "description": "Control ID (e.g., 2.1.1)"
+        },
+        "control_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to ASVS documentation for this control"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "ASVS level (1, 2, or 3)"
+        }
+      }
+    },
+    "ContainerLayer": {
+      "type": "object",
+      "description": "Container layer information for image scans",
+      "properties": {
+        "digest": {"type": "string", "description": "Layer digest (sha256:...)"},
+        "diff_id": {"type": "string", "description": "Layer diff ID"}
+      }
+    },
+    "SecretDetails": {
+      "type": "object",
+      "description": "Secret-specific details",
+      "properties": {
+        "secret_type": {
+          "type": "string",
+          "enum": ["api_key", "password", "token", "certificate", "private_key", "oauth", "jwt", "ssh_key", "aws_key", "gcp_key", "azure_key", "generic_secret", "database_credential", "encryption_key"]
+        },
+        "service": {
+          "type": "string",
+          "description": "Associated service (aws, github, stripe, etc.)"
+        },
+        "masked_value": {
+          "type": "string",
+          "description": "Masked value (first/last chars)"
+        },
+        "length": {"type": "integer", "minimum": 1},
+        "entropy": {"type": "number", "minimum": 0},
+        "valid": {"type": "boolean", "description": "Secret is valid (if verified)"},
+        "revoked": {"type": "boolean"},
+        "scopes": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "API scopes/permissions associated with the secret"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the secret expires"
+        },
+        "rotation_due_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When secret rotation is due"
+        },
+        "in_history_only": {
+          "type": "boolean",
+          "description": "Secret only exists in git history (not current code)"
+        }
+      }
+    },
+    "MisconfigurationDetails": {
+      "type": "object",
+      "description": "Misconfiguration-specific details",
+      "properties": {
+        "policy_id": {"type": "string"},
+        "policy_name": {"type": "string"},
+        "avd_id": {"type": "string", "pattern": "^AVD-[A-Z]+-\\d+$", "description": "Aqua Vulnerability Database ID"},
+        "resource_type": {"type": "string"},
+        "resource_name": {"type": "string"},
+        "provider": {"type": "string", "description": "Cloud provider (AWS, GCP, Azure)"},
+        "service": {"type": "string", "description": "Service name (S3, EC2, IAM)"},
+        "namespace": {"type": "string", "description": "Policy namespace (builtin.aws.s3)"},
+        "query": {"type": "string", "description": "Rego query path"},
+        "expected": {"type": "string"},
+        "actual": {"type": "string"},
+        "cause": {"type": "string"}
+      }
+    },
+    "ComplianceDetails": {
+      "type": "object",
+      "description": "Compliance-specific details",
+      "properties": {
+        "framework": {
+          "type": "string",
+          "enum": ["pci-dss", "hipaa", "soc2", "cis", "nist", "iso27001", "gdpr", "fedramp"]
+        },
+        "framework_version": {"type": "string"},
+        "control_id": {"type": "string"},
+        "control_name": {"type": "string"},
+        "control_description": {"type": "string"},
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail", "manual", "not_applicable"]
+        }
+      }
+    },
+    "Remediation": {
+      "type": "object",
+      "description": "Remediation guidance",
+      "properties": {
+        "recommendation": {"type": "string"},
+        "steps": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "effort": {
+          "type": "string",
+          "enum": ["trivial", "low", "medium", "high"]
+        },
+        "fix_available": {"type": "boolean"},
+        "auto_fixable": {"type": "boolean"},
+        "fix_code": {
+          "type": "string",
+          "description": "Suggested fix code - the actual code to replace the vulnerable code (for SAST auto-fix)"
+        },
+        "fix_regex": {
+          "$ref": "#/$defs/FixRegex"
+        },
+        "references": {
+          "type": "array",
+          "items": {"type": "string", "format": "uri"}
+        }
+      }
+    },
+    "FixRegex": {
+      "type": "object",
+      "description": "Regex-based auto-fix pattern (for tools like Semgrep)",
+      "properties": {
+        "regex": {
+          "type": "string",
+          "description": "Regular expression pattern to match"
+        },
+        "replacement": {
+          "type": "string",
+          "description": "Replacement string (may contain capture group references like $1, $2)"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of replacements to make (0 = all)"
+        }
+      }
+    },
+    "StackTrace": {
+      "type": "object",
+      "description": "Call stack trace (SARIF stack)",
+      "properties": {
+        "message": {"type": "string", "description": "Stack description"},
+        "frames": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/StackFrame"},
+          "description": "Stack frames from innermost to outermost"
+        }
+      }
+    },
+    "StackFrame": {
+      "type": "object",
+      "description": "Single frame in a call stack",
+      "properties": {
+        "location": {"$ref": "#/$defs/FindingLocation"},
+        "module": {"type": "string", "description": "Module/library name"},
+        "thread_id": {"type": "integer"},
+        "parameters": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Function parameters"
+        }
+      }
+    },
+    "Attachment": {
+      "type": "object",
+      "description": "Artifact or evidence attachment (SARIF attachment)",
+      "properties": {
+        "description": {"type": "string"},
+        "artifact_location": {
+          "type": "object",
+          "properties": {
+            "uri": {"type": "string", "format": "uri"},
+            "uri_base_id": {"type": "string"}
+          }
+        },
+        "regions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/FindingLocation"},
+          "description": "Relevant regions within the artifact"
+        },
+        "rectangles": {
+          "type": "array",
+          "description": "Relevant rectangular areas (for images)"
+        }
+      }
+    },
+    "FindingExposure": {
+      "type": "object",
+      "description": "CTEM exposure information for a finding",
+      "properties": {
+        "vector": {
+          "type": "string",
+          "enum": ["network", "local", "physical", "adjacent_net"],
+          "description": "Exposure vector"
+        },
+        "is_network_accessible": {
+          "type": "boolean",
+          "description": "Is the finding reachable from the network"
+        },
+        "is_internet_accessible": {
+          "type": "boolean",
+          "description": "Is the finding directly reachable from the internet"
+        },
+        "attack_prerequisites": {
+          "type": "string",
+          "description": "Prerequisites for exploitation: auth_required, mfa_required, local_access, etc."
+        }
+      }
+    },
+    "RemediationContext": {
+      "type": "object",
+      "description": "CTEM remediation context for a finding",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["patch", "upgrade", "workaround", "config_change", "mitigate", "accept_risk"],
+          "description": "Remediation type"
+        },
+        "estimated_minutes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Estimated time to fix in minutes"
+        },
+        "complexity": {
+          "type": "string",
+          "enum": ["simple", "moderate", "complex"],
+          "description": "Fix complexity"
+        },
+        "remedy_available": {
+          "type": "boolean",
+          "description": "Is a remedy (patch/fix) available"
+        }
+      }
+    },
+    "BusinessImpact": {
+      "type": "object",
+      "description": "CTEM business impact assessment for a finding",
+      "properties": {
+        "data_exposure_risk": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high", "critical"],
+          "description": "Data exposure risk level"
+        },
+        "reputational_impact": {
+          "type": "boolean",
+          "description": "Has potential reputational impact"
+        },
+        "compliance_impact": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Compliance frameworks impacted: PCI-DSS, HIPAA, SOC2, GDPR, ISO27001"
+        }
+      }
+    }
+  }
+}

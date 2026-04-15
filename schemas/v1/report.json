@@ -1,0 +1,241 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.openctem.io/ctis/v1/report.json",
+  "title": "CTIS Report",
+  "description": "CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into OpenCTEM",
+  "type": "object",
+  "required": [
+    "version",
+    "metadata"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "const": "1.0"
+    },
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URL for validation",
+      "format": "uri"
+    },
+    "metadata": {
+      "$ref": "#/$defs/ReportMetadata"
+    },
+    "tool": {
+      "$ref": "#/$defs/Tool"
+    },
+    "assets": {
+      "type": "array",
+      "description": "Discovered assets",
+      "items": {
+        "$ref": "asset.json"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Security findings",
+      "items": {
+        "$ref": "finding.json"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Software dependencies (SBOM)",
+      "items": {
+        "$ref": "dependency.json"
+      }
+    },
+    "properties": {
+      "$ref": "#/$defs/Properties"
+    }
+  },
+  "$defs": {
+    "ReportMetadata": {
+      "type": "object",
+      "description": "Report metadata",
+      "required": [
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique report/scan identifier"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the report was generated (ISO 8601)"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Scan duration in milliseconds"
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "scanner",
+            "collector",
+            "integration",
+            "manual"
+          ],
+          "description": "Type of data source"
+        },
+        "source_ref": {
+          "type": "string",
+          "description": "External reference (job ID, scan ID)"
+        },
+        "coverage_type": {
+          "type": "string",
+          "enum": ["full", "incremental", "partial"],
+          "description": "Coverage type: full (complete scan), incremental (diff scan), partial (specific directories)"
+        },
+        "branch": {
+          "$ref": "#/$defs/BranchInfo"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "properties": {
+          "$ref": "#/$defs/Properties"
+        }
+      }
+    },
+    "BranchInfo": {
+      "type": "object",
+      "description": "Git branch context for CI/CD scans. Used for branch-aware finding lifecycle management.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Branch name (e.g., 'main', 'feature/xyz')"
+        },
+        "is_default_branch": {
+          "type": "boolean",
+          "description": "Whether this is the default branch (main/master). Auto-resolve only applies to default branch scans."
+        },
+        "commit_sha": {
+          "type": "string",
+          "description": "Commit SHA being scanned"
+        },
+        "base_branch": {
+          "type": "string",
+          "description": "Base branch for PR/MR scans (e.g., 'main' when scanning a PR targeting main)"
+        },
+        "pull_request_number": {
+          "type": "integer",
+          "description": "PR/MR number if this is a pull request scan"
+        },
+        "pull_request_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "PR/MR URL if this is a pull request scan"
+        },
+        "repository_url": {
+          "type": "string",
+          "description": "Repository URL for context. Format: domain/owner/repo (e.g., github.com/org/repo)"
+        }
+      }
+    },
+    "Scope": {
+      "type": "object",
+      "description": "Target scope of the scan/collection",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Scope name or identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "domain",
+            "network",
+            "repository",
+            "cloud_account",
+            "blockchain"
+          ],
+          "description": "Scope type"
+        },
+        "includes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Included targets"
+        },
+        "excludes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Excluded targets"
+        }
+      }
+    },
+    "Tool": {
+      "type": "object",
+      "description": "Tool that generated this report",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Tool name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Tool version"
+        },
+        "vendor": {
+          "type": "string",
+          "description": "Tool vendor/organization"
+        },
+        "info_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Tool information URL"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "vulnerability",
+              "secret",
+              "misconfiguration",
+              "compliance",
+              "web3",
+              "domain",
+              "ip_address",
+              "repository",
+              "certificate",
+              "cloud",
+              "container",
+              "sast",
+              "code_analysis",
+              "vulnerability_detection",
+              "code_quality",
+              "taint_tracking",
+              "cross_file_analysis",
+              "secrets_detection",
+              "supply_chain",
+              "sca",
+              "dependency_scanning",
+              "iac"
+            ]
+          },
+          "description": "Tool capabilities"
+        },
+        "properties": {
+          "$ref": "#/$defs/Properties"
+        }
+      }
+    },
+    "Properties": {
+      "type": "object",
+      "description": "Custom properties",
+      "additionalProperties": true
+    }
+  }
+}
