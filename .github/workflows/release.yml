@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: Verify zero external dependencies
+        run: |
+          DEPS=$(go list -m all 2>/dev/null | grep -v "github.com/openctemio/ctis" | wc -l)
+          if [ "$DEPS" -gt 1 ]; then
+            echo "ERROR: ctis module must have zero external dependencies"
+            go list -m all
+            exit 1
+          fi
+
+      - name: Build all platforms
+        run: |
+          for GOOS in linux darwin windows; do
+            for GOARCH in amd64 arm64; do
+              echo "Building $GOOS/$GOARCH..."
+              GOOS=$GOOS GOARCH=$GOARCH go build ./...
+            done
+          done
+
+      - name: Run tests
+        run: go test -v -race ./...
+
+      - name: Validate schemas
+        run: |
+          for f in schemas/v1/*.json; do
+            python3 -m json.tool "$f" > /dev/null || exit 1
+          done
+
+      - name: Verify tag matches go.mod
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "Release tag: $TAG"
+          echo "Module: $(head -1 go.mod)"
+
+  release:
+    name: Create release
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            CHANGES=$(git log --pretty=format:"- %s" HEAD)
+          else
+            CHANGES=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+          fi
+          echo "changes<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Changes
+            ${{ steps.changelog.outputs.changes }}
+
+            ## Installation
+            ```bash
+            go get github.com/openctemio/ctis@${{ github.ref_name }}
+            ```
+
+            ## Compatibility
+            - Go 1.22+
+            - Zero external dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
