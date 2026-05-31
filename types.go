@@ -1106,10 +1106,35 @@ type FindingStatus string
 const (
 	FindingStatusOpen          FindingStatus = "open"
 	FindingStatusResolved      FindingStatus = "resolved"
+	FindingStatusSuppressed    FindingStatus = "suppressed"
 	FindingStatusFalsePositive FindingStatus = "false_positive"
 	FindingStatusAcceptedRisk  FindingStatus = "accepted_risk"
 	FindingStatusInProgress    FindingStatus = "in_progress"
 )
+
+// AllFindingStatuses returns every valid finding status. Kept in sync with the
+// FindingStatus enum in schemas/v1/finding.json.
+func AllFindingStatuses() []FindingStatus {
+	return []FindingStatus{
+		FindingStatusOpen,
+		FindingStatusResolved,
+		FindingStatusSuppressed,
+		FindingStatusFalsePositive,
+		FindingStatusAcceptedRisk,
+		FindingStatusInProgress,
+	}
+}
+
+// IsValid reports whether s is a recognized finding status.
+func (s FindingStatus) IsValid() bool {
+	switch s {
+	case FindingStatusOpen, FindingStatusResolved, FindingStatusSuppressed,
+		FindingStatusFalsePositive, FindingStatusAcceptedRisk, FindingStatusInProgress:
+		return true
+	default:
+		return false
+	}
+}
 
 // DataFlow represents taint analysis data flow trace.
 // This structure captures the complete path from source to sink,
