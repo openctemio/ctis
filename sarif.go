@@ -215,11 +215,21 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 	findingType := detectFindingType(run.Tool.Driver.Name, opts.ToolType)
 
 	for i, result := range run.Results {
+		// Severity: prefer the result-level SARIF level, but fall back to the
+		// rule's defaultConfiguration.level when the result omits it (per the
+		// SARIF spec — many tools set severity only at the rule level).
+		// Without this, rule-level-only severities all collapsed to medium.
+		level := result.Level
+		if level == "" {
+			if rule, ok := ruleMap[result.RuleID]; ok && rule.DefaultConfiguration != nil {
+				level = rule.DefaultConfiguration.Level
+			}
+		}
 		finding := Finding{
 			ID:         fmt.Sprintf("finding-%d", i+1),
 			Type:       findingType,
 			Title:      result.Message.Text,
-			Severity:   mapSARIFLevel(result.Level),
+			Severity:   mapSARIFLevel(level),
 			Confidence: opts.DefaultConfidence,
 			RuleID:     result.RuleID,
 		}
