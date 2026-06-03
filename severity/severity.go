@@ -114,6 +114,27 @@ func FromCVSS(score float64) Level {
 	}
 }
 
+// FromCVSSWithVersion converts a CVSS score to a severity level honoring the
+// CVSS version. CVSS v2 has no "Critical" band — its qualitative ratings are
+// High 7.0-10.0, Medium 4.0-6.9, Low 0.0-3.9 — so a v2 score of e.g. 9.5 must
+// map to High, not Critical. Any non-v2 (v3/v4/unknown/empty) version uses the
+// v3 bands via FromCVSS.
+func FromCVSSWithVersion(score float64, version string) Level {
+	if strings.HasPrefix(strings.TrimSpace(version), "2") {
+		switch {
+		case score >= 7.0:
+			return High
+		case score >= 4.0:
+			return Medium
+		case score > 0:
+			return Low
+		default:
+			return Info
+		}
+	}
+	return FromCVSS(score)
+}
+
 // ToCVSSRange returns the CVSS score range for a severity level.
 // Returns (min, max) where min is inclusive and max is exclusive.
 func (l Level) ToCVSSRange() (float64, float64) {
