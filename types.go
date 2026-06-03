@@ -2381,13 +2381,20 @@ func itoa(i int) string {
 	if i == 0 {
 		return "0"
 	}
-	if i < 0 {
-		return "-" + itoa(-i)
+	neg := i < 0
+	// Work in unsigned to avoid overflow when negating math.MinInt
+	// (-MinInt is not representable as int; unsigned negation is well-defined).
+	u := uint(i)
+	if neg {
+		u = -u
 	}
 	digits := ""
-	for i > 0 {
-		digits = string(rune('0'+i%10)) + digits
-		i /= 10
+	for u > 0 {
+		digits = string(rune('0'+u%10)) + digits
+		u /= 10
+	}
+	if neg {
+		return "-" + digits
 	}
 	return digits
 }

@@ -608,8 +608,16 @@ func normalizeAssetID(value string) string {
 
 // truncateString truncates a string to maxLen characters.
 func truncateString(s string, maxLen int) string {
+	if maxLen <= 0 {
+		return ""
+	}
 	if len(s) <= maxLen {
 		return s
+	}
+	// Not enough room for the "..." suffix — hard-truncate instead of
+	// slicing with a negative bound (which would panic).
+	if maxLen <= 3 {
+		return s[:maxLen]
 	}
 	return s[:maxLen-3] + "..."
 }
