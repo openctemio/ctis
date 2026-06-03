@@ -2166,6 +2166,14 @@ func (s Severity) String() string {
 }
 
 // Score returns a numeric score for the severity (0-10).
+//
+// An unrecognized/empty severity intentionally scores 5.0 (Medium), NOT 0.
+// This is a fail-safe for a security tool: a finding whose severity string the
+// producer got wrong (enum drift, typo) must still SURFACE in score-based
+// triage rather than silently sink to the bottom and be missed. Callers that
+// want to reject unknown severities outright should use Report.Validate /
+// Severity.IsValid instead of relying on the score. Do not change this default
+// to 0 without that explicit reject path — it would hide findings.
 func (s Severity) Score() float64 {
 	switch s {
 	case SeverityCritical:
