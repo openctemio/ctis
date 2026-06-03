@@ -415,3 +415,25 @@ func BenchmarkCompare(b *testing.B) {
 		Compare(Critical, High)
 	}
 }
+
+func TestFromCVSSWithVersion(t *testing.T) {
+	cases := []struct {
+		score    float64
+		version  string
+		expected Level
+	}{
+		{9.5, "2.0", High}, // v2 has no Critical
+		{7.0, "2.0", High},
+		{5.0, "2.0", Medium},
+		{2.0, "2.0", Low},
+		{0.0, "2.0", Info},
+		{9.5, "3.1", Critical}, // v3 keeps Critical
+		{9.5, "", Critical},    // unknown -> v3
+		{9.5, "4.0", Critical},
+	}
+	for _, c := range cases {
+		if got := FromCVSSWithVersion(c.score, c.version); got != c.expected {
+			t.Errorf("FromCVSSWithVersion(%v, %q) = %v, want %v", c.score, c.version, got, c.expected)
+		}
+	}
+}
