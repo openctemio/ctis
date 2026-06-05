@@ -81,6 +81,21 @@
     "location": {
       "$ref": "#/$defs/FindingLocation"
     },
+    "network": {
+      "type": "object",
+      "description": "Network location for host/network findings (Nessus/Tenable etc.)",
+      "properties": {
+        "host": {"type": "string"},
+        "port": {"type": "integer"},
+        "protocol": {"type": "string", "description": "tcp, udp"},
+        "service": {"type": "string", "description": "https, ssh, smb, ..."}
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Scanner raw proof/output for this finding (e.g. Nessus plugin_output)"
+    },
     "vulnerability": {
       "$ref": "#/$defs/VulnerabilityDetails"
     },
@@ -382,6 +397,17 @@
           "type": "string",
           "pattern": "^CVE-\\d{4}-\\d+$",
           "description": "CVE identifier"
+        },
+        "cve_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^CVE-\\d{4}-\\d+$"},
+          "description": "All CVEs for this finding (network scanners group multiple per plugin)"
+        },
+        "vpr_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Tenable Vulnerability Priority Rating (0-10)"
         },
         "cwe_id": {
           "type": "string",
