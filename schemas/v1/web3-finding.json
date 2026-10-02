@@ -1,9 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.openctem.io/ctis/v1/web3-finding.json",
+  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.json",
   "title": "Web3 Vulnerability Details",
   "description": "Web3/Smart contract vulnerability-specific details",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "vulnerability_class": {
       "$ref": "#/$defs/Web3VulnerabilityClass"
@@ -146,6 +147,7 @@
     },
     "Web3POC": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Proof of concept details",
       "properties": {
         "type": {
@@ -175,6 +177,7 @@
     },
     "GasIssue": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Gas optimization issue details",
       "properties": {
         "current_gas": {
@@ -197,6 +200,7 @@
     },
     "AccessControlIssue": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Access control vulnerability details",
       "properties": {
         "missing_modifier": {
@@ -219,6 +223,7 @@
     },
     "ReentrancyIssue": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Reentrancy vulnerability details",
       "properties": {
         "type": {
@@ -246,6 +251,7 @@
     },
     "OracleManipulationIssue": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Oracle manipulation vulnerability details",
       "properties": {
         "oracle_type": {
@@ -275,6 +281,7 @@
     },
     "FlashLoanIssue": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Flash loan attack vulnerability details",
       "properties": {
         "provider": {

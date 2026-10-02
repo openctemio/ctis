@@ -1,9 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.openctem.io/ctis/v1/report.json",
+  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
   "title": "CTIS Report",
-  "description": "CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into OpenCTEM",
+  "description": "CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into OpenCTEM. Normative field semantics: docs/spec.md in https://github.com/openctemio/ctis",
   "type": "object",
+  "additionalProperties": false,
   "required": [
     "version",
     "metadata"
@@ -11,12 +12,13 @@
   "properties": {
     "version": {
       "type": "string",
-      "description": "Schema version",
-      "const": "1.0"
+      "description": "CTIS specification version as MAJOR.MINOR. Receivers accept any minor of their own major; a producer must not send fields newer than the receiver's minor (docs/spec.md, Versioning). The default is the version this schema describes.",
+      "pattern": "^1\\.(0|[1-9][0-9]{0,3})$",
+      "default": "1.3"
     },
     "$schema": {
       "type": "string",
-      "description": "JSON Schema URL for validation",
+      "description": "JSON Schema URL for validation, normally https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
       "format": "uri"
     },
     "metadata": {
@@ -53,6 +55,7 @@
   "$defs": {
     "ReportMetadata": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Report metadata",
       "required": [
         "timestamp"
@@ -104,6 +107,7 @@
     },
     "BranchInfo": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Git branch context for CI/CD scans. Used for branch-aware finding lifecycle management.",
       "properties": {
         "name": {
@@ -139,6 +143,7 @@
     },
     "Scope": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Target scope of the scan/collection",
       "properties": {
         "name": {
@@ -174,6 +179,7 @@
     },
     "Tool": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Tool that generated this report",
       "required": [
         "name"
@@ -222,10 +228,22 @@
               "supply_chain",
               "sca",
               "dependency_scanning",
-              "iac"
+              "iac",
+              "dast",
+              "va",
+              "easm",
+              "cspm",
+              "external",
+              "import",
+              "subdomain",
+              "dns",
+              "portscan",
+              "http_probe",
+              "crawler",
+              "tech-detect"
             ]
           },
-          "description": "Tool capabilities"
+          "description": "What the tool does. OpenCTEM derives a report's detection technique from the first value it recognises (sast, sca, dast, secret, iac, container, va, easm, cspm, external, import, misconfiguration, web3, subdomain, dns, portscan, crawler, tech-detect) and falls back to the tool name."
         },
         "properties": {
           "$ref": "#/$defs/Properties"
