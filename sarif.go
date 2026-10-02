@@ -78,7 +78,10 @@ type SARIFResult struct {
 	PartialFingerprints map[string]string        `json:"partialFingerprints,omitempty"`
 	CorrelationGUID     string                   `json:"correlationGuid,omitempty"`
 	BaselineState       string                   `json:"baselineState,omitempty"`
-	Properties          map[string]any           `json:"properties,omitempty"`
+	// Kind is the evaluation state of the result: notApplicable, pass, fail,
+	// review, open or informational (SARIF 2.1.0 section 3.27.9).
+	Kind       string         `json:"kind,omitempty"`
+	Properties map[string]any `json:"properties,omitempty"`
 }
 
 // SARIFReportingReference is a result's reference to its rule
@@ -397,11 +400,45 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 		}
 	}
 	finding.CorrelationID = result.CorrelationGUID
-	switch result.BaselineState {
-	case "new", "unchanged", "updated", "absent":
-		finding.BaselineState = result.BaselineState
-	}
+	finding.BaselineState = sarifBaselineState(result.BaselineState)
+	finding.Kind = sarifKind(result.Kind)
 	return finding
+}
+
+// sarifKind maps a SARIF result.kind onto the CTIS finding.kind vocabulary.
+// SARIF spells one value in camelCase ("notApplicable"); CTIS uses snake_case
+// ("not_applicable"). Matching ignores case and underscores, so a producer's
+// "NotApplicable" or "not_applicable" also maps. Anything outside the six SARIF
+// values returns "" (left unset): the CTIS schema would reject it, and an
+// absent kind is not defaulted to SARIF's implicit "fail".
+func sarifKind(kind string) string {
+	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(kind), "_", "")) {
+	case "notapplicable":
+		return "not_applicable"
+	case "pass":
+		return "pass"
+	case "fail":
+		return "fail"
+	case "review":
+		return "review"
+	case "open":
+		return "open"
+	case "informational":
+		return "informational"
+	default:
+		return ""
+	}
+}
+
+// sarifBaselineState maps a SARIF result.baselineState onto CTIS
+// finding.baseline_state (same four values). Unknown values are left unset.
+func sarifBaselineState(state string) string {
+	switch s := strings.ToLower(strings.TrimSpace(state)); s {
+	case "new", "unchanged", "updated", "absent":
+		return s
+	default:
+		return ""
+	}
 }
 
 // sarifFingerprint picks the result fingerprint with the lowest key, so the

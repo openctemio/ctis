@@ -2,6 +2,12 @@
 
 All notable changes to CTIS. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Module versions follow [Semantic Versioning](https://semver.org/); module `v1.MINOR.x` implements CTIS spec `1.MINOR` (see [docs/spec.md](docs/spec.md#2-versioning-and-compatibility)).
 
+## [Unreleased]
+
+### Changed
+
+- `FromSARIF` reads `result.kind` into `finding.kind`, mapping SARIF's `notApplicable` to `not_applicable` (it was dropped, so a passed or inapplicable check looked like any other finding). `baselineState` is matched case-insensitively. Values outside SARIF's set are left unset. `SARIFResult` gains `Kind`.
+
 ## [1.3.0] - 2026-10-02
 
 Receivers (OpenCTEM API) must upgrade before producers send `suppression.reason`, `suppression.expires_at` or `dependencies[].properties`.
