@@ -1,0 +1,169 @@
+{
+  "version": "1.3",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-02T00:00:00Z",
+    "source_type": "scanner",
+    "branch": {
+      "name": "main",
+      "is_default_branch": true,
+      "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+    }
+  },
+  "tool": {
+    "name": "checkov",
+    "version": "3.2.255",
+    "info_url": "https://www.checkov.io/",
+    "capabilities": [
+      "vulnerability",
+      "misconfiguration"
+    ]
+  },
+  "assets": [
+    {
+      "id": "repo",
+      "type": "repository",
+      "value": "github.com/example/shop"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "misconfiguration",
+      "title": "S3 Bucket has an ACL defined which allows public READ access.",
+      "severity": "high",
+      "confidence": 90,
+      "rule_id": "CKV_AWS_20",
+      "rule_name": "S3 Bucket has an ACL defined which allows public READ access.",
+      "asset_ref": "repo",
+      "location": {
+        "path": "terraform/s3.tf",
+        "start_line": 1,
+        "end_line": 8,
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "baseline_state": "new",
+      "kind": "fail",
+      "properties": {
+        "sarif_tool": "checkov"
+      }
+    },
+    {
+      "id": "finding-2",
+      "type": "misconfiguration",
+      "title": "Ensure the S3 bucket has access logging enabled",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "CKV_AWS_18",
+      "rule_name": "Ensure the S3 bucket has access logging enabled",
+      "asset_ref": "repo",
+      "location": {
+        "path": "terraform/s3.tf",
+        "start_line": 1,
+        "end_line": 8,
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "baseline_state": "unchanged",
+      "kind": "review",
+      "properties": {
+        "sarif_tool": "checkov"
+      }
+    },
+    {
+      "id": "finding-3",
+      "type": "misconfiguration",
+      "title": "Replication is not applicable to this bucket",
+      "severity": "info",
+      "confidence": 90,
+      "rule_id": "CKV_AWS_144",
+      "rule_name": "Ensure that S3 bucket has cross-region replication enabled",
+      "asset_ref": "repo",
+      "location": {
+        "path": "terraform/s3.tf",
+        "start_line": 1,
+        "end_line": 8,
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "kind": "not_applicable",
+      "properties": {
+        "sarif_tool": "checkov"
+      }
+    },
+    {
+      "id": "finding-4",
+      "type": "misconfiguration",
+      "title": "Bucket logs-archive has no public ACL",
+      "severity": "info",
+      "confidence": 90,
+      "rule_id": "CKV_AWS_20",
+      "rule_name": "S3 Bucket has an ACL defined which allows public READ access.",
+      "asset_ref": "repo",
+      "location": {
+        "path": "terraform/logs.tf",
+        "start_line": 3,
+        "end_line": 9,
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "baseline_state": "absent",
+      "kind": "pass",
+      "properties": {
+        "sarif_tool": "checkov"
+      }
+    },
+    {
+      "id": "finding-5",
+      "type": "vulnerability",
+      "title": "open question",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "X1",
+      "asset_ref": "repo",
+      "kind": "open",
+      "properties": {
+        "sarif_tool": "custom-linter"
+      }
+    },
+    {
+      "id": "finding-6",
+      "type": "vulnerability",
+      "title": "fyi",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "X1",
+      "asset_ref": "repo",
+      "baseline_state": "updated",
+      "kind": "informational",
+      "properties": {
+        "sarif_tool": "custom-linter"
+      }
+    },
+    {
+      "id": "finding-7",
+      "type": "vulnerability",
+      "title": "not a SARIF kind or baselineState",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "X1",
+      "asset_ref": "repo",
+      "properties": {
+        "sarif_tool": "custom-linter"
+      }
+    },
+    {
+      "id": "finding-8",
+      "type": "vulnerability",
+      "title": "no kind: SARIF default is fail, left unset",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "X1",
+      "asset_ref": "repo",
+      "properties": {
+        "sarif_tool": "custom-linter"
+      }
+    }
+  ]
+}

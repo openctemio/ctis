@@ -183,6 +183,7 @@ Producers in other languages MUST reproduce the same input strings and hash them
 - Type: `ConvertOptions.ToolType` (`sast`, `sca`, `secret`, `iac`, `web3`); else the rule tags `vulnerability`, `misconfiguration` or `secret` (Trivy); else a CVE or GHSA rule ID means `vulnerability`; else the tool name.
 - CWE: the rule's `cwe` property (string or array) and tags such as `external/cwe/cwe-079` (CodeQL) or `CWE-89: ...` (Semgrep). OWASP Top 10 IDs from tags such as `OWASP-A03:2021 - Injection`.
 - Fingerprint: the result `fingerprints` entry with the lowest key; values longer than 64 characters are SHA-256 hashed. `partialFingerprints`, `correlationGuid` and `baselineState` are carried as `partial_fingerprints`, `correlation_id` and `baseline_state`.
+- `kind` is carried as `kind`, with SARIF's camelCase `notApplicable` written as `not_applicable` (matching ignores case and underscores). `baselineState` matching ignores case. A value outside SARIF's set is left unset; an absent `kind` is not defaulted to SARIF's implicit `fail`.
 - The rule is found by `ruleId`, `rule.id`, `ruleIndex` or `rule.index`.
 - The asset the options describe gets no criticality.
 
