@@ -23,7 +23,7 @@ jobs:
       - name: Verify zero external dependencies
         run: |
           DEPS=$(go list -m all 2>/dev/null | grep -v "github.com/openctemio/ctis" | wc -l)
-          if [ "$DEPS" -gt 1 ]; then
+          if [ "$DEPS" -gt 0 ]; then
             echo "ERROR: ctis module must have zero external dependencies"
             go list -m all
             exit 1
@@ -41,17 +41,35 @@ jobs:
       - name: Run tests
         run: go test -v -race ./...
 
-      - name: Validate schemas
+      - name: Validate schemas and examples
         run: |
-          for f in schemas/v1/*.json; do
-            python3 -m json.tool "$f" > /dev/null || exit 1
-          done
+          pip install "jsonschema[format-nongpl]==4.25.1"
+          python3 scripts/validate_schemas.py
 
-      - name: Verify tag matches go.mod
+      # The tag must be vMAJOR.MINOR.PATCH, its major must match the module
+      # path (v1 has no /vN suffix, v2+ needs /vN), its MAJOR.MINOR must be
+      # the CTIS spec version the code stamps (ctis.SchemaVersion), and
+      # CHANGELOG.md must have a section for it.
+      - name: Verify tag against module, spec version and changelog
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          echo "Release tag: $TAG"
-          echo "Module: $(head -1 go.mod)"
+          TAG="${GITHUB_REF#refs/tags/}"
+          if ! [[ "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "ERROR: tag $TAG is not vMAJOR.MINOR.PATCH"; exit 1
+          fi
+          MAJOR="${BASH_REMATCH[1]}"; MINOR="${BASH_REMATCH[2]}"; VERSION="${TAG#v}"
+          MODULE="$(go list -m)"
+          if [ "$MAJOR" -ge 2 ]; then WANT="github.com/openctemio/ctis/v$MAJOR"; else WANT="github.com/openctemio/ctis"; fi
+          if [ "$MODULE" != "$WANT" ]; then
+            echo "ERROR: tag $TAG needs module path $WANT, go.mod has $MODULE"; exit 1
+          fi
+          SPEC="$(sed -nE 's/^[[:space:]]*SchemaVersion[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' version.go)"
+          if [ "$SPEC" != "$MAJOR.$MINOR" ]; then
+            echo "ERROR: tag $TAG but ctis.SchemaVersion is $SPEC (want $MAJOR.$MINOR)"; exit 1
+          fi
+          if ! grep -qE "^## \[$VERSION\]" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md has no '## [$VERSION]' section"; exit 1
+          fi
+          echo "Tag $TAG matches $MODULE, CTIS $SPEC and CHANGELOG.md"
 
   release:
     name: Create release
@@ -62,25 +80,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate changelog
+      - name: Extract changelog section
         id: changelog
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -z "$PREV_TAG" ]; then
-            CHANGES=$(git log --pretty=format:"- %s" HEAD)
-          else
-            CHANGES=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
-          fi
-          echo "changes<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > section.md
+          {
+            echo "changes<<CHANGELOG_EOF"
+            cat section.md
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           generate_release_notes: true
           body: |
-            ## Changes
             ${{ steps.changelog.outputs.changes }}
 
             ## Installation
@@ -89,8 +108,10 @@ jobs:
             ```
 
             ## Compatibility
+            - CTIS spec version: see CHANGELOG.md; receivers accept any 1.x report (docs/spec.md, Versioning)
             - Go 1.22+
             - Zero external dependencies
+            - Apache-2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
