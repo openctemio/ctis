@@ -1,9 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.openctem.io/ctis/v1/finding.json",
+  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/finding.json",
   "title": "CTIS Finding",
   "description": "Security finding schema for CTEM Ingest Schema",
   "type": "object",
+  "additionalProperties": false,
   "required": ["type", "title", "severity"],
   "properties": {
     "id": {
@@ -75,22 +76,13 @@
       "description": "Direct asset value (if not using asset_ref)"
     },
     "asset_type": {
-      "type": "string",
-      "description": "Asset type (if using asset_value)"
+      "$ref": "asset.json#/$defs/AssetType"
     },
     "location": {
       "$ref": "#/$defs/FindingLocation"
     },
     "network": {
-      "type": "object",
-      "description": "Network location for host/network findings (Nessus/Tenable etc.)",
-      "properties": {
-        "host": {"type": "string"},
-        "port": {"type": "integer"},
-        "protocol": {"type": "string", "description": "tcp, udp"},
-        "service": {"type": "string", "description": "https, ssh, smb, ..."}
-      },
-      "additionalProperties": true
+      "$ref": "#/$defs/NetworkLocation"
     },
     "evidence": {
       "type": "string",
@@ -125,7 +117,7 @@
     },
     "fingerprint": {
       "type": "string",
-      "description": "Primary fingerprint for deduplication"
+      "description": "Producer-computed identity of this finding for deduplication, stable across scans. Send a lowercase hex SHA-256 (64 characters); OpenCTEM ignores values that are not hex of at least 16 characters and computes its own. See docs/spec.md, Fingerprints, for the recipe per finding type."
     },
     "partial_fingerprints": {
       "type": "object",
@@ -245,6 +237,7 @@
     },
     "FindingLocation": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Location information for code-based findings",
       "properties": {
         "path": {"type": "string", "description": "File path"},
@@ -256,11 +249,24 @@
         "context_snippet": {"type": "string", "description": "Broader context snippet"},
         "branch": {"type": "string", "description": "Git branch"},
         "commit_sha": {"type": "string", "description": "Git commit SHA"},
-        "logical_location": {"$ref": "#/$defs/LogicalLocation"}
+        "logical_location": {"$ref": "#/$defs/LogicalLocation"},
+        "context_start_line": {"type": "integer", "minimum": 1, "description": "Line where context_snippet starts"}
+      }
+    },
+    "NetworkLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where a network/host finding was observed (Nessus/Tenable and other network scanners)",
+      "properties": {
+        "host": {"type": "string", "description": "Host the finding was observed on (IP or hostname)"},
+        "port": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "Port number; 0 or absent means not port-specific"},
+        "protocol": {"type": "string", "description": "Transport protocol: tcp, udp"},
+        "service": {"type": "string", "description": "Service on the port: https, ssh, smb, mysql, ..."}
       }
     },
     "LogicalLocation": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Logical location within code structure",
       "properties": {
         "name": {"type": "string", "description": "Symbol name (function, class, method)"},
@@ -269,11 +275,13 @@
           "enum": ["function", "method", "class", "module", "namespace", "type", "property"],
           "description": "Symbol kind"
         },
-        "fully_qualified_name": {"type": "string", "description": "Fully qualified name"}
+        "fully_qualified_name": {"type": "string", "description": "Fully qualified name"},
+        "parent_index": {"type": "integer", "minimum": 0, "description": "Index of the enclosing logical location (SARIF logicalLocation.parentIndex)"}
       }
     },
     "DataFlow": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Taint tracking data flow from source to sink (SARIF codeFlows)",
       "properties": {
         "sources": {
@@ -337,6 +345,7 @@
     },
     "DataFlowLocation": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Location in data flow trace (SARIF threadFlowLocation)",
       "properties": {
         "path": {"type": "string", "description": "File path"},
@@ -375,14 +384,20 @@
     },
     "Suppression": {
       "type": "object",
-      "description": "Finding suppression information",
+      "additionalProperties": false,
+      "description": "Finding suppression information (follows SARIF suppression: kind + status)",
       "properties": {
-        "state": {
+        "kind": {
           "type": "string",
-          "enum": ["suppressed", "accepted", "under_review"],
-          "description": "Suppression state"
+          "enum": ["in_source", "external"],
+          "description": "in_source: suppressed by a comment or annotation in the code; external: suppressed outside the code (a baseline file, a scanner console)"
         },
-        "reason": {"type": "string", "description": "Reason for suppression"},
+        "status": {
+          "type": "string",
+          "enum": ["accepted", "under_review", "rejected"],
+          "description": "Review state of the suppression"
+        },
+        "reason": {"type": "string", "description": "Short reason code or phrase (false_positive, test_code, risk_accepted, ...)"},
         "justification": {"type": "string", "description": "Detailed justification"},
         "suppressed_by": {"type": "string", "description": "Who suppressed (user/email)"},
         "suppressed_at": {"type": "string", "format": "date-time"},
@@ -391,6 +406,7 @@
     },
     "VulnerabilityDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Vulnerability-specific details",
       "properties": {
         "cve_id": {
@@ -445,7 +461,19 @@
         "package": {"type": "string", "description": "Affected package"},
         "purl": {"type": "string", "description": "Package URL (purl spec)"},
         "affected_version": {"type": "string"},
+        "affected_version_range": {"type": "string", "description": "Affected version range, e.g. \">=1.0.0, <1.2.5\""},
         "fixed_version": {"type": "string"},
+        "fixed_versions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "All versions that fix the vulnerability"
+        },
+        "advisories": {
+          "type": "array",
+          "items": {"type": "string", "format": "uri"},
+          "description": "Advisory URLs"
+        },
+        "is_direct": {"type": "boolean", "description": "The vulnerable package is a direct dependency (not transitive)"},
         "ecosystem": {
           "type": "string",
           "enum": ["npm", "pip", "maven", "gradle", "nuget", "cargo", "go", "composer", "rubygems", "hex", "pub", "swift", "cocoapods"]
@@ -461,8 +489,8 @@
           "enum": ["none", "poc", "functional", "weaponized"]
         },
         "in_cisa_kev": {"type": "boolean", "description": "In CISA Known Exploited Vulnerabilities"},
-        "epss_score": {"type": "number", "minimum": 0, "maximum": 1},
-        "epss_percentile": {"type": "number", "minimum": 0, "maximum": 100, "description": "EPSS percentile ranking"},
+        "epss_score": {"type": "number", "minimum": 0, "maximum": 1, "description": "EPSS probability of exploitation in the next 30 days, 0-1 (FIRST scale)"},
+        "epss_percentile": {"type": "number", "minimum": 0, "maximum": 1, "description": "EPSS percentile as a fraction 0-1, exactly as FIRST publishes it (0.97 = 97th percentile). Do not send 0-100."},
         "cpe": {"type": "string"},
         "published_at": {"type": "string", "format": "date-time", "description": "Vulnerability published date"},
         "modified_at": {"type": "string", "format": "date-time", "description": "Vulnerability last modified date"},
@@ -488,6 +516,7 @@
     },
     "VulnDataSource": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Vulnerability data source information",
       "properties": {
         "id": {"type": "string", "description": "Data source ID (nvd, ghsa, osv, etc.)"},
@@ -497,6 +526,7 @@
     },
     "ASVSInfo": {
       "type": "object",
+      "additionalProperties": false,
       "description": "OWASP ASVS (Application Security Verification Standard) compliance info",
       "properties": {
         "section": {
@@ -522,6 +552,7 @@
     },
     "ContainerLayer": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Container layer information for image scans",
       "properties": {
         "digest": {"type": "string", "description": "Layer digest (sha256:...)"},
@@ -530,6 +561,7 @@
     },
     "SecretDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Secret-specific details",
       "properties": {
         "secret_type": {
@@ -547,7 +579,9 @@
         "length": {"type": "integer", "minimum": 1},
         "entropy": {"type": "number", "minimum": 0},
         "valid": {"type": "boolean", "description": "Secret is valid (if verified)"},
+        "verified_at": {"type": "string", "format": "date-time", "description": "When validity was checked"},
         "revoked": {"type": "boolean"},
+        "revoked_at": {"type": "string", "format": "date-time", "description": "When the secret was revoked"},
         "scopes": {
           "type": "array",
           "items": {"type": "string"},
@@ -566,11 +600,14 @@
         "in_history_only": {
           "type": "boolean",
           "description": "Secret only exists in git history (not current code)"
-        }
+        },
+        "age_in_days": {"type": "integer", "minimum": 0, "description": "Age of the secret in days, if known"},
+        "commit_count": {"type": "integer", "minimum": 0, "description": "Number of commits the secret appears in"}
       }
     },
     "MisconfigurationDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Misconfiguration-specific details",
       "properties": {
         "policy_id": {"type": "string"},
@@ -589,6 +626,7 @@
     },
     "ComplianceDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Compliance-specific details",
       "properties": {
         "framework": {
@@ -607,6 +645,7 @@
     },
     "Remediation": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Remediation guidance",
       "properties": {
         "recommendation": {"type": "string"},
@@ -635,6 +674,7 @@
     },
     "FixRegex": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Regex-based auto-fix pattern (for tools like Semgrep)",
       "properties": {
         "regex": {
@@ -654,6 +694,7 @@
     },
     "StackTrace": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Call stack trace (SARIF stack)",
       "properties": {
         "message": {"type": "string", "description": "Stack description"},
@@ -666,6 +707,7 @@
     },
     "StackFrame": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Single frame in a call stack",
       "properties": {
         "location": {"$ref": "#/$defs/FindingLocation"},
@@ -680,29 +722,31 @@
     },
     "Attachment": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Artifact or evidence attachment (SARIF attachment)",
       "properties": {
         "description": {"type": "string"},
-        "artifact_location": {
-          "type": "object",
-          "properties": {
-            "uri": {"type": "string", "format": "uri"},
-            "uri_base_id": {"type": "string"}
-          }
-        },
+        "artifact_location": {"$ref": "#/$defs/ArtifactLocation"},
         "regions": {
           "type": "array",
           "items": {"$ref": "#/$defs/FindingLocation"},
           "description": "Relevant regions within the artifact"
-        },
-        "rectangles": {
-          "type": "array",
-          "description": "Relevant rectangular areas (for images)"
         }
+      }
+    },
+    "ArtifactLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Location of an artifact (SARIF artifactLocation)",
+      "properties": {
+        "uri": {"type": "string", "format": "uri-reference", "description": "Absolute or relative URI of the artifact"},
+        "uri_base_id": {"type": "string", "description": "Base URI id the uri is relative to"},
+        "index": {"type": "integer", "minimum": 0, "description": "Index within the producer's artifacts list"}
       }
     },
     "FindingExposure": {
       "type": "object",
+      "additionalProperties": false,
       "description": "CTEM exposure information for a finding",
       "properties": {
         "vector": {
@@ -726,6 +770,7 @@
     },
     "RemediationContext": {
       "type": "object",
+      "additionalProperties": false,
       "description": "CTEM remediation context for a finding",
       "properties": {
         "type": {
@@ -751,6 +796,7 @@
     },
     "BusinessImpact": {
       "type": "object",
+      "additionalProperties": false,
       "description": "CTEM business impact assessment for a finding",
       "properties": {
         "data_exposure_risk": {

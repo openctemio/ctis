@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQL",
+          "organization": "GitHub",
+          "semanticVersion": "2.18.4",
+          "rules": [
+            {
+              "id": "js/reflected-xss",
+              "name": "js/reflected-xss",
+              "shortDescription": {"text": "Reflected cross-site scripting"},
+              "fullDescription": {"text": "Writing user input directly to an HTTP response allows for a cross-site scripting vulnerability."},
+              "defaultConfiguration": {"enabled": true, "level": "error"},
+              "properties": {
+                "tags": ["security", "external/cwe/cwe-079", "external/cwe/cwe-116"],
+                "description": "Writing user input directly to an HTTP response allows for a cross-site scripting vulnerability.",
+                "id": "js/reflected-xss",
+                "kind": "path-problem",
+                "name": "Reflected cross-site scripting",
+                "precision": "high",
+                "problem.severity": "error",
+                "security-severity": "7.8"
+              }
+            },
+            {
+              "id": "js/sql-injection",
+              "name": "js/sql-injection",
+              "shortDescription": {"text": "Database query built from user-controlled sources"},
+              "defaultConfiguration": {"enabled": true, "level": "error"},
+              "properties": {
+                "tags": ["security", "external/cwe/cwe-089", "external/cwe/cwe-090", "external/cwe/cwe-943"],
+                "kind": "path-problem",
+                "precision": "high",
+                "problem.severity": "error",
+                "security-severity": "8.8"
+              }
+            },
+            {
+              "id": "js/command-line-injection",
+              "name": "js/command-line-injection",
+              "shortDescription": {"text": "Uncontrolled command line"},
+              "defaultConfiguration": {"enabled": true, "level": "error"},
+              "properties": {
+                "tags": ["correctness", "security", "external/cwe/cwe-078", "external/cwe/cwe-088"],
+                "kind": "path-problem",
+                "precision": "high",
+                "security-severity": "9.8"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "js/reflected-xss",
+          "ruleIndex": 0,
+          "rule": {"id": "js/reflected-xss", "index": 0},
+          "message": {"text": "Cross-site scripting vulnerability due to a [user-provided value](1)."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/server.js", "uriBaseId": "%SRCROOT%", "index": 0},
+                "region": {"startLine": 27, "startColumn": 14, "endColumn": 37}
+              },
+              "logicalLocations": [{"name": "handleSearch", "fullyQualifiedName": "server.handleSearch", "kind": "function"}]
+            }
+          ],
+          "partialFingerprints": {"primaryLocationLineHash": "39fa2ee980eb94b0:1", "primaryLocationStartColumnFingerprint": "9"}
+        },
+        {
+          "ruleId": "js/sql-injection",
+          "ruleIndex": 1,
+          "rule": {"id": "js/sql-injection", "index": 1},
+          "message": {"text": "This query string depends on a [user-provided value](1)."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/db.js", "uriBaseId": "%SRCROOT%", "index": 1},
+                "region": {"startLine": 88, "startColumn": 20, "endColumn": 25}
+              }
+            }
+          ],
+          "partialFingerprints": {"primaryLocationLineHash": "a1b2c3d4e5f60718:1", "primaryLocationStartColumnFingerprint": "15"}
+        },
+        {
+          "ruleIndex": 2,
+          "rule": {"id": "js/command-line-injection", "index": 2},
+          "message": {"text": "This command line depends on a [user-provided value](1)."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/exec.js", "uriBaseId": "%SRCROOT%", "index": 2},
+                "region": {"startLine": 5, "startColumn": 3, "endColumn": 30}
+              }
+            }
+          ],
+          "partialFingerprints": {"primaryLocationLineHash": "77aa88bb99cc00dd:1"}
+        }
+      ]
+    }
+  ]
+}
