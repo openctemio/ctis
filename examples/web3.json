@@ -1,0 +1,44 @@
+{
+  "version": "1.3",
+  "metadata": {"timestamp": "2026-10-02T13:00:00Z", "source_type": "scanner", "scope": {"name": "vault", "type": "blockchain"}},
+  "tool": {"name": "slither", "version": "0.10.4", "capabilities": ["web3"]},
+  "assets": [
+    {
+      "id": "vault",
+      "type": "smart_contract",
+      "value": "0x1234567890abcdef1234567890abcdef12345678",
+      "name": "Vault",
+      "technical": {
+        "web3": {
+          "chain": "ethereum",
+          "chain_id": 1,
+          "network_type": "mainnet",
+          "address": "0x1234567890abcdef1234567890abcdef12345678",
+          "contract": {"name": "Vault", "verified": true, "compiler_version": "0.8.24", "contract_type": "defi", "is_proxy": false}
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "f-1",
+      "type": "web3",
+      "title": "Reentrancy in Vault.withdraw(uint256)",
+      "severity": "critical",
+      "rule_id": "reentrancy-eth",
+      "asset_ref": "vault",
+      "location": {"path": "contracts/Vault.sol", "start_line": 57, "end_line": 66},
+      "web3": {
+        "vulnerability_class": "reentrancy",
+        "swc_id": "SWC-107",
+        "contract_address": "0x1234567890abcdef1234567890abcdef12345678",
+        "chain_id": 1,
+        "function_signature": "withdraw(uint256)",
+        "function_selector": "0x2e1a7d4d",
+        "detection_tool": "slither",
+        "detection_confidence": "high",
+        "reentrancy": {"type": "single_function", "external_call": "msg.sender.call{value: amount}(\"\")", "state_modified_after_call": "balances[msg.sender]"}
+      }
+    }
+  ]
+}
