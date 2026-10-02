@@ -1,9 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.openctem.io/ctis/v1/asset.json",
+  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/asset.json",
   "title": "CTIS Asset",
   "description": "Asset schema for CTEM Ingest Schema",
   "type": "object",
+  "additionalProperties": false,
   "required": ["type", "value"],
   "properties": {
     "id": {
@@ -93,6 +94,7 @@
         "serverless",
         "container_registry",
         "host",
+        "server",
         "container",
         "kubernetes",
         "kubernetes_cluster",
@@ -114,10 +116,9 @@
         "nft_collection",
         "defi_protocol",
         "blockchain",
-        "unclassified",
-        "other"
+        "unclassified"
       ],
-      "description": "Asset type. Note: 'other' is deprecated - use 'unclassified' instead."
+      "description": "Asset type. Use unclassified when no type fits. (The deprecated value other was removed in 1.3: the Go types never accepted it; OpenCTEM still files it as unclassified.)"
     },
     "Criticality": {
       "type": "string",
@@ -126,6 +127,7 @@
     },
     "AssetTechnical": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Type-specific technical details",
       "properties": {
         "domain": {"$ref": "#/$defs/DomainTechnical"},
@@ -139,6 +141,7 @@
     },
     "DomainTechnical": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "registrar": {"type": "string"},
         "registered_at": {"type": "string", "format": "date-time"},
@@ -159,11 +162,12 @@
     },
     "DNSRecord": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["type", "name", "value"],
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SOA", "PTR", "SRV"]
+          "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SOA", "PTR", "SRV", "CAA"]
         },
         "name": {"type": "string"},
         "value": {"type": "string"},
@@ -172,6 +176,7 @@
     },
     "IPAddressTechnical": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "version": {
           "type": "integer",
@@ -191,6 +196,7 @@
     },
     "PortInfo": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["port"],
       "properties": {
         "port": {"type": "integer", "minimum": 1, "maximum": 65535},
@@ -203,6 +209,7 @@
     },
     "Geolocation": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["latitude", "longitude"],
       "properties": {
         "latitude": {"type": "number", "minimum": -90, "maximum": 90},
@@ -212,6 +219,7 @@
     },
     "RepositoryTechnical": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "platform": {"type": "string", "enum": ["github", "gitlab", "bitbucket", "azure_devops"]},
         "owner": {"type": "string"},
@@ -232,6 +240,7 @@
     },
     "CertificateTechnical": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "serial_number": {"type": "string"},
         "subject_cn": {"type": "string"},
@@ -254,6 +263,7 @@
     },
     "CloudTechnical": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "provider": {"type": "string", "enum": ["aws", "gcp", "azure", "alibaba", "oracle"]},
         "account_id": {"type": "string"},
@@ -270,6 +280,7 @@
     },
     "AssetIdentifiers": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Identifiers that stay the same when the asset is renamed or readdressed. In order of trust: machine_id, cloud_resource_id, bios_uuid, serial_number, mac_addresses. scm_repo_id identifies a repository.",
       "properties": {
         "machine_id": {
@@ -301,6 +312,7 @@
     },
     "AssetCompliance": {
       "type": "object",
+      "additionalProperties": false,
       "description": "CTEM compliance context for an asset",
       "properties": {
         "frameworks": {
@@ -329,7 +341,9 @@
     },
     "ServiceInfo": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Network service discovered on an asset (CTEM)",
+      "required": ["port"],
       "properties": {
         "port": {
           "type": "integer",
@@ -383,6 +397,7 @@
     },
     "ServiceTechnical": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Technical details for network services (SSH, SMTP, FTP, DNS, HTTP, database services, etc.)",
       "properties": {
         "name": {

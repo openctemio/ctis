@@ -1,9 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.openctem.io/ctis/v1/web3-asset.json",
+  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-asset.json",
   "title": "Web3 Asset Technical Details",
   "description": "Web3-specific technical details for smart contracts, wallets, tokens, and DeFi protocols",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "chain": {
       "type": "string",
@@ -43,6 +44,7 @@
   "$defs": {
     "SmartContractDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Smart contract-specific details",
       "properties": {
         "name": {"type": "string"},
@@ -78,6 +80,7 @@
           "type": "array",
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["name", "address"],
             "properties": {
               "name": {"type": "string"},
@@ -96,6 +99,7 @@
     },
     "WalletDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Wallet-specific details",
       "properties": {
         "wallet_type": {
@@ -133,6 +137,7 @@
     },
     "TokenBalance": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["contract_address", "balance"],
       "properties": {
         "contract_address": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
@@ -146,6 +151,7 @@
     },
     "TokenDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Token-specific details",
       "properties": {
         "standard": {
@@ -177,6 +183,7 @@
     },
     "TradingPair": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["dex", "pair_address", "quote_token"],
       "properties": {
         "dex": {
@@ -190,6 +197,7 @@
     },
     "DeFiDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "DeFi protocol-specific details",
       "properties": {
         "protocol_name": {"type": "string"},
@@ -225,6 +233,7 @@
     },
     "CoreContract": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["name", "address"],
       "properties": {
         "name": {"type": "string"},
@@ -237,6 +246,7 @@
     },
     "AuditReport": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["auditor"],
       "properties": {
         "auditor": {
@@ -254,6 +264,7 @@
     },
     "NFTCollectionDetails": {
       "type": "object",
+      "additionalProperties": false,
       "description": "NFT collection-specific details",
       "properties": {
         "name": {"type": "string"},

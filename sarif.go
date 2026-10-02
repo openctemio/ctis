@@ -5,7 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
+
+	"github.com/openctemio/ctis/severity"
 )
 
 // =============================================================================
@@ -60,13 +66,26 @@ type SARIFRuleConfig struct {
 
 // SARIFResult represents a finding.
 type SARIFResult struct {
-	RuleID       string            `json:"ruleId"`
-	RuleIndex    int               `json:"ruleIndex,omitempty"`
-	Level        string            `json:"level,omitempty"`
-	Message      SARIFMessage      `json:"message"`
-	Locations    []SARIFLocation   `json:"locations,omitempty"`
-	Fingerprints map[string]string `json:"fingerprints,omitempty"`
-	Properties   map[string]any    `json:"properties,omitempty"`
+	RuleID string `json:"ruleId,omitempty"`
+	// RuleIndex is the index of the rule in tool.driver.rules. Nil when the
+	// result does not carry one (SARIF's default is -1, "absent").
+	RuleIndex           *int                     `json:"ruleIndex,omitempty"`
+	Rule                *SARIFReportingReference `json:"rule,omitempty"`
+	Level               string                   `json:"level,omitempty"`
+	Message             SARIFMessage             `json:"message"`
+	Locations           []SARIFLocation          `json:"locations,omitempty"`
+	Fingerprints        map[string]string        `json:"fingerprints,omitempty"`
+	PartialFingerprints map[string]string        `json:"partialFingerprints,omitempty"`
+	CorrelationGUID     string                   `json:"correlationGuid,omitempty"`
+	BaselineState       string                   `json:"baselineState,omitempty"`
+	Properties          map[string]any           `json:"properties,omitempty"`
+}
+
+// SARIFReportingReference is a result's reference to its rule
+// (SARIF reportingDescriptorReference).
+type SARIFReportingReference struct {
+	ID    string `json:"id,omitempty"`
+	Index *int   `json:"index,omitempty"`
 }
 
 // SARIFMessage holds text.
@@ -77,6 +96,14 @@ type SARIFMessage struct {
 // SARIFLocation represents a code location.
 type SARIFLocation struct {
 	PhysicalLocation *SARIFPhysicalLocation `json:"physicalLocation,omitempty"`
+	LogicalLocations []SARIFLogicalLocation `json:"logicalLocations,omitempty"`
+}
+
+// SARIFLogicalLocation names the function, method or class of a location.
+type SARIFLogicalLocation struct {
+	Name               string `json:"name,omitempty"`
+	FullyQualifiedName string `json:"fullyQualifiedName,omitempty"`
+	Kind               string `json:"kind,omitempty"`
 }
 
 // SARIFPhysicalLocation contains file/region info.
@@ -150,7 +177,28 @@ func DefaultConvertOptions() *ConvertOptions {
 	}
 }
 
-// FromSARIF converts SARIF log to CTIS report.
+// FromSARIF converts a SARIF 2.1.0 log to a CTIS report.
+//
+// Every run is converted. The report's tool is the first run's driver; when
+// the log has more than one run, each finding names its run's tool in
+// properties["sarif_tool"].
+//
+// Mapping:
+//   - severity: the GitHub "security-severity" score (result, then rule) via
+//     severity.FromCVSS; else the result level, else the rule's default level;
+//     else medium (SARIF's default level is warning).
+//   - type: ConvertOptions.ToolType; else the rule's tags (vulnerability,
+//     misconfiguration, secret, as Trivy writes them); else a CVE/GHSA rule
+//     id means vulnerability; else the tool name.
+//   - CWE: rule properties "cwe" (string or array) and tags such as
+//     "external/cwe/cwe-079" (CodeQL) or "CWE-89: ..." (Semgrep).
+//   - fingerprint: the result's "fingerprints" entry with the lowest key, so
+//     the choice is deterministic; values over 64 characters are SHA-256
+//     hashed. partialFingerprints are passed through unchanged as
+//     partial_fingerprints.
+//
+// The converter asserts no business context: the asset it creates has no
+// criticality.
 func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 	if opts == nil {
 		opts = DefaultConvertOptions()
@@ -167,29 +215,26 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 		return report, nil
 	}
 
-	run := sarif.Runs[0]
-
-	// Set tool info
+	first := sarif.Runs[0].Tool.Driver
 	report.Tool = &Tool{
-		Name:         run.Tool.Driver.Name,
-		Version:      run.Tool.Driver.Version,
-		Capabilities: detectCapabilities(run.Tool.Driver.Name, opts.ToolType),
+		Name:    first.Name,
+		Version: first.Version,
+		InfoURL: first.InformationURI,
 	}
-	if run.Tool.Driver.InformationURI != "" {
-		report.Tool.InfoURL = run.Tool.Driver.InformationURI
+	if report.Tool.Version == "" {
+		report.Tool.Version = first.SemanticVersion
 	}
 
-	// Add asset if configured
+	assetID := ""
 	if opts.AssetValue != "" {
-		assetID := opts.AssetID
+		assetID = opts.AssetID
 		if assetID == "" {
 			assetID = "asset-1"
 		}
 		report.Assets = append(report.Assets, Asset{
-			ID:          assetID,
-			Type:        opts.AssetType,
-			Value:       opts.AssetValue,
-			Criticality: CriticalityHigh,
+			ID:    assetID,
+			Type:  opts.AssetType,
+			Value: opts.AssetValue,
 		})
 	}
 
@@ -204,114 +249,287 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 		}
 	}
 
-	// Build rule lookup
-	ruleMap := make(map[string]*SARIFRule)
-	for i := range run.Tool.Driver.Rules {
-		rule := &run.Tool.Driver.Rules[i]
-		ruleMap[rule.ID] = rule
-	}
-
-	// Convert results to findings
-	findingType := detectFindingType(run.Tool.Driver.Name, opts.ToolType)
-
-	for i, result := range run.Results {
-		// Severity: prefer the result-level SARIF level, but fall back to the
-		// rule's defaultConfiguration.level when the result omits it (per the
-		// SARIF spec — many tools set severity only at the rule level).
-		// Without this, rule-level-only severities all collapsed to medium.
-		level := result.Level
-		if level == "" {
-			if rule, ok := ruleMap[result.RuleID]; ok && rule.DefaultConfiguration != nil {
-				level = rule.DefaultConfiguration.Level
-			}
-		}
-		finding := Finding{
-			ID:         fmt.Sprintf("finding-%d", i+1),
-			Type:       findingType,
-			Title:      result.Message.Text,
-			Severity:   mapSARIFLevel(level),
-			Confidence: opts.DefaultConfidence,
-			RuleID:     result.RuleID,
+	multiRun := len(sarif.Runs) > 1
+	n := 0
+	for ri := range sarif.Runs {
+		run := &sarif.Runs[ri]
+		driver := run.Tool.Driver
+		ruleMap := make(map[string]*SARIFRule, len(driver.Rules))
+		for i := range driver.Rules {
+			ruleMap[driver.Rules[i].ID] = &driver.Rules[i]
 		}
 
-		// Link to asset
-		if opts.AssetValue != "" {
-			assetID := opts.AssetID
-			if assetID == "" {
-				assetID = "asset-1"
-			}
+		for _, result := range run.Results {
+			n++
+			rule, ruleID := lookupRule(&result, driver.Rules, ruleMap)
+			finding := convertSARIFResult(&result, rule, ruleID, driver.Name, opts)
+			finding.ID = fmt.Sprintf("finding-%d", n)
 			finding.AssetRef = assetID
-		}
-
-		// Add rule details
-		if rule, ok := ruleMap[result.RuleID]; ok {
-			if rule.ShortDescription != nil {
-				finding.Description = rule.ShortDescription.Text
-			}
-			if rule.Name != "" {
-				finding.RuleName = rule.Name
-			}
-			if rule.HelpURI != "" {
-				finding.References = append(finding.References, rule.HelpURI)
-			}
-			// Extract CWE
-			if rule.Properties != nil {
-				if cwe, ok := rule.Properties["cwe"].(string); ok {
-					finding.Vulnerability = &VulnerabilityDetails{CWEID: cwe}
+			if multiRun {
+				if finding.Properties == nil {
+					finding.Properties = Properties{}
 				}
-				// Extract precision as confidence
-				if precision, ok := rule.Properties["precision"].(string); ok {
-					switch precision {
-					case "very-high":
-						finding.Confidence = 95
-					case "high":
-						finding.Confidence = 85
-					case "medium":
-						finding.Confidence = 70
-					case "low":
-						finding.Confidence = 50
-					}
-				}
+				finding.Properties["sarif_tool"] = driver.Name
 			}
+			report.Findings = append(report.Findings, finding)
 		}
-
-		// Add location
-		if len(result.Locations) > 0 && result.Locations[0].PhysicalLocation != nil {
-			loc := result.Locations[0].PhysicalLocation
-			finding.Location = &FindingLocation{
-				Branch:    opts.Branch,
-				CommitSHA: opts.CommitSHA,
-			}
-			if loc.ArtifactLocation != nil {
-				finding.Location.Path = loc.ArtifactLocation.URI
-			}
-			if loc.Region != nil {
-				finding.Location.StartLine = loc.Region.StartLine
-				finding.Location.EndLine = loc.Region.EndLine
-				finding.Location.StartColumn = loc.Region.StartColumn
-				finding.Location.EndColumn = loc.Region.EndColumn
-				if loc.Region.Snippet != nil {
-					finding.Location.Snippet = loc.Region.Snippet.Text
-				}
-			}
-		}
-
-		// Add fingerprint (hash if too long to fit VARCHAR(64))
-		for _, fp := range result.Fingerprints {
-			if len(fp) > 64 {
-				// Hash long fingerprints to fit database constraint
-				hash := sha256.Sum256([]byte(fp))
-				finding.Fingerprint = hex.EncodeToString(hash[:])
-			} else {
-				finding.Fingerprint = fp
-			}
-			break
-		}
-
-		report.Findings = append(report.Findings, finding)
 	}
 
+	report.Tool.Capabilities = detectCapabilities(first.Name, opts.ToolType)
 	return report, nil
+}
+
+// lookupRule finds the rule a result refers to: by ruleId, else rule.id,
+// else the rule index.
+func lookupRule(result *SARIFResult, rules []SARIFRule, byID map[string]*SARIFRule) (*SARIFRule, string) {
+	id := result.RuleID
+	if id == "" && result.Rule != nil {
+		id = result.Rule.ID
+	}
+	if id != "" {
+		if r, ok := byID[id]; ok {
+			return r, id
+		}
+	}
+	idx := result.RuleIndex
+	if idx == nil && result.Rule != nil {
+		idx = result.Rule.Index
+	}
+	if idx != nil && *idx >= 0 && *idx < len(rules) {
+		r := &rules[*idx]
+		if id == "" {
+			id = r.ID
+		}
+		return r, id
+	}
+	return nil, id
+}
+
+func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName string, opts *ConvertOptions) Finding {
+	finding := Finding{
+		Type:       detectResultType(rule, ruleID, toolName, opts.ToolType),
+		Title:      result.Message.Text,
+		Severity:   sarifSeverity(result, rule),
+		Confidence: opts.DefaultConfidence,
+		RuleID:     ruleID,
+	}
+	if finding.Title == "" && rule != nil && rule.ShortDescription != nil {
+		finding.Title = rule.ShortDescription.Text
+	}
+	if finding.Title == "" {
+		finding.Title = ruleID
+	}
+
+	var vuln VulnerabilityDetails
+	if rule != nil {
+		if rule.ShortDescription != nil {
+			finding.Description = rule.ShortDescription.Text
+		}
+		if rule.Name != "" {
+			finding.RuleName = rule.Name
+		}
+		if rule.HelpURI != "" {
+			finding.References = append(finding.References, rule.HelpURI)
+		}
+		if precision, ok := rule.Properties["precision"].(string); ok {
+			switch precision {
+			case "very-high":
+				finding.Confidence = 95
+			case "high":
+				finding.Confidence = 85
+			case "medium":
+				finding.Confidence = 70
+			case "low":
+				finding.Confidence = 50
+			}
+		}
+		vuln.CWEIDs = sarifCWEs(rule.Properties)
+		vuln.OWASPIDs = sarifOWASP(rule.Properties)
+	}
+	if cveIDPattern.MatchString(ruleID) {
+		vuln.CVEID = strings.ToUpper(ruleID)
+	}
+	if len(vuln.CWEIDs) > 0 {
+		vuln.CWEID = vuln.CWEIDs[0]
+	}
+	if vuln.CVEID != "" || len(vuln.CWEIDs) > 0 || len(vuln.OWASPIDs) > 0 {
+		finding.Vulnerability = &vuln
+	}
+
+	branch, commit := opts.Branch, opts.CommitSHA
+	if branch == "" && opts.BranchInfo != nil {
+		branch, commit = opts.BranchInfo.Name, opts.BranchInfo.CommitSHA
+	}
+	if len(result.Locations) > 0 {
+		loc := result.Locations[0]
+		if loc.PhysicalLocation != nil || len(loc.LogicalLocations) > 0 {
+			finding.Location = &FindingLocation{Branch: branch, CommitSHA: commit}
+		}
+		if pl := loc.PhysicalLocation; pl != nil {
+			if pl.ArtifactLocation != nil {
+				finding.Location.Path = pl.ArtifactLocation.URI
+			}
+			if r := pl.Region; r != nil {
+				finding.Location.StartLine = r.StartLine
+				finding.Location.EndLine = r.EndLine
+				finding.Location.StartColumn = r.StartColumn
+				finding.Location.EndColumn = r.EndColumn
+				if r.Snippet != nil {
+					finding.Location.Snippet = r.Snippet.Text
+				}
+			}
+		}
+		if len(loc.LogicalLocations) > 0 {
+			ll := loc.LogicalLocations[0]
+			finding.Location.LogicalLocation = &LogicalLocation{
+				Name:               ll.Name,
+				FullyQualifiedName: ll.FullyQualifiedName,
+				Kind:               ll.Kind,
+			}
+		}
+	}
+
+	finding.Fingerprint = sarifFingerprint(result.Fingerprints)
+	if len(result.PartialFingerprints) > 0 {
+		finding.PartialFingerprints = make(map[string]string, len(result.PartialFingerprints))
+		for k, v := range result.PartialFingerprints {
+			finding.PartialFingerprints[k] = v
+		}
+	}
+	finding.CorrelationID = result.CorrelationGUID
+	switch result.BaselineState {
+	case "new", "unchanged", "updated", "absent":
+		finding.BaselineState = result.BaselineState
+	}
+	return finding
+}
+
+// sarifFingerprint picks the result fingerprint with the lowest key, so the
+// same log always yields the same value (map iteration order is random).
+// Values longer than 64 characters are SHA-256 hashed to fit receivers that
+// store 64.
+func sarifFingerprint(fps map[string]string) string {
+	if len(fps) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(fps))
+	for k, v := range fps {
+		if v != "" {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return ""
+	}
+	sort.Strings(keys)
+	fp := fps[keys[0]]
+	if len(fp) > 64 {
+		hash := sha256.Sum256([]byte(fp))
+		return hex.EncodeToString(hash[:])
+	}
+	return fp
+}
+
+// sarifSeverity applies the precedence documented on FromSARIF.
+func sarifSeverity(result *SARIFResult, rule *SARIFRule) Severity {
+	if score, ok := securitySeverity(result.Properties); ok {
+		return Severity(severity.FromCVSS(score))
+	}
+	if rule != nil {
+		if score, ok := securitySeverity(rule.Properties); ok {
+			return Severity(severity.FromCVSS(score))
+		}
+	}
+	level := result.Level
+	if level == "" && rule != nil && rule.DefaultConfiguration != nil {
+		level = rule.DefaultConfiguration.Level
+	}
+	return mapSARIFLevel(level)
+}
+
+// securitySeverity reads the GitHub code scanning "security-severity"
+// property, a CVSS-like score 0.0-10.0 sent as a string or a number.
+func securitySeverity(props map[string]any) (float64, bool) {
+	var score float64
+	switch v := props["security-severity"].(type) {
+	case string:
+		f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+		if err != nil {
+			return 0, false
+		}
+		score = f
+	case float64:
+		score = v
+	default:
+		return 0, false
+	}
+	if math.IsNaN(score) || score < 0 || score > 10 {
+		return 0, false
+	}
+	return score, true
+}
+
+var (
+	cweTagPattern   = regexp.MustCompile(`(?i)\bcwe[-_/:]?0*([0-9]+)\b`)
+	owaspTagPattern = regexp.MustCompile(`\b(A(?:0[1-9]|10):20[0-9]{2})\b`)
+	cveIDPattern    = regexp.MustCompile(`(?i)^CVE-\d{4}-\d{4,}$`)
+	ghsaIDPattern   = regexp.MustCompile(`(?i)^GHSA(-[23456789cfghjmpqrvwx]{4}){3}$`)
+)
+
+// sarifCWEs collects CWE ids, in first-seen order, from a rule's "cwe"
+// property (string or array) and its tags.
+func sarifCWEs(props map[string]any) []string {
+	var raw []string
+	raw = append(raw, stringOrStrings(props["cwe"])...)
+	raw = append(raw, stringOrStrings(props["tags"])...)
+	var out []string
+	seen := map[string]bool{}
+	for _, s := range raw {
+		for _, m := range cweTagPattern.FindAllStringSubmatch(s, -1) {
+			id := "CWE-" + m[1]
+			if m[1] == "" || seen[id] {
+				continue
+			}
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// sarifOWASP collects OWASP Top 10 ids (A03:2021) from a rule's tags and
+// "owasp" property.
+func sarifOWASP(props map[string]any) []string {
+	var raw []string
+	raw = append(raw, stringOrStrings(props["owasp"])...)
+	raw = append(raw, stringOrStrings(props["tags"])...)
+	var out []string
+	seen := map[string]bool{}
+	for _, s := range raw {
+		for _, m := range owaspTagPattern.FindAllStringSubmatch(s, -1) {
+			if !seen[m[1]] {
+				seen[m[1]] = true
+				out = append(out, m[1])
+			}
+		}
+	}
+	return out
+}
+
+func stringOrStrings(v any) []string {
+	switch t := v.(type) {
+	case string:
+		return []string{t}
+	case []any:
+		out := make([]string, 0, len(t))
+		for _, x := range t {
+			if s, ok := x.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return nil
 }
 
 // mapSARIFLevel converts SARIF level to CTIS severity.
@@ -330,6 +548,37 @@ func mapSARIFLevel(level string) Severity {
 	}
 }
 
+// detectResultType works out one result's finding type, in the order
+// documented on FromSARIF.
+func detectResultType(rule *SARIFRule, ruleID, toolName, toolType string) FindingType {
+	switch toolType {
+	case "secret":
+		return FindingTypeSecret
+	case "iac":
+		return FindingTypeMisconfiguration
+	case "web3":
+		return FindingTypeWeb3
+	case "sca", "sast":
+		return FindingTypeVulnerability
+	}
+	if rule != nil {
+		for _, tag := range stringOrStrings(rule.Properties["tags"]) {
+			switch strings.ToLower(strings.TrimSpace(tag)) {
+			case "vulnerability":
+				return FindingTypeVulnerability
+			case "misconfiguration":
+				return FindingTypeMisconfiguration
+			case "secret":
+				return FindingTypeSecret
+			}
+		}
+	}
+	if cveIDPattern.MatchString(ruleID) || ghsaIDPattern.MatchString(ruleID) {
+		return FindingTypeVulnerability
+	}
+	return detectFindingType(toolName, toolType)
+}
+
 // detectFindingType determines finding type based on tool name.
 func detectFindingType(toolName string, toolType string) FindingType {
 	name := strings.ToLower(toolName)
@@ -342,6 +591,8 @@ func detectFindingType(toolName string, toolType string) FindingType {
 		return FindingTypeMisconfiguration
 	case "web3":
 		return FindingTypeWeb3
+	case "sca", "sast":
+		return FindingTypeVulnerability
 	}
 
 	// Secret scanners
@@ -372,7 +623,16 @@ func detectFindingType(toolName string, toolType string) FindingType {
 	return FindingTypeVulnerability
 }
 
-// detectCapabilities determines tool capabilities.
+// sastToolNames are static analysers whose SARIF is code findings.
+var sastToolNames = []string{
+	"semgrep", "codeql", "gosec", "bandit", "sonarqube", "sonarcloud",
+	"eslint", "brakeman", "spotbugs", "njsscan", "horusec", "bearer",
+	"psalm", "phpstan", "flawfinder", "cppcheck",
+}
+
+// detectCapabilities determines tool capabilities. The values are the
+// capability vocabulary of report.json; receivers derive the detection
+// technique from them.
 func detectCapabilities(toolName string, toolType string) []string {
 	name := strings.ToLower(toolName)
 
@@ -384,7 +644,9 @@ func detectCapabilities(toolName string, toolType string) []string {
 	case "web3":
 		return []string{"web3"}
 	case "sca":
-		return []string{"vulnerability"}
+		return []string{"sca"}
+	case "sast":
+		return []string{"sast"}
 	}
 
 	// Auto-detect
@@ -397,6 +659,11 @@ func detectCapabilities(toolName string, toolType string) []string {
 	if strings.Contains(name, "trivy") || strings.Contains(name, "checkov") {
 		return []string{"vulnerability", "misconfiguration"}
 	}
+	for _, t := range sastToolNames {
+		if strings.Contains(name, t) {
+			return []string{"sast"}
+		}
+	}
 
-	return []string{"vulnerability", "secret"}
+	return []string{"vulnerability"}
 }

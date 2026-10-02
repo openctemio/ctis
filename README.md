@@ -1,14 +1,18 @@
-# CTIS — CTEM Ingest Schema
+# CTIS: CTEM Ingest Schema
 
-Official JSON schemas and Go types for the CTIS format — the standard for ingesting security data into the OpenCTEM platform.
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![CI](https://github.com/openctemio/ctis/actions/workflows/ci.yml/badge.svg)](https://github.com/openctemio/ctis/actions/workflows/ci.yml)
 
-## Overview
+CTIS is the JSON format security tools use to send assets, findings and dependencies (SBOM) to a CTEM platform such as [OpenCTEM](https://github.com/openctemio). This repository is the single source of truth for:
 
-CTIS supports assets, findings, and metadata from various security tools. This repo is the single source of truth for:
-- **JSON Schemas** (`schemas/v1/`) — language-agnostic format definitions
-- **Go Types** (root package) — strongly-typed structs for Go consumers
-- **Severity** (`severity/`) — severity enum with parsing and comparison
-- **Fingerprint** (`fingerprint/`) — SHA256-based finding deduplication
+- **The specification**: [`docs/spec.md`](docs/spec.md), normative, with a field reference generated from the schema.
+- **JSON Schemas** (`schemas/v1/`): draft-07, language-agnostic.
+- **Go types** (root package): what OpenCTEM decodes reports into.
+- **Severity** (`severity/`) and **fingerprint** (`fingerprint/`) helpers.
+- **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
+- **Examples** (`examples/`): one report per finding type, validated in CI.
+
+The current specification version is **1.3**. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Installation (Go)
 
@@ -16,64 +20,96 @@ CTIS supports assets, findings, and metadata from various security tools. This r
 go get github.com/openctemio/ctis
 ```
 
+The module has no dependencies outside the Go standard library.
+
 ```go
 import (
     "github.com/openctemio/ctis"
-    "github.com/openctemio/ctis/severity"
     "github.com/openctemio/ctis/fingerprint"
+    "github.com/openctemio/ctis/severity"
 )
 
-// Parse a CTIS report
-var report ctis.Report
-json.Unmarshal(data, &report)
+// Produce
+report := ctis.NewReport() // version 1.3, $schema set, timestamp now
+report.Tool = &ctis.Tool{Name: "my-scanner", Version: "1.0.0", Capabilities: []string{"sast"}}
+report.Assets = append(report.Assets, ctis.Asset{ID: "repo", Type: ctis.AssetTypeRepository, Value: "github.com/org/repo"})
+report.Findings = append(report.Findings, ctis.Finding{
+    Type:        ctis.FindingTypeVulnerability,
+    Title:       "SQL injection",
+    Severity:    ctis.Severity(severity.FromCVSS(8.8)),
+    AssetRef:    "repo",
+    RuleID:      "sqli",
+    Location:    &ctis.FindingLocation{Path: "app/db.go", StartLine: 42, Snippet: snippet},
+    Fingerprint: fingerprint.GenerateSASTStable("app/db.go", "sqli", "db.Find", snippet),
+})
+if err := report.Validate(); err != nil {
+    log.Fatal(err)
+}
 
-// Severity parsing
-sev := severity.FromString("high")
+// Consume: decode strictly, as OpenCTEM does, then validate.
+dec := json.NewDecoder(r)
+dec.DisallowUnknownFields()
+var in ctis.Report
+if err := dec.Decode(&in); err != nil { /* reject */ }
+if err := in.Validate(); err != nil { /* reject */ }
 
-// Finding fingerprint for dedup
-fp := fingerprint.GenerateSAST("src/main.go", "sql-injection", 42, 42)
+// Convert SARIF (Semgrep, CodeQL, Trivy, ...)
+report, err := ctis.FromSARIF(sarifBytes, nil)
 ```
 
 ## Schemas
 
-JSON Schema definitions in `schemas/v1/`:
-
 | Schema | Description |
 |---|---|
-| `report.json` | Main CTIS report envelope |
-| `asset.json` | Asset schema (domains, IPs, repos, cloud, Web3) |
-| `finding.json` | Security finding schema |
-| `dependency.json` | SBOM dependency schema |
-| `web3-asset.json` | Web3-specific asset details |
+| `report.json` | Report envelope: version, metadata, tool, assets, findings, dependencies |
+| `asset.json` | Assets (domains, IPs, hosts, repositories, cloud, Web3, ...) |
+| `finding.json` | Security findings |
+| `dependency.json` | SBOM dependencies |
+| `web3-asset.json` | Web3 asset details |
 | `web3-finding.json` | Web3 vulnerability details |
 
-Schema URLs:
+Each schema's `$id` resolves:
+
 ```
-https://schemas.openctem.io/ctis/v1/report.json
-https://schemas.openctem.io/ctis/v1/asset.json
-https://schemas.openctem.io/ctis/v1/finding.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/asset.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/finding.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/dependency.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-asset.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.json
 ```
 
-## Validating CTIS Reports
+Replace `main` with a release tag (`v1.3.0`) for an immutable copy. Every object sets `additionalProperties: false` except the `properties` bags: put producer-specific data in `properties`.
+
+## Validating CTIS reports
+
+`report.json` references the other schemas, so load all six.
 
 ### Python
 
 ```bash
-pip install jsonschema
+pip install "jsonschema[format-nongpl]"
 ```
 
 ```python
-import json
-from jsonschema import validate
+import glob, json
+from jsonschema import Draft7Validator, FormatChecker
+from referencing import Registry, Resource
+from referencing.jsonschema import DRAFT7
 
-with open('schemas/v1/report.json') as f:
-    schema = json.load(f)
+schemas = [json.load(open(p)) for p in glob.glob("schemas/v1/*.json")]
+registry = Registry().with_resources(
+    (s["$id"], Resource.from_contents(s, default_specification=DRAFT7)) for s in schemas
+)
+report_schema = next(s for s in schemas if s["$id"].endswith("/report.json"))
+validator = Draft7Validator(report_schema, registry=registry, format_checker=FormatChecker())
 
-with open('my-report.json') as f:
-    report = json.load(f)
-
-validate(instance=report, schema=schema)
+errors = list(validator.iter_errors(json.load(open("my-report.json"))))
+for e in errors:
+    print("/".join(map(str, e.path)), e.message)
 ```
+
+`scripts/validate_schemas.py` does this for the examples in CI.
 
 ### Node.js
 
@@ -84,49 +120,56 @@ npm install ajv ajv-formats
 ```javascript
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
+const fs = require('fs');
+
 const ajv = new Ajv({ allErrors: true });
 addFormats(ajv);
-
-const schema = require('./schemas/v1/report.json');
-const validate = ajv.compile(schema);
-const valid = validate(myReport);
+for (const f of fs.readdirSync('schemas/v1')) {
+  ajv.addSchema(JSON.parse(fs.readFileSync(`schemas/v1/${f}`, 'utf8')));
+}
+const validate = ajv.getSchema('https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json');
+if (!validate(myReport)) console.log(validate.errors);
 ```
 
-## Asset Types
+Schema validation checks shape. `Report.Validate()` in Go also checks what a schema cannot: unique IDs, `asset_ref` resolution, the spec version and score ranges ([spec section 3.3](docs/spec.md#33-reportvalidate)).
 
-| Type | Example | Description |
-|---|---|---|
-| `domain` | `example.com` | Domain names |
-| `subdomain` | `api.example.com` | Subdomains |
-| `ip_address` | `192.168.1.1` | IPv4/IPv6 addresses |
-| `host` | `web-server-01` | Hosts/servers |
-| `repository` | `github.com/org/repo` | Code repositories |
-| `certificate` | `SHA256:abc123` | SSL/TLS certificates |
-| `cloud_account` | `aws:123456789` | Cloud accounts |
-| `container` | `sha256:abc` | Container images |
-| `kubernetes` | `cluster/namespace` | K8s resources |
-| `database` | `db-prod-01` | Databases |
-| `service` | `host:443:tcp` | Network services |
-| `application` | `https://app.example.com` | Web applications |
-| `identity` | `arn:aws:iam::123:user/admin` | IAM users/roles |
+## Asset types
 
-## Finding Types
+| Group | Types |
+|---|---|
+| External attack surface | `domain`, `subdomain`, `ip_address`, `certificate` |
+| Applications | `website`, `web_application`, `api`, `mobile_app`, `service` |
+| Code | `repository` |
+| Cloud | `cloud_account`, `compute`, `storage`, `database`, `serverless`, `container_registry` |
+| Infrastructure | `host`, `server`, `container`, `kubernetes`, `kubernetes_cluster`, `kubernetes_namespace` |
+| Network | `network`, `vpc`, `subnet`, `load_balancer`, `firewall` |
+| Identity / IAM | `iam_user`, `iam_role`, `service_account` |
+| Recon results | `http_service`, `open_port`, `discovered_url` |
+| Web3 | `smart_contract`, `wallet`, `token`, `nft_collection`, `defi_protocol`, `blockchain` |
+| Other | `unclassified` |
+
+## Finding types
 
 | Type | Description |
 |---|---|
-| `vulnerability` | Code/infrastructure vulnerabilities |
-| `secret` | Exposed secrets/credentials |
-| `misconfiguration` | IaC/configuration issues |
-| `compliance` | Compliance violations |
+| `vulnerability` | Code, dependency, host or web vulnerabilities |
+| `secret` | Exposed secrets and credentials |
+| `misconfiguration` | IaC, cloud and configuration issues |
+| `compliance` | Compliance control failures |
 | `web3` | Smart contract vulnerabilities |
 
-## Design Principles
+## Versioning
 
-- **Zero external dependencies** — stdlib only (Go package)
-- **Backward compatible** — new fields are additive, never breaking
-- **Semantic versioning** — major version = breaking schema change
-- **Shared contract** — used by API (consumer), SDK-Go (agent framework), and Agent (producer)
+- `version` in a report is the spec version, `MAJOR.MINOR`. Receivers accept any minor of their major.
+- Minor versions only add optional members or values. Receivers decode strictly, so a producer must not send members newer than the receiver's minor: **upgrade receivers first, then producers.**
+- Module `v1.MINOR.x` implements spec `1.MINOR`.
+
+Details: [docs/spec.md, section 2](docs/spec.md#2-versioning-and-compatibility).
+
+## Contributing
+
+Every change to the format updates the schema, the Go types, the examples and the CHANGELOG together. `go test ./...` fails when the schema and the Go types disagree, when an example does not validate, or when the generated field reference in `docs/spec.md` is stale (refresh it with `go test -run TestSpecFieldReference -update`). Proposed additions are collected in [docs/proposals-1.4.md](docs/proposals-1.4.md).
 
 ## License
 
-MIT License — see [LICENSE](LICENSE)
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

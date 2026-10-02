@@ -18,7 +18,13 @@ type Type string
 
 const (
 	// TypeSAST is for Static Application Security Testing findings (code vulnerabilities).
+	// Its key includes the line numbers, so the identity changes when code
+	// above the finding moves. Prefer TypeSASTContent when a snippet is known.
 	TypeSAST Type = "sast"
+
+	// TypeSASTContent is the line-independent SAST recipe: file, rule,
+	// enclosing function and the normalised source snippet.
+	TypeSASTContent Type = "sast-content"
 
 	// TypeSCA is for Software Composition Analysis findings (dependency vulnerabilities).
 	TypeSCA Type = "sca"
@@ -64,8 +70,14 @@ type Input struct {
 	PackageVersion  string // Package version
 	VulnerabilityID string // CVE ID or other vuln identifier
 
-	// Secret-specific fields
-	SecretValue string // The actual secret (will be hashed)
+	// SAST-content fields
+	Snippet         string // Source text of the finding's region
+	LogicalLocation string // Enclosing function/method, fully qualified when known
+
+	// Secret-specific fields. Never pass the raw secret: the hash prefix is
+	// unsalted and short, so it identifies the secret to anyone holding it.
+	// Pass the masked value or a keyed hash (HMAC) of the secret instead.
+	SecretValue string
 
 	// Misconfiguration-specific fields
 	ResourceType string // e.g., "aws_s3_bucket", "dockerfile"
@@ -92,6 +104,7 @@ type Input struct {
 //
 // The algorithm varies by finding type to ensure optimal deduplication:
 //   - SAST: file + rule + location (same vulnerability in same place)
+//   - SAST content: file + rule + enclosing function + snippet hash (no lines)
 //   - SCA: package + version + vuln ID (same vuln in same dependency)
 //   - Secret: file + rule + location + secret hash (same secret in same place)
 //   - Misconfig: resource + rule (same misconfiguration on same resource)
@@ -109,6 +122,18 @@ func Generate(input Input) string {
 			input.StartLine,
 			input.EndLine,
 		)
+
+	case TypeSASTContent:
+		// Content-based SAST: survives code moving up or down the file.
+		// Fields are joined with a unit separator so a value containing ":"
+		// cannot shift into the next field; the path keeps its case.
+		data = strings.Join([]string{
+			"sast-content",
+			strings.ReplaceAll(strings.TrimSpace(input.FilePath), "\\", "/"),
+			normalize(input.RuleID),
+			strings.TrimSpace(input.LogicalLocation),
+			Hash(normalizeSnippet(input.Snippet)),
+		}, "\x1f")
 
 	case TypeSCA:
 		// SCA: Deduplicate by package and vulnerability
@@ -197,6 +222,33 @@ func GenerateSAST(filePath, ruleID string, startLine, endLine int) string {
 		StartLine: startLine,
 		EndLine:   endLine,
 	})
+}
+
+// GenerateSASTStable creates a line-independent SAST fingerprint from the
+// file, the rule, the enclosing function (logicalLocation, may be empty) and
+// the source snippet of the finding. Whitespace differences in the snippet are
+// ignored. Inserting code above the finding does not change the result;
+// editing the flagged code or moving it to another function does.
+//
+// It returns "" when snippet is empty: without the code the key would merge
+// every match of the rule in the file, so callers must fall back to
+// GenerateSAST.
+func GenerateSASTStable(filePath, ruleID, logicalLocation, snippet string) string {
+	if strings.TrimSpace(snippet) == "" {
+		return ""
+	}
+	return Generate(Input{
+		Type:            TypeSASTContent,
+		FilePath:        filePath,
+		RuleID:          ruleID,
+		LogicalLocation: logicalLocation,
+		Snippet:         snippet,
+	})
+}
+
+// normalizeSnippet collapses every run of whitespace to one space.
+func normalizeSnippet(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }
 
 // GenerateSCA creates a fingerprint for SCA/dependency vulnerability findings.

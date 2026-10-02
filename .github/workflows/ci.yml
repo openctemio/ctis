@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+env:
+  # Upgrade together with .golangci.yml.
+  GOLANGCI_LINT_VERSION: v2.14.0
+  # Floor for total statement coverage (all packages). Raise it when coverage
+  # rises; never lower it to make a PR pass.
+  COVERAGE_MIN: 85
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -23,7 +33,7 @@ jobs:
       - name: Verify zero external dependencies
         run: |
           DEPS=$(go list -m all 2>/dev/null | grep -v "github.com/openctemio/ctis" | wc -l)
-          if [ "$DEPS" -gt 1 ]; then
+          if [ "$DEPS" -gt 0 ]; then
             echo "ERROR: ctis module must have zero external dependencies"
             go list -m all
             exit 1
@@ -33,20 +43,24 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      # Includes the schema <-> Go parity tests, the examples and the
+      # converter outputs validated against schemas/v1.
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: go test -race -coverprofile=coverage.out ./...
 
       - name: Check coverage
+        if: matrix.go-version == '1.26'
         run: |
-          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
-          echo "Total coverage: ${COVERAGE}%"
-          if [ "$(echo "$COVERAGE < 50" | bc)" -eq 1 ]; then
-            echo "WARNING: Coverage below 50%"
-          fi
+          COVERAGE=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          echo "Total coverage: ${COVERAGE}% (minimum ${COVERAGE_MIN}%)"
+          awk -v c="$COVERAGE" -v m="$COVERAGE_MIN" 'BEGIN { exit (c + 0 >= m + 0) ? 0 : 1 }' || {
+            echo "ERROR: coverage ${COVERAGE}% is below ${COVERAGE_MIN}%"
+            exit 1
+          }
 
       - name: Upload coverage
         if: matrix.go-version == '1.26'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6.0.2
         with:
           files: ./coverage.out
         continue-on-error: true
@@ -74,36 +88,43 @@ jobs:
           fi
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
-          version: latest
-        continue-on-error: true
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
 
   schema-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Validate JSON schemas
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      # Meta-validates every schema (draft-07), resolves every $ref through
+      # the $id registry, validates examples/ and the converter golden files
+      # with format checks, and requires examples/invalid/ to be rejected.
+      - name: Validate schemas and examples
         run: |
-          ERRORS=0
-          for f in schemas/v1/*.json; do
-            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
-              echo "INVALID JSON: $f"
-              ERRORS=$((ERRORS + 1))
-            fi
+          pip install "jsonschema[format-nongpl]==4.25.1"
+          python3 scripts/validate_schemas.py
+
+  fuzz:
+    name: Fuzz (smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: Fuzz each target briefly
+        run: |
+          for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion; do
+            go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s .
           done
-          EXPECTED="asset.json dependency.json finding.json report.json web3-asset.json web3-finding.json"
-          for name in $EXPECTED; do
-            if [ ! -f "schemas/v1/$name" ]; then
-              echo "MISSING: schemas/v1/$name"
-              ERRORS=$((ERRORS + 1))
-            fi
-          done
-          if [ $ERRORS -gt 0 ]; then
-            exit 1
-          fi
-          echo "All 6 schemas valid"
 
   build-compat:
     name: Cross-platform build

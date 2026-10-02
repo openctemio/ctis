@@ -33,7 +33,7 @@ func TestHash(t *testing.T) {
 
 			// Should only contain hex characters
 			for _, c := range hash {
-				if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+				if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
 					t.Errorf("Hash contains non-hex character: %c", c)
 				}
 			}
@@ -720,5 +720,39 @@ func TestGenerate_NoCollisions(t *testing.T) {
 			t.Errorf("Collision detected between input %d and existing: %s", i, existing)
 		}
 		fingerprints[key] = strings.TrimSpace(string(rune(i)))
+	}
+}
+
+func TestGenerateSASTStable(t *testing.T) {
+	base := GenerateSASTStable("src/App.java", "java.sqli", "com.shop.Orders.find", "stmt.execute(\"SELECT * FROM o WHERE id=\" + id);")
+	if len(base) != 64 {
+		t.Fatalf("want a 64-char hex hash, got %q", base)
+	}
+	// Whitespace and indentation changes do not change the identity, and
+	// there are no line numbers to move.
+	if got := GenerateSASTStable("src/App.java", "JAVA.SQLI", "com.shop.Orders.find", "  stmt.execute(\"SELECT * FROM o WHERE id=\"   + id);\n"); got != base {
+		t.Error("whitespace or rule case changed the fingerprint")
+	}
+	// The code, the function, the file (case-sensitive) and the rule do.
+	for name, got := range map[string]string{
+		"code":     GenerateSASTStable("src/App.java", "java.sqli", "com.shop.Orders.find", "stmt.execute(q);"),
+		"function": GenerateSASTStable("src/App.java", "java.sqli", "com.shop.Orders.list", "stmt.execute(\"SELECT * FROM o WHERE id=\" + id);"),
+		"file":     GenerateSASTStable("src/app.java", "java.sqli", "com.shop.Orders.find", "stmt.execute(\"SELECT * FROM o WHERE id=\" + id);"),
+		"rule":     GenerateSASTStable("src/App.java", "java.xss", "com.shop.Orders.find", "stmt.execute(\"SELECT * FROM o WHERE id=\" + id);"),
+	} {
+		if got == base {
+			t.Errorf("changing the %s must change the fingerprint", name)
+		}
+	}
+	// A ':' in one field cannot be confused with the next field.
+	if GenerateSASTStable("a:b", "c", "", "x") == GenerateSASTStable("a", "b:c", "", "x") {
+		t.Error("field boundary collision")
+	}
+	if GenerateSASTStable("f", "r", "", "  \n") != "" {
+		t.Error("no snippet must return empty so callers fall back to GenerateSAST")
+	}
+	// Windows paths match Unix paths.
+	if GenerateSASTStable(`src\App.java`, "java.sqli", "com.shop.Orders.find", "stmt.execute(\"SELECT * FROM o WHERE id=\" + id);") != base {
+		t.Error("path separators must be normalised")
 	}
 }
