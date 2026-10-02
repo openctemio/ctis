@@ -1,0 +1,40 @@
+{
+  "version": "1.3",
+  "metadata": {"timestamp": "2026-10-02T10:00:00Z", "source_type": "collector", "scope": {"name": "prod", "type": "cloud_account", "includes": ["123456789012"]}},
+  "tool": {"name": "prowler", "version": "4.5.0", "capabilities": ["cspm", "misconfiguration"]},
+  "assets": [
+    {
+      "id": "bucket",
+      "type": "storage",
+      "value": "arn:aws:s3:::example-shop-uploads",
+      "name": "example-shop-uploads",
+      "is_internet_accessible": true,
+      "identifiers": {"cloud_resource_id": "arn:aws:s3:::example-shop-uploads"},
+      "technical": {"cloud": {"provider": "aws", "account_id": "123456789012", "region": "eu-west-1", "resource_type": "s3", "resource_id": "example-shop-uploads", "arn": "arn:aws:s3:::example-shop-uploads", "tags": {"team": "shop"}}},
+      "compliance": {"frameworks": ["PCI-DSS"], "data_classification": "confidential", "pii_exposed": true}
+    }
+  ],
+  "findings": [
+    {
+      "id": "f-1",
+      "type": "misconfiguration",
+      "title": "S3 bucket allows public read",
+      "severity": "high",
+      "rule_id": "s3_bucket_public_access",
+      "asset_ref": "bucket",
+      "misconfiguration": {
+        "policy_id": "s3_bucket_public_access",
+        "policy_name": "Ensure S3 buckets block public access",
+        "resource_type": "aws_s3_bucket",
+        "resource_name": "example-shop-uploads",
+        "provider": "AWS",
+        "service": "S3",
+        "expected": "BlockPublicAcls=true",
+        "actual": "BlockPublicAcls=false"
+      },
+      "exposure": {"vector": "network", "is_network_accessible": true, "is_internet_accessible": true},
+      "business_impact": {"data_exposure_risk": "high", "compliance_impact": ["PCI-DSS"]},
+      "remediation_context": {"type": "config_change", "estimated_minutes": 15, "complexity": "simple", "remedy_available": true}
+    }
+  ]
+}
