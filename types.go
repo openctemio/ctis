@@ -1303,6 +1303,17 @@ const (
 	DataFlowLocationTransform DataFlowLocationType = "transform"
 )
 
+// AllDataFlowLocationTypes returns every valid data flow location type.
+func AllDataFlowLocationTypes() []DataFlowLocationType {
+	return []DataFlowLocationType{
+		DataFlowLocationSource,
+		DataFlowLocationSink,
+		DataFlowLocationPropagator,
+		DataFlowLocationSanitizer,
+		DataFlowLocationTransform,
+	}
+}
+
 // StackTrace represents a call stack trace (SARIF stack).
 type StackTrace struct {
 	// Stack description/message
@@ -1359,6 +1370,10 @@ type Suppression struct {
 	// Suppression status: accepted, under_review, rejected
 	Status string `json:"status,omitempty"`
 
+	// Short reason code or phrase, e.g. "false_positive", "test_code",
+	// "risk_accepted".
+	Reason string `json:"reason,omitempty"`
+
 	// Justification for suppression
 	Justification string `json:"justification,omitempty"`
 
@@ -1367,6 +1382,9 @@ type Suppression struct {
 
 	// When the finding was suppressed
 	SuppressedAt *time.Time `json:"suppressed_at,omitempty"`
+
+	// When the suppression stops applying. Empty means it does not expire.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 }
 
 // FindingLocation contains location information for code-based findings.
@@ -2309,10 +2327,12 @@ type Properties map[string]any
 // Factory Functions
 // =============================================================================
 
-// NewReport creates a new empty CTIS report.
+// NewReport creates a new empty CTIS report stamped with the current
+// specification version and the published schema URL.
 func NewReport() *Report {
 	return &Report{
-		Version: "1.0",
+		Version: SchemaVersion,
+		Schema:  SchemaURL,
 		Metadata: ReportMetadata{
 			Timestamp:  time.Now(),
 			SourceType: "scanner",
