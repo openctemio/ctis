@@ -2,12 +2,6 @@
 
 All notable changes to CTIS. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Module versions follow [Semantic Versioning](https://semver.org/); module `v1.MINOR.x` implements CTIS spec `1.MINOR` (see [docs/spec.md](docs/spec.md#2-versioning-and-compatibility)).
 
-## [Unreleased]
-
-### Changed
-
-- `FromSARIF` reads `result.kind` into `finding.kind`, mapping SARIF's `notApplicable` to `not_applicable` (it was dropped, so a passed or inapplicable check looked like any other finding). `baselineState` is matched case-insensitively. Values outside SARIF's set are left unset. `SARIFResult` gains `Kind`.
-
 ## [1.3.0] - 2026-10-02
 
 Receivers (OpenCTEM API) must upgrade before producers send `suppression.reason`, `suppression.expires_at` or `dependencies[].properties`.
@@ -30,7 +24,8 @@ Receivers (OpenCTEM API) must upgrade before producers send `suppression.reason`
   - types findings from rule tags and CVE/GHSA rule IDs, so Trivy CVEs are vulnerabilities, not misconfigurations;
   - reads CWE arrays and `external/cwe/cwe-NNN` tags, and OWASP tags;
   - finds the rule by `rule.id`, `ruleIndex` or `rule.index` too;
-  - carries `partialFingerprints`, `correlationGuid` and `baselineState`;
+  - carries `partialFingerprints`, `correlationGuid` and `baselineState` (matched case-insensitively);
+  - reads `result.kind` into `finding.kind`, mapping SARIF's `notApplicable` to `not_applicable` (it was dropped, so a passed or inapplicable check looked like any other finding); values outside SARIF's set are left unset, and `SARIFResult` gains `Kind`;
   - no longer sets the asset's criticality to `high`;
   - capabilities: known SAST tools report `sast`, `ToolType: sca` reports `sca`, and an unknown tool reports `vulnerability` (it reported `vulnerability, secret`, which OpenCTEM read as a secret scan).
 - `SARIFResult.RuleIndex` is now `*int` (absent is not index 0).
