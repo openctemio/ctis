@@ -187,6 +187,7 @@ Producers in other languages MUST reproduce the same input strings and hash them
 - Tags: `properties.tags` of the result, then of the rule, are carried as `tags` (a string or an array of strings). Order is first seen; whitespace is trimmed; duplicates are dropped ignoring case, keeping the first spelling; empty and non-string entries are skipped. At most 50 tags are kept per finding, and a tag longer than 128 bytes is dropped, not truncated.
 - The rule is found by `ruleId`, `rule.id`, `ruleIndex` or `rule.index`.
 - The asset the options describe gets no criticality.
+- Secrets: secret scanners put the matched secret in the region snippet (gitleaks and betterleaks do unless run with `--redact`). For a finding of type `secret`, or any finding from a secret scanner, the snippet is masked: a value of 16 characters or more keeps its first 4 characters followed by `********`, a shorter one becomes `REDACTED`, and the raw value is masked wherever the title, message or description repeats it. A snippet that is already `REDACTED` or only asterisks is kept; a partial redaction (`--redact=N`) is masked again. The converter does not set `secret.masked_value`, because receivers fingerprint secret findings by it.
 
 ### 6.2 Recon: `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports`
 
