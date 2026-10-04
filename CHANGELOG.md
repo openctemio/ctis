@@ -4,8 +4,14 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Security
+
+- `ConvertReconToCTIS` removes the user and password from probed and crawled URLs (`https://user:token@host/` put the credential into the asset value), and strips control characters from values the scanned host chooses: HTML titles, server headers and service names lose all of them, banners keep tab, newline and carriage return. ANSI escapes and forged newlines no longer reach a receiver's logs.
+
 ### Changed
 
+- `DefaultReconConverterOptions` no longer sets `DefaultCriticality` (it was `medium`). Criticality is business context that a scanner does not know (spec section 4.1); `FromSARIF` stopped setting it in 1.3.0. OpenCTEM files an asset without criticality as medium, so its behaviour is unchanged.
+- `ConvertReconToCTIS` writes each resolved IP of a subdomain once, in canonical form (`::ffff:192.0.2.1` is `192.0.2.1`).
 - `FromSARIF` carries `properties.tags` from the result and its rule into `finding.tags` (they were dropped). Tags are deduplicated ignoring case in first-seen order; non-string, empty and over-long (more than 128 bytes) entries are skipped; at most 50 are kept per finding.
 - betterleaks (a gitleaks fork) is recognised as a secret scanner: its SARIF findings get type `secret` and the tool gets the `secret` capability (they were typed `vulnerability`).
 
