@@ -192,6 +192,8 @@ Producers in other languages MUST reproduce the same input strings and hash them
 
 Output always validates against the schema (tested). Subdomains become `domain` or `subdomain` assets, DNS results `domain` assets with one record per value (types outside the schema enum are kept in `properties.other_dns_records`), port scans `ip_address` assets or, for a target with no IP, `host` assets, HTTP probes `http_service` assets whatever their status code, and crawled URLs `discovered_url` assets. Merging keeps first-seen order, combines assets with the same value, and never modifies its inputs.
 
+URLs lose any user and password before they become asset values or properties. Values chosen by the scanned host are cleaned of control characters: titles, server headers and service names lose all of them, banners keep tab, newline and carriage return. The default options set no criticality.
+
 ## 7. Limits
 
 The schema sets no size limits. OpenCTEM enforces these (API develop, 2026-10):

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // ReconConverterOptions configures the conversion from ReconResult to CTIS Report.
@@ -15,7 +16,9 @@ type ReconConverterOptions struct {
 	DiscoverySource string // "agent", "integration", "manual"
 	DiscoveryTool   string // Scanner name
 
-	// Default values
+	// Default values. DefaultCriticality is business context that a scanner
+	// does not know (spec section 4.1); leave it empty unless the caller
+	// really has it.
 	DefaultCriticality Criticality
 	DefaultConfidence  int // 0-100
 
@@ -30,12 +33,11 @@ type ReconConverterOptions struct {
 // DefaultReconConverterOptions returns sensible default options.
 func DefaultReconConverterOptions() *ReconConverterOptions {
 	return &ReconConverterOptions{
-		DiscoverySource:    "agent",
-		DefaultCriticality: CriticalityMedium,
-		DefaultConfidence:  80,
-		GroupByDomain:      true,
-		GroupByIP:          true,
-		MinConfidence:      0,
+		DiscoverySource:   "agent",
+		DefaultConfidence: 80,
+		GroupByDomain:     true,
+		GroupByIP:         true,
+		MinConfidence:     0,
 	}
 }
 
@@ -328,11 +330,16 @@ func convertSubdomains(report *Report, ids assetIDs, subdomains []SubdomainInput
 		technical := &AssetTechnical{Domain: &DomainTechnical{}}
 		if len(sub.IPs) > 0 {
 			asset.Properties["resolved_ips"] = sub.IPs
+			seenIP := map[string]bool{}
 			for _, ip := range sub.IPs {
 				recType := "A"
-				if parsed := net.ParseIP(ip); parsed == nil {
+				parsed := net.ParseIP(ip)
+				if parsed == nil || seenIP[parsed.String()] {
 					continue
-				} else if parsed.To4() == nil {
+				}
+				seenIP[parsed.String()] = true
+				ip = parsed.String()
+				if parsed.To4() == nil {
 					recType = "AAAA"
 				}
 				technical.Domain.DNSRecords = append(technical.Domain.DNSRecords, DNSRecord{
@@ -430,9 +437,9 @@ func portInfo(p OpenPortInput) (PortInfo, bool) {
 	info := PortInfo{
 		Port:    p.Port,
 		State:   "open",
-		Service: p.Service,
-		Version: p.Version,
-		Banner:  p.Banner,
+		Service: cleanLine(p.Service),
+		Version: cleanLine(p.Version),
+		Banner:  cleanText(p.Banner),
 	}
 	switch proto := strings.ToLower(strings.TrimSpace(p.Protocol)); proto {
 	case "tcp", "udp":
@@ -529,7 +536,7 @@ func convertOpenPorts(report *Report, ids assetIDs, ports []OpenPortInput, opts 
 		}
 		for k, v := range map[string]any{
 			"host": key, "port": p.Port, "protocol": strings.ToLower(p.Protocol),
-			"service": p.Service, "version": p.Version, "banner": p.Banner,
+			"service": cleanLine(p.Service), "version": cleanLine(p.Version), "banner": cleanText(p.Banner),
 		} {
 			asset.Properties[k] = v
 		}
@@ -542,10 +549,14 @@ func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts 
 	seen := make(map[string]bool)
 
 	for _, h := range hosts {
+		h.URL = stripURLUserinfo(h.URL)
 		if h.URL == "" || seen[h.URL] {
 			continue
 		}
 		seen[h.URL] = true
+		h.Redirect = stripURLUserinfo(h.Redirect)
+		h.Title = cleanLine(h.Title)
+		h.WebServer = cleanLine(h.WebServer)
 
 		scheme := strings.ToLower(h.Scheme)
 		service := &ServiceTechnical{
@@ -606,10 +617,12 @@ func convertDiscoveredURLs(report *Report, ids assetIDs, urls []DiscoveredURLInp
 	seen := make(map[string]bool)
 
 	for _, u := range urls {
+		u.URL = stripURLUserinfo(u.URL)
 		if u.URL == "" || seen[u.URL] {
 			continue
 		}
 		seen[u.URL] = true
+		u.Parent = stripURLUserinfo(u.Parent)
 
 		// Parse URL to extract host
 		host := u.URL
@@ -645,6 +658,46 @@ func convertDiscoveredURLs(report *Report, ids assetIDs, urls []DiscoveredURLInp
 
 		report.Assets = append(report.Assets, asset)
 	}
+}
+
+// stripURLUserinfo removes the user and password from a URL. Crawlers and
+// probes report URLs as they found them, and https://user:token@host/ would
+// otherwise put a credential into the asset value. A value that does not
+// parse as a URL with a host is returned unchanged.
+func stripURLUserinfo(raw string) string {
+	if !strings.Contains(raw, "@") {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.User == nil || u.Host == "" {
+		return raw
+	}
+	u.User = nil
+	return u.String()
+}
+
+// cleanLine removes control characters, newlines included, from a value that
+// is displayed and logged on one line (an HTML title, a server header, a
+// service name). Scanned hosts choose these values; ANSI escapes or forged
+// newlines in them must not reach a receiver's terminal or log.
+func cleanLine(s string) string {
+	return strings.TrimSpace(strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, strings.ToValidUTF8(s, "\uFFFD")))
+}
+
+// cleanText removes control characters other than tab, newline and carriage
+// return from a multi-line value (a service banner).
+func cleanText(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r != '\t' && r != '\n' && r != '\r' && unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, strings.ToValidUTF8(s, "\uFFFD"))
 }
 
 // normalizeAssetID creates a safe ID from a string value.
