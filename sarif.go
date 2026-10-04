@@ -199,6 +199,8 @@ func DefaultConvertOptions() *ConvertOptions {
 //     the choice is deterministic; values over 64 characters are SHA-256
 //     hashed. partialFingerprints are passed through unchanged as
 //     partial_fingerprints.
+//   - tags: properties.tags of the result, then of the rule, deduplicated
+//     ignoring case in first-seen order; at most 50, each at most 128 bytes.
 //
 // The converter asserts no business context: the asset it creates has no
 // criticality.
@@ -402,7 +404,61 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 	finding.CorrelationID = result.CorrelationGUID
 	finding.BaselineState = sarifBaselineState(result.BaselineState)
 	finding.Kind = sarifKind(result.Kind)
+	var ruleProps map[string]any
+	if rule != nil {
+		ruleProps = rule.Properties
+	}
+	finding.Tags = sarifTags(result.Properties, ruleProps)
 	return finding
+}
+
+// Bounds on the tags FromSARIF carries, so a hostile or broken SARIF log
+// cannot inflate every finding with an unbounded tag list.
+const (
+	// maxSARIFTags is the most tags one finding gets.
+	maxSARIFTags = 50
+	// maxSARIFTagLen is the longest tag kept, in bytes. Longer values are
+	// dropped rather than cut, so no tag is invented by truncation.
+	maxSARIFTagLen = 128
+)
+
+// sarifTags collects properties.tags from the result, then from its rule, into
+// finding.tags. Order is first seen; duplicates are dropped ignoring case (the
+// first spelling wins); surrounding whitespace is trimmed; empty, non-string
+// and over-long (maxSARIFTagLen) entries are skipped; at most maxSARIFTags are
+// kept. A string tags value is treated as a single tag.
+func sarifTags(resultProps, ruleProps map[string]any) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, props := range []map[string]any{resultProps, ruleProps} {
+		var raw []any
+		switch t := props["tags"].(type) {
+		case string:
+			raw = []any{t}
+		case []any:
+			raw = t
+		}
+		for _, v := range raw {
+			if len(out) >= maxSARIFTags {
+				return out
+			}
+			s, ok := v.(string)
+			if !ok {
+				continue
+			}
+			s = strings.TrimSpace(s)
+			if s == "" || len(s) > maxSARIFTagLen {
+				continue
+			}
+			key := strings.ToLower(s)
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 // sarifKind maps a SARIF result.kind onto the CTIS finding.kind vocabulary.
@@ -632,12 +688,8 @@ func detectFindingType(toolName string, toolType string) FindingType {
 		return FindingTypeVulnerability
 	}
 
-	// Secret scanners
-	secretTools := []string{"gitleaks", "trufflehog", "detect-secrets", "secret"}
-	for _, t := range secretTools {
-		if strings.Contains(name, t) {
-			return FindingTypeSecret
-		}
+	if isSecretTool(name) {
+		return FindingTypeSecret
 	}
 
 	// Web3 scanners
@@ -658,6 +710,20 @@ func detectFindingType(toolName string, toolType string) FindingType {
 
 	// Default to vulnerability
 	return FindingTypeVulnerability
+}
+
+// secretToolNames are secret scanners, matched as substrings of the lowercased
+// tool name. betterleaks is a gitleaks fork with its own driver name.
+var secretToolNames = []string{"gitleaks", "betterleaks", "trufflehog", "detect-secrets", "secret"}
+
+// isSecretTool reports whether a lowercased tool name is a secret scanner.
+func isSecretTool(name string) bool {
+	for _, t := range secretToolNames {
+		if strings.Contains(name, t) {
+			return true
+		}
+	}
+	return false
 }
 
 // sastToolNames are static analysers whose SARIF is code findings.
@@ -687,7 +753,7 @@ func detectCapabilities(toolName string, toolType string) []string {
 	}
 
 	// Auto-detect
-	if strings.Contains(name, "secret") || strings.Contains(name, "gitleaks") || strings.Contains(name, "trufflehog") {
+	if isSecretTool(name) {
 		return []string{"secret"}
 	}
 	if strings.Contains(name, "slither") || strings.Contains(name, "mythril") {

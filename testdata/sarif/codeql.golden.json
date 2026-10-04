@@ -55,6 +55,11 @@
         ],
         "cwe_id": "CWE-79"
       },
+      "tags": [
+        "security",
+        "external/cwe/cwe-079",
+        "external/cwe/cwe-116"
+      ],
       "partial_fingerprints": {
         "primaryLocationLineHash": "39fa2ee980eb94b0:1",
         "primaryLocationStartColumnFingerprint": "9"
@@ -86,6 +91,12 @@
         ],
         "cwe_id": "CWE-89"
       },
+      "tags": [
+        "security",
+        "external/cwe/cwe-089",
+        "external/cwe/cwe-090",
+        "external/cwe/cwe-943"
+      ],
       "partial_fingerprints": {
         "primaryLocationLineHash": "a1b2c3d4e5f60718:1",
         "primaryLocationStartColumnFingerprint": "15"
@@ -116,6 +127,12 @@
         ],
         "cwe_id": "CWE-78"
       },
+      "tags": [
+        "correctness",
+        "security",
+        "external/cwe/cwe-078",
+        "external/cwe/cwe-088"
+      ],
       "partial_fingerprints": {
         "primaryLocationLineHash": "77aa88bb99cc00dd:1"
       }

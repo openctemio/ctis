@@ -51,6 +51,11 @@
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2021-44228"
+      ],
+      "tags": [
+        "vulnerability",
+        "security",
+        "CRITICAL"
       ]
     },
     {
@@ -74,6 +79,11 @@
       },
       "references": [
         "https://github.com/advisories/GHSA-jfh8-c2jp-5v3q"
+      ],
+      "tags": [
+        "vulnerability",
+        "security",
+        "MEDIUM"
       ]
     },
     {
@@ -97,6 +107,11 @@
       },
       "references": [
         "https://avd.aquasec.com/misconfig/ds002"
+      ],
+      "tags": [
+        "misconfiguration",
+        "security",
+        "HIGH"
       ]
     },
     {
@@ -117,7 +132,12 @@
         "end_column": 1,
         "branch": "main",
         "commit_sha": "0123456789abcdef0123456789abcdef01234567"
-      }
+      },
+      "tags": [
+        "secret",
+        "security",
+        "CRITICAL"
+      ]
     }
   ]
 }
