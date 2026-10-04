@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/openctemio/ctis/severity"
 )
@@ -80,8 +81,20 @@ type SARIFResult struct {
 	BaselineState       string                   `json:"baselineState,omitempty"`
 	// Kind is the evaluation state of the result: notApplicable, pass, fail,
 	// review, open or informational (SARIF 2.1.0 section 3.27.9).
-	Kind       string         `json:"kind,omitempty"`
-	Properties map[string]any `json:"properties,omitempty"`
+	Kind string `json:"kind,omitempty"`
+	// Suppressions are the result's suppressions (SARIF 2.1.0 section
+	// 3.27.23), e.g. a nosemgrep comment or a CodeQL alert suppression.
+	Suppressions []SARIFSuppression `json:"suppressions,omitempty"`
+	Properties   map[string]any     `json:"properties,omitempty"`
+}
+
+// SARIFSuppression is one SARIF suppression object (section 3.35).
+type SARIFSuppression struct {
+	// Kind is inSource or external.
+	Kind string `json:"kind,omitempty"`
+	// Status is accepted (the default when absent), underReview or rejected.
+	Status        string `json:"status,omitempty"`
+	Justification string `json:"justification,omitempty"`
 }
 
 // SARIFReportingReference is a result's reference to its rule
@@ -404,6 +417,7 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 	finding.CorrelationID = result.CorrelationGUID
 	finding.BaselineState = sarifBaselineState(result.BaselineState)
 	finding.Kind = sarifKind(result.Kind)
+	finding.Suppression, finding.Status = sarifSuppression(result.Suppressions)
 	var ruleProps map[string]any
 	if rule != nil {
 		ruleProps = rule.Properties
@@ -486,6 +500,90 @@ func sarifKind(kind string) string {
 	}
 }
 
+// maxSuppressionJustification is the longest suppression justification kept,
+// in bytes; longer ones are cut.
+const maxSuppressionJustification = 2048
+
+// sarifSuppression maps a result's SARIF suppressions onto finding.suppression
+// and finding.status. SARIF (section 3.27.23) calls a result suppressed when
+// at least one suppression is accepted (an absent status means accepted) and
+// none is underReview or rejected. The suppression carried is the first one
+// with the deciding status: a rejected one, else one under review, else the
+// first accepted one. Status is set to suppressed only for a suppressed
+// result. Kinds and statuses outside SARIF's values are left unset.
+func sarifSuppression(sups []SARIFSuppression) (*Suppression, FindingStatus) {
+	if len(sups) == 0 {
+		return nil, ""
+	}
+	rank := map[string]int{"rejected": 3, "under_review": 2, "accepted": 1}
+	var pick *SARIFSuppression
+	pickStatus := ""
+	for i := range sups {
+		st := sarifSuppressionStatus(sups[i].Status)
+		if rank[st] > rank[pickStatus] {
+			pick, pickStatus = &sups[i], st
+		}
+	}
+	if pick == nil {
+		return nil, ""
+	}
+	sup := &Suppression{
+		Kind:          sarifSuppressionKind(pick.Kind),
+		Status:        pickStatus,
+		Justification: truncateUTF8(cleanSuppressionText(pick.Justification), maxSuppressionJustification),
+	}
+	if pickStatus == "accepted" {
+		return sup, FindingStatusSuppressed
+	}
+	return sup, ""
+}
+
+func sarifSuppressionKind(kind string) string {
+	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(kind), "_", "")) {
+	case "insource":
+		return "in_source"
+	case "external":
+		return "external"
+	}
+	return ""
+}
+
+// sarifSuppressionStatus maps a SARIF suppression status; absent means
+// accepted, an unknown value returns "".
+func sarifSuppressionStatus(status string) string {
+	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(status), "_", "")) {
+	case "", "accepted":
+		return "accepted"
+	case "underreview":
+		return "under_review"
+	case "rejected":
+		return "rejected"
+	}
+	return ""
+}
+
+// cleanSuppressionText drops control characters other than tab and newline.
+func cleanSuppressionText(s string) string {
+	return strings.TrimSpace(strings.Map(func(r rune) rune {
+		if r != '\t' && r != '\n' && (r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0)) {
+			return -1
+		}
+		return r
+	}, strings.ToValidUTF8(s, "\uFFFD")))
+}
+
+// truncateUTF8 cuts s to at most maxBytes bytes on a character boundary.
+func truncateUTF8(s string, maxBytes int) string {
+	if len(s) <= maxBytes {
+		return s
+	}
+	cut := maxBytes
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut]
+}
+
 // sarifBaselineState maps a SARIF result.baselineState onto CTIS
 // finding.baseline_state (same four values). Unknown values are left unset.
 func sarifBaselineState(state string) string {
@@ -507,7 +605,7 @@ func sarifFingerprint(fps map[string]string) string {
 	}
 	keys := make([]string, 0, len(fps))
 	for k, v := range fps {
-		if v != "" {
+		if v != "" && !isPlaceholderFingerprint(v) {
 			keys = append(keys, k)
 		}
 	}
@@ -521,6 +619,13 @@ func sarifFingerprint(fps map[string]string) string {
 		return hex.EncodeToString(hash[:])
 	}
 	return fp
+}
+
+// isPlaceholderFingerprint reports a fingerprint value that names no finding:
+// Semgrep OSS writes "requires login" for every result's matchBasedId, which
+// would give all of them the same fingerprint.
+func isPlaceholderFingerprint(v string) bool {
+	return strings.EqualFold(strings.TrimSpace(v), "requires login")
 }
 
 // sarifSeverity applies the precedence documented on FromSARIF.
