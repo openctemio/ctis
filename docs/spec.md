@@ -186,7 +186,10 @@ Producers in other languages MUST reproduce the same input strings and hash them
 - `kind` is carried as `kind`, with SARIF's camelCase `notApplicable` written as `not_applicable` (matching ignores case and underscores). `baselineState` matching ignores case. A value outside SARIF's set is left unset; an absent `kind` is not defaulted to SARIF's implicit `fail`.
 - Tags: `properties.tags` of the result, then of the rule, are carried as `tags` (a string or an array of strings). Order is first seen; whitespace is trimmed; duplicates are dropped ignoring case, keeping the first spelling; empty and non-string entries are skipped. At most 50 tags are kept per finding, and a tag longer than 128 bytes is dropped, not truncated.
 - The rule is found by `ruleId`, `rule.id`, `ruleIndex` or `rule.index`.
+- Suppressions: the result's `suppressions` become `suppression`. The suppression carried is the first rejected one, else the first under review, else the first accepted one (an absent SARIF status means accepted); `inSource` is written `in_source`, `underReview` `under_review`. `status` is `suppressed` only when SARIF calls the result suppressed: at least one accepted suppression and none under review or rejected. The justification loses control characters and is cut at 2048 bytes.
+- The fingerprint placeholder `requires login` (Semgrep OSS) is ignored.
 - The asset the options describe gets no criticality.
+- Secrets: secret scanners put the matched secret in the region snippet (gitleaks and betterleaks do unless run with `--redact`). For a finding of type `secret`, or any finding from a secret scanner, the snippet is masked: a value of 16 characters or more keeps its first 4 characters followed by `********`, a shorter one becomes `REDACTED`, and the raw value is masked wherever the title, message or description repeats it. A snippet that is already `REDACTED` or only asterisks is kept; a partial redaction (`--redact=N`) is masked again. The converter does not set `secret.masked_value`, because receivers fingerprint secret findings by it.
 
 ### 6.2 Recon: `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports`
 
