@@ -4,6 +4,14 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Documentation
+
+- Spec: new sections 4.8 (secrets: no member may hold a usable secret; bounds on `masked_value`) and 4.9 (`metadata.source_type` is the channel and a producer claim; results are bound to commands by the request, not the body).
+- Spec 4.5: an absent `coverage_type` is not `full`, and receivers MUST NOT auto-resolve from it.
+- Spec 4.2: `network.protocol` is the transport; send it whenever `port` is sent.
+- Spec 2.2: new enum values are refused by older receivers, the same as new members.
+- Spec 7: OpenCTEM's per-field text caps and the v1 body limit.
+
 ### Changed
 
 - `FromSARIF` carries `properties.tags` from the result and its rule into `finding.tags` (they were dropped). Tags are deduplicated ignoring case in first-seen order; non-string, empty and over-long (more than 128 bytes) entries are skipped; at most 50 are kept per finding.
