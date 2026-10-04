@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Security
+
+- `FromSARIF` no longer copies a secret scanner's raw match into the report. gitleaks and betterleaks write the matched secret into the SARIF region snippet unless run with `--redact`, and it went into `location.snippet` unchanged. For secret findings the snippet is now masked (first 4 characters of a value of 16 or more, else `REDACTED`), and the raw value is masked in the title, message and description too. `secret.masked_value` is left unset so receiver fingerprints do not change.
+
 ### Changed
 
 - `FromSARIF` carries `properties.tags` from the result and its rule into `finding.tags` (they were dropped). Tags are deduplicated ignoring case in first-seen order; non-string, empty and over-long (more than 128 bytes) entries are skipped; at most 50 are kept per finding.
