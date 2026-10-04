@@ -2,6 +2,13 @@
 
 All notable changes to CTIS. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Module versions follow [Semantic Versioning](https://semver.org/); module `v1.MINOR.x` implements CTIS spec `1.MINOR` (see [docs/spec.md](docs/spec.md#2-versioning-and-compatibility)).
 
+## [Unreleased]
+
+### Changed
+
+- `FromSARIF` carries `properties.tags` from the result and its rule into `finding.tags` (they were dropped). Tags are deduplicated ignoring case in first-seen order; non-string, empty and over-long (more than 128 bytes) entries are skipped; at most 50 are kept per finding.
+- betterleaks (a gitleaks fork) is recognised as a secret scanner: its SARIF findings get type `secret` and the tool gets the `secret` capability (they were typed `vulnerability`).
+
 ## [1.3.0] - 2026-10-02
 
 Receivers (OpenCTEM API) must upgrade before producers send `suppression.reason`, `suppression.expires_at` or `dependencies[].properties`.

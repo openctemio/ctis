@@ -1,0 +1,93 @@
+{
+  "version": "1.3",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-02T00:00:00Z",
+    "source_type": "scanner",
+    "branch": {
+      "name": "main",
+      "is_default_branch": true,
+      "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+    }
+  },
+  "tool": {
+    "name": "betterleaks",
+    "version": "1.1.0",
+    "info_url": "https://github.com/betterleaks/betterleaks",
+    "capabilities": [
+      "secret"
+    ]
+  },
+  "assets": [
+    {
+      "id": "repo",
+      "type": "repository",
+      "value": "github.com/example/shop"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "secret",
+      "title": "aws-access-token has detected secret for file config/prod.env.",
+      "description": "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms.",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "aws-access-token",
+      "asset_ref": "repo",
+      "location": {
+        "path": "config/prod.env",
+        "start_line": 3,
+        "end_line": 3,
+        "start_column": 19,
+        "end_column": 39,
+        "snippet": "REDACTED",
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "tags": [
+        "key",
+        "verified",
+        "cloud",
+        "aws"
+      ],
+      "partial_fingerprints": {
+        "author": "",
+        "commitMessage": "",
+        "commitSha": "0123456789abcdef0123456789abcdef01234567",
+        "date": "2026-10-01T00:00:00Z",
+        "email": ""
+      }
+    },
+    {
+      "id": "finding-2",
+      "type": "secret",
+      "title": "generic-api-key has detected secret for file src/client.go.",
+      "description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "generic-api-key",
+      "asset_ref": "repo",
+      "location": {
+        "path": "src/client.go",
+        "start_line": 12,
+        "end_line": 12,
+        "start_column": 8,
+        "end_column": 48,
+        "snippet": "REDACTED",
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "tags": [
+        "entropy"
+      ],
+      "partial_fingerprints": {
+        "author": "",
+        "commitMessage": "",
+        "commitSha": "0123456789abcdef0123456789abcdef01234567",
+        "date": "2026-10-01T00:00:00Z",
+        "email": ""
+      }
+    }
+  ]
+}
