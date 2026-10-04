@@ -6,10 +6,13 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ### Security
 
+- `ConvertReconToCTIS` removes the user and password from probed and crawled URLs (`https://user:token@host/` put the credential into the asset value), and strips control characters from values the scanned host chooses: HTML titles, server headers and service names lose all of them, banners keep tab, newline and carriage return. ANSI escapes and forged newlines no longer reach a receiver's logs.
 - `FromSARIF` no longer copies a secret scanner's raw match into the report. gitleaks and betterleaks write the matched secret into the SARIF region snippet unless run with `--redact`, and it went into `location.snippet` unchanged. For secret findings the snippet is now masked (first 4 characters of a value of 16 or more, else `REDACTED`), and the raw value is masked in the title, message and description too. `secret.masked_value` is left unset so receiver fingerprints do not change.
 
 ### Changed
 
+- `DefaultReconConverterOptions` no longer sets `DefaultCriticality` (it was `medium`). Criticality is business context that a scanner does not know (spec section 4.1); `FromSARIF` stopped setting it in 1.3.0. OpenCTEM files an asset without criticality as medium, so its behaviour is unchanged.
+- `ConvertReconToCTIS` writes each resolved IP of a subdomain once, in canonical form (`::ffff:192.0.2.1` is `192.0.2.1`).
 - `FromSARIF` carries SARIF `suppressions` (a `nosemgrep` comment, a CodeQL alert suppression) as `finding.suppression`, and sets `status: suppressed` when SARIF calls the result suppressed (at least one accepted suppression, none under review or rejected). They were dropped, so a suppressed result looked open. `SARIFResult` gains `Suppressions`.
 - `FromSARIF` ignores the placeholder fingerprint `requires login` that Semgrep OSS writes for every result (all results got the same `fingerprint`).
 - `FromSARIF` carries `properties.tags` from the result and its rule into `finding.tags` (they were dropped). Tags are deduplicated ignoring case in first-seen order; non-string, empty and over-long (more than 128 bytes) entries are skipped; at most 50 are kept per finding.
