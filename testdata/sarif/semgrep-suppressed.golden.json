@@ -1,0 +1,96 @@
+{
+  "version": "1.3",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-02T00:00:00Z",
+    "source_type": "scanner",
+    "branch": {
+      "name": "main",
+      "is_default_branch": true,
+      "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+    }
+  },
+  "tool": {
+    "name": "Semgrep OSS",
+    "version": "1.149.0",
+    "capabilities": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "repo",
+      "type": "repository",
+      "value": "github.com/example/shop"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "vulnerability",
+      "title": "Found shell=True",
+      "description": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "severity": "high",
+      "confidence": 95,
+      "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "rule_name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "asset_ref": "repo",
+      "location": {
+        "path": "src/app.py",
+        "start_line": 4,
+        "end_line": 4,
+        "start_column": 5,
+        "end_column": 37,
+        "snippet": "    subprocess.call(cmd, shell=True)  # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-78"
+        ],
+        "cwe_id": "CWE-78"
+      },
+      "tags": [
+        "CWE-78: OS Command Injection",
+        "security"
+      ],
+      "status": "suppressed",
+      "suppression": {
+        "kind": "in_source",
+        "status": "accepted"
+      }
+    },
+    {
+      "id": "finding-2",
+      "type": "vulnerability",
+      "title": "Found shell=True",
+      "description": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "severity": "high",
+      "confidence": 95,
+      "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "rule_name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "asset_ref": "repo",
+      "location": {
+        "path": "src/app.py",
+        "start_line": 7,
+        "end_line": 7,
+        "start_column": 5,
+        "end_column": 37,
+        "snippet": "    subprocess.call(cmd, shell=True)",
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-78"
+        ],
+        "cwe_id": "CWE-78"
+      },
+      "tags": [
+        "CWE-78: OS Command Injection",
+        "security"
+      ]
+    }
+  ]
+}
