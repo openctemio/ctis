@@ -10,6 +10,8 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ### Changed
 
+- `FromSARIF` carries SARIF `suppressions` (a `nosemgrep` comment, a CodeQL alert suppression) as `finding.suppression`, and sets `status: suppressed` when SARIF calls the result suppressed (at least one accepted suppression, none under review or rejected). They were dropped, so a suppressed result looked open. `SARIFResult` gains `Suppressions`.
+- `FromSARIF` ignores the placeholder fingerprint `requires login` that Semgrep OSS writes for every result (all results got the same `fingerprint`).
 - `FromSARIF` carries `properties.tags` from the result and its rule into `finding.tags` (they were dropped). Tags are deduplicated ignoring case in first-seen order; non-string, empty and over-long (more than 128 bytes) entries are skipped; at most 50 are kept per finding.
 - betterleaks (a gitleaks fork) is recognised as a secret scanner: its SARIF findings get type `secret` and the tool gets the `secret` capability (they were typed `vulnerability`).
 
