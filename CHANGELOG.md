@@ -4,6 +4,13 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Documentation
+
+- Spec: new sections 4.8 (secrets: no member may hold a usable secret; bounds on `masked_value`) and 4.9 (`metadata.source_type` is the channel and a producer claim; results are bound to commands by the request, not the body).
+- Spec 4.5: an absent `coverage_type` is not `full`, and receivers MUST NOT auto-resolve from it.
+- Spec 4.2: `network.protocol` is the transport; send it whenever `port` is sent.
+- Spec 2.2: new enum values are refused by older receivers, the same as new members.
+- Spec 7: OpenCTEM's per-field text caps and the v1 body limit.
 ### Security
 
 - `ConvertReconToCTIS` removes the user and password from probed and crawled URLs (`https://user:token@host/` put the credential into the asset value), and strips control characters from values the scanned host chooses: HTML titles, server headers and service names lose all of them, banners keep tab, newline and carriage return. ANSI escapes and forged newlines no longer reach a receiver's logs.

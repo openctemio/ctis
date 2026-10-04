@@ -47,7 +47,7 @@ Reports produced before 1.3 often carry `"1.0"` regardless of the fields they us
 - A **minor** release only adds optional members or enum values, or loosens a constraint. It never removes or renames a member, and never makes an optional member required.
 - A **major** release may break anything. It gets a new schema directory (`schemas/v2`) and a new Go module path (`github.com/openctemio/ctis/v2`).
 - A receiver MUST accept a report whose major equals its own, whatever the minor (`ctis.IsCompatibleVersion`). It MUST reject other majors.
-- Receivers decode strictly: a member the receiver does not know is an error, not something to drop (section 3.2). So a newer minor is compatible only if the producer does not use members newer than the receiver's minor.
+- Receivers decode strictly: a member the receiver does not know is an error, not something to drop (section 3.2). So a newer minor is compatible only if the producer does not use members newer than the receiver's minor. The same holds for enum values: OpenCTEM checks asset and finding types, severities, statuses and criticalities against its own enums, so a new enum value is refused by an older receiver just like a new member.
 - Therefore a producer MUST NOT send members introduced after the receiver's minor, unless it knows the receiver ignores unknown members. When it cannot know, it SHOULD stay within the members of the oldest receiver it talks to.
 - **Rollout order:** upgrade receivers first, then producers. For OpenCTEM this means the API before the sensors.
 
@@ -114,7 +114,7 @@ Producers SHOULD run `Validate` before sending; receivers SHOULD run it at their
 - `status` is the producer's view (`open`, `resolved`, `suppressed`, `false_positive`, `accepted_risk`, `in_progress`). Receivers MAY treat it as a hint only; OpenCTEM does today.
 - `suppression` follows SARIF: `kind` is `in_source` (a code comment or annotation) or `external` (a baseline file, a scanner console); `status` is the review state (`accepted`, `under_review`, `rejected`); `reason`, `justification`, `suppressed_by`, `suppressed_at` and `expires_at` describe it. A finding with an accepted suppression SHOULD also carry `status: suppressed`.
 - `first_seen_at` and `last_seen_at` are when the producer first and last observed the finding, not when the report was written.
-- `location` is for code and files. `network` is for findings observed on a host and port. Neither is for URLs: until a web location block exists (see `docs/proposals-1.4.md`), DAST tools SHOULD put the URL in `properties` and the host in `asset_value`.
+- `location` is for code and files. `network` is for findings observed on a host and port: `network.port` is the port (`0` or absent for a host-level finding), `network.protocol` the **transport** (`tcp` or `udp`, never an application protocol), and `network.service` the application protocol on the port (`https`, `ssh`). Producers SHOULD send `protocol` whenever they send `port`: OpenCTEM makes the port and transport part of a network finding's identity and reads an absent transport as `tcp`, so the same check on 53/tcp and 53/udp merges when the transport is left out. Neither is for URLs: until a web location block exists (see `docs/proposals-1.4.md`), DAST tools SHOULD put the URL in `properties` and the host in `asset_value`.
 
 ### 4.3 Scores
 
@@ -133,7 +133,7 @@ Boolean members are optional, and the Go types omit `false`. An absent boolean t
 
 ### 4.5 Scan coverage and branches
 
-- `metadata.coverage_type` is `full` (the whole scope was scanned), `incremental` (changed files only) or `partial` (part of the scope). Receivers MAY auto-resolve findings missing from a report only when it is `full`. Producers MUST NOT send `full` for a scan that failed part-way.
+- `metadata.coverage_type` is `full` (the whole scope was scanned), `incremental` (changed files only) or `partial` (part of the scope). Receivers MAY auto-resolve findings missing from a report only when it is `full`. An absent `coverage_type` is **not** `full`: receivers MUST NOT auto-resolve from it. Producers MUST NOT send `full` for a scan that failed part-way, or for a tool run whose exit status says it did not complete.
 - `metadata.branch.is_default_branch` decides whether a code scan describes the default branch. OpenCTEM auto-resolves only from full scans of the default branch.
 
 ### 4.6 Timestamps
@@ -143,6 +143,18 @@ Every timestamp is an RFC 3339 `date-time` with an offset (`2026-10-02T08:15:00Z
 ### 4.7 Tool capabilities
 
 `tool.capabilities` says what the tool does, from the enum in `report.json`. OpenCTEM derives a report's detection technique from the first value it recognises: `sast`, `sca`, `dast`, `secret`, `iac`, `container`, `va`, `easm`, `cspm`, `external`, `import`, `misconfiguration`, `web3`, `subdomain`, `dns`, `portscan`, `crawler`, `tech-detect`. Generic values (`vulnerability`) fall through to the tool name. The technique is per report; a per-finding technique is proposed for 1.4.
+
+### 4.8 Secrets
+
+- No member of a report may hold a usable secret value. This covers `location.snippet`, `location.context_snippet`, `evidence`, `title`, `message`, `description` and `properties`, not only `secret.*`.
+- `secret.masked_value` MUST NOT reveal more than 4 characters at either end, nor more than half of the secret. Receivers SHOULD mask it again rather than trust the producer (OpenCTEM does).
+- A secret finding's snippet SHOULD be the masked value, or `REDACTED`.
+- Fingerprint inputs follow section 5.2: never the raw secret.
+
+### 4.9 Channel and binding
+
+- `metadata.source_type` is the channel the report came through (`scanner`, `collector`, `integration`, `manual`), not the detection technique (section 4.7). It is the producer's claim. Receivers that know the channel from the authenticated credential (a sensor key, an integration token, a user upload) SHOULD use that and treat the body value as a hint.
+- A report carries no binding to the job or command that produced it. OpenCTEM binds results by the request: the v2 URL path (`/commands/{id}/results/{report_id}`) or the v1 `X-OpenCTEM-Command-ID` header. `metadata.id`, when set, MUST equal the report ID the receiver assigned.
 
 ## 5. Fingerprints
 
@@ -210,8 +222,25 @@ The schema sets no size limits. OpenCTEM enforces these (API develop, 2026-10):
 | JSON nesting depth (v2) | 64 |
 | Size of one property value | 1 MiB |
 | Properties per asset / tags per asset | 100 / 50 |
+| Request body (v1) | 50 MB |
 
-Producers SHOULD split larger results into several reports (or v2 segments).
+OpenCTEM cuts these finding members to a length (in characters) and appends `…[truncated]`; it never refuses a report for them:
+
+| Member | Cap |
+|---|---|
+| `title`, `rule_name` | 500 |
+| `category` | 255 |
+| `message` | 8 KiB |
+| `description` | 32 KiB |
+| `evidence` | 64 KiB |
+| `location.snippet`, `location.context_snippet` | 16 KiB |
+| `remediation` text / steps | 16 KiB / 50 steps of 2 KiB |
+| `references` | 100 of 2 KiB |
+| `tags` | 50 of 100 |
+| `vulnerability_class`, `subcategory` | 50 of 200 |
+| misconfiguration texts | 4 KiB |
+
+Producers SHOULD split larger results into several reports (or v2 segments) and SHOULD keep text within these caps, since a cut value may lose what made it useful.
 
 ## 8. What OpenCTEM stores
 
