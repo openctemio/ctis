@@ -180,10 +180,11 @@ Producers in other languages MUST reproduce the same input strings and hash them
 
 - Converts every run. With more than one run, each finding names its run's tool in `properties.sarif_tool`.
 - Severity: GitHub's `security-severity` (result, then rule) through `severity.FromCVSS`; else the result `level`, else the rule's `defaultConfiguration.level`; else `medium`.
-- Type: `ConvertOptions.ToolType` (`sast`, `sca`, `secret`, `iac`, `web3`); else the rule tags `vulnerability`, `misconfiguration` or `secret` (Trivy); else a CVE or GHSA rule ID means `vulnerability`; else the tool name.
+- Type: `ConvertOptions.ToolType` (`sast`, `sca`, `secret`, `iac`, `web3`); else the rule tags `vulnerability`, `misconfiguration` or `secret` (Trivy); else a CVE or GHSA rule ID means `vulnerability`; else the tool name (secret scanners: gitleaks, betterleaks, trufflehog, detect-secrets, or any name containing `secret`).
 - CWE: the rule's `cwe` property (string or array) and tags such as `external/cwe/cwe-079` (CodeQL) or `CWE-89: ...` (Semgrep). OWASP Top 10 IDs from tags such as `OWASP-A03:2021 - Injection`.
 - Fingerprint: the result `fingerprints` entry with the lowest key; values longer than 64 characters are SHA-256 hashed. `partialFingerprints`, `correlationGuid` and `baselineState` are carried as `partial_fingerprints`, `correlation_id` and `baseline_state`.
 - `kind` is carried as `kind`, with SARIF's camelCase `notApplicable` written as `not_applicable` (matching ignores case and underscores). `baselineState` matching ignores case. A value outside SARIF's set is left unset; an absent `kind` is not defaulted to SARIF's implicit `fail`.
+- Tags: `properties.tags` of the result, then of the rule, are carried as `tags` (a string or an array of strings). Order is first seen; whitespace is trimmed; duplicates are dropped ignoring case, keeping the first spelling; empty and non-string entries are skipped. At most 50 tags are kept per finding, and a tag longer than 128 bytes is dropped, not truncated.
 - The rule is found by `ruleId`, `rule.id`, `ruleIndex` or `rule.index`.
 - The asset the options describe gets no criticality.
 

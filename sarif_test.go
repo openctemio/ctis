@@ -51,7 +51,7 @@ func checkGolden(t *testing.T, name string, v any) {
 
 func TestFromSARIFGolden(t *testing.T) {
 	s := loadSchemaSet(t)
-	for _, tool := range []string{"semgrep", "codeql", "trivy", "kinds"} {
+	for _, tool := range []string{"semgrep", "codeql", "trivy", "kinds", "betterleaks"} {
 		t.Run(tool, func(t *testing.T) {
 			opts := DefaultConvertOptions()
 			opts.AssetValue = "github.com/example/shop"
