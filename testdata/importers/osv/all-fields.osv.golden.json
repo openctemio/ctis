@@ -1,0 +1,220 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "osv-scanner",
+    "capabilities": [
+      "sca"
+    ]
+  },
+  "assets": [
+    {
+      "id": "osv-app/requirements.txt",
+      "type": "repository",
+      "value": "app/requirements.txt",
+      "name": "app/requirements.txt",
+      "properties": {
+        "source_type": "lockfile"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "PYSEC-2021-66: ReDoS in the urlize filter",
+      "description": "ReDoS in the urlize filter\n\nThe urlize filter is affected by a regular expression denial of service.",
+      "message": "ReDoS in the urlize filter",
+      "severity": "medium",
+      "rule_id": "PYSEC-2021-66",
+      "rule_name": "PYSEC-2021-66",
+      "asset_ref": "osv-app/requirements.txt",
+      "vulnerability": {
+        "cve_id": "CVE-2020-28493",
+        "cve_ids": [
+          "CVE-2020-28493"
+        ],
+        "cwe_ids": [
+          "CWE-400"
+        ],
+        "cwe_id": "CWE-400",
+        "cvss_version": "4.0",
+        "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
+        "cvss_source": "vendor",
+        "package": "jinja2",
+        "purl": "pkg:pypi/jinja2@2.11.2",
+        "affected_version": "2.11.2",
+        "affected_version_range": ">=2.0, <=2.11.2 || <3.0.0 || <2.11.3",
+        "fixed_version": "2.11.3",
+        "fixed_versions": [
+          "2.11.3"
+        ],
+        "ecosystem": "pip",
+        "published_at": "2021-02-01T20:15:00Z",
+        "modified_at": "2024-02-01T00:00:00Z",
+        "ids": [
+          {
+            "type": "osv",
+            "id": "PYSEC-2021-66"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2020-28493"
+          },
+          {
+            "type": "ghsa",
+            "id": "GHSA-g3rq-g295-4j3m"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade jinja2 to 2.11.3 or later.",
+        "fix_available": true,
+        "solution_type": "upgrade",
+        "advisories": [
+          {
+            "url": "https://osv.example.com/PYSEC-2021-66",
+            "source": "osv"
+          }
+        ]
+      },
+      "references": [
+        "https://osv.example.com/PYSEC-2021-66",
+        "https://www.example.com/jinja-redos"
+      ],
+      "native": {
+        "scheme": "other",
+        "vuln_id": "PYSEC-2021-66",
+        "severity": "5.3",
+        "raw_ref": "PyPI:jinja2@2.11.2/PYSEC-2021-66"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "source": "osv"
+        },
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
+          "source": "osv"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P",
+          "source": "osv"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "ubuntu"
+        },
+        {
+          "system": "cvss",
+          "version": "3.0",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "source": "osv"
+        }
+      ],
+      "source_extra": {
+        "affected_database_specific:PYSEC-2021-66": "{\"source\":\"https://osv.example.com/PYSEC-2021-66.json\"}",
+        "database_specific:PYSEC-2021-66": "{\"cwe_ids\":[\"CWE-400\"]}",
+        "ecosystem_specific:PYSEC-2021-66": "{\"affected_functions\":[\"jinja2.utils.urlize\"]}",
+        "max_severity": "5.3",
+        "related": "CVE-2024-22195",
+        "upstream": "CVE-2020-28493"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "PYSEC-0000-1: A record without any severity",
+      "description": "A record without any severity",
+      "message": "A record without any severity",
+      "severity": "medium",
+      "rule_id": "PYSEC-0000-1",
+      "rule_name": "PYSEC-0000-1",
+      "asset_ref": "osv-app/requirements.txt",
+      "vulnerability": {
+        "package": "jinja2",
+        "purl": "pkg:pypi/jinja2@2.11.2",
+        "affected_version": "2.11.2",
+        "ecosystem": "pip",
+        "ids": [
+          {
+            "type": "osv",
+            "id": "PYSEC-0000-1"
+          }
+        ]
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "PYSEC-0000-1",
+        "raw_ref": "PyPI:jinja2@2.11.2/PYSEC-0000-1"
+      },
+      "source_extra": {
+        "severity_note": "no max_severity or database severity; kept as medium"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "GHSA-j8r2-6x86-q33q: Unintended leak of Proxy-Authorization header",
+      "description": "Unintended leak of Proxy-Authorization header",
+      "message": "Unintended leak of Proxy-Authorization header",
+      "severity": "medium",
+      "rule_id": "GHSA-j8r2-6x86-q33q",
+      "rule_name": "GHSA-j8r2-6x86-q33q",
+      "asset_ref": "osv-app/requirements.txt",
+      "vulnerability": {
+        "package": "requests",
+        "affected_version": "2.25.0",
+        "ecosystem": "pip",
+        "ids": [
+          {
+            "type": "ghsa",
+            "id": "GHSA-j8r2-6x86-q33q"
+          }
+        ]
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "GHSA-j8r2-6x86-q33q",
+        "severity": "MODERATE",
+        "raw_ref": "PyPI:requests@2.25.0/GHSA-j8r2-6x86-q33q"
+      },
+      "source_extra": {
+        "database_specific:GHSA-j8r2-6x86-q33q": "{\"severity\":\"MODERATE\"}"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "app/requirements.txt|pkg:pypi/jinja2@2.11.2",
+      "name": "jinja2",
+      "version": "2.11.2",
+      "ecosystem": "pip",
+      "purl": "pkg:pypi/jinja2@2.11.2",
+      "licenses": [
+        "BSD-3-Clause"
+      ],
+      "path": "app/requirements.txt",
+      "properties": {
+        "commit": "0000000000000000000000000000000000000000",
+        "dependency_groups": "main,docs"
+      }
+    },
+    {
+      "id": "app/requirements.txt|PyPI:requests@2.25.0",
+      "name": "requests",
+      "version": "2.25.0",
+      "ecosystem": "pip",
+      "path": "app/requirements.txt"
+    }
+  ]
+}

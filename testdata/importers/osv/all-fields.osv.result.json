@@ -1,0 +1,34 @@
+{
+  "format": "osv",
+  "stats": {
+    "records": 5,
+    "assets": 1,
+    "findings": 3,
+    "components": 2,
+    "statements": 0,
+    "skipped": 2,
+    "by_severity": {
+      "medium": 3
+    }
+  },
+  "issues": [
+    {
+      "line": 6,
+      "column": 9,
+      "path": "/results/0/packages/0",
+      "message": "GHSA-0000-0000-0001 was withdrawn by its database: skipped"
+    },
+    {
+      "line": 6,
+      "column": 9,
+      "path": "/results/0/packages/0/groups/2",
+      "message": "group GHSA-ffff-ffff-ffff names no record of this package: skipped"
+    },
+    {
+      "line": 70,
+      "column": 9,
+      "path": "/results/0/packages/1",
+      "message": "package without a name: skipped"
+    }
+  ]
+}

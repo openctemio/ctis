@@ -1,0 +1,14 @@
+{
+  "format": "osv",
+  "stats": {
+    "records": 2,
+    "assets": 2,
+    "findings": 2,
+    "components": 3,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 2
+    }
+  }
+}

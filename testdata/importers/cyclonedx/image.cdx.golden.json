@@ -1,0 +1,189 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "bom_serial_number": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+      "bom_timestamp": "2026-09-30T10:00:00Z",
+      "bom_version": 1,
+      "cyclonedx_spec_version": "1.6"
+    }
+  },
+  "tool": {
+    "name": "cyclonedx",
+    "capabilities": [
+      "sca"
+    ]
+  },
+  "assets": [
+    {
+      "id": "sbom-pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
+      "type": "container",
+      "value": "pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
+      "name": "registry.example.com/shop/shop-api",
+      "properties": {
+        "component_type": "container",
+        "version": "sha256:0000000000000000000000000000000000000000000000000000000000000001"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "CVE-2022-24999 in qs@6.7.0",
+      "description": "qs before 6.7.3 allows prototype pollution.",
+      "message": "qs before 6.7.3 allows prototype pollution.",
+      "severity": "high",
+      "rule_id": "CVE-2022-24999",
+      "rule_name": "CVE-2022-24999",
+      "asset_ref": "sbom-pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
+      "vulnerability": {
+        "cve_id": "CVE-2022-24999",
+        "cve_ids": [
+          "CVE-2022-24999"
+        ],
+        "cwe_ids": [
+          "CWE-1321"
+        ],
+        "cwe_id": "CWE-1321",
+        "cvss_version": "3.1",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+        "cvss_source": "nvd",
+        "package": "qs",
+        "purl": "pkg:npm/qs@6.7.0",
+        "affected_version": "6.7.0",
+        "ecosystem": "npm",
+        "published_at": "2022-11-26T22:15:00Z",
+        "modified_at": "2023-01-10T00:00:00Z",
+        "data_source": {
+          "name": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24999"
+        },
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2022-24999"
+          },
+          {
+            "type": "ghsa",
+            "id": "GHSA-hrpp-h998-j3pp"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade qs to 6.7.3 or later."
+      },
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2022-24999"
+      ],
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2022-24999",
+        "severity": "high",
+        "raw_ref": "/vulnerabilities/0/affects/0"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "value": 7.5,
+          "label": "high",
+          "source": "NVD"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "GHSA-rv95-896h-c2vc in express@4.17.1",
+      "description": "Express.js Open Redirect in malformed URLs.",
+      "message": "Express.js Open Redirect in malformed URLs.",
+      "severity": "medium",
+      "rule_id": "GHSA-rv95-896h-c2vc",
+      "rule_name": "GHSA-rv95-896h-c2vc",
+      "asset_ref": "sbom-pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
+      "vulnerability": {
+        "cvss_version": "3.1",
+        "cvss_score": 6.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+        "cvss_source": "vendor",
+        "package": "express",
+        "purl": "pkg:npm/express@4.17.1",
+        "affected_version": "4.17.1",
+        "ecosystem": "npm",
+        "ids": [
+          {
+            "type": "ghsa",
+            "id": "GHSA-rv95-896h-c2vc"
+          }
+        ]
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "GHSA-rv95-896h-c2vc",
+        "severity": "medium",
+        "raw_ref": "/vulnerabilities/2/affects/0"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "value": 6.1,
+          "label": "medium",
+          "source": "GitHub"
+        }
+      ],
+      "vex": {
+        "status": "affected",
+        "statement": "Reachable from the login redirect.",
+        "source": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "pkg:npm/express@4.17.1",
+      "name": "express",
+      "version": "4.17.1",
+      "type": "library",
+      "ecosystem": "npm",
+      "purl": "pkg:npm/express@4.17.1",
+      "licenses": [
+        "MIT"
+      ],
+      "relationship": "direct",
+      "depends_on": [
+        "pkg:npm/qs@6.7.0"
+      ],
+      "properties": {
+        "hash_sha-512": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "id": "pkg:npm/qs@6.7.0",
+      "name": "qs",
+      "version": "6.7.0",
+      "type": "library",
+      "ecosystem": "npm",
+      "purl": "pkg:npm/qs@6.7.0",
+      "licenses": [
+        "BSD-3-Clause"
+      ],
+      "relationship": "indirect"
+    },
+    {
+      "id": "pkg:deb/debian/openssl@3.0.11-1~deb12u1?arch=amd64&distro=debian-12",
+      "name": "openssl",
+      "version": "3.0.11-1~deb12u1",
+      "type": "library",
+      "ecosystem": "deb",
+      "purl": "pkg:deb/debian/openssl@3.0.11-1~deb12u1?arch=amd64&distro=debian-12",
+      "relationship": "direct"
+    }
+  ]
+}

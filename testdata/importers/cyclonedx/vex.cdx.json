@@ -1,0 +1,24 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:00000000-0000-4000-8000-00000000vex1",
+  "version": 1,
+  "vulnerabilities": [
+    {
+      "id": "CVE-2021-44228",
+      "references": [ { "id": "GHSA-jfh8-c2jp-5v3q", "source": { "name": "GitHub" } } ],
+      "analysis": {
+        "state": "not_affected",
+        "justification": "requires_configuration",
+        "detail": "JNDI lookups are disabled (log4j2.formatMsgNoLookups=true).",
+        "lastUpdated": "2026-08-15T12:00:00Z"
+      },
+      "affects": [ { "ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1" } ]
+    },
+    {
+      "id": "CVE-2022-22965",
+      "analysis": { "state": "in_triage" },
+      "affects": [ { "ref": "pkg:maven/org.springframework/spring-beans@5.3.17" } ]
+    }
+  ]
+}

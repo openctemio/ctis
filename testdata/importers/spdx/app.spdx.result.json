@@ -1,0 +1,11 @@
+{
+  "format": "spdx",
+  "stats": {
+    "records": 2,
+    "assets": 1,
+    "findings": 0,
+    "components": 2,
+    "statements": 0,
+    "skipped": 0
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "edge-gateway-image",
+  "documentNamespace": "https://sbom.example.com/edge-gateway-1",
+  "comment": "Synthetic sample.",
+  "creationInfo": {
+    "created": "2026-10-02T00:00:00Z",
+    "creators": ["Tool: example-scanner", "Person: Jane Example (jane@example.com)"],
+    "licenseListVersion": "3.20",
+    "comment": "Generated in CI."
+  },
+  "externalDocumentRefs": [ { "externalDocumentId": "DocumentRef-base", "spdxDocument": "https://sbom.example.com/base", "checksum": { "algorithm": "SHA1", "checksumValue": "0000000000000000000000000000000000000000" } } ],
+  "documentDescribes": ["SPDXRef-Image"],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Image",
+      "name": "edge-gateway",
+      "versionInfo": "2026.10.1",
+      "primaryPackagePurpose": "CONTAINER",
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [ { "referenceCategory": "PACKAGE-MANAGER", "referenceType": "purl", "referenceLocator": "pkg:oci/edge-gateway@sha256%3A3333333333333333333333333333333333333333333333333333333333333333" } ]
+    },
+    {
+      "SPDXID": "SPDXRef-openssl",
+      "name": "openssl",
+      "versionInfo": "3.0.13-r0",
+      "supplier": "Person: Some Maintainer (maint@example.com)",
+      "originator": "Organization: OpenSSL Project (openssl@example.com)",
+      "downloadLocation": "https://www.example.com/openssl-3.0.13.tar.gz",
+      "homepage": "https://www.example.com/openssl",
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "licenseInfoFromFiles": ["Apache-2.0"],
+      "licenseComments": "none",
+      "copyrightText": "Copyright Example",
+      "primaryPackagePurpose": "LIBRARY",
+      "checksums": [ { "algorithm": "SHA256", "checksumValue": "4444444444444444444444444444444444444444444444444444444444444444" } ],
+      "externalRefs": [
+        { "referenceCategory": "PACKAGE-MANAGER", "referenceType": "purl", "referenceLocator": "pkg:apk/alpine/openssl@3.0.13-r0?arch=x86_64" },
+        { "referenceCategory": "SECURITY", "referenceType": "cpe23Type", "referenceLocator": "cpe:2.3:a:openssl:openssl:3.0.13:*:*:*:*:*:*:*" },
+        { "referenceCategory": "SECURITY", "referenceType": "advisory", "referenceLocator": "https://www.example.com/advisories/openssl-2024-01", "comment": "vendor advisory" },
+        { "referenceCategory": "PERSISTENT-ID", "referenceType": "gitoid", "referenceLocator": "gitoid:blob:sha1:0000000000000000000000000000000000000000" }
+      ],
+      "releaseDate": "2024-01-30T00:00:00Z",
+      "builtDate": "2024-02-01T00:00:00Z",
+      "validUntilDate": "2026-01-01T00:00:00Z",
+      "filesAnalyzed": true,
+      "packageFileName": "openssl-3.0.13-r0.apk",
+      "packageVerificationCode": { "packageVerificationCodeValue": "0000000000000000000000000000000000000000" },
+      "hasFiles": ["SPDXRef-File-libssl"],
+      "sourceInfo": "built from upstream",
+      "description": "Toolkit for TLS",
+      "summary": "TLS toolkit",
+      "comment": "Synthetic.",
+      "attributionTexts": ["Example attribution"],
+      "annotations": [ { "annotator": "Person: Reviewer", "annotationDate": "2026-01-01T00:00:00Z", "annotationType": "REVIEW", "comment": "ok" } ]
+    },
+    {
+      "SPDXID": "SPDXRef-zlib",
+      "name": "zlib",
+      "versionInfo": "1.3.1-r0",
+      "licenseConcluded": "NONE",
+      "licenseDeclared": "Zlib",
+      "externalRefs": [ { "referenceCategory": "PACKAGE-MANAGER", "referenceType": "purl", "referenceLocator": "pkg:apk/alpine/zlib@1.3.1-r0" } ]
+    },
+    {
+      "SPDXID": "SPDXRef-zlib",
+      "name": "zlib-duplicate"
+    },
+    {
+      "SPDXID": "SPDXRef-noname"
+    }
+  ],
+  "files": [ { "SPDXID": "SPDXRef-File-libssl", "fileName": "./usr/lib/libssl.so.3", "checksums": [] } ],
+  "snippets": [],
+  "hasExtractedLicensingInfos": [ { "licenseId": "LicenseRef-x", "extractedText": "x" } ],
+  "annotations": [ { "annotator": "Tool: example", "annotationType": "OTHER", "comment": "c" } ],
+  "relationships": [
+    { "spdxElementId": "SPDXRef-Image", "relationshipType": "CONTAINS", "relatedSpdxElement": "SPDXRef-openssl" },
+    { "spdxElementId": "SPDXRef-zlib", "relationshipType": "CONTAINED_BY", "relatedSpdxElement": "SPDXRef-Image" },
+    { "spdxElementId": "SPDXRef-openssl", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "SPDXRef-zlib", "comment": "link" },
+    { "spdxElementId": "SPDXRef-zlib", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "SPDXRef-openssl" },
+    { "spdxElementId": "SPDXRef-openssl", "relationshipType": "GENERATED_FROM", "relatedSpdxElement": "SPDXRef-zlib" }
+  ]
+}
