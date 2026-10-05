@@ -128,6 +128,11 @@ jobs:
           for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion; do
             go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s .
           done
+          # The importers read hostile files; a short minimization keeps the
+          # time budget on new inputs.
+          for target in FuzzParse FuzzDetect; do
+            go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 5s ./importer
+          done
 
   build-compat:
     name: Cross-platform build
