@@ -102,6 +102,9 @@ func parse(ctx context.Context, r io.Reader, opts Options) (*Result, []string, e
 	if err := p(b, br); err != nil {
 		return nil, nil, err
 	}
+	if err := b.guard(); err != nil {
+		return nil, nil, err
+	}
 	return b.finish(), b.obs.paths(), nil
 }
 
