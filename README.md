@@ -133,6 +133,18 @@ if (!validate(myReport)) console.log(validate.errors);
 
 Schema validation checks shape. `Report.Validate()` in Go also checks what a schema cannot: unique IDs, `asset_ref` resolution, the spec version and score ranges ([spec section 3.3](docs/spec.md#33-reportvalidate)).
 
+## Importing other tools' exports
+
+The `importer` package converts exported files to CTIS 1.4. `Detect` names the format from the first bytes; `Parse` converts the file:
+
+```go
+res, err := importer.Parse(ctx, file, importer.Options{})
+// res.Report: the CTIS report; res.VEX: statements of a VEX document;
+// res.Stats, res.Issues (with line numbers), res.Unmapped.
+```
+
+Each format has a mapping spec: every source field, the CTIS member that keeps it or why it is ignored on purpose ([docs/importers](docs/importers/README.md), generated from the code). The tests fail when a fixture holds a field its spec does not list, or a spec maps a field no fixture holds. Inputs are treated as hostile: size, depth, element, text and record limits; no XML internal subsets, entities or external resources; UTF-8, US-ASCII or ISO-8859-1 only; `OpenZip` refuses traversal, links, nested archives and decompression bombs. Scan credentials and account names are never copied into a report.
+
 ## Asset types
 
 | Group | Types |
