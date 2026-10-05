@@ -16,6 +16,11 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 - `ConvertReconToCTIS` removes the user and password from probed and crawled URLs (`https://user:token@host/` put the credential into the asset value), and strips control characters from values the scanned host chooses: HTML titles, server headers and service names lose all of them, banners keep tab, newline and carriage return. ANSI escapes and forged newlines no longer reach a receiver's logs.
 - `FromSARIF` no longer copies a secret scanner's raw match into the report. gitleaks and betterleaks write the matched secret into the SARIF region snippet unless run with `--redact`, and it went into `location.snippet` unchanged. For secret findings the snippet is now masked (first 4 characters of a value of 16 or more, else `REDACTED`), and the raw value is masked in the title, message and description too. `secret.masked_value` is left unset so receiver fingerprints do not change.
 
+### Added
+
+- `LiveHostInput` keeps what an HTTP probe learns about the server: `TLS` (the leaf certificate: subject, SANs, issuer, serial, validity, SHA-256 fingerprint, self-signed, wildcard, host mismatch), `FaviconMMH3`, `JARM`, `ASN` and `CDNType`. `ConvertReconToCTIS` emits one `certificate` asset per leaf, named by its SHA-256 fingerprint (64 lower-case hex) and linked from the `http_service` through `related_assets` and `properties.tls_fingerprint`; services that serve the same certificate share one asset. The service gets `favicon_mmh3`, `jarm`, `asn`/`asn_org`/`asn_country`, `cdn_type`, `waf` and `hosted_by`. Every value is bounded: names at 255 bytes, serial at 128, at most 100 SANs (the rest counted in `sans_truncated`), control characters removed; a leaf without a valid SHA-256 fingerprint, an invalid JARM or favicon hash, or an ASN number outside 1..2^32-1 is dropped.
+- `MergeReconReports` keeps `related_assets` pointing at the right asset when merged IDs change.
+
 ### Changed
 
 - `DefaultReconConverterOptions` no longer sets `DefaultCriticality` (it was `medium`). Criticality is business context that a scanner does not know (spec section 4.1); `FromSARIF` stopped setting it in 1.3.0. OpenCTEM files an asset without criticality as medium, so its behaviour is unchanged.
