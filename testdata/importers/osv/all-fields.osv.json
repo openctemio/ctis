@@ -1,0 +1,88 @@
+{
+  "results": [
+    {
+      "source": { "path": "app/requirements.txt", "type": "lockfile" },
+      "packages": [
+        {
+          "package": { "name": "jinja2", "version": "2.11.2", "ecosystem": "PyPI", "purl": "pkg:pypi/jinja2@2.11.2", "commit": "0000000000000000000000000000000000000000" },
+          "dependency_groups": ["main", "docs"],
+          "licenses": ["BSD-3-Clause"],
+          "license_violations": [],
+          "vulnerabilities": [
+            {
+              "schema_version": "1.7.0",
+              "id": "PYSEC-2021-66",
+              "modified": "2024-02-01T00:00:00Z",
+              "published": "2021-02-01T20:15:00Z",
+              "aliases": ["CVE-2020-28493", "GHSA-g3rq-g295-4j3m"],
+              "related": ["CVE-2024-22195"],
+              "upstream": ["CVE-2020-28493"],
+              "summary": "ReDoS in the urlize filter",
+              "details": "The urlize filter is affected by a regular expression denial of service.",
+              "severity": [
+                { "type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L" },
+                { "type": "CVSS_V4", "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N" },
+                { "type": "CVSS_V2", "score": "AV:N/AC:L/Au:N/C:N/I:N/A:P" },
+                { "type": "Ubuntu", "score": "medium" }
+              ],
+              "affected": [
+                {
+                  "package": { "name": "jinja2", "ecosystem": "PyPI", "purl": "pkg:pypi/jinja2" },
+                  "severity": [ { "type": "CVSS_V3", "score": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L" } ],
+                  "ranges": [
+                    { "type": "ECOSYSTEM", "events": [ { "introduced": "2.0" }, { "last_affected": "2.11.2" } ] },
+                    { "type": "GIT", "repo": "https://git.example.com/jinja", "events": [ { "introduced": "0" }, { "limit": "3.0.0" } ], "database_specific": { "source": "example" } },
+                    { "type": "SEMVER", "events": [ { "introduced": "0" }, { "fixed": "2.11.3" } ] }
+                  ],
+                  "versions": ["2.0", "2.11.2"],
+                  "ecosystem_specific": { "affected_functions": ["jinja2.utils.urlize"] },
+                  "database_specific": { "source": "https://osv.example.com/PYSEC-2021-66.json" }
+                },
+                {
+                  "package": { "name": "other-package", "ecosystem": "PyPI" },
+                  "ranges": [ { "type": "ECOSYSTEM", "events": [ { "introduced": "0" }, { "fixed": "9.9" } ] } ]
+                }
+              ],
+              "references": [
+                { "type": "ADVISORY", "url": "https://osv.example.com/PYSEC-2021-66" },
+                { "type": "WEB", "url": "https://www.example.com/jinja-redos" }
+              ],
+              "credits": [ { "name": "A Researcher", "contact": ["mailto:researcher@example.com"] } ],
+              "database_specific": { "cwe_ids": ["CWE-400"] }
+            },
+            {
+              "id": "GHSA-0000-0000-0001",
+              "withdrawn": "2024-03-01T00:00:00Z",
+              "summary": "Withdrawn advisory"
+            },
+            {
+              "id": "PYSEC-0000-1",
+              "summary": "A record without any severity",
+              "database_specific": null
+            }
+          ],
+          "groups": [
+            { "ids": ["PYSEC-2021-66"], "aliases": ["CVE-2020-28493", "GHSA-g3rq-g295-4j3m"], "max_severity": "5.3", "experimentalAnalysis": { "PYSEC-2021-66": { "called": true } } },
+            { "ids": ["GHSA-0000-0000-0001"], "aliases": [], "max_severity": "" },
+            { "ids": ["GHSA-ffff-ffff-ffff"], "aliases": [], "max_severity": "9.0" }
+          ]
+        },
+        {
+          "package": { "name": "", "version": "1.0", "ecosystem": "PyPI" },
+          "vulnerabilities": []
+        },
+        {
+          "package": { "name": "requests", "version": "2.25.0", "ecosystem": "PyPI", "inventory": { "location": "/home/runner/app/requirements.txt" } },
+          "vulnerabilities": [
+            {
+              "id": "GHSA-j8r2-6x86-q33q",
+              "summary": "Unintended leak of Proxy-Authorization header",
+              "database_specific": { "severity": "MODERATE" }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "experimental_config": { "licenses": { "summary": false, "allowlist": null } }
+}

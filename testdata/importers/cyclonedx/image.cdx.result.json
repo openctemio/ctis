@@ -1,0 +1,60 @@
+{
+  "format": "cyclonedx",
+  "vex": [
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2023-5678"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:deb/debian/openssl@3.0.11-1~deb12u1?arch=amd64&distro=debian-12",
+          "name": "openssl",
+          "version": "3.0.11-1~deb12u1"
+        }
+      ],
+      "vex": {
+        "status": "not_affected",
+        "justification": "vulnerable_code_not_in_execute_path",
+        "native_justification": "code_not_reachable",
+        "statement": "The service never generates or checks DH parameters.",
+        "source": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+        "as_of": "2026-09-01T00:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "ghsa",
+          "id": "GHSA-rv95-896h-c2vc"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:npm/express@4.17.1",
+          "name": "express",
+          "version": "4.17.1"
+        }
+      ],
+      "vex": {
+        "status": "affected",
+        "statement": "Reachable from the login redirect.",
+        "source": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79"
+      }
+    }
+  ],
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 2,
+    "components": 3,
+    "statements": 2,
+    "skipped": 1,
+    "by_severity": {
+      "high": 1,
+      "medium": 1
+    }
+  }
+}

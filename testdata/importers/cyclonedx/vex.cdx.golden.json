@@ -1,0 +1,20 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "bom_serial_number": "urn:uuid:00000000-0000-4000-8000-00000000vex1",
+      "bom_version": 1,
+      "cyclonedx_spec_version": "1.4"
+    }
+  },
+  "tool": {
+    "name": "cyclonedx",
+    "capabilities": [
+      "sca"
+    ]
+  }
+}

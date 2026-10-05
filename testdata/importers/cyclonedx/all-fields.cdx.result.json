@@ -1,0 +1,106 @@
+{
+  "format": "cyclonedx",
+  "vex": [
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2020-36518"
+        },
+        {
+          "type": "ghsa",
+          "id": "GHSA-57j2-w4cx-62h2"
+        },
+        {
+          "type": "vendor",
+          "id": "SNYK-JAVA-0000001",
+          "source": "snyk"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+          "cpe": "cpe:2.3:a:fasterxml:jackson-databind:2.9.10:*:*:*:*:*:*:*",
+          "name": "jackson-databind",
+          "version": "2.9.10"
+        },
+        {
+          "purl": "pkg:maven/com.example/billing@2.4.0",
+          "cpe": "cpe:2.3:a:example:billing:2.4.0:*:*:*:*:*:*:*",
+          "name": "billing",
+          "version": "2.4.0"
+        }
+      ],
+      "vex": {
+        "status": "under_investigation",
+        "statement": "Triage in progress.",
+        "source": "urn:uuid:00000000-0000-4000-8000-0000000000c5",
+        "as_of": "2026-09-01T00:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2026-0001"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.9.10",
+          "name": "jackson-annotations",
+          "version": "2.9.10"
+        }
+      ],
+      "vex": {
+        "status": "fixed",
+        "statement": "Fixed in this build.",
+        "source": "urn:uuid:00000000-0000-4000-8000-0000000000c5"
+      }
+    }
+  ],
+  "stats": {
+    "records": 4,
+    "assets": 1,
+    "findings": 3,
+    "components": 3,
+    "statements": 2,
+    "skipped": 2,
+    "by_severity": {
+      "high": 2,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 58,
+      "column": 5,
+      "path": "/components/1",
+      "message": "bom-ref \"jackson\" is used twice: the second component is skipped"
+    },
+    {
+      "line": 64,
+      "column": 5,
+      "path": "/components/2",
+      "message": "component without a name: skipped"
+    },
+    {
+      "line": 75,
+      "column": 5,
+      "path": "/vulnerabilities/0/affects",
+      "message": "CVE-2020-36518: 1 affected refs name no component of this BOM and are not package URLs: urn:cdx:00000000-0000-4000-8000-0000000000ff/1#other"
+    },
+    {
+      "line": 122,
+      "column": 5,
+      "path": "/vulnerabilities/2/analysis",
+      "message": "CVE-2026-0002: status not_affected without a justification or an impact statement"
+    },
+    {
+      "line": 127,
+      "column": 5,
+      "path": "/vulnerabilities/3",
+      "message": "vulnerability without an id: skipped"
+    }
+  ]
+}

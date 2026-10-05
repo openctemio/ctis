@@ -1,0 +1,365 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "bom_serial_number": "urn:uuid:00000000-0000-4000-8000-0000000000c5",
+      "bom_timestamp": "2026-10-01T08:00:00Z",
+      "bom_version": 3,
+      "cyclonedx_spec_version": "1.5"
+    }
+  },
+  "tool": {
+    "name": "cyclonedx",
+    "capabilities": [
+      "sca"
+    ]
+  },
+  "assets": [
+    {
+      "id": "sbom-pkg:maven/com.example/billing@2.4.0",
+      "type": "repository",
+      "value": "pkg:maven/com.example/billing@2.4.0",
+      "name": "com.example/billing",
+      "properties": {
+        "component_type": "application",
+        "cpe": "cpe:2.3:a:example:billing:2.4.0:*:*:*:*:*:*:*",
+        "version": "2.4.0"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "CVE-2020-36518 in com.fasterxml.jackson.core/jackson-databind@2.9.10",
+      "description": "jackson-databind before 2.13.0 allows a Java StackOverflow exception and denial of service via a large depth of nested objects.\n\nDeeply nested JSON input exhausts the stack.",
+      "message": "jackson-databind before 2.13.0 allows a Java StackOverflow exception and denial of service via a large depth of nested objects.",
+      "severity": "high",
+      "rule_id": "CVE-2020-36518",
+      "rule_name": "CVE-2020-36518",
+      "asset_ref": "sbom-pkg:maven/com.example/billing@2.4.0",
+      "vulnerability": {
+        "cve_id": "CVE-2020-36518",
+        "cve_ids": [
+          "CVE-2020-36518"
+        ],
+        "cwe_ids": [
+          "CWE-502",
+          "CWE-400"
+        ],
+        "cwe_id": "CWE-502",
+        "cvss_version": "4.0",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+        "cvss_source": "vendor",
+        "package": "com.fasterxml.jackson.core/jackson-databind",
+        "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+        "affected_version": "2.9.10",
+        "ecosystem": "maven",
+        "published_at": "2022-03-11T07:15:00Z",
+        "modified_at": "2022-11-01T00:00:00Z",
+        "cpe": "cpe:2.3:a:fasterxml:jackson-databind:2.9.10:*:*:*:*:*:*:*",
+        "data_source": {
+          "name": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-36518"
+        },
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2020-36518"
+          },
+          {
+            "type": "ghsa",
+            "id": "GHSA-57j2-w4cx-62h2"
+          },
+          {
+            "type": "vendor",
+            "id": "SNYK-JAVA-0000001",
+            "source": "snyk"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade jackson-databind to 2.12.6.1 or later.",
+        "steps": [
+          "Workaround: Limit the nesting depth of accepted JSON."
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-57j2-w4cx-62h2",
+            "url": "https://github.com/advisories/GHSA-57j2-w4cx-62h2"
+          }
+        ]
+      },
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2020-36518",
+        "https://github.com/advisories/GHSA-57j2-w4cx-62h2"
+      ],
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2020-36518",
+        "instance_id": "vuln-1",
+        "severity": "high",
+        "raw_ref": "/vulnerabilities/0/affects/0"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "value": 7.5,
+          "label": "high",
+          "source": "NVD"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P",
+          "value": 5,
+          "label": "medium",
+          "source": "NVD"
+        },
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+          "value": 8.7,
+          "label": "high",
+          "source": "example-vendor"
+        },
+        {
+          "system": "ssvc",
+          "vector": "SSVCv2/E:P/A:N/T:P/2026-10-01T00:00:00Z/",
+          "source": "CISA"
+        },
+        {
+          "system": "vendor",
+          "value": 42,
+          "label": "unknown",
+          "source": "example-risk"
+        }
+      ],
+      "vex": {
+        "status": "under_investigation",
+        "statement": "Triage in progress.",
+        "source": "urn:uuid:00000000-0000-4000-8000-0000000000c5",
+        "as_of": "2026-09-01T00:00:00Z"
+      },
+      "source_extra": {
+        "affects_versions": "vers:maven/<2.12.6.1 (affected)\n2.12.6.1 (unaffected)",
+        "analysis_response": "update, workaround_available",
+        "created": "2022-03-11T00:00:00Z",
+        "property:example:fix-priority": "P1",
+        "rating_justification:NVD:CVSSv31": "Network reachable denial of service.",
+        "rejected": "2099-01-01T00:00:00Z"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "CVE-2020-36518 in com.example/billing@2.4.0",
+      "description": "jackson-databind before 2.13.0 allows a Java StackOverflow exception and denial of service via a large depth of nested objects.\n\nDeeply nested JSON input exhausts the stack.",
+      "message": "jackson-databind before 2.13.0 allows a Java StackOverflow exception and denial of service via a large depth of nested objects.",
+      "severity": "high",
+      "rule_id": "CVE-2020-36518",
+      "rule_name": "CVE-2020-36518",
+      "asset_ref": "sbom-pkg:maven/com.example/billing@2.4.0",
+      "vulnerability": {
+        "cve_id": "CVE-2020-36518",
+        "cve_ids": [
+          "CVE-2020-36518"
+        ],
+        "cwe_ids": [
+          "CWE-502",
+          "CWE-400"
+        ],
+        "cwe_id": "CWE-502",
+        "cvss_version": "4.0",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+        "cvss_source": "vendor",
+        "package": "com.example/billing",
+        "purl": "pkg:maven/com.example/billing@2.4.0",
+        "affected_version": "2.4.0",
+        "ecosystem": "maven",
+        "published_at": "2022-03-11T07:15:00Z",
+        "modified_at": "2022-11-01T00:00:00Z",
+        "cpe": "cpe:2.3:a:example:billing:2.4.0:*:*:*:*:*:*:*",
+        "data_source": {
+          "name": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-36518"
+        },
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2020-36518"
+          },
+          {
+            "type": "ghsa",
+            "id": "GHSA-57j2-w4cx-62h2"
+          },
+          {
+            "type": "vendor",
+            "id": "SNYK-JAVA-0000001",
+            "source": "snyk"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade jackson-databind to 2.12.6.1 or later.",
+        "steps": [
+          "Workaround: Limit the nesting depth of accepted JSON."
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-57j2-w4cx-62h2",
+            "url": "https://github.com/advisories/GHSA-57j2-w4cx-62h2"
+          }
+        ]
+      },
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2020-36518",
+        "https://github.com/advisories/GHSA-57j2-w4cx-62h2"
+      ],
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2020-36518",
+        "instance_id": "vuln-1",
+        "severity": "high",
+        "raw_ref": "/vulnerabilities/0/affects/1"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "value": 7.5,
+          "label": "high",
+          "source": "NVD"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P",
+          "value": 5,
+          "label": "medium",
+          "source": "NVD"
+        },
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+          "value": 8.7,
+          "label": "high",
+          "source": "example-vendor"
+        },
+        {
+          "system": "ssvc",
+          "vector": "SSVCv2/E:P/A:N/T:P/2026-10-01T00:00:00Z/",
+          "source": "CISA"
+        },
+        {
+          "system": "vendor",
+          "value": 42,
+          "label": "unknown",
+          "source": "example-risk"
+        }
+      ],
+      "vex": {
+        "status": "under_investigation",
+        "statement": "Triage in progress.",
+        "source": "urn:uuid:00000000-0000-4000-8000-0000000000c5",
+        "as_of": "2026-09-01T00:00:00Z"
+      },
+      "source_extra": {
+        "analysis_response": "update, workaround_available",
+        "created": "2022-03-11T00:00:00Z",
+        "property:example:fix-priority": "P1",
+        "rating_justification:NVD:CVSSv31": "Network reachable denial of service.",
+        "rejected": "2099-01-01T00:00:00Z"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "CVE-2026-0002 in embedded-lib@0.1.0",
+      "severity": "medium",
+      "rule_id": "CVE-2026-0002",
+      "rule_name": "CVE-2026-0002",
+      "asset_ref": "sbom-pkg:maven/com.example/billing@2.4.0",
+      "vulnerability": {
+        "cve_id": "CVE-2026-0002",
+        "cve_ids": [
+          "CVE-2026-0002"
+        ],
+        "package": "embedded-lib",
+        "affected_version": "0.1.0",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2026-0002"
+          }
+        ]
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2026-0002",
+        "raw_ref": "/vulnerabilities/2/affects/0"
+      },
+      "source_extra": {
+        "severity_note": "no rating with a severity; kept as medium"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "embedded-lib",
+      "name": "embedded-lib",
+      "version": "0.1.0",
+      "type": "library",
+      "relationship": "direct"
+    },
+    {
+      "id": "jackson",
+      "name": "jackson-databind",
+      "version": "2.9.10",
+      "type": "library",
+      "ecosystem": "maven",
+      "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+      "licenses": [
+        "Apache-2.0",
+        "Example Proprietary License"
+      ],
+      "relationship": "direct",
+      "depends_on": [
+        "jackson-annotations"
+      ],
+      "properties": {
+        "cpe": "cpe:2.3:a:fasterxml:jackson-databind:2.9.10:*:*:*:*:*:*:*",
+        "description": "General data-binding functionality for Jackson",
+        "group": "com.fasterxml.jackson.core",
+        "hash_sha-256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "property:example:packaging": "jar",
+        "publisher": "FasterXML",
+        "scope": "required",
+        "supplier": "FasterXML"
+      }
+    },
+    {
+      "id": "jackson-annotations",
+      "name": "jackson-annotations",
+      "version": "2.9.10",
+      "type": "library",
+      "ecosystem": "maven",
+      "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.9.10",
+      "relationship": "indirect",
+      "depends_on": [
+        "jackson"
+      ],
+      "properties": {
+        "group": "com.fasterxml.jackson.core"
+      }
+    }
+  ]
+}
