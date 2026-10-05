@@ -102,6 +102,10 @@ func formatList() string {
 // parsers are filled by the <format>.go files.
 var parsers = map[Format]func(*builder, io.Reader) error{}
 
+// companions name the spec of the document read together with the main
+// document of a format (the Qualys KnowledgeBase).
+var companions = map[Format]Format{FormatQualys: FormatQualysKB}
+
 // tools are the default tool of each format.
 var tools = map[Format]ctis.Tool{}
 
@@ -207,6 +211,10 @@ func (b *builder) finish() *Result {
 	r.Stats.Statements = len(r.VEX)
 	if spec, ok := specs[b.format]; ok {
 		r.Unmapped = spec.Unmapped(b.obs.paths())
+		// A companion document has its own spec.
+		if comp, ok := specs[companions[b.format]]; ok {
+			r.Unmapped = comp.Unmapped(r.Unmapped)
+		}
 	}
 	if b.obs.overflow {
 		b.issue(Issue{Message: fmt.Sprintf("more than %d distinct source fields; the unmapped list is incomplete", b.lim.MaxObservedPaths)})
@@ -288,6 +296,13 @@ func extra(f *ctis.Finding, key, value string) {
 		return
 	}
 	ctis.SetSourceExtra(f, key, value)
+}
+
+// extras stores key/value pairs in order (see extra).
+func extras(f *ctis.Finding, kv ...string) {
+	for i := 0; i+1 < len(kv); i += 2 {
+		extra(f, kv[i], kv[i+1])
+	}
 }
 
 // addVulnID adds a typed id to v once (canonical form), and keeps cve_ids in
