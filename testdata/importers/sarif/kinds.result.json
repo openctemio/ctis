@@ -1,0 +1,21 @@
+{
+  "format": "sarif",
+  "stats": {
+    "records": 8,
+    "assets": 1,
+    "findings": 8,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 1,
+      "info": 2,
+      "medium": 5
+    }
+  },
+  "issues": [
+    {
+      "message": "the file names no repository and none was given: findings are filed on checkov-import"
+    }
+  ]
+}

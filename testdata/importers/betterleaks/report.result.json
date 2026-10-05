@@ -1,0 +1,15 @@
+{
+  "format": "betterleaks",
+  "stats": {
+    "records": 4,
+    "assets": 1,
+    "findings": 4,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 2,
+      "high": 2
+    }
+  }
+}

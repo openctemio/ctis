@@ -1,0 +1,100 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "Semgrep OSS",
+    "version": "1.85.0",
+    "capabilities": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-semgrep-oss-import",
+      "type": "unclassified",
+      "value": "semgrep-oss-import",
+      "name": "semgrep-oss-import"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "vulnerability",
+      "title": "User-controlled data from a request is passed to 'execute()'. This could lead to a SQL injection.",
+      "description": "Semgrep Finding: python.django.security.injection.sql.sql-injection-db-cursor-execute",
+      "severity": "medium",
+      "confidence": 95,
+      "rule_id": "python.django.security.injection.sql.sql-injection-using-raw.sql-injection-db-cursor-execute",
+      "rule_name": "python.django.security.injection.sql.sql-injection-using-raw.sql-injection-db-cursor-execute",
+      "asset_ref": "unclassified-semgrep-oss-import",
+      "location": {
+        "path": "app/views.py",
+        "start_line": 42,
+        "end_line": 42,
+        "start_column": 9,
+        "end_column": 61,
+        "snippet": "        cursor.execute(\"SELECT * FROM users WHERE id = \" + uid)"
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "cwe_id": "CWE-89",
+        "owasp_ids": [
+          "A01:2017",
+          "A03:2021"
+        ]
+      },
+      "references": [
+        "https://semgrep.dev/r/python.django.security.injection.sql.sql-injection-db-cursor-execute"
+      ],
+      "tags": [
+        "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+        "HIGH CONFIDENCE",
+        "OWASP-A01:2017 - Injection",
+        "OWASP-A03:2021 - Injection",
+        "security"
+      ],
+      "fingerprint": "4af3da96d0577ef9061f8acc8714a48deddf5248a276fe89ac0bafc7b9e672b7"
+    },
+    {
+      "id": "finding-2",
+      "type": "vulnerability",
+      "title": "AWS Access Key ID Value detected.",
+      "description": "Semgrep Finding: generic.secrets.security.detected-aws-access-key-id-value",
+      "severity": "high",
+      "confidence": 95,
+      "rule_id": "generic.secrets.security.detected-aws-access-key-id-value.detected-aws-access-key-id-value",
+      "rule_name": "generic.secrets.security.detected-aws-access-key-id-value.detected-aws-access-key-id-value",
+      "asset_ref": "unclassified-semgrep-oss-import",
+      "location": {
+        "path": "config/settings.py",
+        "start_line": 12,
+        "end_line": 12,
+        "start_column": 21,
+        "end_column": 41
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-798"
+        ],
+        "cwe_id": "CWE-798",
+        "owasp_ids": [
+          "A07:2021"
+        ]
+      },
+      "tags": [
+        "CWE-798: Use of Hard-coded Credentials",
+        "MEDIUM CONFIDENCE",
+        "OWASP-A07:2021 - Identification and Authentication Failures",
+        "security"
+      ],
+      "fingerprint": "e30a14be1257aa566a0205dd035b02a79ebcd2e5b1147196d1c29599e052750d"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "vuls",
+    "vendor": "future-architect",
+    "info_url": "https://vuls.io",
+    "capabilities": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "host-1",
+      "type": "ip_address",
+      "value": "192.0.2.80",
+      "name": "web01.example.com",
+      "tags": [
+        "vuls",
+        "ubuntu",
+        "22.04"
+      ],
+      "technical": {
+        "ip_address": {
+          "version": 4,
+          "hostname": "web01.example.com"
+        }
+      },
+      "identity_hints": {
+        "cloud_resource_id": "i-0aaaabbbbccccdddd"
+      },
+      "properties": {
+        "ipv6_addresses": "2001:db8::80",
+        "kernel_release": "5.15.0-100-generic",
+        "kernel_version": "5.15.0-100.110",
+        "os_family": "ubuntu",
+        "os_release": "22.04",
+        "platform": "aws",
+        "reboot_required": true,
+        "scanned_at": "2026-10-05T09:00:00Z",
+        "scanned_via": "remote"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "OpenSSH signal handler race condition",
+      "description": "A signal handler race condition was found in OpenSSH's server (sshd).",
+      "severity": "critical",
+      "confidence": 100,
+      "rule_id": "CVE-2024-6387",
+      "asset_ref": "host-1",
+      "vulnerability": {
+        "cve_id": "CVE-2024-6387",
+        "cve_ids": [
+          "CVE-2024-6387"
+        ],
+        "cwe_ids": [
+          "CWE-362"
+        ],
+        "cwe_id": "CWE-362",
+        "cvss_version": "4.0",
+        "cvss_score": 9.2,
+        "cvss_vector": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+        "package": "openssh-server",
+        "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6?arch=amd64&distro=22.04",
+        "affected_version": "1:8.9p1-3ubuntu0.6",
+        "fixed_version": "1:8.9p1-3ubuntu0.10",
+        "published_at": "2024-07-01T13:15:00Z",
+        "modified_at": "2024-09-01T00:00:00Z",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-6387"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Update openssh-server to version 1:8.9p1-3ubuntu0.10",
+        "fix_available": true,
+        "solution_type": "upgrade"
+      },
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2024-6387",
+        "https://www.qualys.com/2024/07/01/cve-2024-6387/regresshion.txt"
+      ],
+      "tags": [
+        "vuls",
+        "web01.example.com"
+      ],
+      "fingerprint": "28cfa357a60fb04fd10fdbaf801697aacf087dfd64f8609ea76838c424d6e700",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2024-6387"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+          "value": 9.2,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H",
+          "value": 8.1,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:H/Au:N/C:C/I:C/A:C",
+          "value": 7.6,
+          "source": "ubuntu"
+        }
+      ],
+      "source_extra": {
+        "detection_method": "OvalMatch",
+        "fix_state": "released"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "openssh-server",
+      "version": "1:8.9p1-3ubuntu0.6",
+      "type": "os",
+      "ecosystem": "deb",
+      "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6?arch=amd64&distro=22.04"
+    }
+  ]
+}

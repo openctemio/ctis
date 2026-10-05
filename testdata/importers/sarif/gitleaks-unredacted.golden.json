@@ -1,0 +1,77 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "gitleaks",
+    "version": "v8.0.0",
+    "info_url": "https://github.com/gitleaks/gitleaks",
+    "capabilities": [
+      "secret"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-gitleaks-import",
+      "type": "unclassified",
+      "value": "gitleaks-import",
+      "name": "gitleaks-import"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "secret",
+      "title": "aws-access-token has detected secret for file config.env at commit cd40b1369cb572deebdda1c65f7bc1dc1f07114d.",
+      "description": "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms.",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "aws-access-token",
+      "asset_ref": "unclassified-gitleaks-import",
+      "location": {
+        "path": "config.env",
+        "start_line": 1,
+        "end_line": 1,
+        "start_column": 19,
+        "end_column": 38,
+        "snippet": "REDACTED"
+      },
+      "partial_fingerprints": {
+        "author": "",
+        "commitMessage": "",
+        "commitSha": "cd40b1369cb572deebdda1c65f7bc1dc1f07114d",
+        "date": "2026-10-04T04:04:10Z",
+        "email": ""
+      }
+    },
+    {
+      "id": "finding-2",
+      "type": "secret",
+      "title": "generic-api-key has detected secret REDACTED for file config.env at commit cd40b1369cb572deebdda1c65f7bc1dc1f07114d.",
+      "description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "generic-api-key",
+      "asset_ref": "unclassified-gitleaks-import",
+      "location": {
+        "path": "config.env",
+        "start_line": 2,
+        "end_line": 2,
+        "start_column": 1,
+        "end_column": 20,
+        "snippet": "REDACTED"
+      },
+      "partial_fingerprints": {
+        "author": "",
+        "commitMessage": "",
+        "commitSha": "cd40b1369cb572deebdda1c65f7bc1dc1f07114d",
+        "date": "2026-10-04T04:04:10Z",
+        "email": ""
+      }
+    }
+  ]
+}
