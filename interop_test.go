@@ -456,7 +456,7 @@ func TestValidateIdentityHints(t *testing.T) {
 	}
 	for name, h := range map[string]*IdentityHints{
 		"fqdn long":  {FQDN: strings.Repeat("a", MaxIdentityHintLen+1)},
-		"agent long": {AgentID: strings.Repeat("a", MaxIdentityHintLen+1)},
+		"agent long": {ScannerAgentID: strings.Repeat("a", MaxIdentityHintLen+1)},
 		"many macs":  {MACAddresses: make([]string, MaxIdentityHintMACs+1)},
 		"mac long":   {MACAddresses: []string{strings.Repeat("a", 65)}},
 	} {
@@ -508,5 +508,35 @@ func TestInteropBackwardCompatibleAndRoundTrip(t *testing.T) {
 	}
 	if errs := loadSchemaSet(t).validateJSON(raw, "report.json"); len(errs) > 0 {
 		t.Errorf("schema rejects a valid 1.4 report: %v", errs)
+	}
+}
+
+func TestSupportedSchemaVersions(t *testing.T) {
+	got := SupportedSchemaVersions()
+	want := []string{"1.0", "1.1", "1.2", "1.3", "1.4"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("SupportedSchemaVersions = %v, want %v", got, want)
+	}
+	if got[len(got)-1] != SchemaVersion {
+		t.Errorf("last supported %s is not SchemaVersion %s", got[len(got)-1], SchemaVersion)
+	}
+	for _, v := range want {
+		if !IsSupportedVersion(v) || !IsCompatibleVersion(v) {
+			t.Errorf("%s not supported", v)
+		}
+		// Every supported version still decodes strictly and validates.
+		raw := []byte(`{"version":"` + v + `","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"vulnerability","title":"t","severity":"high"}]}`)
+		r, err := decodeStrict(raw)
+		if err != nil {
+			t.Fatalf("%s: %v", v, err)
+		}
+		if err := r.Validate(); err != nil {
+			t.Errorf("%s: %v", v, err)
+		}
+	}
+	for _, v := range []string{"1.5", "2.0", "0.9", "", "1.03"} {
+		if IsSupportedVersion(v) {
+			t.Errorf("%q reported supported", v)
+		}
 	}
 }
