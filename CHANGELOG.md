@@ -4,6 +4,11 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- `SchemaVersion` is now `"1.4"` and `NewReport()` stamps it. Reports declaring 1.0 to 1.3 are still accepted, decode strictly and validate. Code that compared a version against the literal `"1.3"` should use `SupportedSchemaVersions()` / `IsSupportedVersion()` (versions this module knows every member of) or `IsCompatibleVersion()` (any minor of major 1).
+- Receivers must run a 1.4 build before producers send the 1.4 members; a 1.3 receiver accepts the 1.4 stamp but refuses the new members.
+
 ### Documentation
 
 - Spec: new sections 4.8 (secrets: no member may hold a usable secret; bounds on `masked_value`) and 4.9 (`metadata.source_type` is the channel and a producer claim; results are bound to commands by the request, not the body).
@@ -27,6 +32,7 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
   - `vulnerability.ids[]`: typed vulnerability ids (cve, ghsa, osv, vendor).
   - `remediation.solution_type`, `remediation.patch_published_at`, `remediation.advisories[]`.
   - `asset.identity_hints`: FQDN, NetBIOS name, MACs, OS CPE, cloud resource id and agent id as a scanner observed them.
+- `SupportedSchemaVersions()` and `IsSupportedVersion()`: the CTIS versions this module reads with full knowledge of their members (1.0 to `SchemaVersion`).
 - Normalizers and mapping tables that keep the native value: `NormalizeNativeSeverity` (Nessus 0-4, Qualys 1-5, DefectDojo labels, SARIF levels), `NormalizeNativeStatus`, `NormalizeDetectionType`, `NormalizeVEXStatus`, `NormalizeVEXJustification` (CSAF, OpenVEX, CycloneDX), `NormalizeVulnerabilityID`, `VulnerabilityIDs`, `PreferredVulnerabilityID`, `LocationKey` (the derived location part of a deduplication key), `AllScores`, `CVSSVersionOfVector` and `SetSourceExtra`.
 - `Validate` checks the new members: enums, score ranges per system, CVSS version and vector agreement, VEX consistency (`not_affected` needs a justification or statement; a justification only with `not_affected`), typed id shapes, and the size limits, which the schema states with `maxLength`, `maxItems` and `maxProperties`.
 - Example `examples/network-vulnerability-interop.json` and four invalid examples for the new members. The test schema validator evaluates `maxItems` and `maxProperties`.
