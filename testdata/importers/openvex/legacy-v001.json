@@ -1,0 +1,33 @@
+{
+  "@context": "https://openvex.dev/ns",
+  "@id": "https://vex.example.com/legacy/0001",
+  "author": "Example Legacy Team",
+  "role": "author",
+  "timestamp": "2023-06-01T00:00:00Z",
+  "version": "1",
+  "statements": [
+    {
+      "vulnerability": "CVE-2023-0001",
+      "products": ["pkg:apk/example/base-image@1.0"],
+      "subcomponents": ["pkg:apk/alpine/openssl@3.0.8-r0"],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present"
+    },
+    {
+      "vulnerability": "CVE-2023-0002",
+      "products": [
+        {
+          "@id": "example-app",
+          "subcomponents": [
+            {
+              "@id": "example-lib",
+              "identifiers": { "purl": "pkg:pypi/example-lib@2.0", "cpe23": "cpe:2.3:a:example:example-lib:2.0:*:*:*:*:*:*:*", "cpe22": "cpe:/a:example:example-lib:2.0" },
+              "hashes": { "sha256": "0000000000000000000000000000000000000000000000000000000000000002" }
+            }
+          ]
+        }
+      ],
+      "status": "affected"
+    }
+  ]
+}

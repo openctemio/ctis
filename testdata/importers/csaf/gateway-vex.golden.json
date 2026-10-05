@@ -1,0 +1,25 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "source_ref": "EXCORP-VEX-2025-0007",
+    "properties": {
+      "category": "csaf_vex",
+      "csaf_version": "2.0",
+      "current_release_date": "2025-09-15T10:00:00Z",
+      "document_status": "final",
+      "document_version": "2",
+      "initial_release_date": "2025-09-01T10:00:00Z",
+      "publisher": "Example Corp PSIRT",
+      "publisher_namespace": "https://psirt.example.com",
+      "title": "Example Gateway: status of CVE-2025-0001 and GHSA-2xxx",
+      "tlp": "WHITE"
+    }
+  },
+  "tool": {
+    "name": "csaf"
+  }
+}

@@ -26,7 +26,8 @@ type Spec struct {
 // Path is the field's path in the source: XML as "/Root/Child/@attr"
 // (elements keyed by an attribute as "tag[name]"), JSON as "/member/array[]/
 // member". A "*" matches any run of characters inside one path segment; a
-// trailing "/**" matches everything below.
+// "**" segment matches zero or more segments (a trailing "/**" matches
+// everything below).
 //
 // Exactly one of Target and Ignored is set: Target names the CTIS member or
 // members the value goes to; Ignored says why the value is deliberately not
@@ -177,30 +178,28 @@ func pathMatch(pattern, p string) bool {
 	if pattern == p {
 		return true
 	}
-	if rest, ok := strings.CutSuffix(pattern, "/**"); ok {
-		if pathMatch(rest, p) {
-			return true
-		}
-		ps := strings.Split(p, "/")
-		rs := strings.Split(rest, "/")
-		if len(ps) <= len(rs) {
-			return false
-		}
-		return segmentsMatch(rs, ps[:len(rs)])
-	}
 	return segmentsMatch(strings.Split(pattern, "/"), strings.Split(p, "/"))
 }
 
+// segmentsMatch matches path segments; a "**" segment matches zero or more
+// segments, anywhere in the pattern (CSAF product branches nest to any
+// depth).
 func segmentsMatch(pat, segs []string) bool {
-	if len(pat) != len(segs) {
-		return false
-	}
-	for i := range pat {
-		if !wildcard(pat[i], segs[i]) {
+	for len(pat) > 0 {
+		if pat[0] == "**" {
+			for k := 0; k <= len(segs); k++ {
+				if segmentsMatch(pat[1:], segs[k:]) {
+					return true
+				}
+			}
 			return false
 		}
+		if len(segs) == 0 || !wildcard(pat[0], segs[0]) {
+			return false
+		}
+		pat, segs = pat[1:], segs[1:]
 	}
-	return true
+	return len(segs) == 0
 }
 
 // wildcard matches s against a pattern where "*" is any run of characters.
