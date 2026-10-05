@@ -131,7 +131,7 @@ jobs:
           # The importers read hostile files; a short minimization keeps the
           # time budget on new inputs.
           for target in FuzzParse FuzzDetect; do
-            go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 5s ./importer
+            go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x ./importer
           done
 
   build-compat:
