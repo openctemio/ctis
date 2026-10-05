@@ -12,9 +12,12 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | `csaf` | [CSAF 2.0 (VEX and security advisory profiles)](csaf.md) | 45 | 55 | 45% | 168 | 39% |
 | `cyclonedx` | [CycloneDX JSON (SBOM, VDR, VEX)](cyclonedx.md) | 75 | 77 | 49% | 119 | 63% |
 | `defectdojo` | [DefectDojo Generic Findings Import JSON](defectdojo.md) | 65 | 8 | 89% | 74 | 88% |
+| `gitleaks` | [gitleaks JSON report](gitleaks.md) | 16 | 5 | 76% | 21 | 76% |
+| `grype` | [grype JSON output](grype.md) | 84 | 49 | 63% | 155 | 54% |
 | `nessus` | [Nessus v2 XML (.nessus)](nessus.md) | 128 | 40 | 76% | 162 | 80% |
 | `openvex` | [OpenVEX](openvex.md) | 29 | 11 | 72% | 40 | 72% |
 | `osv` | [osv-scanner JSON results (OSV records)](osv.md) | 43 | 13 | 77% | 78 | 72% |
 | `qualys` | [Qualys VM host list detection XML](qualys.md) | 60 | 15 | 80% | 76 | 80% |
 | `qualys_kb` | [Qualys KnowledgeBase XML](qualys_kb.md) | 53 | 30 | 64% | 97 | 61% |
 | `spdx` | [SPDX JSON](spdx.md) | 28 | 34 | 45% | 79 | 35% |
+| `zap` | [ZAP traditional report (JSON and XML)](zap.md) | 64 | 29 | 69% | 90 | 72% |

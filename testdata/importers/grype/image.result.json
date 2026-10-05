@@ -1,0 +1,23 @@
+{
+  "format": "grype",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 2,
+    "components": 2,
+    "statements": 0,
+    "skipped": 1,
+    "by_severity": {
+      "high": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 108,
+      "column": 5,
+      "path": "/matches/2",
+      "message": "match without a vulnerability id or a package name: skipped"
+    }
+  ]
+}

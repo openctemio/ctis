@@ -1,0 +1,143 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2023-5363",
+        "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2023-5363",
+        "namespace": "alpine:distro:alpine:3.18",
+        "severity": "High",
+        "urls": ["https://www.openssl.org/news/secadv/20231024.txt"],
+        "description": "Incorrect cipher key and IV length processing.",
+        "cvss": [
+          {
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+            "metrics": {"baseScore": 7.5, "exploitabilityScore": 3.9, "impactScore": 3.6},
+            "vendorMetadata": {}
+          }
+        ],
+        "epss": [{"cve": "CVE-2023-5363", "epss": 0.00289, "percentile": 0.69544, "date": "2025-10-01"}],
+        "fix": {"versions": ["3.1.4-r0"], "state": "fixed", "available": [{"version": "3.1.4-r0", "date": "2023-10-25", "kind": "first-observed"}]},
+        "advisories": [{"id": "ALPINE-2023-0001", "link": "https://security.alpinelinux.org/vuln/CVE-2023-5363"}],
+        "risk": 2.1
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2023-5363",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2023-5363",
+          "namespace": "nvd:cpe",
+          "severity": "High",
+          "urls": ["https://www.openssl.org/news/secadv/20231024.txt"],
+          "description": "Issue summary: A bug has been identified in the processing of key and initialisation vector lengths.",
+          "cvss": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "metrics": {"baseScore": 7.5, "exploitabilityScore": 3.9, "impactScore": 3.6},
+              "vendorMetadata": {}
+            }
+          ],
+          "epss": [{"cve": "CVE-2023-5363", "epss": 0.00289, "percentile": 0.69544, "date": "2025-10-01"}]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-indirect-match",
+          "matcher": "apk-matcher",
+          "searchedBy": {"distro": {"type": "alpine", "version": "3.18.4"}, "package": {"name": "openssl", "version": "3.1.3-r0"}, "namespace": "alpine:distro:alpine:3.18"},
+          "found": {"versionConstraint": "< 3.1.4-r0 (apk)", "vulnerabilityID": "CVE-2023-5363"},
+          "fix": {"suggestedVersion": "3.1.4-r0"}
+        }
+      ],
+      "artifact": {
+        "id": "a1b2c3d4e5f60718",
+        "name": "libcrypto3",
+        "version": "3.1.3-r0",
+        "type": "apk",
+        "locations": [{"path": "/lib/apk/db/installed", "layerID": "sha256:0000000000000000000000000000000000000000000000000000000000000001", "accessPath": "/lib/apk/db/installed", "annotations": {"evidence": "primary"}}],
+        "language": "",
+        "licenses": ["Apache-2.0"],
+        "cpes": ["cpe:2.3:a:libcrypto3:libcrypto3:3.1.3-r0:*:*:*:*:*:*:*"],
+        "purl": "pkg:apk/alpine/libcrypto3@3.1.3-r0?arch=x86_64&distro=alpine-3.18.4",
+        "upstreams": [{"name": "openssl", "version": "3.1.3-r0"}],
+        "metadataType": "ApkMetadata",
+        "metadata": {"files": [{"path": "/lib/libcrypto.so.3"}]}
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-9wx4-h78v-vm56",
+        "dataSource": "https://github.com/advisories/GHSA-9wx4-h78v-vm56",
+        "namespace": "github:language:python",
+        "severity": "Unknown",
+        "urls": ["https://github.com/advisories/GHSA-9wx4-h78v-vm56", "javascript:alert(1)"],
+        "description": "Requests Session object does not verify requests after making first request with verify=False.",
+        "cvss": [
+          {
+            "type": "Secondary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:H/AC:H/PR:H/UI:R/S:U/C:H/I:N/A:N",
+            "metrics": {"baseScore": 5.6}
+          }
+        ],
+        "knownExploited": [],
+        "fix": {"versions": ["2.32.0"], "state": "fixed"},
+        "advisories": []
+      },
+      "relatedVulnerabilities": [
+        {"id": "CVE-2024-35195", "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2024-35195", "namespace": "nvd:cpe", "severity": "Medium"}
+      ],
+      "matchDetails": [{"type": "exact-direct-match", "matcher": "python-matcher"}],
+      "artifact": {
+        "id": "b2c3d4e5f6071829",
+        "name": "requests",
+        "version": "2.31.0",
+        "type": "python",
+        "locations": [{"path": "/app/requirements.txt", "layerID": "sha256:0000000000000000000000000000000000000000000000000000000000000002"}],
+        "language": "python",
+        "licenses": [],
+        "cpes": [],
+        "purl": "pkg:pypi/requests@2.31.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {"id": "", "severity": "Low"},
+      "artifact": {"name": "no-id"}
+    }
+  ],
+  "ignoredMatches": [
+    {"vulnerability": {"id": "CVE-2020-0001"}, "appliedIgnoreRules": [{"vulnerability": "CVE-2020-0001"}], "artifact": {"name": "busybox"}}
+  ],
+  "source": {
+    "type": "image",
+    "target": {
+      "userInput": "registry.example.com/shop/api:1.4.2",
+      "imageID": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "manifestDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+      "tags": ["registry.example.com/shop/api:1.4.2"],
+      "imageSize": 81234567,
+      "layers": [{"mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip", "digest": "sha256:01", "size": 7339008}],
+      "manifest": "eyJzY2hlbWFWZXJzaW9uIjoyfQ==",
+      "config": "eyJjb25maWciOnt9fQ==",
+      "repoDigests": ["registry.example.com/shop/api@sha256:3333333333333333333333333333333333333333333333333333333333333333"],
+      "architecture": "amd64",
+      "os": "linux",
+      "labels": {"maintainer": "team@example.com"},
+      "variant": ""
+    }
+  },
+  "distro": {"name": "alpine", "version": "3.18.4", "idLike": []},
+  "descriptor": {
+    "name": "grype",
+    "version": "0.80.1",
+    "configuration": {"registry": {"auth": [{"authority": "registry.example.com", "username": "ci", "password": "not-a-real-password"}]}},
+    "db": {"built": "2025-10-05T01:30:00Z", "schemaVersion": 5, "location": "/home/ci/.cache/grype/db/5", "checksum": "sha256:44", "error": null},
+    "timestamp": "2025-10-05T08:00:00Z"
+  }
+}
