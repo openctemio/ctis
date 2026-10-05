@@ -1,0 +1,22 @@
+{
+  "format": "gitleaks",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 2,
+    "components": 0,
+    "statements": 0,
+    "skipped": 1,
+    "by_severity": {
+      "high": 2
+    }
+  },
+  "issues": [
+    {
+      "line": 41,
+      "column": 3,
+      "path": "/2",
+      "message": "leak without a RuleID: skipped"
+    }
+  ]
+}

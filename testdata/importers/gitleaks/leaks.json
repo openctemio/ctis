@@ -1,0 +1,45 @@
+[
+  {
+    "RuleID": "generic-api-key",
+    "Description": "Detected a Generic API Key, potentially exposing access to various services: fakeSampleValue0123456789abcdef",
+    "StartLine": 12,
+    "EndLine": 12,
+    "StartColumn": 15,
+    "EndColumn": 60,
+    "Line": "    api_key = \"fakeSampleValue0123456789abcdef\"",
+    "Match": "api_key = \"fakeSampleValue0123456789abcdef\"",
+    "Secret": "fakeSampleValue0123456789abcdef",
+    "File": "config/settings.py",
+    "SymlinkFile": "",
+    "Commit": "3f1c2a9e0b7d4c5a6e8f9012345678901234abcd",
+    "Link": "https://git.example.com/shop/app/blob/3f1c2a9e0b7d4c5a6e8f9012345678901234abcd/config/settings.py#L12",
+    "Entropy": 4.32,
+    "Author": "Jane Example",
+    "Email": "jane@example.com",
+    "Date": "2025-09-14T10:11:12Z",
+    "Message": "add settings for the payment provider",
+    "Tags": ["key", "api"],
+    "Fingerprint": "3f1c2a9e0b7d4c5a6e8f9012345678901234abcd:config/settings.py:generic-api-key:12"
+  },
+  {
+    "RuleID": "password-in-url",
+    "Description": "Password in a connection URL",
+    "StartLine": "3",
+    "EndLine": "3",
+    "StartColumn": "1",
+    "EndColumn": "40",
+    "Match": "postgres://app:shortpw@db.example.com/app",
+    "Secret": "shortpw",
+    "File": "deploy/.env",
+    "SymlinkFile": "deploy/env.link",
+    "Commit": "",
+    "Entropy": "2.8",
+    "Date": "",
+    "Tags": [],
+    "Fingerprint": "deploy/.env:password-in-url:3"
+  },
+  {
+    "Description": "no rule id",
+    "Secret": "x"
+  }
+]

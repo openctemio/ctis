@@ -1,0 +1,23 @@
+{
+  "format": "grype",
+  "stats": {
+    "records": 2,
+    "assets": 1,
+    "findings": 2,
+    "components": 2,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 39,
+      "column": 5,
+      "path": "/matches/1",
+      "message": "unknown severity \"Unknown\" and no CVSS score, kept as medium"
+    }
+  ]
+}
