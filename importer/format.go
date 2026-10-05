@@ -31,6 +31,13 @@ const (
 	FormatOpenVEX Format = "openvex"
 	// DefectDojo Generic Findings Import JSON.
 	FormatDefectDojo Format = "defectdojo"
+	// gitleaks JSON report (an array of leaks). Every gitleaks-compatible
+	// scanner writes the same shape; Options.ToolName names the tool.
+	FormatGitleaks Format = "gitleaks"
+	// grype JSON output.
+	FormatGrype Format = "grype"
+	// ZAP traditional JSON or XML report.
+	FormatZAP Format = "zap"
 )
 
 // AllFormats returns every format Parse reads, sorted.
@@ -96,6 +103,8 @@ func detectXML(head []byte) (Format, bool) {
 			return FormatQualys, true
 		case "KNOWLEDGE_BASE_VULN_LIST_OUTPUT":
 			return FormatQualysKB, true
+		case "OWASPZAPReport":
+			return FormatZAP, true
 		}
 		return "", false
 	}
@@ -173,6 +182,36 @@ func detectJSON(head []byte) (Format, bool) {
 		valueDone()
 	}
 
+	if root == 2 {
+		// A top-level array: a gitleaks report is the only array format
+		// besides CSAF (decided above by its document member).
+		_, rule := top["RuleID"]
+		_, secret := top["Secret"]
+		_, match := top["Match"]
+		if docKeys["csaf_version"] {
+			return FormatCSAF, true
+		}
+		if rule && (secret || match) {
+			return FormatGitleaks, true
+		}
+		return "", false
+	}
+	if _, ok := top["matches"]; ok {
+		if _, src := top["source"]; src {
+			return FormatGrype, true
+		}
+		if _, d := top["descriptor"]; d {
+			return FormatGrype, true
+		}
+	}
+	if _, ok := top["site"]; ok {
+		if _, p := top["@programName"]; p {
+			return FormatZAP, true
+		}
+		if _, v := top["@version"]; v {
+			return FormatZAP, true
+		}
+	}
 	if strings.EqualFold(top["bomFormat"], "CycloneDX") {
 		return FormatCycloneDX, true
 	}

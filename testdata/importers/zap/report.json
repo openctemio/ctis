@@ -1,0 +1,114 @@
+{
+  "@programName": "ZAP",
+  "@version": "2.15.0",
+  "@generated": "Sun, 5 Oct 2025 08:00:00",
+  "created": "2025-10-05T08:00:00.000Z",
+  "insights": [{"level": "Info", "reason": "Informational", "site": "https://shop.example.com", "key": "insight.code.2xx", "description": "Percentage of responses with status code 2xx", "statistic": "97"}],
+  "site": [
+    {
+      "@name": "https://shop.example.com",
+      "@host": "shop.example.com",
+      "@port": "443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "40012",
+          "alertRef": "40012",
+          "alert": "Cross Site Scripting (Reflected)",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "High (Medium)",
+          "desc": "<p>Cross-site Scripting (XSS) is an attack technique that involves echoing attacker-supplied code into a user's browser instance.</p>",
+          "instances": [
+            {
+              "id": "17",
+              "uri": "https://user:secretpw@shop.example.com/search?q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E",
+              "nodeName": "https://shop.example.com/search (q)",
+              "method": "GET",
+              "param": "q",
+              "attack": "<script>alert(1);</script>",
+              "evidence": "<script>alert(1);</script>",
+              "otherinfo": "",
+              "request-header": "GET /search HTTP/1.1\r\nCookie: session=fake-session-cookie-value\r\nAuthorization: Bearer fake-bearer-token\r\n",
+              "request-body": "",
+              "response-header": "HTTP/1.1 200 OK\r\nSet-Cookie: session=fake-session-cookie-value\r\n",
+              "response-body": "<html>Hello Jane Example</html>"
+            }
+          ],
+          "count": "1",
+          "systemic": false,
+          "solution": "<p>Phase: Architecture and Design</p><p>Use a vetted library or framework that does not allow this weakness to occur.</p>",
+          "otherinfo": "<p>Reflected in the HTML body.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/xss/</p><p>https://cwe.mitre.org/data/definitions/79.html</p>",
+          "cweid": "79",
+          "wascid": "8",
+          "sourceid": "1",
+          "tags": {
+            "OWASP_2021_A03": "https://owasp.org/Top10/A03_2021-Injection/",
+            "CWE-79": "https://cwe.mitre.org/data/definitions/79.html"
+          }
+        },
+        {
+          "pluginid": 10038,
+          "alertRef": "10038-1",
+          "alert": "Content Security Policy (CSP) Header Not Set",
+          "riskcode": 2,
+          "confidence": 3,
+          "desc": "<p>CSP is an added layer of security.</p>",
+          "instances": [
+            {"uri": "https://shop.example.com/", "method": "GET", "param": "", "attack": "", "evidence": "", "otherinfo": ""},
+            {"uri": "https://shop.example.com/cart", "method": "GET"}
+          ],
+          "count": 2,
+          "systemic": true,
+          "solution": "<p>Set the Content-Security-Policy header.</p>",
+          "reference": "<p>https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP</p>",
+          "cweid": "693",
+          "wascid": "15",
+          "sourceid": "3",
+          "tags": {}
+        },
+        {
+          "pluginid": "10096",
+          "alert": "Timestamp Disclosure - Unix",
+          "riskcode": "0",
+          "confidence": "1",
+          "desc": "A timestamp was disclosed.",
+          "instances": [],
+          "cweid": "-1"
+        },
+        {
+          "pluginid": "90022",
+          "alert": "Application Error Disclosure",
+          "riskcode": "1",
+          "confidence": "0",
+          "desc": "<p>An error message was returned.</p>",
+          "instances": [{"uri": "https://shop.example.com/api", "method": "POST"}]
+        },
+        {
+          "pluginid": "",
+          "alert": "no plugin id"
+        }
+      ]
+    },
+    {
+      "@name": "http://legacy.example.com:8080",
+      "@host": "legacy.example.com",
+      "@port": "8080",
+      "@ssl": "false",
+      "alerts": [
+        {
+          "pluginid": "10020",
+          "alertRef": "10020-1",
+          "alert": "Missing Anti-clickjacking Header",
+          "riskcode": "9",
+          "confidence": "4",
+          "desc": "<p>The response does not protect against ClickJacking.</p>",
+          "instances": [{"uri": "http://legacy.example.com:8080/", "method": "GET"}],
+          "count": "1"
+        }
+      ]
+    }
+  ]
+}
