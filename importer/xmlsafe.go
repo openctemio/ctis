@@ -47,6 +47,9 @@ type observer struct {
 	max      int
 	seen     map[string]struct{}
 	overflow bool
+	// rewrite, when set, folds a path before it is recorded (CycloneDX
+	// components nest to any depth; their paths fold to one level).
+	rewrite func(string) string
 }
 
 func newObserver(max int) *observer {
@@ -56,6 +59,9 @@ func newObserver(max int) *observer {
 func (o *observer) add(p string) {
 	if o == nil {
 		return
+	}
+	if o.rewrite != nil {
+		p = o.rewrite(p)
 	}
 	if _, ok := o.seen[p]; ok {
 		return
