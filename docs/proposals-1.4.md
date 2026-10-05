@@ -26,11 +26,15 @@ Status: draft, not implemented. These came out of the 2026-10 review of CTIS 1.2
 
 ## 4. Exploitability (VEX)
 
+**Implemented in 1.4** as `finding.vex` with the CSAF / OpenVEX status and justification vocabulary (CycloneDX values map through `NormalizeVEXJustification`), plus `statement`, `source` and `as_of`. See spec section 4.10. The text below is the original proposal.
+
 **Problem.** No way to say "this component is present but the vulnerability is not reachable / not affected". CTEM validation and prioritisation need it.
 
 **Proposal.** `vulnerability.analysis`: `state` (`exploitable | not_affected | in_triage | resolved | false_positive`), `justification` (CycloneDX/OpenVEX vocabulary: `code_not_present`, `code_not_reachable`, `requires_configuration`, ...), `detail`.
 
 ## 5. Vulnerability aliases
+
+**Implemented in 1.4** as typed `vulnerability.ids[]` (`cve`, `ghsa`, `osv`, `vendor`) with `VulnerabilityIDs` and `PreferredVulnerabilityID`. See spec section 4.10. The text below is the original proposal.
 
 **Problem.** The same vulnerability arrives as CVE, GHSA and OSV IDs from different scanners and is not deduplicated.
 
@@ -52,7 +56,7 @@ Status: draft, not implemented. These came out of the 2026-10 review of CTIS 1.2
 
 - Tri-state booleans: make the CTEM booleans (`exposure.is_internet_accessible`, `asset.is_internet_accessible`, `remediation_context.remedy_available`, `services[].is_public`, `vulnerability.exploit_available`) `*bool` in Go so "verified false" differs from "unknown". This changes Go field types, so it needs a migration note for Go consumers.
 - `dependencies[].asset_ref`, so a dependency names its asset instead of receivers guessing from the manifest path.
-- Size limits in the schema (`maxLength`, `maxItems`) matching the receiver limits in spec.md section 7.
+- Size limits in the schema (`maxLength`, `maxItems`) matching the receiver limits in spec.md section 7. (1.4 states them for its own new members; the older members still have none.)
 - Severity unknown rule: `severity.Level.Priority(Unknown)` sorts below Info while `Severity.Score` treats unknown as Medium; pick one fail-safe rule.
 - `owasp_ids`: anchor the pattern once producers send bare IDs (Semgrep tags carry a title after the ID today).
 - Move the schemas to draft 2020-12, where `$defs` is a real keyword.

@@ -32,6 +32,7 @@ var supportedKeywords = map[string]bool{
 	"type": true, "required": true, "properties": true, "additionalProperties": true,
 	"items": true, "enum": true, "const": true, "pattern": true,
 	"minimum": true, "maximum": true, "minLength": true, "maxLength": true,
+	"maxItems": true, "maxProperties": true,
 	"format": true,
 }
 
@@ -201,12 +202,18 @@ func (s *schemaSet) validate(v any, node map[string]any, file, path string, errs
 			fail("%v is above maximum %v", f, m)
 		}
 	case []any:
+		if m, ok := numberOf(node["maxItems"]); ok && float64(len(val)) > m {
+			fail("more than %v items", m)
+		}
 		if items, ok := node["items"].(map[string]any); ok {
 			for i, item := range val {
 				s.validate(item, items, file, fmt.Sprintf("%s/%d", path, i), errs)
 			}
 		}
 	case map[string]any:
+		if m, ok := numberOf(node["maxProperties"]); ok && float64(len(val)) > m {
+			fail("more than %v members", m)
+		}
 		if req, ok := node["required"].([]any); ok {
 			for _, r := range req {
 				if _, ok := val[r.(string)]; !ok {
