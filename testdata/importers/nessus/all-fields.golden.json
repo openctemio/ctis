@@ -1,0 +1,180 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "scan_name": "Cloud agents"
+    }
+  },
+  "tool": {
+    "name": "nessus",
+    "vendor": "Tenable",
+    "capabilities": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "host-web02.example.com",
+      "type": "host",
+      "value": "web02.example.com",
+      "name": "web02.example.com",
+      "identity_hints": {
+        "fqdn": "web02.example.com",
+        "os_cpe": "cpe:/o:microsoft:windows_server_2022",
+        "cloud_resource_id": "00000000-0000-4000-8000-0000000000aa",
+        "agent_id": "b2c3d4e5-0000-4000-8000-000000000002"
+      },
+      "properties": {
+        "fqdn": "web02.example.com",
+        "scan_started_at": "2025-10-05T09:00:00Z"
+      }
+    },
+    {
+      "id": "host-203.0.113.30",
+      "type": "ip_address",
+      "value": "203.0.113.30",
+      "name": "203.0.113.30",
+      "identity_hints": {
+        "cloud_resource_id": "1234567890123456789",
+        "agent_id": "c3d4e5f6-0000-4000-8000-000000000003"
+      },
+      "properties": {
+        "ip_address": "203.0.113.30"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Café Web Server < 2.1 Multiple Vulnerabilities",
+      "description": "The web server is affected by multiple vulnerabilities.\n\nThe version of Café Web Server is older than 2.1.",
+      "message": "The web server is affected by multiple vulnerabilities.",
+      "severity": "medium",
+      "category": "Web Servers",
+      "rule_id": "900001",
+      "rule_name": "Café Web Server < 2.1 Multiple Vulnerabilities",
+      "asset_ref": "host-web02.example.com",
+      "network": {
+        "host": "web02.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "www"
+      },
+      "evidence": "Installed version : 2.0\nFixed version     : 2.1",
+      "vulnerability": {
+        "cvss_version": "4.0",
+        "cvss_score": 6.9,
+        "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
+        "cvss_source": "vendor",
+        "in_cisa_kev": true,
+        "ids": [
+          {
+            "type": "vendor",
+            "id": "OSVDB-12345",
+            "source": "osvdb"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade to 2.1 or later.",
+        "advisories": [
+          {
+            "id": "RHSA-2025:0001",
+            "source": "rhsa"
+          },
+          {
+            "id": "2025-B-0001",
+            "source": "iavb"
+          },
+          {
+            "id": "CEA-2025-0001",
+            "source": "cea-id"
+          },
+          {
+            "id": "2025-T-0001",
+            "source": "iavt"
+          }
+        ]
+      },
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "900001",
+        "family": "Web Servers",
+        "severity": "2",
+        "raw_ref": "ReportHost[web02.example.com]/ReportItem[pluginID=900001,port=443,protocol=tcp]"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
+          "value": 6.9,
+          "source": "tenable"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+          "value": 5,
+          "source": "tenable"
+        }
+      ],
+      "source_extra": {
+        "age_of_vuln": "730 days +",
+        "canvas_package": "CANVAS",
+        "cisa_known_exploited": "2025/01/01",
+        "cvss3_impact_score": "3.6",
+        "cvss3_score_source": "NVD",
+        "cvss4_threat_score": "5.5",
+        "cvss4_threat_vector": "E:U",
+        "cvssV3_impact_score": "3.6",
+        "cvss_temporal_score": "3.7",
+        "cvss_temporal_vector": "CVSS2#E:U/RL:OF/RC:C",
+        "d2_elliot_name": "Cafe Web Server traversal",
+        "default_account": "false",
+        "dsa": "DSA-5800-1",
+        "edb-id": "50000",
+        "exploit_framework_canvas": "true",
+        "exploit_framework_core": "true",
+        "exploit_framework_d2_elliot": "true",
+        "exploit_framework_exploithub": "true",
+        "exploited_by_nessus": "true",
+        "fedora": "FEDORA-2025-0000000001",
+        "glsa": "GLSA-202501-01",
+        "osvdb": "12345",
+        "product_coverage": "Low",
+        "rhsa": "RHSA-2025:0001",
+        "suse": "SUSE-SU-2025:0001-1",
+        "usn": "USN-7000-1",
+        "vendor_severity": "Moderate",
+        "vendor_unpatched": "false",
+        "xref": "OSVDB:12345\nRHSA:2025:0001"
+      },
+      "properties": {
+        "cvss_v2_vector": "CVSS2#AV:N/AC:L/Au:N/C:P/I:N/A:N"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Low finding",
+      "description": "Same text.",
+      "message": "Same text.",
+      "severity": "low",
+      "category": "General",
+      "rule_id": "900002",
+      "rule_name": "Low finding",
+      "asset_ref": "host-203.0.113.30",
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "900002",
+        "family": "General",
+        "severity": "1",
+        "raw_ref": "ReportHost[203.0.113.30]/ReportItem[pluginID=900002,port=0,protocol=tcp]"
+      }
+    }
+  ]
+}
