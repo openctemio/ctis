@@ -456,7 +456,7 @@ func TestValidateIdentityHints(t *testing.T) {
 	}
 	for name, h := range map[string]*IdentityHints{
 		"fqdn long":  {FQDN: strings.Repeat("a", MaxIdentityHintLen+1)},
-		"agent long": {AgentID: strings.Repeat("a", MaxIdentityHintLen+1)},
+		"agent long": {ScannerAgentID: strings.Repeat("a", MaxIdentityHintLen+1)},
 		"many macs":  {MACAddresses: make([]string, MaxIdentityHintMACs+1)},
 		"mac long":   {MACAddresses: []string{strings.Repeat("a", 65)}},
 	} {
