@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Synthetic sample without a KnowledgeBase companion. -->
+<HOST_LIST_VM_DETECTION_OUTPUT>
+  <RESPONSE>
+    <DATETIME>2025-10-05T09:00:00Z</DATETIME>
+    <HOST_LIST>
+      <HOST>
+        <ID>100003</ID>
+        <IP>203.0.113.33</IP>
+        <TRACKING_METHOD>IP</TRACKING_METHOD>
+        <DETECTION_LIST>
+          <DETECTION>
+            <UNIQUE_VULN_ID>9000000010</UNIQUE_VULN_ID>
+            <QID>38909</QID>
+            <TYPE>Confirmed</TYPE>
+            <SEVERITY>4</SEVERITY>
+            <PORT>22</PORT>
+            <PROTOCOL>tcp</PROTOCOL>
+            <STATUS>Active</STATUS>
+          </DETECTION>
+          <DETECTION>
+            <UNIQUE_VULN_ID>9000000011</UNIQUE_VULN_ID>
+            <QID>not-a-number</QID>
+            <TYPE>Confirmed</TYPE>
+            <SEVERITY>9</SEVERITY>
+          </DETECTION>
+        </DETECTION_LIST>
+      </HOST>
+      <HOST>
+        <ID>100004</ID>
+        <TRACKING_METHOD>IP</TRACKING_METHOD>
+      </HOST>
+    </HOST_LIST>
+  </RESPONSE>
+</HOST_LIST_VM_DETECTION_OUTPUT>

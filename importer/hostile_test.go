@@ -482,7 +482,7 @@ func mustOpen(t *testing.T, p string) io.Reader {
 }
 
 func FuzzParse(f *testing.F) {
-	for _, fx := range []string{"nessus/scan.nessus", "nessus/all-fields.nessus"} {
+	for _, fx := range []string{"nessus/scan.nessus", "nessus/all-fields.nessus", "qualys/detections.xml", "qualys/no-kb.xml"} {
 		if b, err := os.ReadFile(fixtureRoot + "/" + fx); err == nil {
 			f.Add(b)
 		}
