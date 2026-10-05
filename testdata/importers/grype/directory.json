@@ -1,0 +1,47 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2021-44228",
+        "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+        "namespace": "github:language:java",
+        "severity": "Critical",
+        "urls": [],
+        "description": "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP endpoints.",
+        "cvss": [
+          {"source": "nvd@nist.gov", "type": "Primary", "version": "3.1", "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H", "metrics": {"baseScore": 10.0}},
+          {"source": "security-advisories@github.com", "type": "Secondary", "version": "2.0", "vector": "AV:N/AC:M/Au:N/C:C/I:C/A:C", "metrics": {"baseScore": 9.3}}
+        ],
+        "knownExploited": [
+          {"cve": "CVE-2021-44228", "vendorProject": "Apache", "product": "Log4j2", "dateAdded": "2021-12-10", "requiredAction": "Apply updates.", "dueDate": "2021-12-24", "knownRansomwareCampaignUse": "Known", "notes": "synthetic note", "urls": ["https://www.cisa.gov/known-exploited-vulnerabilities-catalog"], "cwes": ["CWE-917", "CWE-502"]}
+        ],
+        "fix": {"versions": ["2.15.0", "2.12.2"], "state": "fixed"},
+        "advisories": [{"id": "GHSA-jfh8-c2jp-5v3q", "link": "https://github.com/advisories/GHSA-jfh8-c2jp-5v3q"}]
+      },
+      "relatedVulnerabilities": [
+        {"id": "CVE-2021-44228", "namespace": "nvd:cpe", "severity": "Critical",
+         "knownExploited": [{"cve": "CVE-2021-44228", "vendorProject": "Apache", "product": "Log4j", "dateAdded": "2021-12-10", "requiredAction": "Apply updates per vendor instructions.", "dueDate": "2021-12-24", "knownRansomwareCampaignUse": "Known", "notes": "related entry", "urls": ["https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2021-44228"], "cwes": ["CWE-20"]}]}
+      ],
+      "matchDetails": [],
+      "artifact": {
+        "id": "c3d4e5f607182930",
+        "name": "log4j-core",
+        "version": "2.14.1",
+        "type": "java-archive",
+        "locations": [{"path": "/src/lib/log4j-core-2.14.1.jar"}],
+        "language": "java",
+        "licenses": ["Apache-2.0"],
+        "cpes": ["cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*"],
+        "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {"id": "CVE-2099-0001", "severity": "Unknown", "fix": {"versions": [], "state": "wont-fix"}},
+      "artifact": {"id": "d4", "name": "mystery", "version": "1.0", "type": "binary", "locations": []}
+    }
+  ],
+  "source": {"type": "directory", "target": {"path": "/src"}},
+  "distro": {"name": "", "version": ""},
+  "descriptor": {"name": "grype", "version": "0.80.1", "timestamp": "2025-10-05T09:00:00Z"}
+}

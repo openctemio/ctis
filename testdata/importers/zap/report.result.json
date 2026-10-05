@@ -1,0 +1,29 @@
+{
+  "format": "zap",
+  "stats": {
+    "records": 6,
+    "assets": 2,
+    "findings": 5,
+    "components": 0,
+    "statements": 0,
+    "skipped": 1,
+    "by_severity": {
+      "high": 1,
+      "info": 1,
+      "low": 1,
+      "medium": 2
+    }
+  },
+  "issues": [
+    {
+      "line": 8,
+      "path": "/site/0/alerts/4",
+      "message": "alert without a name or a plugin id: skipped"
+    },
+    {
+      "line": 95,
+      "path": "/site/1/alerts/0",
+      "message": "alert 10020: unknown riskcode \"9\", kept as medium"
+    }
+  ]
+}
