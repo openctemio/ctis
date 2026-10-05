@@ -518,3 +518,40 @@ func FuzzDetect(f *testing.F) {
 		Detect(data)
 	})
 }
+
+// FuzzParseFormat drives one parser directly, without detection, so each
+// format is fuzzed on its own: IMPORTER_FUZZ_FORMAT names it (default: the
+// format is taken from the first byte of the input).
+func FuzzParseFormat(f *testing.F) {
+	formats := append(AllFormats(), FormatQualysKB)
+	seeds, _ := filepath.Glob(fixtureRoot + "/*/*")
+	for _, fx := range seeds {
+		if isCompanion(fx) {
+			continue
+		}
+		if b, err := os.ReadFile(fx); err == nil {
+			f.Add(b)
+		}
+	}
+	fixed := Format(os.Getenv("IMPORTER_FUZZ_FORMAT"))
+	f.Fuzz(func(t *testing.T, data []byte) {
+		format := fixed
+		if format == "" {
+			if len(data) == 0 {
+				return
+			}
+			format = formats[int(data[0])%len(formats)]
+		}
+		res, err := Parse(context.Background(), bytes.NewReader(data), Options{Format: format, Limits: Limits{MaxInputBytes: 1 << 20}})
+		if err != nil {
+			var pe *ParseError
+			if !errors.As(err, &pe) {
+				t.Fatalf("error is not a *ParseError: %v", err)
+			}
+			return
+		}
+		if err := res.Report.Validate(); err != nil {
+			t.Fatalf("Parse returned an invalid report: %v", err)
+		}
+	})
+}
