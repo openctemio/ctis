@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ExampleAnalyzer",
+          "version": "2.0.0",
+          "informationUri": "https://www.example.com/analyzer",
+          "rules": [
+            {
+              "id": "EX001",
+              "name": "HardcodedCredential",
+              "shortDescription": {"text": "Hard-coded credential"},
+              "helpUri": "https://www.example.com/rules/EX001",
+              "defaultConfiguration": {"level": "error"},
+              "properties": {
+                "cwe": ["CWE-798"],
+                "owasp": ["A07:2021"],
+                "precision": "high",
+                "security-severity": "8.1",
+                "tags": ["security"]
+              }
+            }
+          ]
+        }
+      },
+      "versionControlProvenance": [
+        {"repositoryUri": "https://ci-user:not-a-token@git.example.com/team/app.git", "revisionId": "0123456789abcdef0123456789abcdef01234567", "branch": "main"}
+      ],
+      "automationDetails": {"id": "analyzer/main/"},
+      "results": [
+        {
+          "ruleId": "EX001",
+          "level": "error",
+          "message": {"text": "A credential is written in the source."},
+          "correlationGuid": "6f0c1b2a-0000-4000-8000-000000000001",
+          "locations": [
+            {"physicalLocation": {"artifactLocation": {"uri": "src/config.py"}, "region": {"startLine": 7, "startColumn": 1, "endColumn": 40}}}
+          ],
+          "relatedLocations": [
+            {"id": 1, "physicalLocation": {"artifactLocation": {"uri": "src/settings.py"}, "region": {"startLine": 2}}}
+          ],
+          "suppressions": [
+            {"kind": "external", "status": "underReview", "justification": "Test fixture value, rotation tracked separately."}
+          ],
+          "properties": {"security-severity": "9.1", "tags": ["credentials"]}
+        }
+      ],
+      "properties": {"scanId": "local-1"}
+    }
+  ]
+}

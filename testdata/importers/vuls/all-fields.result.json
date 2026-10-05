@@ -1,0 +1,14 @@
+{
+  "format": "vuls",
+  "stats": {
+    "records": 1,
+    "assets": 1,
+    "findings": 1,
+    "components": 1,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 1
+    }
+  }
+}

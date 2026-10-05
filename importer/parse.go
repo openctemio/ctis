@@ -45,6 +45,16 @@ type Options struct {
 	// endpoint). Nil: an unclassified asset named after the tool.
 	DefaultAsset *ctis.Asset
 
+	// The repository a code report (SARIF, semgrep, betterleaks, a trivy
+	// file-system scan) is filed on, with its branch and commit. It wins
+	// over what the file names (a SARIF versionControlProvenance, a trivy
+	// artifact). A receiver that knows the repository from a verified
+	// identity (a CI workload token) sets it from there and never from the
+	// file; the importer only records the file's claim.
+	Repository string
+	Branch     string
+	CommitSHA  string
+
 	// The Qualys KnowledgeBase XML for a Qualys detection file. Optional:
 	// without it, detections keep their QID and results but have no title
 	// beyond the QID, CVEs or CVSS.

@@ -1,0 +1,16 @@
+{
+  "format": "semgrep",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 3,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 1,
+      "low": 1,
+      "medium": 1
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "ExampleAnalyzer",
+    "version": "2.0.0",
+    "info_url": "https://www.example.com/analyzer",
+    "capabilities": [
+      "vulnerability"
+    ]
+  },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "repository",
+      "value": "https://git.example.com/team/app.git",
+      "name": "https://git.example.com/team/app.git",
+      "properties": {
+        "branch": "main",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+        "source": "sarif_version_control_provenance"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "vulnerability",
+      "title": "A credential is written in the source.",
+      "description": "Hard-coded credential",
+      "severity": "critical",
+      "confidence": 85,
+      "rule_id": "EX001",
+      "rule_name": "HardcodedCredential",
+      "asset_ref": "asset-1",
+      "location": {
+        "path": "src/config.py",
+        "start_line": 7,
+        "start_column": 1,
+        "end_column": 40
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-798"
+        ],
+        "cwe_id": "CWE-798",
+        "owasp_ids": [
+          "A07:2021"
+        ]
+      },
+      "references": [
+        "https://www.example.com/rules/EX001"
+      ],
+      "tags": [
+        "credentials",
+        "security"
+      ],
+      "correlation_id": "6f0c1b2a-0000-4000-8000-000000000001",
+      "suppression": {
+        "kind": "external",
+        "status": "under_review",
+        "justification": "Test fixture value, rotation tracked separately."
+      }
+    }
+  ]
+}

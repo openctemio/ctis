@@ -1,0 +1,114 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "nuclei",
+    "vendor": "ProjectDiscovery",
+    "info_url": "https://github.com/projectdiscovery/nuclei",
+    "capabilities": [
+      "dast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "domain",
+      "value": "app.example.com",
+      "name": "app.example.com",
+      "properties": {
+        "ip_address": "203.0.113.50"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Example App - Path Traversal",
+      "description": "Example App allows reading files outside the web root.",
+      "message": "Example App - Path Traversal at https://app.example.com:8443/download?file=../../etc/passwd",
+      "severity": "high",
+      "confidence": 90,
+      "rule_id": "CVE-2024-0001",
+      "asset_ref": "asset-1",
+      "location": {
+        "path": "https://app.example.com:8443/download?file=../../etc/passwd"
+      },
+      "network": {
+        "host": "app.example.com",
+        "port": 8443,
+        "protocol": "tcp",
+        "service": "https"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2024-0001",
+        "cve_ids": [
+          "CVE-2024-0001"
+        ],
+        "cwe_ids": [
+          "CWE-22"
+        ],
+        "cwe_id": "CWE-22",
+        "cvss_version": "3.1",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+        "epss_score": 0.42,
+        "epss_percentile": 0.97,
+        "cpe": "cpe:2.3:a:example:app:*:*:*:*:*:*:*:*",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-0001"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade Example App to 2.0."
+      },
+      "references": [
+        "https://www.example.com/advisory/0001",
+        "https://cloud.projectdiscovery.io/public/CVE-2024-0001"
+      ],
+      "tags": [
+        "cve",
+        "lfi",
+        "nuclei",
+        "http"
+      ],
+      "fingerprint": "3344e0612628b6c52804ebd527c6eb46e7e2afa6d1032b35a628e86d1116b397",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2024-0001",
+        "severity": "high",
+        "raw_ref": "/0"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "value": 7.5,
+          "source": "nuclei-templates"
+        },
+        {
+          "system": "epss",
+          "value": 0.42,
+          "source": "first"
+        }
+      ],
+      "source_extra": {
+        "authors": "example-author",
+        "extractor_name": "users",
+        "impact": "Arbitrary file read.",
+        "matcher_name": "passwd",
+        "template_metadata": "max-request=1\nvendor=\"example\"",
+        "template_path": "/home/scanner/nuclei-templates/http/cves/2024/CVE-2024-0001.yaml",
+        "timestamp": "2026-10-05T10:00:00.000000000Z"
+      }
+    }
+  ]
+}

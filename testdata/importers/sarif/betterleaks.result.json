@@ -1,0 +1,19 @@
+{
+  "format": "sarif",
+  "stats": {
+    "records": 2,
+    "assets": 1,
+    "findings": 2,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "medium": 2
+    }
+  },
+  "issues": [
+    {
+      "message": "the file names no repository and none was given: findings are filed on betterleaks-import"
+    }
+  ]
+}

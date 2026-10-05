@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"jsonVersion\":0,\"serverName\":\"\",\"sCAnnedIpv4Addrs\":[\"0.0.0.0\"],\"pACkAges\":{\"0\":{}}}")

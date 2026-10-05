@@ -1,0 +1,49 @@
+{
+  "version": "1.149.0",
+  "results": [
+    {
+      "check_id": "python.flask.security.injection.tainted-sql-string",
+      "path": "app/views.py",
+      "start": {"line": 30, "col": 9, "offset": 812},
+      "end": {"line": 30, "col": 61, "offset": 864},
+      "extra": {
+        "message": "User input flows into a SQL string.",
+        "severity": "ERROR",
+        "metadata": {
+          "cwe": "CWE-89: Improper Neutralization of Special Elements used in an SQL Command",
+          "owasp": "A03:2021 - Injection",
+          "confidence": "MEDIUM",
+          "impact": "HIGH",
+          "likelihood": "MEDIUM",
+          "category": "security",
+          "subcategory": "vuln",
+          "technology": "flask",
+          "references": "https://owasp.org/Top10/A03_2021-Injection/",
+          "vulnerability_class": "SQL Injection",
+          "source": "https://semgrep.dev/r/python.flask.security.injection.tainted-sql-string",
+          "source-rule-url": "https://www.example.com/rules/tainted-sql",
+          "shortlink": "https://sg.run/abcd",
+          "license": "Semgrep Rules License v1.0",
+          "cwe2022-top25": true
+        },
+        "lines": "cur.execute(f\"SELECT * FROM t WHERE id = {request.args['id']}\")",
+        "fingerprint": "0123456789abcdef",
+        "fix": "cur.execute(\"SELECT * FROM t WHERE id = %s\", (request.args['id'],))",
+        "fix_regex": {"regex": "f\"(.*)\"", "replacement": "\"$1\"", "count": 1},
+        "is_ignored": true,
+        "metavars": {"$X": {"abstract_content": "request.args['id']"}},
+        "dataflow_trace": {
+          "taint_source": ["CliLoc", [{"path": "app/views.py", "start": {"line": 28, "col": 13, "offset": 700}, "end": {"line": 28, "col": 33, "offset": 720}}, "request.args['id']"]],
+          "intermediate_vars": [{"location": {"path": "app/views.py", "start": {"line": 29, "col": 5, "offset": 760}, "end": {"line": 29, "col": 10, "offset": 765}}, "content": "query"}],
+          "taint_sink": ["CliLoc", [{"path": "app/views.py", "start": {"line": 30, "col": 9, "offset": 812}, "end": {"line": 30, "col": 61, "offset": 864}}, "cur.execute(...)"]]
+        },
+        "validation_state": "NO_VALIDATOR",
+        "engine_kind": "OSS"
+      }
+    }
+  ],
+  "errors": [],
+  "paths": {"scanned": ["app/views.py"]},
+  "interfile_languages_used": [],
+  "skipped_rules": []
+}

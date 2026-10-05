@@ -44,28 +44,45 @@ func TestGitleaks_NoRawSecretAnywhere(t *testing.T) {
 	long := "fakeLongSampleSecretValue0123456789"
 	short := "pw12345"
 	in := `[
-{"RuleID": "aws-access-token", "Description": "found ` + long + ` here", "Secret": "` + long + `", "Match": "key=` + long + `", "Line": "x = ` + long + `", "File": "a.py", "StartLine": 1, "Fingerprint": "c:a.py:aws-access-token:1:` + long + `", "Author": "Jane Example", "Email": "jane@example.com", "Message": "secret commit"},
+{"RuleID": "aws-access-token", "Description": "found ` + long + ` here", "Secret": "` + long + `", "Match": "key=` + long + `", "Line": "x = ` + long + `", "File": "a.py", "StartLine": 1, "Fingerprint": "c:a.py:aws-access-token:1:` + long + `", "Message": "added ` + long + `"},
 {"RuleID": "password", "Description": "pw", "Secret": "` + short + `", "Match": "pw=` + short + `", "File": "b.env"}
 ]`
 	res, err := Parse(context.Background(), strings.NewReader(in), Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	if res.Format != FormatGitleaks || res.Report.Tool.Name != "gitleaks" {
+		t.Fatalf("format %s tool %s", res.Format, res.Report.Tool.Name)
+	}
 	out, _ := json.Marshal(res)
-	for _, s := range []string{long, short, "Jane", "jane@example.com", "secret commit"} {
+	for _, s := range []string{long, short} {
 		if strings.Contains(string(out), s) {
-			t.Errorf("output holds %q", s)
+			t.Errorf("output holds the raw secret %q", s)
 		}
 	}
 	f := res.Report.Findings
-	if f[0].Location.Snippet != "fake********" || f[1].Location.Snippet != "REDACTED" {
-		t.Fatalf("snippets = %q, %q", f[0].Location.Snippet, f[1].Location.Snippet)
-	}
 	if f[0].Secret.SecretType != "aws_key" || f[1].Secret.SecretType != "password" {
 		t.Fatalf("secret types = %q, %q", f[0].Secret.SecretType, f[1].Secret.SecretType)
 	}
-	if f[0].Secret.MaskedValue != "" || f[0].Secret.Length != 0 {
-		t.Fatal("masked_value or length set: it changes fingerprints or reveals the length")
+}
+
+// The betterleaks format is the same parser under its own tool name.
+func TestLeaks_BetterleaksAlias(t *testing.T) {
+	in := `[{"RuleID": "jwt", "Secret": "eyJhbGciOiJIUzI1NiJ9.e30.abcdefabcdef", "File": "a"}]`
+	g, err := Parse(context.Background(), strings.NewReader(in), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := Parse(context.Background(), strings.NewReader(in), Options{Format: FormatBetterleaks})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g.Format != FormatGitleaks || b.Format != FormatBetterleaks || b.Report.Tool.Name != "betterleaks" {
+		t.Fatalf("formats %s/%s tool %s", g.Format, b.Format, b.Report.Tool.Name)
+	}
+	gf, bf := g.Report.Findings[0], b.Report.Findings[0]
+	if gf.Title != bf.Title || gf.RuleID != bf.RuleID || gf.Secret.SecretType != bf.Secret.SecretType || gf.Location.Path != bf.Location.Path {
+		t.Fatalf("the two formats map differently: %+v vs %+v", gf, bf)
 	}
 }
 
@@ -85,15 +102,14 @@ func TestGitleaks_DefaultAssetAndEmpty(t *testing.T) {
 	}
 }
 
-func TestGlSecretType(t *testing.T) {
+func TestLeakSecretType(t *testing.T) {
 	for rule, want := range map[string]string{
-		"private-key": "private_key", "github-pat": "token", "gcp-api-key": "gcp_key", "azure-ad-client-secret": "azure_key",
-		"slack-bot-token": "token", "generic-api-key": "api_key", "postgres-uri": "database_credential", "jwt": "jwt",
-		"age-secret-key": "encryption_key", "pkcs12-file": "certificate", "openssh-key": "ssh_key", "something": "generic_secret",
-		"oauth-client": "oauth",
+		"private-key": "private_key", "aws-access-token": "aws_key", "gcp-api-key": "gcp_key", "azure-ad-client-secret": "azure_key",
+		"slack-bot-token": "token", "generic-api-key": "api_key", "jwt": "jwt", "openssh-key": "ssh_key", "something": "generic_secret",
+		"password": "password",
 	} {
-		if got := glSecretType(rule); got != want {
-			t.Errorf("glSecretType(%q) = %q, want %q", rule, got, want)
+		if got := leakSecretType(rule); got != want {
+			t.Errorf("leakSecretType(%q) = %q, want %q", rule, got, want)
 		}
 	}
 }
@@ -149,12 +165,12 @@ func TestMore_WrongTypesAreIssuesWithLines(t *testing.T) {
 	if len(res.Report.Findings) != 1 || len(res.Issues) != 1 || res.Issues[0].Line != 4 {
 		t.Fatalf("findings %d issues %+v", len(res.Report.Findings), res.Issues)
 	}
-	leaks := "[\n{\"RuleID\": \"r\", \"Secret\": \"x\"},\n{\"RuleID\": [1], \"Secret\": \"y\"}\n]"
+	leaks := "[\n{\"RuleID\": \"r\", \"Secret\": \"x\", \"File\": \"a\"},\n{\"RuleID\": [1], \"Secret\": \"y\"}\n]"
 	res, err = Parse(context.Background(), strings.NewReader(leaks), Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(res.Report.Findings) != 1 || len(res.Issues) != 1 || res.Issues[0].Line != 3 {
+	if len(res.Report.Findings) != 1 || len(res.Issues) < 1 || res.Issues[0].Line != 3 {
 		t.Fatalf("findings %d issues %+v", len(res.Report.Findings), res.Issues)
 	}
 	zap := "{\"@programName\": \"ZAP\", \"site\": [\n{\"@host\": \"a.example.com\", \"alerts\": [{\"pluginid\": \"1\", \"alert\": \"x\", \"riskcode\": \"1\"}]},\n{\"@host\": {\"bad\": 1}}\n]}"

@@ -31,6 +31,18 @@ const (
 	FormatOpenVEX Format = "openvex"
 	// DefectDojo Generic Findings Import JSON.
 	FormatDefectDojo Format = "defectdojo"
+	// SARIF 2.1.0 (any static analysis tool that writes SARIF).
+	FormatSARIF Format = "sarif"
+	// trivy JSON (image, file-system, repository and config scans).
+	FormatTrivy Format = "trivy"
+	// nuclei JSON lines (-jsonl) or a JSON array (-json-export).
+	FormatNuclei Format = "nuclei"
+	// semgrep JSON (--json).
+	FormatSemgrep Format = "semgrep"
+	// betterleaks JSON report (the gitleaks-compatible array).
+	FormatBetterleaks Format = "betterleaks"
+	// vuls JSON scan result (one server).
+	FormatVuls Format = "vuls"
 	// gitleaks JSON report (an array of leaks). Every gitleaks-compatible
 	// scanner writes the same shape; Options.ToolName names the tool.
 	FormatGitleaks Format = "gitleaks"
@@ -126,6 +138,9 @@ func detectJSON(head []byte) (Format, bool) {
 	var stack []frame
 	top := map[string]string{}
 	docKeys := map[string]bool{}
+	// Keys of the objects of a top-level "results" array (semgrep and
+	// osv-scanner both use "results").
+	resultKeys := map[string]bool{}
 	// root is the depth of the document object: 1, or 2 under a top-level
 	// array.
 	root := 1
@@ -172,6 +187,8 @@ func detectJSON(head []byte) (Format, bool) {
 					top[v] = ""
 				case n == root+1 && stack[root-1].object && stack[root-1].key == "document":
 					docKeys[v] = true
+				case n == root+2 && stack[root-1].object && stack[root-1].key == "results" && !stack[root].object:
+					resultKeys[v] = true
 				}
 				continue
 			}
@@ -183,8 +200,8 @@ func detectJSON(head []byte) (Format, bool) {
 	}
 
 	if root == 2 {
-		// A top-level array: a gitleaks report is the only array format
-		// besides CSAF (decided above by its document member).
+		// A top-level array: a leaks report (gitleaks shape), a nuclei
+		// -json-export array, or CSAF.
 		_, rule := top["RuleID"]
 		_, secret := top["Secret"]
 		_, match := top["Match"]
@@ -193,6 +210,11 @@ func detectJSON(head []byte) (Format, bool) {
 		}
 		if rule && (secret || match) {
 			return FormatGitleaks, true
+		}
+		if _, tid := top["template-id"]; tid {
+			if _, info := top["info"]; info {
+				return FormatNuclei, true
+			}
 		}
 		return "", false
 	}
@@ -224,7 +246,28 @@ func detectJSON(head []byte) (Format, bool) {
 	if docKeys["csaf_version"] {
 		return FormatCSAF, true
 	}
+	has := func(keys ...string) bool {
+		for _, k := range keys {
+			if _, ok := top[k]; ok {
+				return true
+			}
+		}
+		return false
+	}
+	switch {
+	case has("runs") && (top["version"] == "2.1.0" || strings.Contains(strings.ToLower(top["$schema"]), "sarif")):
+		return FormatSARIF, true
+	case has("SchemaVersion") && has("Results", "ArtifactName", "ArtifactType"):
+		return FormatTrivy, true
+	case has("template-id") && has("info"):
+		return FormatNuclei, true
+	case has("scannedCves") || has("jsonVersion") && has("serverName"):
+		return FormatVuls, true
+	}
 	if _, ok := top["results"]; ok {
+		if resultKeys["check_id"] || (!resultKeys["source"] && !resultKeys["packages"] && has("paths", "skipped_rules", "interfile_languages_used")) {
+			return FormatSemgrep, true
+		}
 		return FormatOSV, true
 	}
 	if _, ok := top["findings"]; ok {
