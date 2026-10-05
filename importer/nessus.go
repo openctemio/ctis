@@ -675,7 +675,7 @@ func addVendorID(v *ctis.VulnerabilityDetails, id, source string) {
 
 // addAdvisory adds a vendor advisory to the finding's remediation.
 func addAdvisory(f *ctis.Finding, id, source string) {
-	id = line(id, ctis.MaxNativeIDLen)
+	id = line(id, ctis.MaxVulnerabilityIDLen)
 	if id == "" {
 		return
 	}
@@ -690,7 +690,7 @@ func addAdvisory(f *ctis.Finding, id, source string) {
 	if len(f.Remediation.Advisories) >= ctis.MaxAdvisories {
 		return
 	}
-	f.Remediation.Advisories = append(f.Remediation.Advisories, ctis.Advisory{ID: id, Source: source})
+	f.Remediation.Advisories = append(f.Remediation.Advisories, ctis.Advisory{ID: id, Source: line(source, ctis.MaxScoreSourceLen)})
 }
 
 func nessusComplianceResult(s string) string {
@@ -744,7 +744,7 @@ func nessusMaturity(s string) string {
 	case "poc", "proof-of-concept", "proof of concept":
 		return "poc"
 	case "unproven":
-		return "unproven"
+		return "none"
 	}
 	return ""
 }
