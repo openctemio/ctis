@@ -1,0 +1,29 @@
+{
+  "format": "qualys",
+  "stats": {
+    "records": 2,
+    "assets": 1,
+    "findings": 1,
+    "components": 0,
+    "statements": 0,
+    "skipped": 1,
+    "by_severity": {
+      "high": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 7,
+      "path": "/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION",
+      "message": "detection on 203.0.113.33 with QID \"not-a-number\": skipped"
+    },
+    {
+      "line": 29,
+      "path": "/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST",
+      "message": "host 100004 without DNS, IP or NetBIOS name: skipped"
+    },
+    {
+      "message": "no KnowledgeBase given: findings carry the QID but no title, description, CVEs or CVSS; export the KnowledgeBase for these QIDs and import it with the detections"
+    }
+  ]
+}

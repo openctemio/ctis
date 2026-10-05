@@ -1,0 +1,62 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "generated_at": "2025-10-05T09:00:00Z"
+    }
+  },
+  "tool": {
+    "name": "qualys",
+    "vendor": "Qualys",
+    "capabilities": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "host-203.0.113.33",
+      "type": "ip_address",
+      "value": "203.0.113.33",
+      "name": "203.0.113.33",
+      "properties": {
+        "ip_address": "203.0.113.33",
+        "qualys_host_id": "100003",
+        "tracking_method": "IP"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Qualys QID 38909",
+      "severity": "high",
+      "rule_id": "38909",
+      "asset_ref": "host-203.0.113.33",
+      "network": {
+        "host": "203.0.113.33",
+        "port": 22,
+        "protocol": "tcp"
+      },
+      "status": "open",
+      "native": {
+        "scheme": "qualys",
+        "vuln_id": "38909",
+        "instance_id": "9000000010",
+        "severity": "4",
+        "status": "Active",
+        "detection_type": "confirmed",
+        "raw_ref": "HOST[203.0.113.33]/DETECTION[QID=38909,port=22,protocol=tcp]"
+      },
+      "source_lifecycle": {
+        "state": "active"
+      },
+      "source_extra": {
+        "type": "Confirmed"
+      }
+    }
+  ]
+}

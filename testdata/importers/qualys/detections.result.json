@@ -1,0 +1,26 @@
+{
+  "format": "qualys",
+  "stats": {
+    "records": 5,
+    "assets": 2,
+    "findings": 5,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 2,
+      "high": 1,
+      "info": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "path": "/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/WARNING",
+      "message": "the export is one page of a longer list; import the other pages too"
+    },
+    {
+      "message": "the KnowledgeBase has no entry for QID 999999; those findings keep only the detection data"
+    }
+  ]
+}
