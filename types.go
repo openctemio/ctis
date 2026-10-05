@@ -184,6 +184,11 @@ type Asset struct {
 	// address, so a renamed host or repository keeps its history.
 	Identifiers *AssetIdentifiers `json:"identifiers,omitempty"`
 
+	// What a scanner observed about the host that helps match it across
+	// tools (FQDN, NetBIOS name, MACs, OS CPE, cloud id, agent id). Weaker
+	// than Identifiers.
+	IdentityHints *IdentityHints `json:"identity_hints,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
 }
@@ -1102,6 +1107,26 @@ type Finding struct {
 	// CTEM: Business impact assessment
 	BusinessImpact *BusinessImpact `json:"business_impact,omitempty"`
 
+	// The finding as the source tool names it: native id, severity, status,
+	// detection type, credentialed flag, raw record reference.
+	Native *NativeIdentity `json:"native,omitempty"`
+
+	// Every score of the finding with its source and date (CVSS v3.1 and
+	// v4.0 together, vendor scores, EPSS, SSVC). The vulnerability.cvss_*
+	// members stay the primary CVSS score.
+	Scores []Score `json:"scores,omitempty"`
+
+	// Exploitability statement (VEX) about this finding's vulnerability.
+	VEX *VEX `json:"vex,omitempty"`
+
+	// The finding's history as the source tracks it.
+	SourceLifecycle *SourceLifecycle `json:"source_lifecycle,omitempty"`
+
+	// Source fields no CTIS member holds, as strings, so an importer drops
+	// nothing silently. Bounded: at most 64 entries, keys of 128 and values
+	// of 4096 bytes, 32 KiB in all. Use SetSourceExtra to stay within it.
+	SourceExtra map[string]string `json:"source_extra,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
 }
@@ -1565,6 +1590,11 @@ type VulnerabilityDetails struct {
 
 	// Vulnerability status: affected, fixed, under_investigation, will_not_fix
 	VulnStatus string `json:"vuln_status,omitempty"`
+
+	// Every id of the vulnerability with its namespace (CVE, GHSA, OSV,
+	// vendor). cve_id and cve_ids stay as they are; producers that send
+	// both keep them consistent.
+	IDs []VulnerabilityID `json:"ids,omitempty"`
 }
 
 // VulnDataSource contains information about the vulnerability data source.
@@ -2024,6 +2054,15 @@ type Remediation struct {
 
 	// Reference URLs
 	References []string `json:"references,omitempty"`
+
+	// Kind of fix: patch, upgrade, config, workaround, mitigation, no_fix.
+	SolutionType SolutionType `json:"solution_type,omitempty"`
+
+	// When the vendor published the patch.
+	PatchPublishedAt *time.Time `json:"patch_published_at,omitempty"`
+
+	// Vendor advisories that address the finding.
+	Advisories []Advisory `json:"advisories,omitempty"`
 }
 
 // FixRegex contains regex-based auto-fix information.

@@ -34,6 +34,14 @@ var goEnums = map[reflect.Type][]string{
 	reflect.TypeOf(AssetType("")):            stringsOf(AllAssetTypes()),
 	reflect.TypeOf(Criticality("")):          stringsOf(AllCriticalities()),
 	reflect.TypeOf(DataFlowLocationType("")): stringsOf(AllDataFlowLocationTypes()),
+	reflect.TypeOf(NativeScheme("")):         stringsOf(AllNativeSchemes()),
+	reflect.TypeOf(DetectionType("")):        stringsOf(AllDetectionTypes()),
+	reflect.TypeOf(ScoreSystem("")):          stringsOf(AllScoreSystems()),
+	reflect.TypeOf(VEXStatus("")):            stringsOf(AllVEXStatuses()),
+	reflect.TypeOf(VEXJustification("")):     stringsOf(AllVEXJustifications()),
+	reflect.TypeOf(SourceState("")):          stringsOf(AllSourceStates()),
+	reflect.TypeOf(VulnerabilityIDType("")):  stringsOf(AllVulnerabilityIDTypes()),
+	reflect.TypeOf(SolutionType("")):         stringsOf(AllSolutionTypes()),
 }
 
 func stringsOf[T ~string](in []T) []string {

@@ -214,12 +214,134 @@
       "type": "string",
       "format": "date-time"
     },
+    "native": {
+      "$ref": "#/$defs/NativeIdentity"
+    },
+    "scores": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/Score"},
+      "description": "Every score of the finding with its source and date (CVSS v3.1 and v4.0 together, vendor scores, EPSS, SSVC). vulnerability.cvss_* stays the primary CVSS score."
+    },
+    "vex": {
+      "$ref": "#/$defs/VEX"
+    },
+    "source_lifecycle": {
+      "$ref": "#/$defs/SourceLifecycle"
+    },
+    "source_extra": {
+      "type": "object",
+      "maxProperties": 64,
+      "additionalProperties": {"type": "string", "maxLength": 4096},
+      "description": "Source fields no CTIS member holds, as strings. At most 64 entries, keys of 128 characters, values of 4096, 32 KiB in all (the total is checked by receivers)."
+    },
     "properties": {
       "type": "object",
       "additionalProperties": true
     }
   },
   "$defs": {
+    "NativeIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The finding as the source tool names it. The normalized values stay in severity, status and source_lifecycle.state.",
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "enum": ["nessus", "qualys", "defectdojo", "sarif", "other"],
+          "description": "Vocabulary of the native values"
+        },
+        "vuln_id": {"type": "string", "maxLength": 256, "description": "Tool id of the vulnerability or check: Nessus plugin ID, Qualys QID, DefectDojo vuln_id_from_tool, SARIF rule id"},
+        "instance_id": {"type": "string", "maxLength": 256, "description": "Tool id of this occurrence (DefectDojo unique_id_from_tool, a detection id)"},
+        "family": {"type": "string", "maxLength": 256, "description": "Tool family or category of the check"},
+        "severity": {"type": "string", "maxLength": 64, "description": "Severity exactly as the tool reported it (\"4\", \"5\", \"High\", \"error\")"},
+        "status": {"type": "string", "maxLength": 64, "description": "Status exactly as the tool reported it (\"Re-Opened\", \"fixed\", \"risk_accepted\")"},
+        "detection_type": {
+          "type": "string",
+          "enum": ["confirmed", "potential", "info"],
+          "description": "Whether the tool confirmed the issue, only suspects it, or gathered information"
+        },
+        "credentialed": {"type": "boolean", "description": "The scan was authenticated on the target. Absent means unknown."},
+        "raw_ref": {"type": "string", "maxLength": 1024, "description": "Where the raw record can be found again (a URL into the source, a locator in the imported file). Receivers never fetch it."}
+      }
+    },
+    "Score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system"],
+      "description": "One score with its source and date. cvss needs version (2.0, 3.0, 3.1, 4.0) and a value or a vector; cvss and vpr values are 0-10, epss and epss_percentile 0-1 (FIRST fractions); ssvc has no value and needs a vector or a label.",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": ["cvss", "epss", "epss_percentile", "ssvc", "vpr", "vendor"]
+        },
+        "version": {"type": "string", "maxLength": 32},
+        "vector": {"type": "string", "maxLength": 512},
+        "value": {"type": "number"},
+        "label": {"type": "string", "maxLength": 32, "description": "Qualitative rating as the source states it"},
+        "source": {"type": "string", "maxLength": 64, "description": "Who assigned it: nvd, ghsa, vendor, tenable, qualys, first, cisa, ..."},
+        "as_of": {"type": "string", "format": "date-time"}
+      }
+    },
+    "VEX": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "description": "Exploitability statement (CSAF / OpenVEX vocabulary). not_affected needs a justification or a statement; a justification is only for not_affected.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["not_affected", "affected", "fixed", "under_investigation"]
+        },
+        "justification": {
+          "type": "string",
+          "enum": ["component_not_present", "vulnerable_code_not_present", "vulnerable_code_not_in_execute_path", "vulnerable_code_cannot_be_controlled_by_adversary", "inline_mitigations_already_exist"]
+        },
+        "native_justification": {"type": "string", "maxLength": 64, "description": "The justification as the source document states it (a CycloneDX analysis.justification)"},
+        "statement": {"type": "string", "maxLength": 4096, "description": "Impact or action statement, plain text"},
+        "source": {"type": "string", "maxLength": 512, "description": "Who made the statement: a document id or URL, a vendor, a team"},
+        "as_of": {"type": "string", "format": "date-time"}
+      }
+    },
+    "SourceLifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The finding's history as the source tracks it, separate from the receiver's own lifecycle",
+      "properties": {
+        "first_found": {"type": "string", "format": "date-time"},
+        "last_found": {"type": "string", "format": "date-time"},
+        "last_fixed": {"type": "string", "format": "date-time"},
+        "times_found": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "state": {
+          "type": "string",
+          "enum": ["new", "active", "reopened", "fixed"]
+        }
+      }
+    },
+    "VulnerabilityID": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "description": "One identifier of a vulnerability with its namespace",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["cve", "ghsa", "osv", "vendor"]
+        },
+        "id": {"type": "string", "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/+\\-]*$"},
+        "source": {"type": "string", "maxLength": 64, "description": "Issuer of a vendor id (redhat, microsoft, ...)"}
+      }
+    },
+    "Advisory": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A vendor advisory that addresses the finding (an id or a url)",
+      "properties": {
+        "id": {"type": "string", "maxLength": 128},
+        "url": {"type": "string", "maxLength": 2048, "format": "uri"},
+        "source": {"type": "string", "maxLength": 64}
+      }
+    },
     "FindingType": {
       "type": "string",
       "enum": ["vulnerability", "secret", "misconfiguration", "compliance", "web3"],
@@ -511,6 +633,12 @@
           "type": "string",
           "enum": ["affected", "fixed", "under_investigation", "will_not_fix"],
           "description": "Vulnerability status"
+        },
+        "ids": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {"$ref": "#/$defs/VulnerabilityID"},
+          "description": "Every id of the vulnerability with its namespace (CVE, GHSA, OSV, vendor)"
         }
       }
     },
@@ -669,6 +797,18 @@
         "references": {
           "type": "array",
           "items": {"type": "string", "format": "uri"}
+        },
+        "solution_type": {
+          "type": "string",
+          "enum": ["patch", "upgrade", "config", "workaround", "mitigation", "no_fix"],
+          "description": "Kind of fix"
+        },
+        "patch_published_at": {"type": "string", "format": "date-time", "description": "When the vendor published the patch"},
+        "advisories": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {"$ref": "#/$defs/Advisory"},
+          "description": "Vendor advisories that address the finding"
         }
       }
     },

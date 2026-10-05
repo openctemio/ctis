@@ -18,6 +18,18 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ### Added
 
+- **CTIS 1.4: interoperability members** (spec section 4.10), all optional, so every 1.3 report is a valid 1.4 report. Receivers must upgrade before producers send them.
+  - `finding.native`: the source's own identity of the finding (`scheme`, `vuln_id`, `instance_id`, `family`, native `severity` and `status`, `detection_type` confirmed / potential / info, `credentialed`, `raw_ref`).
+  - `finding.scores[]`: every score with `system` (cvss, epss, epss_percentile, ssvc, vpr, vendor), `version`, `vector`, `value`, `label`, `source` and `as_of`, so CVSS v3.1 and v4.0, vendor ratings, EPSS and SSVC travel together.
+  - `finding.vex`: exploitability statement (`status`, `justification`, `native_justification`, `statement`, `source`, `as_of`) in the CSAF / OpenVEX vocabulary.
+  - `finding.source_lifecycle`: `first_found`, `last_found`, `last_fixed`, `times_found`, `state` as the source tracks them.
+  - `finding.source_extra`: unmapped source fields as bounded strings.
+  - `vulnerability.ids[]`: typed vulnerability ids (cve, ghsa, osv, vendor).
+  - `remediation.solution_type`, `remediation.patch_published_at`, `remediation.advisories[]`.
+  - `asset.identity_hints`: FQDN, NetBIOS name, MACs, OS CPE, cloud resource id and agent id as a scanner observed them.
+- Normalizers and mapping tables that keep the native value: `NormalizeNativeSeverity` (Nessus 0-4, Qualys 1-5, DefectDojo labels, SARIF levels), `NormalizeNativeStatus`, `NormalizeDetectionType`, `NormalizeVEXStatus`, `NormalizeVEXJustification` (CSAF, OpenVEX, CycloneDX), `NormalizeVulnerabilityID`, `VulnerabilityIDs`, `PreferredVulnerabilityID`, `LocationKey` (the derived location part of a deduplication key), `AllScores`, `CVSSVersionOfVector` and `SetSourceExtra`.
+- `Validate` checks the new members: enums, score ranges per system, CVSS version and vector agreement, VEX consistency (`not_affected` needs a justification or statement; a justification only with `not_affected`), typed id shapes, and the size limits, which the schema states with `maxLength`, `maxItems` and `maxProperties`.
+- Example `examples/network-vulnerability-interop.json` and four invalid examples for the new members. The test schema validator evaluates `maxItems` and `maxProperties`.
 - `LiveHostInput` keeps what an HTTP probe learns about the server: `TLS` (the leaf certificate: subject, SANs, issuer, serial, validity, SHA-256 fingerprint, self-signed, wildcard, host mismatch), `FaviconMMH3`, `JARM`, `ASN` and `CDNType`. `ConvertReconToCTIS` emits one `certificate` asset per leaf, named by its SHA-256 fingerprint (64 lower-case hex) and linked from the `http_service` through `related_assets` and `properties.tls_fingerprint`; services that serve the same certificate share one asset. The service gets `favicon_mmh3`, `jarm`, `asn`/`asn_org`/`asn_country`, `cdn_type`, `waf` and `hosted_by`. Every value is bounded: names at 255 bytes, serial at 128, at most 100 SANs (the rest counted in `sans_truncated`), control characters removed; a leaf without a valid SHA-256 fingerprint, an invalid JARM or favicon hash, or an ASN number outside 1..2^32-1 is dropped.
 - `MergeReconReports` keeps `related_assets` pointing at the right asset when merged IDs change.
 
