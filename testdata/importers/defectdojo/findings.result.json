@@ -1,0 +1,31 @@
+{
+  "format": "defectdojo",
+  "stats": {
+    "records": 6,
+    "assets": 4,
+    "findings": 6,
+    "components": 0,
+    "statements": 0,
+    "skipped": 1,
+    "by_severity": {
+      "critical": 1,
+      "high": 2,
+      "low": 1,
+      "medium": 2
+    }
+  },
+  "issues": [
+    {
+      "line": 103,
+      "column": 5,
+      "path": "/findings/4",
+      "message": "finding without a title: skipped"
+    },
+    {
+      "line": 107,
+      "column": 5,
+      "path": "/findings/5",
+      "message": "unknown severity \"Severe\", kept as medium"
+    }
+  ]
+}

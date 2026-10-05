@@ -41,6 +41,10 @@ type Options struct {
 	// out. Empty keeps every finding.
 	MinSeverity ctis.Severity
 
+	// The asset of records that name none (a DefectDojo finding without an
+	// endpoint). Nil: an unclassified asset named after the tool.
+	DefaultAsset *ctis.Asset
+
 	// The Qualys KnowledgeBase XML for a Qualys detection file. Optional:
 	// without it, detections keep their QID and results but have no title
 	// beyond the QID, CVEs or CVSS.
