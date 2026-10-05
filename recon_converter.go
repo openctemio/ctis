@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -112,6 +113,46 @@ type LiveHostInput struct {
 	TLSVersion    string
 	Redirect      string
 	ResponseTime  int64
+
+	// CDNType is what CDN names: "cdn", "waf" or "cloud" (httpx cdn_type).
+	CDNType string
+	// TLS is the leaf certificate seen in the TLS handshake (httpx
+	// -tls-grab); nil when the probe did not grab one.
+	TLS *TLSLeafInput
+	// FaviconMMH3 is the mmh3 hash of the favicon (httpx -favicon), as
+	// Shodan prints it: a signed 32-bit decimal.
+	FaviconMMH3 string
+	// JARM is the JARM TLS server fingerprint (62 hex characters).
+	JARM string
+	// ASN is the autonomous system of the host's address (httpx -asn).
+	ASN *ASNInput
+}
+
+// TLSLeafInput is the leaf certificate an HTTP probe saw in a TLS handshake.
+// Every value comes from the scanned server and is bounded by the converter.
+type TLSLeafInput struct {
+	SubjectCN    string
+	SANs         []string
+	IssuerCN     string
+	IssuerOrg    string
+	SerialNumber string
+	NotBefore    time.Time
+	NotAfter     time.Time
+	// FingerprintSHA256 is the SHA-256 of the DER certificate, hex, with or
+	// without colons. It is the certificate's identity: a leaf without a
+	// valid one is not converted.
+	FingerprintSHA256 string
+	SelfSigned        bool
+	Expired           bool
+	Wildcard          bool
+	Mismatched        bool
+}
+
+// ASNInput is an autonomous system.
+type ASNInput struct {
+	Number  string // "AS13335" or "13335"
+	Org     string
+	Country string // ISO 3166-1 alpha-2
 }
 
 // DiscoveredURLInput represents a discovered URL/endpoint.
@@ -547,6 +588,7 @@ func convertOpenPorts(report *Report, ids assetIDs, ports []OpenPortInput, opts 
 func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts *ReconConverterOptions) {
 	now := time.Now()
 	seen := make(map[string]bool)
+	certIDs := make(map[string]string) // fingerprint -> certificate asset ID
 
 	for _, h := range hosts {
 		h.URL = stripURLUserinfo(h.URL)
@@ -595,8 +637,18 @@ func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts 
 			asset.Properties["technologies"] = h.Technologies
 			asset.Tags = append(asset.Tags, h.Technologies...)
 		}
-		if h.CDN != "" {
-			asset.Properties["cdn"] = h.CDN
+		if cdn := boundLine(h.CDN, maxProviderLen); cdn != "" {
+			asset.Properties["cdn"] = cdn
+			// The service is served through this provider's edge: the
+			// address it answered on is the provider's, not the tenant's.
+			asset.Properties["hosted_by"] = cdn
+			switch t := strings.ToLower(strings.TrimSpace(h.CDNType)); t {
+			case "cdn", "waf", "cloud":
+				asset.Properties["cdn_type"] = t
+				if t == "waf" {
+					asset.Properties["waf"] = cdn
+				}
+			}
 		}
 		if h.TLSVersion != "" {
 			asset.Properties["tls_version"] = h.TLSVersion
@@ -607,9 +659,206 @@ func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts 
 		if h.Redirect != "" && h.Redirect != h.URL {
 			asset.Properties["redirect_url"] = h.Redirect
 		}
+		if v := faviconMMH3(h.FaviconMMH3); v != "" {
+			asset.Properties["favicon_mmh3"] = v
+		}
+		if v := jarmHash(h.JARM); v != "" {
+			asset.Properties["jarm"] = v
+		}
+		if asn := normalizeASN(h.ASN); asn != nil {
+			for k, v := range asn {
+				asset.Properties[k] = v
+			}
+		}
+
+		var leaf *Asset
+		if cert, fp := certificateAsset(h.TLS, ids, certIDs, opts, now); fp != "" {
+			asset.Properties["tls_fingerprint"] = fp
+			asset.RelatedAssets = append(asset.RelatedAssets, certIDs[fp])
+			leaf = cert
+		}
 
 		report.Assets = append(report.Assets, asset)
+		if leaf != nil {
+			report.Assets = append(report.Assets, *leaf)
+		}
 	}
+}
+
+// Bounds on values a scanned server chooses (RFC-040 §5.4: sensor and target
+// output is hostile).
+const (
+	maxProviderLen = 64
+	maxCertNameLen = 255
+	maxSerialLen   = 128
+	maxCertSANs    = 100
+	maxSANLen      = 253
+	maxASNOrgLen   = 255
+)
+
+// boundLine is cleanLine cut to at most maxBytes bytes.
+func boundLine(s string, maxBytes int) string {
+	return strings.TrimSpace(truncateUTF8(cleanLine(s), maxBytes))
+}
+
+// certificateAsset converts the leaf certificate of an HTTP probe. It
+// returns the asset to add (nil when this report already has the
+// certificate: several services can serve one certificate) and the
+// certificate's fingerprint ("" when there is no usable leaf: no
+// certificate, or no valid SHA-256 fingerprint to identify it by).
+func certificateAsset(leaf *TLSLeafInput, ids assetIDs, certIDs map[string]string, opts *ReconConverterOptions, now time.Time) (*Asset, string) {
+	if leaf == nil {
+		return nil, ""
+	}
+	fp := sha256Fingerprint(leaf.FingerprintSHA256)
+	if fp == "" {
+		return nil, ""
+	}
+	if _, dup := certIDs[fp]; dup {
+		return nil, fp
+	}
+	tech := &CertificateTechnical{
+		SerialNumber: boundLine(leaf.SerialNumber, maxSerialLen),
+		SubjectCN:    boundLine(leaf.SubjectCN, maxCertNameLen),
+		IssuerCN:     boundLine(leaf.IssuerCN, maxCertNameLen),
+		IssuerOrg:    boundLine(leaf.IssuerOrg, maxCertNameLen),
+		Fingerprint:  fp,
+		SelfSigned:   leaf.SelfSigned,
+		Wildcard:     leaf.Wildcard,
+	}
+	sans, truncated := boundSANs(leaf.SANs)
+	tech.SANs = sans
+	if !leaf.NotBefore.IsZero() {
+		nb := leaf.NotBefore.UTC()
+		tech.NotBefore = &nb
+	}
+	if !leaf.NotAfter.IsZero() {
+		na := leaf.NotAfter.UTC()
+		tech.NotAfter = &na
+	}
+	tech.Expired = leaf.Expired || (tech.NotAfter != nil && tech.NotAfter.Before(now))
+
+	id := ids.next("cert", fp)
+	certIDs[fp] = id
+	a := &Asset{
+		ID:           id,
+		Type:         AssetTypeCertificate,
+		Value:        fp,
+		Name:         fp,
+		Criticality:  opts.DefaultCriticality,
+		Confidence:   opts.DefaultConfidence,
+		DiscoveredAt: &now,
+		Technical:    &AssetTechnical{Certificate: tech},
+		Properties:   baseProperties(opts),
+	}
+	// The receiver correlates certificates by this top-level property.
+	a.Properties["fingerprint"] = fp
+	if tech.SubjectCN != "" {
+		a.Properties["subject_cn"] = tech.SubjectCN
+	}
+	if leaf.Mismatched {
+		a.Properties["host_mismatch"] = true
+	}
+	if truncated > 0 {
+		a.Properties["sans_truncated"] = truncated
+	}
+	return a, fp
+}
+
+// sha256Fingerprint returns a SHA-256 fingerprint as 64 lower-case hex
+// characters (colons, spaces and a "sha256:" prefix removed), or "".
+func sha256Fingerprint(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	s = strings.TrimPrefix(s, "sha256:")
+	s = strings.NewReplacer(":", "", " ", "").Replace(s)
+	if len(s) != 64 || !isHex(s) {
+		return ""
+	}
+	return s
+}
+
+func isHex(s string) bool {
+	for _, r := range s {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') {
+			return false
+		}
+	}
+	return s != ""
+}
+
+// boundSANs cleans, de-duplicates and caps a certificate's names. It returns
+// the names kept and how many were left out.
+func boundSANs(in []string) ([]string, int) {
+	if len(in) == 0 {
+		return nil, 0
+	}
+	out := make([]string, 0, min(len(in), maxCertSANs))
+	seen := map[string]bool{}
+	dropped := 0
+	for _, s := range in {
+		s = strings.TrimSuffix(strings.ToLower(boundLine(s, maxSANLen+1)), ".")
+		if s == "" || len(s) > maxSANLen || strings.ContainsAny(s, " /\\") {
+			dropped++
+			continue
+		}
+		if seen[s] {
+			continue
+		}
+		if len(out) == maxCertSANs {
+			dropped++
+			continue
+		}
+		seen[s] = true
+		out = append(out, s)
+	}
+	return out, dropped
+}
+
+// faviconMMH3 returns a favicon mmh3 hash (a signed 32-bit decimal), or "".
+func faviconMMH3(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" || len(s) > 11 {
+		return ""
+	}
+	n, err := strconv.ParseInt(s, 10, 32)
+	if err != nil {
+		return ""
+	}
+	return strconv.FormatInt(n, 10)
+}
+
+// jarmHash returns a JARM fingerprint (62 lower-case hex characters), or ""
+// for anything else and for the all-zero hash (no TLS answer).
+func jarmHash(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if len(s) != 62 || !isHex(s) || strings.Trim(s, "0") == "" {
+		return ""
+	}
+	return s
+}
+
+// normalizeASN returns the properties of an autonomous system: asn
+// ("AS13335"), asn_org and asn_country. nil when the number is not one.
+func normalizeASN(a *ASNInput) map[string]any {
+	if a == nil {
+		return nil
+	}
+	num := strings.TrimSpace(a.Number)
+	if len(num) > 2 && strings.EqualFold(num[:2], "as") {
+		num = num[2:]
+	}
+	n, err := strconv.ParseUint(num, 10, 32)
+	if err != nil || n == 0 {
+		return nil
+	}
+	out := map[string]any{"asn": "AS" + strconv.FormatUint(n, 10)}
+	if org := boundLine(a.Org, maxASNOrgLen); org != "" {
+		out["asn_org"] = org
+	}
+	if c := strings.ToUpper(strings.TrimSpace(a.Country)); len(c) == 2 && c[0] >= 'A' && c[0] <= 'Z' && c[1] >= 'A' && c[1] <= 'Z' {
+		out["asn_country"] = c
+	}
+	return out
 }
 
 func convertDiscoveredURLs(report *Report, ids assetIDs, urls []DiscoveredURLInput, opts *ReconConverterOptions) {
@@ -780,6 +1029,7 @@ func MergeReconReports(reports []*Report) *Report {
 
 	var order []string
 	byValue := make(map[string]*Asset)
+	relatedValues := make(map[string][]string) // asset value -> related asset values
 
 	for _, report := range reports {
 		if report == nil {
@@ -796,13 +1046,23 @@ func MergeReconReports(reports []*Report) *Report {
 		}
 		totalDuration += report.Metadata.DurationMs
 
+		valueOf := make(map[string]string, len(report.Assets)) // ID in this report -> value
+		for i := range report.Assets {
+			valueOf[report.Assets[i].ID] = report.Assets[i].Value
+		}
 		for i := range report.Assets {
 			src := &report.Assets[i]
+			for _, rel := range src.RelatedAssets {
+				if v, ok := valueOf[rel]; ok && !slices.Contains(relatedValues[src.Value], v) {
+					relatedValues[src.Value] = append(relatedValues[src.Value], v)
+				}
+			}
 			if existing, ok := byValue[src.Value]; ok {
 				mergeAssetProperties(existing, src)
 				continue
 			}
 			c := cloneAsset(src)
+			c.RelatedAssets = nil
 			byValue[src.Value] = &c
 			order = append(order, src.Value)
 		}
@@ -811,12 +1071,24 @@ func MergeReconReports(reports []*Report) *Report {
 	}
 
 	ids := newAssetIDs()
+	idOf := make(map[string]string, len(order))
 	for _, v := range order {
-		a := *byValue[v]
+		a := byValue[v]
 		if a.ID != "" && !ids[a.ID] {
 			ids[a.ID] = true
 		} else if a.ID != "" {
 			a.ID = ids.next("asset", a.Value)
+		}
+		idOf[v] = a.ID
+	}
+	// Related assets are IDs within one report: point them at the merged
+	// IDs (an asset's ID can change when two reports used the same one).
+	for _, v := range order {
+		a := *byValue[v]
+		for _, rv := range relatedValues[v] {
+			if id := idOf[rv]; id != "" && id != a.ID {
+				a.RelatedAssets = append(a.RelatedAssets, id)
+			}
 		}
 		merged.Assets = append(merged.Assets, a)
 	}
