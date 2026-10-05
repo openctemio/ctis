@@ -135,7 +135,7 @@ func validateIdentityHints(i int, h *IdentityHints, add func(string, ...any)) {
 	}
 	for _, m := range [][2]string{
 		{"fqdn", h.FQDN}, {"netbios_name", h.NetBIOSName}, {"os_cpe", h.OSCPE},
-		{"cloud_resource_id", h.CloudResourceID}, {"agent_id", h.AgentID},
+		{"cloud_resource_id", h.CloudResourceID}, {"agent_id", h.ScannerAgentID},
 	} {
 		if tooLong(m[1], MaxIdentityHintLen) {
 			add("assets[%d]: identity_hints.%s longer than %d", i, m[0], MaxIdentityHintLen)

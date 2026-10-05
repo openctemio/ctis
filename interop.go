@@ -365,9 +365,11 @@ type IdentityHints struct {
 	// Cloud resource id the scanner reported (instance id, ARN).
 	CloudResourceID string `json:"cloud_resource_id,omitempty"`
 
-	// Id of the scanner's agent installed on the host (a Nessus or Qualys
-	// agent UUID). Unique per scanner, not across scanners.
-	AgentID string `json:"agent_id,omitempty"`
+	// Id of the scanner's own agent installed on the host (a Nessus or
+	// Qualys agent UUID). Unique per scanner, not across scanners. The Go
+	// name says whose agent it is, so it is not read as a receiver's own
+	// endpoint software.
+	ScannerAgentID string `json:"agent_id,omitempty"`
 }
 
 func inEnum[T comparable](v T, all []T) bool {
