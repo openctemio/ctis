@@ -1,0 +1,19 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "source_ref": "https://vex.example.com/public/vex-2025-0042",
+    "properties": {
+      "author": "Example Platform Security",
+      "document_version": "2",
+      "openvex_context": "https://openvex.dev/ns/v0.2.0",
+      "tooling": "vexctl/0.3.0"
+    }
+  },
+  "tool": {
+    "name": "openvex"
+  }
+}

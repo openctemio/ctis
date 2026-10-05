@@ -1,0 +1,130 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "title": "Example Gateway: status of CVE-2025-0001 and GHSA-2xxx",
+    "lang": "en",
+    "publisher": {
+      "category": "vendor",
+      "name": "Example Corp PSIRT",
+      "namespace": "https://psirt.example.com"
+    },
+    "distribution": {
+      "tlp": { "label": "WHITE" }
+    },
+    "tracking": {
+      "id": "EXCORP-VEX-2025-0007",
+      "version": "2",
+      "status": "final",
+      "initial_release_date": "2025-09-01T10:00:00Z",
+      "current_release_date": "2025-09-15T10:00:00Z",
+      "revision_history": [
+        { "date": "2025-09-01T10:00:00Z", "number": "1", "summary": "Initial" },
+        { "date": "2025-09-15T10:00:00Z", "number": "2", "summary": "Added 2.2" }
+      ],
+      "generator": { "engine": { "name": "Example VEX writer", "version": "0.3" } }
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "Example Corp",
+        "branches": [
+          {
+            "category": "product_name",
+            "name": "Example Gateway",
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "2.0",
+                "product": {
+                  "name": "Example Gateway 2.0",
+                  "product_id": "GW-2.0",
+                  "product_identification_helper": { "cpe": "cpe:2.3:a:example:gateway:2.0:*:*:*:*:*:*:*" }
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "2.1",
+                "product": {
+                  "name": "Example Gateway 2.1",
+                  "product_id": "GW-2.1",
+                  "product_identification_helper": { "cpe": "cpe:2.3:a:example:gateway:2.1:*:*:*:*:*:*:*" }
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "2.2",
+                "product": {
+                  "name": "Example Gateway 2.2",
+                  "product_id": "GW-2.2",
+                  "product_identification_helper": { "cpe": "cpe:2.3:a:example:gateway:2.2:*:*:*:*:*:*:*" }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "full_product_names": [
+      {
+        "name": "examplelib 1.2.3",
+        "product_id": "LIB-1.2.3",
+        "product_identification_helper": { "purl": "pkg:npm/examplelib@1.2.3" }
+      }
+    ],
+    "relationships": [
+      {
+        "category": "default_component_of",
+        "full_product_name": { "name": "examplelib 1.2.3 in Example Gateway 2.1", "product_id": "GW-2.1:LIB-1.2.3" },
+        "product_reference": "LIB-1.2.3",
+        "relates_to_product_reference": "GW-2.1"
+      }
+    ],
+    "product_groups": [
+      { "group_id": "OLD", "product_ids": ["GW-2.0"], "summary": "Releases before 2.1" }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2025-0001",
+      "title": "examplelib prototype pollution",
+      "product_status": {
+        "known_not_affected": ["GW-2.0"],
+        "known_affected": ["GW-2.1:LIB-1.2.3"],
+        "fixed": ["GW-2.2"]
+      },
+      "flags": [
+        { "label": "vulnerable_code_not_in_execute_path", "group_ids": ["OLD"] }
+      ],
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Upgrade to Example Gateway 2.2.",
+          "url": "https://psirt.example.com/advisories/EXCORP-2025-0007",
+          "product_ids": ["GW-2.1:LIB-1.2.3"]
+        }
+      ],
+      "notes": [ { "category": "description", "text": "Prototype pollution in examplelib." } ]
+    },
+    {
+      "ids": [ { "system_name": "GitHub", "text": "GHSA-2xxx-3xxx-4xxx" } ],
+      "product_status": {
+        "under_investigation": ["GW-2.1", "GW-2.2"],
+        "known_not_affected": ["GW-2.0", "GW-9.9"]
+      },
+      "threats": [
+        { "category": "impact", "details": "The vulnerable parser is not built into 2.0.", "product_ids": ["GW-2.0"] }
+      ]
+    },
+    {
+      "cve": "CVE-2025-0002",
+      "product_status": { "known_not_affected": ["GW-2.2"] }
+    },
+    {
+      "title": "No id at all",
+      "product_status": { "known_affected": ["GW-2.2"] }
+    }
+  ]
+}

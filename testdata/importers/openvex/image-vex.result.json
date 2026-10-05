@@ -1,0 +1,132 @@
+{
+  "format": "openvex",
+  "vex": [
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2025-1111"
+        },
+        {
+          "type": "ghsa",
+          "id": "GHSA-cfgh-jmpq-rvwx"
+        },
+        {
+          "type": "osv",
+          "id": "GO-2025-3001"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:oci/web-frontend@sha256%3A0000000000000000000000000000000000000000000000000000000000000001?repository_url=registry.example.com/web",
+          "subcomponents": [
+            {
+              "purl": "pkg:golang/example.com/libexample@v1.4.2"
+            }
+          ]
+        }
+      ],
+      "vex": {
+        "status": "not_affected",
+        "justification": "vulnerable_code_not_in_execute_path",
+        "native_justification": "vulnerable_code_not_in_execute_path",
+        "statement": "The image never decodes TIFF input.",
+        "source": "Example Platform Security (https://vex.example.com/public/vex-2025-0042)",
+        "as_of": "2025-09-20T12:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2025-2222"
+        }
+      ],
+      "products": [
+        {
+          "cpe": "cpe:2.3:a:example:api_server:3.2.0:*:*:*:*:*:*:*"
+        },
+        {
+          "cpe": "cpe:2.3:a:example:api_server:3.2.1:*:*:*:*:*:*:*",
+          "name": "api-server-3.2"
+        }
+      ],
+      "vex": {
+        "status": "affected",
+        "statement": "Upgrade to 3.3.0.\n\nExploitable only with the debug endpoint enabled.",
+        "source": "Example Platform Security (https://vex.example.com/public/vex-2025-0042)",
+        "as_of": "2025-09-21T08:30:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2025-3333"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:npm/example-ui@5.0.1"
+        }
+      ],
+      "vex": {
+        "status": "fixed",
+        "source": "Example Platform Security (https://vex.example.com/public/vex-2025-0042)",
+        "as_of": "2025-09-21T08:30:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2025-4444"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:npm/example-ui@5.0.1"
+        }
+      ],
+      "vex": {
+        "status": "under_investigation",
+        "source": "Example Platform Security (https://vex.example.com/public/vex-2025-0042)",
+        "as_of": "2025-09-21T08:30:00Z"
+      }
+    }
+  ],
+  "stats": {
+    "records": 8,
+    "assets": 0,
+    "findings": 0,
+    "components": 0,
+    "statements": 4,
+    "skipped": 4
+  },
+  "issues": [
+    {
+      "line": 58,
+      "column": 5,
+      "path": "/statements/4",
+      "message": "status not_affected without a justification or an impact statement: skipped"
+    },
+    {
+      "line": 63,
+      "column": 5,
+      "path": "/statements/5",
+      "message": "unknown VEX status \"exploited_maybe\": skipped"
+    },
+    {
+      "line": 68,
+      "column": 5,
+      "path": "/statements/6",
+      "message": "statement without a usable vulnerability name: skipped"
+    },
+    {
+      "line": 73,
+      "column": 5,
+      "path": "/statements/7",
+      "message": "statement without products: skipped"
+    }
+  ]
+}

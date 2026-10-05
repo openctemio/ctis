@@ -1,0 +1,18 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "source_ref": "https://vex.example.com/legacy/0001",
+    "properties": {
+      "author": "Example Legacy Team",
+      "document_version": "1",
+      "openvex_context": "https://openvex.dev/ns"
+    }
+  },
+  "tool": {
+    "name": "openvex"
+  }
+}

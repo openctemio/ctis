@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -482,8 +483,13 @@ func mustOpen(t *testing.T, p string) io.Reader {
 }
 
 func FuzzParse(f *testing.F) {
-	for _, fx := range []string{"nessus/scan.nessus", "nessus/all-fields.nessus", "qualys/detections.xml", "qualys/no-kb.xml"} {
-		if b, err := os.ReadFile(fixtureRoot + "/" + fx); err == nil {
+	// Every fixture of every format seeds the fuzzer.
+	seeds, _ := filepath.Glob(fixtureRoot + "/*/*")
+	for _, fx := range seeds {
+		if isCompanion(fx) {
+			continue
+		}
+		if b, err := os.ReadFile(fx); err == nil {
 			f.Add(b)
 		}
 	}
