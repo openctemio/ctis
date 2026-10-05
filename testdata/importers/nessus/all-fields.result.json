@@ -1,0 +1,15 @@
+{
+  "format": "nessus",
+  "stats": {
+    "records": 2,
+    "assets": 2,
+    "findings": 2,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "low": 1,
+      "medium": 1
+    }
+  }
+}
