@@ -154,8 +154,10 @@ func scanJSON(data []byte, format Format, lim Limits, obs *observer, index ...st
 		case stack[n-1].object:
 			path = stack[n-1].path + "/" + pathKey(stack[n-1].key)
 		default:
-			if path = stack[n-1].path + "[]"; stack[n-1].path == "" {
-				path = "/[]" // the elements of a top-level array
+			// The elements of a top-level array are "/[]".
+			path = stack[n-1].path + "[]"
+			if stack[n-1].path == "" {
+				path = "/[]"
 			}
 			if want[path] {
 				start := prevEnd

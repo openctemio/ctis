@@ -90,6 +90,7 @@ func runFixture(t *testing.T, fx fixture) (*Result, []string) {
 	// <stem>.options.json sets the repository a code report is filed on.
 	if b, err := os.ReadFile(stem(fx.path) + ".options.json"); err == nil {
 		var o struct {
+			Format     Format `json:"format"`
 			Repository string `json:"repository"`
 			Branch     string `json:"branch"`
 			CommitSHA  string `json:"commit_sha"`
@@ -98,6 +99,9 @@ func runFixture(t *testing.T, fx fixture) (*Result, []string) {
 			t.Fatal(err)
 		}
 		opts.Repository, opts.Branch, opts.CommitSHA = o.Repository, o.Branch, o.CommitSHA
+		if o.Format != "" {
+			opts.Format = o.Format
+		}
 	}
 	if fx.kb != "" {
 		kb, err := os.Open(fx.kb)

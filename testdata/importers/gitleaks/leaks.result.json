@@ -1,0 +1,31 @@
+{
+  "format": "gitleaks",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 1,
+    "components": 0,
+    "statements": 0,
+    "skipped": 2,
+    "by_severity": {
+      "high": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 24,
+      "column": 3,
+      "path": "/1",
+      "message": "skipped: StartLine has the wrong type (JSON string)"
+    },
+    {
+      "line": 41,
+      "column": 3,
+      "path": "/2",
+      "message": "record without RuleID or File: skipped"
+    },
+    {
+      "message": "the file names no repository and none was given: findings are filed on gitleaks-import"
+    }
+  ]
+}

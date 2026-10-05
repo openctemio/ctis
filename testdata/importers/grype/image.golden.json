@@ -1,0 +1,255 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "generated_at": "2025-10-05T08:00:00Z",
+      "grype_db_built": "2025-10-05T01:30:00Z",
+      "grype_db_schema": "5"
+    }
+  },
+  "tool": {
+    "name": "grype",
+    "version": "0.80.1",
+    "vendor": "Anchore",
+    "capabilities": [
+      "sca"
+    ]
+  },
+  "assets": [
+    {
+      "id": "grype-registry.example.com/shop/api:1.4.2",
+      "type": "container",
+      "value": "registry.example.com/shop/api:1.4.2",
+      "name": "registry.example.com/shop/api:1.4.2",
+      "properties": {
+        "architecture": "amd64",
+        "distro": "alpine 3.18.4",
+        "image_id": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "image_tag": "registry.example.com/shop/api:1.4.2",
+        "manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "os": "linux",
+        "repo_digest": "registry.example.com/shop/api@sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "source_type": "image"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "CVE-2023-5363 in libcrypto3@3.1.3-r0",
+      "description": "Incorrect cipher key and IV length processing.",
+      "severity": "high",
+      "rule_id": "CVE-2023-5363",
+      "asset_ref": "grype-registry.example.com/shop/api:1.4.2",
+      "location": {
+        "path": "/lib/apk/db/installed"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2023-5363",
+        "cve_ids": [
+          "CVE-2023-5363"
+        ],
+        "cvss_version": "3.1",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+        "cvss_source": "nvd",
+        "package": "libcrypto3",
+        "purl": "pkg:apk/alpine/libcrypto3@3.1.3-r0?arch=x86_64&distro=alpine-3.18.4",
+        "affected_version": "3.1.3-r0",
+        "fixed_version": "3.1.4-r0",
+        "fixed_versions": [
+          "3.1.4-r0"
+        ],
+        "epss_score": 0.00289,
+        "epss_percentile": 0.69544,
+        "cpe": "cpe:2.3:a:libcrypto3:libcrypto3:3.1.3-r0:*:*:*:*:*:*:*",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2023-5363"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade libcrypto3 to 3.1.4-r0.",
+        "fix_available": true,
+        "solution_type": "upgrade",
+        "advisories": [
+          {
+            "id": "ALPINE-2023-0001",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-5363"
+          }
+        ]
+      },
+      "references": [
+        "https://www.openssl.org/news/secadv/20231024.txt",
+        "https://nvd.nist.gov/vuln/detail/CVE-2023-5363"
+      ],
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2023-5363",
+        "family": "alpine:distro:alpine:3.18",
+        "severity": "High",
+        "raw_ref": "/matches/0"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "value": 7.5,
+          "source": "nvd"
+        },
+        {
+          "system": "epss",
+          "value": 0.00289,
+          "source": "first",
+          "as_of": "2025-10-01T00:00:00Z"
+        },
+        {
+          "system": "epss_percentile",
+          "value": 0.69544,
+          "source": "first",
+          "as_of": "2025-10-01T00:00:00Z"
+        },
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "value": 7.5,
+          "source": "nvd"
+        },
+        {
+          "system": "epss",
+          "value": 0.00289,
+          "source": "first",
+          "as_of": "2025-10-01T00:00:00Z"
+        },
+        {
+          "system": "epss_percentile",
+          "value": 0.69544,
+          "source": "first",
+          "as_of": "2025-10-01T00:00:00Z"
+        },
+        {
+          "system": "vendor",
+          "value": 2.1,
+          "label": "risk",
+          "source": "grype"
+        }
+      ],
+      "source_extra": {
+        "fix_state": "fixed",
+        "match_type": "exact-indirect-match",
+        "matcher": "apk-matcher",
+        "namespace": "alpine:distro:alpine:3.18",
+        "suggested_version": "3.1.4-r0"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "GHSA-9wx4-h78v-vm56 in requests@2.31.0",
+      "description": "Requests Session object does not verify requests after making first request with verify=False.",
+      "severity": "medium",
+      "rule_id": "GHSA-9wx4-h78v-vm56",
+      "asset_ref": "grype-registry.example.com/shop/api:1.4.2",
+      "location": {
+        "path": "/app/requirements.txt"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2024-35195",
+        "cve_ids": [
+          "CVE-2024-35195"
+        ],
+        "cvss_version": "3.1",
+        "cvss_score": 5.6,
+        "cvss_vector": "CVSS:3.1/AV:H/AC:H/PR:H/UI:R/S:U/C:H/I:N/A:N",
+        "cvss_source": "vendor",
+        "package": "requests",
+        "purl": "pkg:pypi/requests@2.31.0",
+        "affected_version": "2.31.0",
+        "fixed_version": "2.32.0",
+        "fixed_versions": [
+          "2.32.0"
+        ],
+        "ecosystem": "pip",
+        "ids": [
+          {
+            "type": "ghsa",
+            "id": "GHSA-9wx4-h78v-vm56"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2024-35195"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade requests to 2.32.0.",
+        "fix_available": true,
+        "solution_type": "upgrade"
+      },
+      "references": [
+        "https://github.com/advisories/GHSA-9wx4-h78v-vm56",
+        "https://nvd.nist.gov/vuln/detail/CVE-2024-35195"
+      ],
+      "native": {
+        "scheme": "other",
+        "vuln_id": "GHSA-9wx4-h78v-vm56",
+        "family": "github:language:python",
+        "severity": "Unknown",
+        "raw_ref": "/matches/1"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:H/AC:H/PR:H/UI:R/S:U/C:H/I:N/A:N",
+          "value": 5.6,
+          "source": "github"
+        }
+      ],
+      "source_extra": {
+        "fix_state": "fixed",
+        "match_type": "exact-direct-match",
+        "matcher": "python-matcher",
+        "namespace": "github:language:python"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "a1b2c3d4e5f60718",
+      "name": "libcrypto3",
+      "version": "3.1.3-r0",
+      "type": "apk",
+      "purl": "pkg:apk/alpine/libcrypto3@3.1.3-r0?arch=x86_64&distro=alpine-3.18.4",
+      "licenses": [
+        "Apache-2.0"
+      ],
+      "path": "/lib/apk/db/installed",
+      "properties": {
+        "cpe": "cpe:2.3:a:libcrypto3:libcrypto3:3.1.3-r0:*:*:*:*:*:*:*",
+        "layer_id": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+        "upstream": "openssl@3.1.3-r0"
+      }
+    },
+    {
+      "id": "b2c3d4e5f6071829",
+      "name": "requests",
+      "version": "2.31.0",
+      "type": "python",
+      "ecosystem": "pip",
+      "purl": "pkg:pypi/requests@2.31.0",
+      "path": "/app/requirements.txt",
+      "properties": {
+        "language": "python",
+        "layer_id": "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+      }
+    }
+  ]
+}

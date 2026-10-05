@@ -1,0 +1,221 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "generated": "2025-10-05T08:00:00.000Z"
+    }
+  },
+  "tool": {
+    "name": "zap",
+    "version": "2.15.0",
+    "capabilities": [
+      "dast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "site-https://shop.example.com",
+      "type": "website",
+      "value": "https://shop.example.com",
+      "name": "https://shop.example.com",
+      "properties": {
+        "host": "shop.example.com",
+        "port": "443",
+        "scheme": "https"
+      }
+    },
+    {
+      "id": "site-http://legacy.example.com:8080",
+      "type": "website",
+      "value": "http://legacy.example.com:8080",
+      "name": "http://legacy.example.com:8080",
+      "properties": {
+        "host": "legacy.example.com",
+        "port": "8080",
+        "scheme": "http"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Cross Site Scripting (Reflected)",
+      "description": "Cross-site Scripting (XSS) is an attack technique that involves echoing attacker-supplied code into a user's browser instance.",
+      "severity": "high",
+      "confidence": 60,
+      "rule_id": "40012",
+      "rule_name": "Cross Site Scripting (Reflected)",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "GET https://shop.example.com/search?q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E param=q attack=<script>alert(1);</script> evidence=<script>alert(1);</script>",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-79"
+        ],
+        "cwe_id": "CWE-79"
+      },
+      "remediation": {
+        "recommendation": "Phase: Architecture and Design\n\nUse a vetted library or framework that does not allow this weakness to occur."
+      },
+      "references": [
+        "https://owasp.org/www-community/attacks/xss/",
+        "https://cwe.mitre.org/data/definitions/79.html",
+        "https://owasp.org/Top10/A03_2021-Injection/"
+      ],
+      "tags": [
+        "CWE-79",
+        "OWASP_2021_A03"
+      ],
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "40012",
+        "instance_id": "40012",
+        "severity": "3",
+        "raw_ref": "/site/0/alerts/0"
+      },
+      "source_extra": {
+        "confidence": "2",
+        "otherinfo": "Reflected in the HTML body.",
+        "sourceid": "1",
+        "systemic": "false",
+        "wascid": "8"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Content Security Policy (CSP) Header Not Set",
+      "description": "CSP is an added layer of security.",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "10038",
+      "rule_name": "Content Security Policy (CSP) Header Not Set",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "GET https://shop.example.com/\nGET https://shop.example.com/cart",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-693"
+        ],
+        "cwe_id": "CWE-693"
+      },
+      "remediation": {
+        "recommendation": "Set the Content-Security-Policy header."
+      },
+      "references": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"
+      ],
+      "occurrence_count": 2,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "10038",
+        "instance_id": "10038-1",
+        "severity": "2",
+        "raw_ref": "/site/0/alerts/1"
+      },
+      "source_extra": {
+        "confidence": "3",
+        "sourceid": "3",
+        "systemic": "true",
+        "wascid": "15"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Timestamp Disclosure - Unix",
+      "description": "A timestamp was disclosed.",
+      "severity": "info",
+      "confidence": 30,
+      "rule_id": "10096",
+      "rule_name": "Timestamp Disclosure - Unix",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "10096",
+        "severity": "0",
+        "detection_type": "info",
+        "raw_ref": "/site/0/alerts/2"
+      },
+      "source_extra": {
+        "confidence": "1"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Application Error Disclosure",
+      "description": "An error message was returned.",
+      "severity": "low",
+      "rule_id": "90022",
+      "rule_name": "Application Error Disclosure",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "POST https://shop.example.com/api",
+      "occurrence_count": 1,
+      "status": "false_positive",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "90022",
+        "severity": "1",
+        "status": "false_positive",
+        "raw_ref": "/site/0/alerts/3"
+      },
+      "source_extra": {
+        "confidence": "0"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Missing Anti-clickjacking Header",
+      "description": "The response does not protect against ClickJacking.",
+      "severity": "medium",
+      "confidence": 100,
+      "rule_id": "10020",
+      "rule_name": "Missing Anti-clickjacking Header",
+      "asset_ref": "site-http://legacy.example.com:8080",
+      "network": {
+        "host": "legacy.example.com",
+        "port": 8080,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "GET http://legacy.example.com:8080/",
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "10020",
+        "instance_id": "10020-1",
+        "severity": "9",
+        "detection_type": "confirmed",
+        "raw_ref": "/site/1/alerts/0"
+      },
+      "source_extra": {
+        "confidence": "4"
+      }
+    }
+  ]
+}
