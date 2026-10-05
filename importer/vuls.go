@@ -152,14 +152,23 @@ func parseVuls(b *builder, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	for _, name := range sortedKeysOf(rep.Packages) {
-		p := rep.Packages[name]
+	for _, key := range sortedKeysOf(rep.Packages) {
+		p := rep.Packages[key]
+		// vuls keys packages by name; the key stands in for an empty name.
+		// A package with neither is not a dependency (CTIS requires a name).
+		name := line(p.Name, capShort)
+		if name == "" {
+			name = line(key, capShort)
+		}
+		if name == "" {
+			continue
+		}
 		if err := b.dependency(ctis.Dependency{
-			Name:      line(p.Name, capShort),
+			Name:      name,
 			Version:   line(vulsVersion(p), 128),
 			Type:      "os",
 			Ecosystem: vulsEcosystem(rep.Family),
-			PURL:      sanePURL(vulsPURL(rep.Family, rep.Release, p.Name, vulsVersion(p), p.Arch)),
+			PURL:      sanePURL(vulsPURL(rep.Family, rep.Release, name, vulsVersion(p), p.Arch)),
 		}); err != nil {
 			return err
 		}
