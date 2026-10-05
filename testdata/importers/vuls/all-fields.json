@@ -1,0 +1,63 @@
+{
+  "jsonVersion": 4,
+  "serverName": "web01.example.com",
+  "serverUUID": "00000000-0000-4000-8000-0000000000aa",
+  "family": "ubuntu",
+  "release": "22.04",
+  "runningKernel": {"version": "5.15.0-100.110", "release": "5.15.0-100-generic", "rebootRequired": true},
+  "scannedAt": "2026-10-05T09:00:00Z",
+  "scanMode": "fast mode",
+  "scannedVersion": "v0.27.0",
+  "scannedRevision": "build-0",
+  "scannedBy": "scanner01",
+  "scannedVia": "remote",
+  "scannedIpv4Addrs": ["192.0.2.80"],
+  "scannedIpv6Addrs": ["2001:db8::80"],
+  "reportedAt": "2026-10-05T09:05:00Z",
+  "reportedVersion": "v0.27.0",
+  "reportedRevision": "build-0",
+  "reportedBy": "scanner01",
+  "errors": [],
+  "warnings": [],
+  "platform": {"name": "aws", "instanceID": "i-0aaaabbbbccccdddd"},
+  "ipv4Addrs": ["192.0.2.80"],
+  "packages": {
+    "openssh-server": {"name": "openssh-server", "version": "1:8.9p1", "release": "3ubuntu0.6", "arch": "amd64", "repository": "jammy-updates", "newVersion": "1:8.9p1", "newRelease": "3ubuntu0.10"}
+  },
+  "scannedCves": {
+    "CVE-2024-6387": {
+      "cveID": "CVE-2024-6387",
+      "confidences": [{"score": 100, "detectionMethod": "OvalMatch"}],
+      "affectedPackages": [{"name": "openssh-server", "fixedIn": "1:8.9p1-3ubuntu0.10", "notFixedYet": false, "fixState": "released"}],
+      "cveContents": {
+        "nvd": [{
+          "type": "nvd",
+          "cveID": "CVE-2024-6387",
+          "title": "OpenSSH signal handler race condition",
+          "summary": "A signal handler race condition was found in OpenSSH's server (sshd).",
+          "cvss3Score": 8.1,
+          "cvss3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H",
+          "cvss3Severity": "HIGH",
+          "cvss40Score": 9.2,
+          "cvss40Vector": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+          "cweIDs": ["CWE-362"],
+          "references": [{"source": "nvd", "link": "https://www.qualys.com/2024/07/01/cve-2024-6387/regresshion.txt", "refID": "", "tags": ["Exploit"]}],
+          "published": "2024-07-01T13:15:00Z",
+          "lastModified": "2024-09-01T00:00:00Z",
+          "sourceLink": "https://nvd.nist.gov/vuln/detail/CVE-2024-6387",
+          "optional": {"vector": "network"},
+          "cpes": [{"uri": "cpe:/a:openbsd:openssh"}]
+        }],
+        "ubuntu": [{
+          "type": "ubuntu",
+          "cveID": "CVE-2024-6387",
+          "cvss2Score": 7.6,
+          "cvss2Vector": "AV:N/AC:H/Au:N/C:C/I:C/A:C",
+          "cvss2Severity": "HIGH"
+        }]
+      },
+      "alertDict": {"cisa": [{"url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", "title": "KEV"}]},
+      "exploits": [{"exploitType": "exploitdb", "id": "0000"}]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "format": "sarif",
+  "stats": {
+    "records": 4,
+    "assets": 1,
+    "findings": 4,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 2,
+      "high": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "message": "the file names no repository and none was given: findings are filed on trivy-import"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "format": "sarif",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 3,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 1,
+      "high": 2
+    }
+  },
+  "issues": [
+    {
+      "message": "the file names no repository and none was given: findings are filed on codeql-import"
+    }
+  ]
+}

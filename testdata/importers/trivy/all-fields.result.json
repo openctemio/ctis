@@ -1,0 +1,16 @@
+{
+  "format": "trivy",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 3,
+    "components": 1,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 1,
+      "low": 1,
+      "medium": 1
+    }
+  }
+}

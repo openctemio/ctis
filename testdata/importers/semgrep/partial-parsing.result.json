@@ -1,0 +1,25 @@
+{
+  "format": "semgrep",
+  "stats": {
+    "records": 2,
+    "assets": 1,
+    "findings": 2,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "path": "src2/b.go",
+      "message": "semgrep reported: PartialParsing Syntax error at line src2/b.go:4: `func b( { ]]]` was unexpected"
+    },
+    {
+      "path": "src2/broken.js",
+      "message": "semgrep reported: PartialParsing Syntax error at line src2/broken.js:3: `function bad( { ))) %%% let y = ; cp.exec(y)` was unexpected"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "Semgrep OSS",
+    "version": "1.149.0",
+    "capabilities": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-semgrep-oss-import",
+      "type": "unclassified",
+      "value": "semgrep-oss-import",
+      "name": "semgrep-oss-import"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "vulnerability",
+      "title": "Found shell=True",
+      "description": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "severity": "high",
+      "confidence": 95,
+      "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "rule_name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "asset_ref": "unclassified-semgrep-oss-import",
+      "location": {
+        "path": "src/app.py",
+        "start_line": 4,
+        "end_line": 4,
+        "start_column": 5,
+        "end_column": 37,
+        "snippet": "    subprocess.call(cmd, shell=True)  # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true"
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-78"
+        ],
+        "cwe_id": "CWE-78"
+      },
+      "tags": [
+        "CWE-78: OS Command Injection",
+        "security"
+      ],
+      "status": "suppressed",
+      "suppression": {
+        "kind": "in_source",
+        "status": "accepted"
+      }
+    },
+    {
+      "id": "finding-2",
+      "type": "vulnerability",
+      "title": "Found shell=True",
+      "description": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "severity": "high",
+      "confidence": 95,
+      "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "rule_name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "asset_ref": "unclassified-semgrep-oss-import",
+      "location": {
+        "path": "src/app.py",
+        "start_line": 7,
+        "end_line": 7,
+        "start_column": 5,
+        "end_column": 37,
+        "snippet": "    subprocess.call(cmd, shell=True)"
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-78"
+        ],
+        "cwe_id": "CWE-78"
+      },
+      "tags": [
+        "CWE-78: OS Command Injection",
+        "security"
+      ]
+    }
+  ]
+}

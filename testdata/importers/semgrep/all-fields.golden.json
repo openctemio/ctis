@@ -1,0 +1,132 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "semgrep",
+    "version": "1.149.0",
+    "vendor": "Semgrep, Inc.",
+    "capabilities": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-semgrep-import",
+      "type": "unclassified",
+      "value": "semgrep-import",
+      "name": "semgrep-import"
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "User input flows into a SQL string.",
+      "message": "User input flows into a SQL string.",
+      "severity": "high",
+      "confidence": 70,
+      "impact": "high",
+      "likelihood": "medium",
+      "category": "security",
+      "vulnerability_class": [
+        "SQL Injection"
+      ],
+      "subcategory": [
+        "vuln"
+      ],
+      "rule_id": "python.flask.security.injection.tainted-sql-string",
+      "rule_name": "Tainted Sql String",
+      "asset_ref": "unclassified-semgrep-import",
+      "location": {
+        "path": "app/views.py",
+        "start_line": 30,
+        "end_line": 30,
+        "start_column": 9,
+        "end_column": 61,
+        "snippet": "cur.execute(f\"SELECT * FROM t WHERE id = {request.args['id']}\")"
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "cwe_id": "CWE-89",
+        "owasp_ids": [
+          "A03:2021 - Injection"
+        ]
+      },
+      "remediation": {
+        "recommendation": "Apply the suggested fix code.",
+        "fix_available": true,
+        "fix_code": "cur.execute(\"SELECT * FROM t WHERE id = %s\", (request.args['id'],))",
+        "fix_regex": {
+          "regex": "f\"(.*)\"",
+          "replacement": "\"$1\"",
+          "count": 1
+        }
+      },
+      "references": [
+        "https://owasp.org/Top10/A03_2021-Injection/",
+        "https://www.example.com/rules/tainted-sql",
+        "https://sg.run/abcd"
+      ],
+      "tags": [
+        "flask",
+        "semgrep"
+      ],
+      "fingerprint": "0123456789abcdef",
+      "data_flow": {
+        "sources": [
+          {
+            "path": "app/views.py",
+            "line": 28,
+            "column": 13,
+            "content": "request.args['id']",
+            "type": "source"
+          }
+        ],
+        "intermediates": [
+          {
+            "path": "app/views.py",
+            "line": 29,
+            "column": 5,
+            "content": "query",
+            "index": 1,
+            "type": "propagator"
+          }
+        ],
+        "sinks": [
+          {
+            "path": "app/views.py",
+            "line": 30,
+            "column": 9,
+            "content": "cur.execute(...)",
+            "index": 2,
+            "type": "sink"
+          }
+        ],
+        "tainted": true
+      },
+      "suppression": {
+        "kind": "in_source",
+        "status": "accepted",
+        "justification": "nosemgrep"
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "python.flask.security.injection.tainted-sql-string",
+        "severity": "ERROR",
+        "raw_ref": "/results/0"
+      },
+      "source_extra": {
+        "engine_kind": "OSS",
+        "rule_license": "Semgrep Rules License v1.0",
+        "rule_source": "https://semgrep.dev/r/python.flask.security.injection.tainted-sql-string",
+        "validation_state": "NO_VALIDATOR"
+      }
+    }
+  ]
+}

@@ -135,7 +135,7 @@ Schema validation checks shape. `Report.Validate()` in Go also checks what a sch
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 1.4. `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 1.4: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, and the native JSON of trivy, nuclei, semgrep, betterleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})
