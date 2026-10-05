@@ -8,6 +8,8 @@
   },
   "tool": {
     "name": "gitleaks",
+    "vendor": "Gitleaks",
+    "info_url": "https://github.com/gitleaks/gitleaks",
     "capabilities": [
       "secret"
     ]
@@ -24,10 +26,10 @@
     {
       "type": "secret",
       "title": "Detected a Generic API Key, potentially exposing access to various services: fake********",
-      "description": "Detected a Generic API Key, potentially exposing access to various services: fake********",
+      "message": "Secret detected: Detected a Generic API Key, potentially exposing access to various services: fake******** in config/settings.py",
       "severity": "high",
+      "confidence": 85,
       "rule_id": "generic-api-key",
-      "rule_name": "Detected a Generic API Key, potentially exposing access to various services: fake********",
       "asset_ref": "unclassified-gitleaks-import",
       "location": {
         "path": "config/settings.py",
@@ -35,56 +37,33 @@
         "end_line": 12,
         "start_column": 15,
         "end_column": 60,
-        "snippet": "fake********",
+        "snippet": "api_key = \"fake********\"",
         "commit_sha": "3f1c2a9e0b7d4c5a6e8f9012345678901234abcd"
       },
       "secret": {
         "secret_type": "api_key",
+        "masked_value": "fake********",
+        "length": 31,
         "entropy": 4.32
       },
-      "references": [
-        "https://git.example.com/shop/app/blob/3f1c2a9e0b7d4c5a6e8f9012345678901234abcd/config/settings.py#L12"
-      ],
       "tags": [
+        "gitleaks",
+        "secret",
         "key",
         "api"
       ],
+      "fingerprint": "3f1c2a9e0b7d4c5a6e8f9012345678901234abcd:config/settings.py:generic-api-key:12",
+      "author": "Jane Example",
+      "author_email": "jane@example.com",
       "commit_date": "2025-09-14T10:11:12Z",
       "native": {
         "scheme": "other",
         "vuln_id": "generic-api-key",
-        "instance_id": "3f1c2a9e0b7d4c5a6e8f9012345678901234abcd:config/settings.py:generic-api-key:12",
         "raw_ref": "/0"
-      }
-    },
-    {
-      "type": "secret",
-      "title": "Password in a connection URL",
-      "description": "Password in a connection URL",
-      "severity": "high",
-      "rule_id": "password-in-url",
-      "rule_name": "Password in a connection URL",
-      "asset_ref": "unclassified-gitleaks-import",
-      "location": {
-        "path": "deploy/.env",
-        "start_line": 3,
-        "end_line": 3,
-        "start_column": 1,
-        "end_column": 40,
-        "snippet": "REDACTED"
-      },
-      "secret": {
-        "secret_type": "password",
-        "entropy": 2.8
-      },
-      "native": {
-        "scheme": "other",
-        "vuln_id": "password-in-url",
-        "instance_id": "deploy/.env:password-in-url:3",
-        "raw_ref": "/1"
       },
       "source_extra": {
-        "symlink_file": "deploy/env.link"
+        "commit_link": "https://git.example.com/shop/app/blob/3f1c2a9e0b7d4c5a6e8f9012345678901234abcd/config/settings.py#L12",
+        "commit_message": "add settings for the payment provider"
       }
     }
   ]

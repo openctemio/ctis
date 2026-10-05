@@ -1,0 +1,111 @@
+{
+ "version": "2.1.0",
+ "runs": [
+  {
+   "invocations": [
+    {
+     "executionSuccessful": true,
+     "toolExecutionNotifications": []
+    }
+   ],
+   "results": [
+    {
+     "fingerprints": {
+      "matchBasedId/v1": "requires login"
+     },
+     "locations": [
+      {
+       "physicalLocation": {
+        "artifactLocation": {
+         "uri": "src/app.py",
+         "uriBaseId": "%SRCROOT%"
+        },
+        "region": {
+         "endColumn": 37,
+         "endLine": 4,
+         "snippet": {
+          "text": "    subprocess.call(cmd, shell=True)  # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true"
+         },
+         "startColumn": 5,
+         "startLine": 4
+        }
+       }
+      }
+     ],
+     "message": {
+      "text": "Found shell=True"
+     },
+     "properties": {},
+     "ruleId": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+     "suppressions": [
+      {
+       "kind": "inSource"
+      }
+     ]
+    },
+    {
+     "fingerprints": {
+      "matchBasedId/v1": "requires login"
+     },
+     "locations": [
+      {
+       "physicalLocation": {
+        "artifactLocation": {
+         "uri": "src/app.py",
+         "uriBaseId": "%SRCROOT%"
+        },
+        "region": {
+         "endColumn": 37,
+         "endLine": 7,
+         "snippet": {
+          "text": "    subprocess.call(cmd, shell=True)"
+         },
+         "startColumn": 5,
+         "startLine": 7
+        }
+       }
+      }
+     ],
+     "message": {
+      "text": "Found shell=True"
+     },
+     "properties": {},
+     "ruleId": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true"
+    }
+   ],
+   "tool": {
+    "driver": {
+     "name": "Semgrep OSS",
+     "rules": [
+      {
+       "defaultConfiguration": {
+        "level": "error"
+       },
+       "fullDescription": {
+        "text": "Found shell=True"
+       },
+       "help": {
+        "markdown": "Found shell=True",
+        "text": "Found shell=True"
+       },
+       "id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+       "name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+       "properties": {
+        "precision": "very-high",
+        "tags": [
+         "CWE-78: OS Command Injection",
+         "security"
+        ]
+       },
+       "shortDescription": {
+        "text": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true"
+       }
+      }
+     ],
+     "semanticVersion": "1.149.0"
+    }
+   }
+  }
+ ],
+ "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/schemas/sarif-schema-2.1.0.json"
+}

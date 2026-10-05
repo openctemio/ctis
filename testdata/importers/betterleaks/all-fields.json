@@ -1,0 +1,24 @@
+[
+  {
+    "RuleID": "aws-access-key",
+    "Description": "AWS Access Key",
+    "StartLine": 4,
+    "EndLine": 4,
+    "StartColumn": 15,
+    "EndColumn": 34,
+    "Line": "AWS_ACCESS_KEY_ID=AKIAEXAMPLEEXAMPLE00",
+    "Match": "AWS_ACCESS_KEY_ID=AKIAEXAMPLEEXAMPLE00",
+    "Secret": "AKIAEXAMPLEEXAMPLE00",
+    "File": "deploy/prod.env",
+    "SymlinkFile": "config/current.env",
+    "Commit": "0123456789abcdef0123456789abcdef01234567",
+    "Link": "https://git.example.com/team/app/blob/0123456789abcdef0123456789abcdef01234567/deploy/prod.env#L4",
+    "Entropy": 3.7,
+    "Author": "Dev Example",
+    "Email": "dev@example.com",
+    "Date": "2026-09-30T12:00:00Z",
+    "Message": "add prod config with AKIAEXAMPLEEXAMPLE00",
+    "Tags": ["aws", "key"],
+    "Fingerprint": "0123456789abcdef0123456789abcdef01234567:deploy/prod.env:aws-access-key:4"
+  }
+]

@@ -1,0 +1,72 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "betterleaks",
+    "vendor": "Betterleaks",
+    "info_url": "https://github.com/betterleaks/betterleaks",
+    "capabilities": [
+      "secret"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-betterleaks-import",
+      "type": "unclassified",
+      "value": "betterleaks-import",
+      "name": "betterleaks-import"
+    }
+  ],
+  "findings": [
+    {
+      "type": "secret",
+      "title": "AWS Access Key",
+      "message": "Secret detected: AWS Access Key in deploy/prod.env",
+      "severity": "critical",
+      "confidence": 85,
+      "rule_id": "aws-access-key",
+      "asset_ref": "unclassified-betterleaks-import",
+      "location": {
+        "path": "deploy/prod.env",
+        "start_line": 4,
+        "end_line": 4,
+        "start_column": 15,
+        "end_column": 34,
+        "snippet": "AWS_ACCESS_KEY_ID=AKIA********",
+        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+      },
+      "secret": {
+        "secret_type": "aws_key",
+        "service": "aws",
+        "masked_value": "AKIA********",
+        "length": 20,
+        "entropy": 3.7
+      },
+      "tags": [
+        "betterleaks",
+        "secret",
+        "aws",
+        "key"
+      ],
+      "fingerprint": "0123456789abcdef0123456789abcdef01234567:deploy/prod.env:aws-access-key:4",
+      "author": "Dev Example",
+      "author_email": "dev@example.com",
+      "commit_date": "2026-09-30T12:00:00Z",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "aws-access-key",
+        "raw_ref": "/0"
+      },
+      "source_extra": {
+        "commit_link": "https://git.example.com/team/app/blob/0123456789abcdef0123456789abcdef01234567/deploy/prod.env#L4",
+        "commit_message": "add prod config with AKIA********",
+        "symlink_file": "config/current.env"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "format": "semgrep",
+  "stats": {
+    "records": 1,
+    "assets": 1,
+    "findings": 1,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 1
+    }
+  },
+  "issues": [
+    {
+      "message": "the file names no repository and none was given: findings are filed on semgrep-import"
+    }
+  ]
+}

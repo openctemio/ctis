@@ -477,6 +477,13 @@ func isRedacted(s string) bool {
 	return strings.EqualFold(t, redactedSecret) || strings.Trim(t, "*•") == ""
 }
 
+// MaskSecretMatch masks a secret scanner's raw match the way FromSARIF does:
+// the first 4 characters of a secret of 16 characters or more followed by
+// asterisks, else "REDACTED". The masked form does not reveal the length.
+// Converters of other secret-scanner formats use it so every report masks
+// a match the same way.
+func MaskSecretMatch(s string) string { return maskSecret(s) }
+
 // maskSecret returns the first secretPrefixLen characters of a secret of at
 // least minMaskedPrefixLen characters followed by asterisks, or redactedSecret
 // for a shorter one. The masked form does not reveal the secret's length.

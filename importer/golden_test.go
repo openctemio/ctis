@@ -38,7 +38,8 @@ func (f fixture) result() string { return stem(f.path) + ".result.json" }
 func stem(p string) string { return strings.TrimSuffix(p, filepath.Ext(p)) }
 
 func isCompanion(name string) bool {
-	return strings.HasSuffix(name, ".golden.json") || strings.HasSuffix(name, ".result.json") || strings.HasSuffix(name, ".kb.xml")
+	return strings.HasSuffix(name, ".golden.json") || strings.HasSuffix(name, ".result.json") || strings.HasSuffix(name, ".kb.xml") ||
+		strings.HasSuffix(name, ".options.json") || strings.HasSuffix(name, ".legacy.json")
 }
 
 // fixtures lists every input fixture, by format directory.
@@ -86,6 +87,22 @@ func runFixture(t *testing.T, fx fixture) (*Result, []string) {
 	}
 	defer func() { _ = in.Close() }()
 	opts := Options{Now: fixedNow, ReportID: "import-test"}
+	// <stem>.options.json sets the repository a code report is filed on.
+	if b, err := os.ReadFile(stem(fx.path) + ".options.json"); err == nil {
+		var o struct {
+			Format     Format `json:"format"`
+			Repository string `json:"repository"`
+			Branch     string `json:"branch"`
+			CommitSHA  string `json:"commit_sha"`
+		}
+		if err := json.Unmarshal(b, &o); err != nil {
+			t.Fatal(err)
+		}
+		opts.Repository, opts.Branch, opts.CommitSHA = o.Repository, o.Branch, o.CommitSHA
+		if o.Format != "" {
+			opts.Format = o.Format
+		}
+	}
 	if fx.kb != "" {
 		kb, err := os.Open(fx.kb)
 		if err != nil {
