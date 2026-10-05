@@ -1,0 +1,26 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "source_ref": "EXA-2025-01",
+    "properties": {
+      "aggregate_severity": "High",
+      "category": "csaf_security_advisory",
+      "csaf_version": "2.0",
+      "current_release_date": "2025-08-01T00:00:00.000Z",
+      "document_status": "final",
+      "document_version": "1.0.0",
+      "initial_release_date": "2025-08-01T00:00:00.000Z",
+      "publisher": "Example Appliances",
+      "publisher_namespace": "https://appliances.example.com/",
+      "title": "Example Appliance firmware advisory",
+      "tlp": "CLEAR"
+    }
+  },
+  "tool": {
+    "name": "csaf"
+  }
+}

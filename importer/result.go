@@ -103,6 +103,13 @@ type Product struct {
 	// identifier.
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
+
+	// When set, the statement is about these components inside the
+	// product only (an OpenVEX subcomponent, a CSAF relationship's
+	// component), not about the product as a whole or about the components
+	// anywhere else. A receiver matches a finding on a subcomponent's PURL
+	// or CPE only when the finding's asset is the product.
+	Subcomponents []Product `json:"subcomponents,omitempty"`
 }
 
 // ParseError is the error of an input that could not be read. Line and

@@ -1,0 +1,102 @@
+{
+  "document": {
+    "category": "csaf_security_advisory",
+    "csaf_version": "2.0",
+    "title": "Example Appliance firmware advisory",
+    "lang": "en",
+    "source_lang": "de",
+    "aggregate_severity": { "namespace": "https://www.example.com/severity", "text": "High" },
+    "publisher": {
+      "category": "vendor",
+      "name": "Example Appliances",
+      "namespace": "https://appliances.example.com/",
+      "contact_details": "psirt@example.com",
+      "issuing_authority": "Example Appliances PSIRT"
+    },
+    "distribution": {
+      "text": "Share freely.",
+      "tlp": { "label": "CLEAR", "url": "https://www.first.org/tlp/" }
+    },
+    "notes": [ { "category": "summary", "title": "Summary", "text": "Firmware update.", "audience": "all" } ],
+    "references": [ { "category": "self", "summary": "This advisory", "url": "https://appliances.example.com/csaf/EXA-2025-01.json" } ],
+    "acknowledgments": [ { "names": ["A. Researcher"], "organization": "Example Lab", "summary": "Reported the issue", "urls": ["https://lab.example.org"] } ],
+    "tracking": {
+      "id": "EXA-2025-01",
+      "version": "1.0.0",
+      "status": "final",
+      "aliases": ["EXA-SA-01"],
+      "initial_release_date": "2025-08-01T00:00:00.000Z",
+      "current_release_date": "2025-08-01T00:00:00.000Z",
+      "generator": { "date": "2025-08-01T00:00:00Z", "engine": { "name": "writer", "version": "1" } },
+      "revision_history": [ { "date": "2025-08-01T00:00:00Z", "number": "1.0.0", "summary": "Initial", "legacy_version": "1" } ]
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "category": "product_family",
+        "name": "Appliances",
+        "product": {
+          "name": "Example Appliance A1 firmware 4.0",
+          "product_id": "A1-4.0",
+          "product_identification_helper": {
+            "cpe": "cpe:2.3:o:example:a1_firmware:4.0:*:*:*:*:*:*:*",
+            "hashes": [ { "filename": "a1-4.0.bin", "file_hashes": [ { "algorithm": "sha256", "value": "0000000000000000000000000000000000000000000000000000000000000000" } ] } ],
+            "model_numbers": ["A1"],
+            "serial_numbers": ["*"],
+            "skus": ["A1-STD"],
+            "sbom_urls": ["https://appliances.example.com/sbom/a1-4.0.json"],
+            "x_generic_uris": [ { "namespace": "https://appliances.example.com/ids", "uri": "https://appliances.example.com/ids/a1-4.0" } ]
+          }
+        }
+      }
+    ],
+    "full_product_names": [
+      { "name": "Example Appliance A1 firmware 4.1", "product_id": "A1-4.1", "product_identification_helper": { "purl": "pkg:generic/example/a1-firmware@4.1" } }
+    ],
+    "product_groups": [
+      { "group_id": "ALL-A1", "product_ids": ["A1-4.0", "A1-4.1"] }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2025-0100",
+      "ids": [ { "system_name": "Example Appliances", "text": "EXA-BUG-1234" } ],
+      "cwe": { "id": "CWE-787", "name": "Out-of-bounds Write" },
+      "title": "Overflow in the management web server",
+      "discovery_date": "2025-06-01T00:00:00Z",
+      "release_date": "2025-08-01T00:00:00Z",
+      "notes": [ { "category": "description", "text": "Overflow." } ],
+      "references": [ { "category": "external", "summary": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-0100" } ],
+      "acknowledgments": [ { "names": ["A. Researcher"] } ],
+      "involvements": [ { "party": "vendor", "status": "completed", "date": "2025-07-01T00:00:00Z", "summary": "Fixed" } ],
+      "product_status": {
+        "first_affected": ["A1-4.0"],
+        "last_affected": ["A1-4.0"],
+        "first_fixed": ["A1-4.1"],
+        "recommended": ["A1-4.1"]
+      },
+      "flags": [ { "label": "component_not_present", "product_ids": ["A1-4.1"], "date": "2025-08-01T00:00:00Z" } ],
+      "threats": [
+        { "category": "exploit_status", "details": "No known exploit.", "group_ids": ["ALL-A1"], "date": "2025-08-01T00:00:00Z" },
+        { "category": "impact", "details": "Remote code execution.", "group_ids": ["ALL-A1"] }
+      ],
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Install firmware 4.1.",
+          "group_ids": ["ALL-A1"],
+          "date": "2025-08-01T00:00:00Z",
+          "entitlements": ["Customers with a support contract"],
+          "restart_required": { "category": "system", "details": "The appliance reboots." }
+        }
+      ],
+      "scores": [
+        {
+          "products": ["A1-4.0"],
+          "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", "baseScore": 9.8, "baseSeverity": "CRITICAL" }
+        }
+      ]
+    }
+  ]
+}

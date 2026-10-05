@@ -1,0 +1,148 @@
+{
+  "format": "csaf",
+  "vex": [
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2025-0001"
+        }
+      ],
+      "products": [
+        {
+          "cpe": "cpe:2.3:a:example:gateway:2.0:*:*:*:*:*:*:*",
+          "name": "Example Gateway 2.0",
+          "version": "2.0"
+        }
+      ],
+      "vex": {
+        "status": "not_affected",
+        "justification": "vulnerable_code_not_in_execute_path",
+        "native_justification": "vulnerable_code_not_in_execute_path",
+        "source": "https://psirt.example.com#EXCORP-VEX-2025-0007",
+        "as_of": "2025-09-15T10:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2025-0001"
+        }
+      ],
+      "products": [
+        {
+          "cpe": "cpe:2.3:a:example:gateway:2.1:*:*:*:*:*:*:*",
+          "name": "examplelib 1.2.3 in Example Gateway 2.1",
+          "version": "2.1",
+          "subcomponents": [
+            {
+              "purl": "pkg:npm/examplelib@1.2.3",
+              "name": "examplelib 1.2.3"
+            }
+          ]
+        }
+      ],
+      "vex": {
+        "status": "affected",
+        "statement": "vendor_fix: Upgrade to Example Gateway 2.2. (https://psirt.example.com/advisories/EXCORP-2025-0007)",
+        "source": "https://psirt.example.com#EXCORP-VEX-2025-0007",
+        "as_of": "2025-09-15T10:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2025-0001"
+        }
+      ],
+      "products": [
+        {
+          "cpe": "cpe:2.3:a:example:gateway:2.2:*:*:*:*:*:*:*",
+          "name": "Example Gateway 2.2",
+          "version": "2.2"
+        }
+      ],
+      "vex": {
+        "status": "fixed",
+        "source": "https://psirt.example.com#EXCORP-VEX-2025-0007",
+        "as_of": "2025-09-15T10:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "ghsa",
+          "id": "GHSA-2xxx-3xxx-4xxx"
+        }
+      ],
+      "products": [
+        {
+          "cpe": "cpe:2.3:a:example:gateway:2.0:*:*:*:*:*:*:*",
+          "name": "Example Gateway 2.0",
+          "version": "2.0"
+        }
+      ],
+      "vex": {
+        "status": "not_affected",
+        "statement": "The vulnerable parser is not built into 2.0.",
+        "source": "https://psirt.example.com#EXCORP-VEX-2025-0007",
+        "as_of": "2025-09-15T10:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "ghsa",
+          "id": "GHSA-2xxx-3xxx-4xxx"
+        }
+      ],
+      "products": [
+        {
+          "cpe": "cpe:2.3:a:example:gateway:2.1:*:*:*:*:*:*:*",
+          "name": "Example Gateway 2.1",
+          "version": "2.1"
+        },
+        {
+          "cpe": "cpe:2.3:a:example:gateway:2.2:*:*:*:*:*:*:*",
+          "name": "Example Gateway 2.2",
+          "version": "2.2"
+        }
+      ],
+      "vex": {
+        "status": "under_investigation",
+        "source": "https://psirt.example.com#EXCORP-VEX-2025-0007",
+        "as_of": "2025-09-15T10:00:00Z"
+      }
+    }
+  ],
+  "stats": {
+    "records": 4,
+    "assets": 0,
+    "findings": 0,
+    "components": 0,
+    "statements": 5,
+    "skipped": 2
+  },
+  "issues": [
+    {
+      "line": 111,
+      "column": 5,
+      "path": "/vulnerabilities/1",
+      "message": "product_status.known_not_affected names product \"GW-9.9\", which the product tree does not define: left out"
+    },
+    {
+      "line": 121,
+      "column": 5,
+      "path": "/vulnerabilities/2",
+      "message": "product_status.known_not_affected: status not_affected without a justification or an impact statement: products left out: 1"
+    },
+    {
+      "line": 125,
+      "column": 5,
+      "path": "/vulnerabilities/3",
+      "message": "vulnerability without cve or ids: skipped"
+    }
+  ]
+}
