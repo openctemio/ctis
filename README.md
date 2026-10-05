@@ -12,7 +12,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
 - **Examples** (`examples/`): one report per finding type, validated in CI.
 
-The current specification version is **1.3**. See [CHANGELOG.md](CHANGELOG.md).
+The current specification version is **1.4**. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Installation (Go)
 
@@ -30,7 +30,7 @@ import (
 )
 
 // Produce
-report := ctis.NewReport() // version 1.3, $schema set, timestamp now
+report := ctis.NewReport() // version 1.4, $schema set, timestamp now
 report.Tool = &ctis.Tool{Name: "my-scanner", Version: "1.0.0", Capabilities: []string{"sast"}}
 report.Assets = append(report.Assets, ctis.Asset{ID: "repo", Type: ctis.AssetTypeRepository, Value: "github.com/org/repo"})
 report.Findings = append(report.Findings, ctis.Finding{

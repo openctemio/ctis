@@ -19,7 +19,7 @@ import (
 //     a field newer than its own minor, so a producer must not send fields from
 //     a minor newer than the consumer it talks to. Upgrade receivers first.
 const (
-	SchemaVersion = "1.3"
+	SchemaVersion = "1.4"
 	SchemaMajor   = 1
 
 	// SchemaBaseURL is the base of the published schema $ids. Every file in
