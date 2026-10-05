@@ -21,7 +21,7 @@ func TestDetect_CodeFormats(t *testing.T) {
 		{`{"template-id": "x", "info": {"name": "n"}, "host": "a.example.com"}` + "\n" + `{"template-id": "y"}`, FormatNuclei},
 		{`[{"template-id": "x", "info": {"name": "n"}}]`, FormatNuclei},
 		{`{"jsonVersion": 4, "serverName": "web", "scannedCves": {}}`, FormatVuls},
-		{`[{"RuleID": "aws-access-key", "File": "a.env", "Secret": "x"}]`, FormatBetterleaks},
+		{`[{"RuleID": "aws-access-key", "File": "a.env", "Secret": "x"}]`, FormatGitleaks},
 		{`{"version": "1.149.0", "results": [{"check_id": "r", "path": "a.py"}]}`, FormatSemgrep},
 		{`{"results": [], "errors": [], "paths": {"scanned": []}}`, FormatSemgrep},
 		// osv-scanner also has top-level results.

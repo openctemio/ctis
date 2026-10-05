@@ -43,6 +43,13 @@ const (
 	FormatBetterleaks Format = "betterleaks"
 	// vuls JSON scan result (one server).
 	FormatVuls Format = "vuls"
+	// gitleaks JSON report (an array of leaks). Every gitleaks-compatible
+	// scanner writes the same shape; Options.ToolName names the tool.
+	FormatGitleaks Format = "gitleaks"
+	// grype JSON output.
+	FormatGrype Format = "grype"
+	// ZAP traditional JSON or XML report.
+	FormatZAP Format = "zap"
 )
 
 // AllFormats returns every format Parse reads, sorted.
@@ -108,6 +115,8 @@ func detectXML(head []byte) (Format, bool) {
 			return FormatQualys, true
 		case "KNOWLEDGE_BASE_VULN_LIST_OUTPUT":
 			return FormatQualysKB, true
+		case "OWASPZAPReport":
+			return FormatZAP, true
 		}
 		return "", false
 	}
@@ -190,6 +199,41 @@ func detectJSON(head []byte) (Format, bool) {
 		valueDone()
 	}
 
+	if root == 2 {
+		// A top-level array: a leaks report (gitleaks shape), a nuclei
+		// -json-export array, or CSAF.
+		_, rule := top["RuleID"]
+		_, secret := top["Secret"]
+		_, match := top["Match"]
+		if docKeys["csaf_version"] {
+			return FormatCSAF, true
+		}
+		if rule && (secret || match) {
+			return FormatGitleaks, true
+		}
+		if _, tid := top["template-id"]; tid {
+			if _, info := top["info"]; info {
+				return FormatNuclei, true
+			}
+		}
+		return "", false
+	}
+	if _, ok := top["matches"]; ok {
+		if _, src := top["source"]; src {
+			return FormatGrype, true
+		}
+		if _, d := top["descriptor"]; d {
+			return FormatGrype, true
+		}
+	}
+	if _, ok := top["site"]; ok {
+		if _, p := top["@programName"]; p {
+			return FormatZAP, true
+		}
+		if _, v := top["@version"]; v {
+			return FormatZAP, true
+		}
+	}
 	if strings.EqualFold(top["bomFormat"], "CycloneDX") {
 		return FormatCycloneDX, true
 	}
@@ -219,8 +263,6 @@ func detectJSON(head []byte) (Format, bool) {
 		return FormatNuclei, true
 	case has("scannedCves") || has("jsonVersion") && has("serverName"):
 		return FormatVuls, true
-	case has("RuleID") && has("File", "Secret", "Match"):
-		return FormatBetterleaks, true
 	}
 	if _, ok := top["results"]; ok {
 		if resultKeys["check_id"] || (!resultKeys["source"] && !resultKeys["packages"] && has("paths", "skipped_rules", "interfile_languages_used")) {

@@ -1,0 +1,21 @@
+{
+  "format": "zap",
+  "stats": {
+    "records": 2,
+    "assets": 1,
+    "findings": 1,
+    "components": 0,
+    "statements": 0,
+    "skipped": 1,
+    "by_severity": {
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 50,
+      "path": "/OWASPZAPReport/site[1]",
+      "message": "site without a host: skipped"
+    }
+  ]
+}

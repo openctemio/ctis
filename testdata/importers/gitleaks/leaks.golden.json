@@ -1,0 +1,70 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "gitleaks",
+    "vendor": "Gitleaks",
+    "info_url": "https://github.com/gitleaks/gitleaks",
+    "capabilities": [
+      "secret"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-gitleaks-import",
+      "type": "unclassified",
+      "value": "gitleaks-import",
+      "name": "gitleaks-import"
+    }
+  ],
+  "findings": [
+    {
+      "type": "secret",
+      "title": "Detected a Generic API Key, potentially exposing access to various services: fake********",
+      "message": "Secret detected: Detected a Generic API Key, potentially exposing access to various services: fake******** in config/settings.py",
+      "severity": "high",
+      "confidence": 85,
+      "rule_id": "generic-api-key",
+      "asset_ref": "unclassified-gitleaks-import",
+      "location": {
+        "path": "config/settings.py",
+        "start_line": 12,
+        "end_line": 12,
+        "start_column": 15,
+        "end_column": 60,
+        "snippet": "api_key = \"fake********\"",
+        "commit_sha": "3f1c2a9e0b7d4c5a6e8f9012345678901234abcd"
+      },
+      "secret": {
+        "secret_type": "api_key",
+        "masked_value": "fake********",
+        "length": 31,
+        "entropy": 4.32
+      },
+      "tags": [
+        "gitleaks",
+        "secret",
+        "key",
+        "api"
+      ],
+      "fingerprint": "3f1c2a9e0b7d4c5a6e8f9012345678901234abcd:config/settings.py:generic-api-key:12",
+      "author": "Jane Example",
+      "author_email": "jane@example.com",
+      "commit_date": "2025-09-14T10:11:12Z",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "generic-api-key",
+        "raw_ref": "/0"
+      },
+      "source_extra": {
+        "commit_link": "https://git.example.com/shop/app/blob/3f1c2a9e0b7d4c5a6e8f9012345678901234abcd/config/settings.py#L12",
+        "commit_message": "add settings for the payment provider"
+      }
+    }
+  ]
+}
