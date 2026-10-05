@@ -1,0 +1,63 @@
+{
+  "format": "openvex",
+  "vex": [
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2023-0001"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:apk/example/base-image@1.0",
+          "subcomponents": [
+            {
+              "purl": "pkg:apk/alpine/openssl@3.0.8-r0"
+            }
+          ]
+        }
+      ],
+      "vex": {
+        "status": "not_affected",
+        "justification": "vulnerable_code_not_present",
+        "native_justification": "vulnerable_code_not_present",
+        "source": "Example Legacy Team (https://vex.example.com/legacy/0001)",
+        "as_of": "2023-06-01T00:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2023-0002"
+        }
+      ],
+      "products": [
+        {
+          "name": "example-app",
+          "subcomponents": [
+            {
+              "purl": "pkg:pypi/example-lib@2.0",
+              "cpe": "cpe:2.3:a:example:example-lib:2.0:*:*:*:*:*:*:*",
+              "name": "example-lib"
+            }
+          ]
+        }
+      ],
+      "vex": {
+        "status": "affected",
+        "source": "Example Legacy Team (https://vex.example.com/legacy/0001)",
+        "as_of": "2023-06-01T00:00:00Z"
+      }
+    }
+  ],
+  "stats": {
+    "records": 2,
+    "assets": 0,
+    "findings": 0,
+    "components": 0,
+    "statements": 2,
+    "skipped": 0
+  }
+}
