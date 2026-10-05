@@ -68,6 +68,9 @@
     "identifiers": {
       "$ref": "#/$defs/AssetIdentifiers"
     },
+    "identity_hints": {
+      "$ref": "#/$defs/IdentityHints"
+    },
     "properties": {
       "type": "object",
       "additionalProperties": true
@@ -276,6 +279,23 @@
           "type": "object",
           "additionalProperties": {"type": "string"}
         }
+      }
+    },
+    "IdentityHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What a scanner observed about a host that helps match it to the same host seen by another tool. Remote observations, weaker than identifiers.",
+      "properties": {
+        "fqdn": {"type": "string", "maxLength": 255},
+        "netbios_name": {"type": "string", "maxLength": 255},
+        "mac_addresses": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {"type": "string", "maxLength": 64}
+        },
+        "os_cpe": {"type": "string", "maxLength": 255, "description": "CPE of the detected operating system"},
+        "cloud_resource_id": {"type": "string", "maxLength": 255},
+        "agent_id": {"type": "string", "maxLength": 255, "description": "Id of the scanner's agent on the host; unique per scanner, not across scanners"}
       }
     },
     "AssetIdentifiers": {

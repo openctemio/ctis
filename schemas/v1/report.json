@@ -14,7 +14,7 @@
       "type": "string",
       "description": "CTIS specification version as MAJOR.MINOR. Receivers accept any minor of their own major; a producer must not send fields newer than the receiver's minor (docs/spec.md, Versioning). The default is the version this schema describes.",
       "pattern": "^1\\.(0|[1-9][0-9]{0,3})$",
-      "default": "1.3"
+      "default": "1.4"
     },
     "$schema": {
       "type": "string",

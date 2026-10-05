@@ -31,7 +31,7 @@ The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be u
 
 ### 2.1 Wire version
 
-`version` is the specification version the producer wrote the report against, as `MAJOR.MINOR` without leading zeros: `1.0`, `1.1`, `1.2`, `1.3`. Producers SHOULD send the version of the specification they implement. The Go module sets it for you: `ctis.NewReport()` stamps `ctis.SchemaVersion` (currently `1.3`) and `ctis.SchemaURL`.
+`version` is the specification version the producer wrote the report against, as `MAJOR.MINOR` without leading zeros: `1.0`, `1.1`, `1.2`, `1.3`, `1.4`. Producers SHOULD send the version of the specification they implement. The Go module sets it for you: `ctis.NewReport()` stamps `ctis.SchemaVersion` (currently `1.4`) and `ctis.SchemaURL`.
 
 | Spec version | Module | Added |
 |---|---|---|
@@ -39,6 +39,7 @@ The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be u
 | 1.1 | v1.1.0 | `vulnerability.cve_ids`, `vulnerability.vpr_score`, `finding.network`, `finding.evidence` |
 | 1.2 | v1.2.0 | `asset.identifiers` |
 | 1.3 | v1.3.0 | Schema/Go reconciliation (see CHANGELOG): `suppression.reason`, `suppression.expires_at`, `dependencies[].properties`, asset type `server`, the schema entries for every field the Go types already had |
+| 1.4 | v1.4.0 | Interoperability members (section 4.10): `finding.native`, `finding.scores`, `finding.vex`, `finding.source_lifecycle`, `finding.source_extra`, `vulnerability.ids`, `remediation.solution_type` / `patch_published_at` / `advisories`, `asset.identity_hints` |
 
 Reports produced before 1.3 often carry `"1.0"` regardless of the fields they use. Receivers MUST NOT infer the field set from the version.
 
@@ -92,7 +93,8 @@ Schema validation checks shape. `Report.Validate()` (Go) checks what the schema 
 - asset, finding and dependency `id`s are unique within their array;
 - `finding.asset_ref` names an asset `id` of the same report;
 - ranges: confidence 0-100, rank 0-100, `cvss_score` 0-10, `epss_score` 0-1, `epss_percentile` 0-1, `vpr_score` 0-10, and none of them NaN or infinite;
-- enum members (type, severity, status, criticality) and required strings.
+- enum members (type, severity, status, criticality) and required strings;
+- the interoperability members (section 4.10): their enums, score ranges per system, VEX consistency, typed vulnerability ids, and their size limits (section 7).
 
 Producers SHOULD run `Validate` before sending; receivers SHOULD run it at their ingest boundary.
 
@@ -126,6 +128,9 @@ Producers SHOULD run `Validate` before sending; receivers SHOULD run it at their
 | `vulnerability.epss_score` | 0-1 | EPSS probability, as FIRST publishes it |
 | `vulnerability.epss_percentile` | 0-1 | EPSS percentile **as a fraction**, as FIRST publishes it: `0.97` is the 97th percentile. Sending `97` is invalid. |
 | `vulnerability.vpr_score` | 0-10 | Tenable VPR |
+| `scores[].value` | per system | `cvss` and `vpr` 0-10, `epss` and `epss_percentile` 0-1, `ssvc` none, `vendor` any finite number |
+
+`scores[]` (1.4) holds every score a source knows, each with its `system`, `version`, `vector`, `value`, `label`, `source` and `as_of`, so CVSS v3.1 and v4.0, a vendor rating, EPSS and an SSVC decision can travel together. The `vulnerability.cvss_*` members stay the primary CVSS score and SHOULD agree with one entry of `scores`. A `cvss` score needs a `version` (`2.0`, `3.0`, `3.1`, `4.0`) and a value or a vector whose prefix matches the version. `ctis.AllScores` returns `scores` followed by the single-valued members expressed as scores, so a receiver handles one list whatever minor the producer wrote.
 
 ### 4.4 Booleans
 
@@ -155,6 +160,20 @@ Every timestamp is an RFC 3339 `date-time` with an offset (`2026-10-02T08:15:00Z
 
 - `metadata.source_type` is the channel the report came through (`scanner`, `collector`, `integration`, `manual`), not the detection technique (section 4.7). It is the producer's claim. Receivers that know the channel from the authenticated credential (a sensor key, an integration token, a user upload) SHOULD use that and treat the body value as a hint.
 - A report carries no binding to the job or command that produced it. OpenCTEM binds results by the request: the v2 URL path (`/commands/{id}/results/{report_id}`) or the v1 `X-OpenCTEM-Command-ID` header. `metadata.id`, when set, MUST equal the report ID the receiver assigned.
+
+### 4.10 Interoperability (1.4)
+
+These members let a report converted from another format (Nessus, Qualys, DefectDojo, SARIF, CycloneDX, SPDX, OSV, CSAF, OpenVEX) keep what the source knew. The rule is **native next to normalized**: the normalized value goes in the existing member (`severity`, `status`, `cve_ids`), and the source's own value is kept beside it. A receiver never has to choose.
+
+- `native` is the finding as the source names it: `scheme` (the vocabulary: `nessus`, `qualys`, `defectdojo`, `sarif`, `other`), `vuln_id` (plugin ID, QID, rule id), `instance_id` (the source's id of this occurrence), `family`, `severity` and `status` exactly as reported, `detection_type` (`confirmed`, `potential`, `info`), `credentialed` (absent = unknown) and `raw_ref` (where the raw record can be found; receivers never fetch it).
+- `ctis.NormalizeNativeSeverity`, `ctis.NormalizeNativeStatus` and `ctis.NormalizeDetectionType` are the mapping tables per scheme. They return `ok=false` for a value they do not know rather than guess. Severity: Nessus 0-4 maps to info, low, medium, high, critical; Qualys 1-5 maps to info, low, medium, high, critical; DefectDojo labels map by name; SARIF levels map as `FromSARIF` does. Status maps to a finding status and a source state; dispositions (false positive, risk accepted, out of scope) have no source state.
+- `source_lifecycle` is the source's own history (`first_found`, `last_found`, `last_fixed`, `times_found`, `state`). It is the source's view: a scanner may call a finding fixed that a receiver keeps open until it verifies the fix. Receivers MUST NOT replace their own lifecycle with it.
+- `vex` is an exploitability statement in the CSAF / OpenVEX vocabulary: `status` (`not_affected`, `affected`, `fixed`, `under_investigation`), `justification` (only with `not_affected`), `native_justification`, `statement`, `source` and `as_of`. `not_affected` needs a justification or a statement. `ctis.NormalizeVEXStatus` and `ctis.NormalizeVEXJustification` map CSAF, OpenVEX and CycloneDX values. A receiver that acts on `not_affected` SHOULD record who said so (`source`) and why, and keep the statement for audit.
+- `vulnerability.ids` lists every id of the vulnerability with its namespace (`cve`, `ghsa`, `osv`, `vendor`). `ctis.VulnerabilityIDs` merges it with `cve_id` and `cve_ids` in canonical form; `ctis.PreferredVulnerabilityID` picks the one id receivers key on (the smallest CVE, else GHSA, else OSV, else vendor), so two tools that name one vulnerability differently agree.
+- `remediation.solution_type`, `patch_published_at` and `advisories` describe the fix.
+- `asset.identity_hints` are what a scanner observed about a host (FQDN, NetBIOS name, MACs, OS CPE, cloud resource id, agent id). They are remote observations, weaker than `identifiers`, and receivers weigh them accordingly. An `agent_id` is unique per scanner only.
+- `source_extra` keeps source fields no member holds, as strings, so an importer drops nothing silently. It is bounded (section 7); `ctis.SetSourceExtra` stays within the bounds.
+- **Normalized location.** `ctis.LocationKey` derives a finding's location on its asset (`pkg:`, `url:`, `file:`, `net:`, `resource:`), the location part of a cross-source deduplication key *(asset, vulnerability, location)*. It is computed by the receiver and never sent: a producer must not be able to choose the key another producer's finding merges under.
 
 ## 5. Fingerprints
 
@@ -239,6 +258,19 @@ OpenCTEM cuts these finding members to a length (in characters) and appends `…
 | `tags` | 50 of 100 |
 | `vulnerability_class`, `subcategory` | 50 of 200 |
 | misconfiguration texts | 4 KiB |
+
+The interoperability members (section 4.10) carry their limits in the schema, and `Validate` refuses a report that exceeds them:
+
+| Member | Limit |
+|---|---|
+| `scores` | 32 entries; `vector` 512, `source` 64, `label` and `version` 32 characters |
+| `vulnerability.ids` | 64 entries; `id` 128, `source` 64 characters |
+| `remediation.advisories` | 50 entries; `id` 128, `url` 2048, `source` 64 characters |
+| `native` | `vuln_id`, `instance_id`, `family` 256; `severity`, `status` 64; `raw_ref` 1024 characters |
+| `vex` | `statement` 4096, `source` 512, `native_justification` 64 characters |
+| `source_lifecycle.times_found` | 0 to 10^9 |
+| `source_extra` | 64 entries; keys 128 characters without control characters, values 4096 characters, 32 KiB of keys and values in all |
+| `asset.identity_hints` | each string 255 characters; 32 MAC addresses of up to 64 |
 
 Producers SHOULD split larger results into several reports (or v2 segments) and SHOULD keep text within these caps, since a cut value may lose what made it useful.
 
@@ -354,6 +386,7 @@ Asset schema for CTEM Ingest Schema
 | `discovered_at` | string (date-time) |  |  | When asset was discovered |
 | `id` | string |  |  | Unique identifier within the report |
 | `identifiers` | `AssetIdentifiers` |  |  |  |
+| `identity_hints` | `IdentityHints` |  |  |  |
 | `is_internet_accessible` | boolean |  |  | Is the asset directly accessible from the internet (CTEM) |
 | `name` | string |  |  | Human-readable name |
 | `properties` | object (free-form) |  |  |  |
@@ -488,6 +521,19 @@ Type: string. one of: critical, high, medium, low, info
 | `ports` | array of `PortInfo` |  |  |  |
 | `version` | integer |  | one of: 4, 6 |  |
 
+#### IdentityHints
+
+What a scanner observed about a host that helps match it to the same host seen by another tool. Remote observations, weaker than identifiers.
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `agent_id` | string |  | maxLength 255 | Id of the scanner's agent on the host; unique per scanner, not across scanners |
+| `cloud_resource_id` | string |  | maxLength 255 |  |
+| `fqdn` | string |  | maxLength 255 |  |
+| `mac_addresses` | array of string |  | items: maxLength 64 |  |
+| `netbios_name` | string |  | maxLength 255 |  |
+| `os_cpe` | string |  | maxLength 255 | CPE of the detected operating system |
+
 #### PortInfo
 
 | Field | Type | Required | Constraints | Description |
@@ -597,6 +643,7 @@ Security finding schema for CTEM Ingest Schema
 | `location` | `FindingLocation` |  |  |  |
 | `message` | string |  |  | Primary message to display (the main human-readable finding message). If not set, title will be used as the message. |
 | `misconfiguration` | `MisconfigurationDetails` |  |  |  |
+| `native` | `NativeIdentity` |  |  |  |
 | `network` | `NetworkLocation` |  |  |  |
 | `occurrence_count` | integer |  | minimum 1 | Number of times this result was observed |
 | `partial_fingerprints` | map of string |  |  | Contributing identity components for fingerprint calculation |
@@ -608,8 +655,11 @@ Security finding schema for CTEM Ingest Schema
 | `remediation_context` | `RemediationContext` |  |  |  |
 | `rule_id` | string |  |  | Rule/check ID that detected this finding |
 | `rule_name` | string |  |  | Rule name |
+| `scores` | array of `Score` |  |  | Every score of the finding with its source and date (CVSS v3.1 and v4.0 together, vendor scores, EPSS, SSVC). vulnerability.cvss_* stays the primary CVSS score. |
 | `secret` | `SecretDetails` |  |  |  |
 | `severity` | `Severity` | yes |  |  |
+| `source_extra` | map of string |  |  | Source fields no CTIS member holds, as strings. At most 64 entries, keys of 128 characters, values of 4096, 32 KiB in all (the total is checked by receivers). |
+| `source_lifecycle` | `SourceLifecycle` |  |  |  |
 | `stacks` | array of `StackTrace` |  |  | Call stacks relevant to the finding |
 | `status` | `FindingStatus` |  |  |  |
 | `subcategory` | array of string |  |  | Subcategories (e.g., audit, vuln, secure default) |
@@ -617,6 +667,7 @@ Security finding schema for CTEM Ingest Schema
 | `tags` | array of string |  |  |  |
 | `title` | string | yes |  | Short title |
 | `type` | `FindingType` | yes |  |  |
+| `vex` | `VEX` |  |  |  |
 | `vulnerability` | `VulnerabilityDetails` |  |  |  |
 | `vulnerability_class` | array of string |  |  | Vulnerability classes (e.g., SQL Injection, XSS) |
 | `web3` | `web3-finding.json` |  |  |  |
@@ -632,6 +683,16 @@ OWASP ASVS (Application Security Verification Standard) compliance info
 | `control_url` | string (uri) |  |  | Link to ASVS documentation for this control |
 | `level` | integer |  | minimum 1; maximum 3 | ASVS level (1, 2, or 3) |
 | `section` | string |  |  | ASVS section (e.g., V2: Authentication) |
+
+#### Advisory
+
+A vendor advisory that addresses the finding (an id or a url)
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `id` | string |  | maxLength 128 |  |
+| `source` | string |  | maxLength 64 |  |
+| `url` | string (uri) |  | maxLength 2048 |  |
 
 #### ArtifactLocation
 
@@ -810,6 +871,22 @@ Misconfiguration-specific details
 | `resource_type` | string |  |  |  |
 | `service` | string |  |  | Service name (S3, EC2, IAM) |
 
+#### NativeIdentity
+
+The finding as the source tool names it. The normalized values stay in severity, status and source_lifecycle.state.
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `credentialed` | boolean |  |  | The scan was authenticated on the target. Absent means unknown. |
+| `detection_type` | string |  | one of: confirmed, potential, info | Whether the tool confirmed the issue, only suspects it, or gathered information |
+| `family` | string |  | maxLength 256 | Tool family or category of the check |
+| `instance_id` | string |  | maxLength 256 | Tool id of this occurrence (DefectDojo unique_id_from_tool, a detection id) |
+| `raw_ref` | string |  | maxLength 1024 | Where the raw record can be found again (a URL into the source, a locator in the imported file). Receivers never fetch it. |
+| `scheme` | string |  | one of: nessus, qualys, defectdojo, sarif, other | Vocabulary of the native values |
+| `severity` | string |  | maxLength 64 | Severity exactly as the tool reported it ("4", "5", "High", "error") |
+| `status` | string |  | maxLength 64 | Status exactly as the tool reported it ("Re-Opened", "fixed", "risk_accepted") |
+| `vuln_id` | string |  | maxLength 256 | Tool id of the vulnerability or check: Nessus plugin ID, Qualys QID, DefectDojo vuln_id_from_tool, SARIF rule id |
+
 #### NetworkLocation
 
 Where a network/host finding was observed (Nessus/Tenable and other network scanners)
@@ -827,13 +904,16 @@ Remediation guidance
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
+| `advisories` | array of `Advisory` |  |  | Vendor advisories that address the finding |
 | `auto_fixable` | boolean |  |  |  |
 | `effort` | string |  | one of: trivial, low, medium, high |  |
 | `fix_available` | boolean |  |  |  |
 | `fix_code` | string |  |  | Suggested fix code - the actual code to replace the vulnerable code (for SAST auto-fix) |
 | `fix_regex` | `FixRegex` |  |  |  |
+| `patch_published_at` | string (date-time) |  |  | When the vendor published the patch |
 | `recommendation` | string |  |  |  |
 | `references` | array of string (uri) |  |  |  |
+| `solution_type` | string |  | one of: patch, upgrade, config, workaround, mitigation, no_fix | Kind of fix |
 | `steps` | array of string |  |  |  |
 
 #### RemediationContext
@@ -846,6 +926,20 @@ CTEM remediation context for a finding
 | `estimated_minutes` | integer |  | minimum 0 | Estimated time to fix in minutes |
 | `remedy_available` | boolean |  |  | Is a remedy (patch/fix) available |
 | `type` | string |  | one of: patch, upgrade, workaround, config_change, mitigate, accept_risk | Remediation type |
+
+#### Score
+
+One score with its source and date. cvss needs version (2.0, 3.0, 3.1, 4.0) and a value or a vector; cvss and vpr values are 0-10, epss and epss_percentile 0-1 (FIRST fractions); ssvc has no value and needs a vector or a label.
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `as_of` | string (date-time) |  |  |  |
+| `label` | string |  | maxLength 32 | Qualitative rating as the source states it |
+| `source` | string |  | maxLength 64 | Who assigned it: nvd, ghsa, vendor, tenable, qualys, first, cisa, ... |
+| `system` | string | yes | one of: cvss, epss, epss_percentile, ssvc, vpr, vendor |  |
+| `value` | number |  |  |  |
+| `vector` | string |  | maxLength 512 |  |
+| `version` | string |  | maxLength 32 |  |
 
 #### SecretDetails
 
@@ -874,6 +968,18 @@ Secret-specific details
 Severity level
 
 Type: string. one of: critical, high, medium, low, info
+
+#### SourceLifecycle
+
+The finding's history as the source tracks it, separate from the receiver's own lifecycle
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `first_found` | string (date-time) |  |  |  |
+| `last_fixed` | string (date-time) |  |  |  |
+| `last_found` | string (date-time) |  |  |  |
+| `state` | string |  | one of: new, active, reopened, fixed |  |
+| `times_found` | integer |  | minimum 0; maximum 1000000000 |  |
 
 #### StackFrame
 
@@ -908,6 +1014,19 @@ Finding suppression information (follows SARIF suppression: kind + status)
 | `status` | string |  | one of: accepted, under_review, rejected | Review state of the suppression |
 | `suppressed_at` | string (date-time) |  |  |  |
 | `suppressed_by` | string |  |  | Who suppressed (user/email) |
+
+#### VEX
+
+Exploitability statement (CSAF / OpenVEX vocabulary). not_affected needs a justification or a statement; a justification is only for not_affected.
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `as_of` | string (date-time) |  |  |  |
+| `justification` | string |  | one of: component_not_present, vulnerable_code_not_present, vulnerable_code_not_in_execute_path, vulnerable_code_cannot_be_controlled_by_adversary, inline_mitigations_already_exist |  |
+| `native_justification` | string |  | maxLength 64 | The justification as the source document states it (a CycloneDX analysis.justification) |
+| `source` | string |  | maxLength 512 | Who made the statement: a document id or URL, a vendor, a team |
+| `statement` | string |  | maxLength 4096 | Impact or action statement, plain text |
+| `status` | string | yes | one of: not_affected, affected, fixed, under_investigation |  |
 
 #### VulnDataSource
 
@@ -948,6 +1067,7 @@ Vulnerability-specific details
 | `exploit_maturity` | string |  | one of: none, poc, functional, weaponized |  |
 | `fixed_version` | string |  |  |  |
 | `fixed_versions` | array of string |  |  | All versions that fix the vulnerability |
+| `ids` | array of `VulnerabilityID` |  |  | Every id of the vulnerability with its namespace (CVE, GHSA, OSV, vendor) |
 | `in_cisa_kev` | boolean |  |  | In CISA Known Exploited Vulnerabilities |
 | `is_direct` | boolean |  |  | The vulnerable package is a direct dependency (not transitive) |
 | `layer` | `ContainerLayer` |  |  |  |
@@ -960,6 +1080,16 @@ Vulnerability-specific details
 | `vendor_severity` | map of integer |  |  | Per-vendor severity mapping (vendor name -> severity level 1-5) |
 | `vpr_score` | number |  | minimum 0; maximum 10 | Tenable Vulnerability Priority Rating (0-10) |
 | `vuln_status` | string |  | one of: affected, fixed, under_investigation, will_not_fix | Vulnerability status |
+
+#### VulnerabilityID
+
+One identifier of a vulnerability with its namespace
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `id` | string | yes | pattern `^[A-Za-z0-9][A-Za-z0-9._:/+\-]*$`; maxLength 128 |  |
+| `source` | string |  | maxLength 64 | Issuer of a vendor id (redhat, microsoft, ...) |
+| `type` | string | yes | one of: cve, ghsa, osv, vendor |  |
 
 ### CTIS Dependency (`dependency.json`)
 

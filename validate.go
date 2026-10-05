@@ -27,6 +27,9 @@ const maxValidateProblems = 100
 //   - vulnerability scores: cvss_score 0-10, epss_score 0-1,
 //     epss_percentile 0-1 (FIRST's fraction scale, not 0-100), vpr_score
 //     0-10, none of them NaN or infinite;
+//   - the interoperability members (CTIS 1.4): enums, score ranges per
+//     system, VEX consistency, typed vulnerability ids, and the size limits
+//     of interop.go (scores, ids, advisories, source_extra, identity hints);
 //   - dependencies: name set, unique non-empty IDs.
 //
 // Validate reports all problems it finds (up to 100) in one error, joined
@@ -71,6 +74,7 @@ func (r *Report) Validate() error {
 		if a.Confidence < 0 || a.Confidence > 100 {
 			add("assets[%d]: confidence %d is outside 0-100", i, a.Confidence)
 		}
+		validateIdentityHints(i, a.IdentityHints, add)
 		if a.ID != "" {
 			if assetIDs[a.ID] {
 				add("assets[%d]: duplicate id %q", i, a.ID)
@@ -124,6 +128,7 @@ func (r *Report) Validate() error {
 				add("findings[%d]: vulnerability.vpr_score %v is outside 0-10", i, v.VPRScore)
 			}
 		}
+		validateInteropFinding(i, f, add)
 	}
 
 	depIDs := make(map[string]bool, len(r.Dependencies))
