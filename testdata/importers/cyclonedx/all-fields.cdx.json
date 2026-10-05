@@ -1,0 +1,132 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:00000000-0000-4000-8000-0000000000c5",
+  "version": 3,
+  "metadata": {
+    "timestamp": "2026-10-01T08:00:00Z",
+    "tools": [ { "vendor": "Example", "name": "example-scanner", "version": "2.0" } ],
+    "authors": [ { "name": "Jane Example", "email": "jane@example.com" } ],
+    "component": {
+      "bom-ref": "app",
+      "type": "application",
+      "group": "com.example",
+      "name": "billing",
+      "version": "2.4.0",
+      "purl": "pkg:maven/com.example/billing@2.4.0",
+      "cpe": "cpe:2.3:a:example:billing:2.4.0:*:*:*:*:*:*:*",
+      "description": "Billing service",
+      "components": [
+        { "bom-ref": "embedded-lib", "type": "library", "name": "embedded-lib", "version": "0.1.0" }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "jackson",
+      "type": "library",
+      "group": "com.fasterxml.jackson.core",
+      "name": "jackson-databind",
+      "version": "2.9.10",
+      "description": "General data-binding functionality for Jackson",
+      "scope": "required",
+      "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+      "cpe": "cpe:2.3:a:fasterxml:jackson-databind:2.9.10:*:*:*:*:*:*:*",
+      "hashes": [ { "alg": "SHA-256", "content": "1111111111111111111111111111111111111111111111111111111111111111" } ],
+      "licenses": [
+        { "license": { "id": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0" } },
+        { "license": { "name": "Example Proprietary License" } }
+      ],
+      "supplier": { "name": "FasterXML", "url": ["https://fasterxml.example.com"], "contact": [ { "name": "Maintainer", "email": "maint@example.com" } ] },
+      "publisher": "FasterXML",
+      "author": "Somebody",
+      "copyright": "Copyright Example",
+      "externalReferences": [ { "type": "vcs", "url": "https://git.example.com/jackson" } ],
+      "properties": [ { "name": "example:packaging", "value": "jar" } ],
+      "evidence": { "occurrences": [ { "location": "/srv/app/lib/jackson-databind.jar" } ] },
+      "components": [
+        {
+          "bom-ref": "jackson-annotations",
+          "type": "library",
+          "group": "com.fasterxml.jackson.core",
+          "name": "jackson-annotations",
+          "version": "2.9.10",
+          "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.9.10"
+        }
+      ]
+    },
+    {
+      "bom-ref": "jackson",
+      "type": "library",
+      "name": "duplicate-ref",
+      "version": "1.0.0"
+    },
+    {
+      "type": "library",
+      "version": "9.9.9"
+    }
+  ],
+  "dependencies": [
+    { "ref": "app", "dependsOn": ["jackson", "embedded-lib", "unknown-ref"] },
+    { "ref": "jackson", "dependsOn": ["jackson-annotations", "jackson"] },
+    { "ref": "jackson-annotations", "dependsOn": ["jackson"] }
+  ],
+  "vulnerabilities": [
+    {
+      "bom-ref": "vuln-1",
+      "id": "CVE-2020-36518",
+      "source": { "name": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-36518" },
+      "references": [
+        { "id": "GHSA-57j2-w4cx-62h2", "source": { "name": "GitHub", "url": "https://github.com/advisories/GHSA-57j2-w4cx-62h2" } },
+        { "id": "SNYK-JAVA-0000001", "source": { "name": "snyk" } }
+      ],
+      "ratings": [
+        { "source": { "name": "NVD", "url": "https://nvd.nist.gov" }, "score": 7.5, "severity": "high", "method": "CVSSv31", "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "justification": "Network reachable denial of service." },
+        { "source": { "name": "NVD" }, "score": 5.0, "severity": "medium", "method": "CVSSv2", "vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P" },
+        { "source": { "name": "example-vendor" }, "score": 8.7, "severity": "high", "method": "CVSSv4", "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N" },
+        { "source": { "name": "CISA" }, "method": "SSVC", "vector": "SSVCv2/E:P/A:N/T:P/2026-10-01T00:00:00Z/" },
+        { "source": { "name": "example-risk" }, "score": 42, "severity": "unknown", "method": "OWASP" }
+      ],
+      "cwes": [502, 400],
+      "description": "jackson-databind before 2.13.0 allows a Java StackOverflow exception and denial of service via a large depth of nested objects.",
+      "detail": "Deeply nested JSON input exhausts the stack.",
+      "recommendation": "Upgrade jackson-databind to 2.12.6.1 or later.",
+      "workaround": "Limit the nesting depth of accepted JSON.",
+      "proofOfConcept": { "reproductionSteps": "send [[[[...]]]]" },
+      "advisories": [ { "title": "GHSA-57j2-w4cx-62h2", "url": "https://github.com/advisories/GHSA-57j2-w4cx-62h2" } ],
+      "created": "2022-03-11T00:00:00Z",
+      "published": "2022-03-11T07:15:00Z",
+      "updated": "2022-11-01T00:00:00Z",
+      "rejected": "2099-01-01T00:00:00Z",
+      "credits": { "individuals": [ { "name": "Researcher" } ] },
+      "tools": [ { "name": "example-scanner" } ],
+      "analysis": {
+        "state": "in_triage",
+        "response": ["update", "workaround_available"],
+        "detail": "Triage in progress.",
+        "firstIssued": "2026-09-01T00:00:00Z"
+      },
+      "affects": [
+        { "ref": "jackson", "versions": [ { "range": "vers:maven/<2.12.6.1", "status": "affected" }, { "version": "2.12.6.1", "status": "unaffected" } ] },
+        { "ref": "app" },
+        { "ref": "urn:cdx:00000000-0000-4000-8000-0000000000ff/1#other" }
+      ],
+      "properties": [ { "name": "example:fix-priority", "value": "P1" } ]
+    },
+    {
+      "id": "CVE-2026-0001",
+      "ratings": [ { "score": 9.8, "method": "CVSSv3", "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" } ],
+      "analysis": { "state": "resolved", "justification": "", "detail": "Fixed in this build." },
+      "affects": [ { "ref": "jackson-annotations" } ]
+    },
+    {
+      "id": "CVE-2026-0002",
+      "analysis": { "state": "not_affected" },
+      "affects": [ { "ref": "embedded-lib" } ]
+    },
+    {
+      "id": "",
+      "affects": [ { "ref": "jackson" } ]
+    }
+  ]
+}

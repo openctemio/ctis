@@ -1,0 +1,55 @@
+{
+  "format": "cyclonedx",
+  "vex": [
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2021-44228"
+        },
+        {
+          "type": "ghsa",
+          "id": "GHSA-jfh8-c2jp-5v3q"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
+        }
+      ],
+      "vex": {
+        "status": "not_affected",
+        "justification": "vulnerable_code_cannot_be_controlled_by_adversary",
+        "native_justification": "requires_configuration",
+        "statement": "JNDI lookups are disabled (log4j2.formatMsgNoLookups=true).",
+        "source": "urn:uuid:00000000-0000-4000-8000-00000000vex1",
+        "as_of": "2026-08-15T12:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2022-22965"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:maven/org.springframework/spring-beans@5.3.17"
+        }
+      ],
+      "vex": {
+        "status": "under_investigation",
+        "source": "urn:uuid:00000000-0000-4000-8000-00000000vex1"
+      }
+    }
+  ],
+  "stats": {
+    "records": 2,
+    "assets": 0,
+    "findings": 0,
+    "components": 0,
+    "statements": 2,
+    "skipped": 2
+  }
+}

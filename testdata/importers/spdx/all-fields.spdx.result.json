@@ -1,0 +1,25 @@
+{
+  "format": "spdx",
+  "stats": {
+    "records": 2,
+    "assets": 1,
+    "findings": 0,
+    "components": 2,
+    "statements": 0,
+    "skipped": 0
+  },
+  "issues": [
+    {
+      "line": 68,
+      "column": 5,
+      "path": "/packages/3",
+      "message": "SPDXID \"SPDXRef-zlib\" is used twice: the second package is skipped"
+    },
+    {
+      "line": 72,
+      "column": 5,
+      "path": "/packages/4",
+      "message": "package without SPDXID or name: skipped"
+    }
+  ]
+}
