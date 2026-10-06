@@ -403,13 +403,19 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 		f.Evidence = text(out, capEvidence)
 	}
 
+	// Every plugin result is observed on its host, so every finding carries
+	// a network location: port 0 is a host-level result (Nessus reports it on
+	// the pseudo-service "general"). A receiver then keys a host-level result
+	// by (host, plugin) like any other network result, not by its title.
 	port, _ := strconv.Atoi(strings.TrimSpace(it.Port))
-	svc := line(it.SvcName, capShort)
-	if port > 0 && port <= 65535 {
-		f.Network = &ctis.NetworkLocation{Host: assetValue, Port: port, Protocol: strings.ToLower(line(it.Protocol, 16)), Service: svc}
-	} else if svc != "" && svc != "general" {
-		f.Network = &ctis.NetworkLocation{Host: assetValue, Protocol: strings.ToLower(line(it.Protocol, 16)), Service: svc}
+	if port < 0 || port > 65535 {
+		port = 0
 	}
+	svc := line(it.SvcName, capShort)
+	if port == 0 && svc == "general" {
+		svc = ""
+	}
+	f.Network = &ctis.NetworkLocation{Host: assetValue, Port: port, Protocol: strings.ToLower(line(it.Protocol, 16)), Service: svc}
 
 	// Compliance audit results (cm: members).
 	if check := first(v, "compliance-check-name"); check != "" {
@@ -757,6 +763,9 @@ var (
 	reAccountLine = regexp.MustCompile(`(?im)^([ \t]*(?:user ?name|user|login|account|domain\\user|credentials?|community(?: string)?)[ \t]*[:=][ \t]*)\S.*$`)
 	reSecretKV    = regexp.MustCompile(`(?i)(\b(?:password|passwd|pwd|passphrase|secret|token|api[_-]?key|community)\b[ \t]*[:=][ \t]*)\S+`)
 	reAsAccount   = regexp.MustCompile(`(?i)(\bas[ \t]+)'[^'\n]*'`)
+	// An account label inside a line ("missing; user: svc-scan"): the value
+	// up to the next separator.
+	reAccountInline = regexp.MustCompile(`(?i)(\b(?:user ?name|user|login|account)[ \t]*[:=][ \t]*)[^\s;,'"\[]+`)
 )
 
 const redacted = "[redacted]"
@@ -768,5 +777,6 @@ func redactCredentials(s string) string {
 	s = reAccountLine.ReplaceAllString(s, "${1}"+redacted)
 	s = reSecretKV.ReplaceAllString(s, "${1}"+redacted)
 	s = reAsAccount.ReplaceAllString(s, "${1}'"+redacted+"'")
+	s = reAccountInline.ReplaceAllString(s, "${1}"+redacted)
 	return s
 }
