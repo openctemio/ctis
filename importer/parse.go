@@ -55,6 +55,15 @@ type Options struct {
 	Branch     string
 	CommitSHA  string
 
+	// SARIF only. ToolType is the kind of tool that wrote the log: "sast",
+	// "sca", "secret", "iac" or "web3". It decides the type of every finding
+	// and the tool's capabilities instead of the rule tags and the tool name
+	// (a scanner runtime that knows what it ran sets it). Other values are
+	// ignored. DefaultConfidence (1 to 100) is the confidence of a result
+	// whose rule states no precision; zero or out of range: 90.
+	ToolType          string
+	DefaultConfidence int
+
 	// The Qualys KnowledgeBase XML for a Qualys detection file. Optional:
 	// without it, detections keep their QID and results but have no title
 	// beyond the QID, CVEs or CVSS.
