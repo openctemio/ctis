@@ -168,6 +168,10 @@
       "rule_id": "900002",
       "rule_name": "Low finding",
       "asset_ref": "host-203.0.113.30",
+      "network": {
+        "host": "203.0.113.30",
+        "protocol": "tcp"
+      },
       "native": {
         "scheme": "nessus",
         "vuln_id": "900002",
