@@ -233,6 +233,9 @@ func TestRedactCredentials(t *testing.T) {
 		"SNMP community: public":                       "SNMP community: [redacted]",
 		"api_key: abc123":                              "api_key: [redacted]",
 		"nothing here":                                 "nothing here",
+		"install cramfs missing; user: svc-scan":       "install cramfs missing; user: [redacted]",
+		"ran as login=jdoe, ok":                        "ran as login=[redacted], ok",
+		"User: [redacted]":                             "User: [redacted]",
 	}
 	for in, want := range cases {
 		if got := redactCredentials(in); got != want {
