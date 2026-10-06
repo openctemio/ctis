@@ -91,6 +91,13 @@ func parseSARIF(b *builder, r io.Reader) error {
 	asset := b.codeAsset(sarifProvenance(&view))
 	opts := ctis.DefaultConvertOptions()
 	opts.AssetType, opts.AssetValue, opts.AssetID = asset.Type, asset.Value, asset.ID
+	switch b.opts.ToolType {
+	case "sast", "sca", "secret", "iac", "web3":
+		opts.ToolType = b.opts.ToolType
+	}
+	if c := b.opts.DefaultConfidence; c >= 1 && c <= 100 {
+		opts.DefaultConfidence = c
+	}
 	if b.opts.Repository != "" && b.opts.Branch != "" {
 		opts.Branch, opts.CommitSHA = line(b.opts.Branch, capShort), line(b.opts.CommitSHA, 128)
 	}
@@ -100,6 +107,9 @@ func parseSARIF(b *builder, r io.Reader) error {
 	}
 	if rep.Tool != nil && rep.Tool.Name != "" && b.opts.ToolName == "" {
 		b.res.Report.Tool = rep.Tool
+	} else if opts.ToolType != "" && rep.Tool != nil && b.res.Report.Tool != nil {
+		// A named tool keeps the capabilities its type states.
+		b.res.Report.Tool.Capabilities = rep.Tool.Capabilities
 	}
 	b.res.Report.Metadata.Branch = rep.Metadata.Branch
 	if _, err := b.asset(asset); err != nil {
