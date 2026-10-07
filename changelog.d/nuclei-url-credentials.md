@@ -1,0 +1,3 @@
+### Security: nuclei results no longer carry the credentials of a matched URL
+
+- `importer.Parse` (nuclei) removes the credentials a matched URL carries before it reaches the finding message or location: the user info, and the values of query and fragment parameters named like a credential (`api_key`, `token`, `access_token`, `password`, `session`, `signature`, `code`, ...), which become `REDACTED`. A URL that does not parse is masked by pattern. The fingerprint is computed from the host without its user info; fingerprints of hosts without credentials are unchanged. Found while moving the sensor parsers onto the importer (sensor #175).
