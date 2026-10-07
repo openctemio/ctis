@@ -63,10 +63,12 @@ report, err := ctis.FromSARIF(sarifBytes, nil)
 
 | Schema | Description |
 |---|---|
-| `report.json` | Report envelope: version, metadata, tool, assets, findings, dependencies |
+| `report.json` | Report envelope: version, metadata, tool, assets, findings, dependencies, endpoints |
 | `asset.json` | Assets (domains, IPs, hosts, repositories, cloud, Web3, ...) |
-| `finding.json` | Security findings |
+| `finding.json` | Security findings, with their web location (`web`) and typed evidence (`evidence_items`) |
 | `dependency.json` | SBOM dependencies |
+| `endpoint.json` | Web endpoints: a method and a path on an origin, parameters by name only (1.6) |
+| `evidence-item.json` | Typed evidence of a finding: HTTP exchanges, text, command output, file excerpts, screenshots, with marked sensitive spans (1.6) |
 | `web3-asset.json` | Web3 asset details |
 | `web3-finding.json` | Web3 vulnerability details |
 
