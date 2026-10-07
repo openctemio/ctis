@@ -10,7 +10,7 @@ Generated from `importer/spec_betterleaks.go`; do not edit. Regenerate with `go 
 
 - The betterleaks format is the gitleaks parser under the betterleaks tool name; Detect names the shared shape gitleaks, so choose betterleaks with Options.Format.
 - One secret finding per record, filed on Options.Repository, else Options.DefaultAsset, else an unclassified asset named after the tool (with an issue).
-- The raw secret never reaches the report: secret.masked_value, the snippet, the title and the commit message hold it masked with ctis.MaskSecretMatch (the masking FromSARIF uses), and the fingerprint input is the masked value (CTIS spec 5.2).
+- The raw secret never reaches the report: secret.masked_value, the snippet, the title and the commit message hold it masked with ctis.MaskSecretMatch (the masking FromSARIF uses), the secret, the match line and each secret-looking word of the match are masked in every other field (ctis.RedactSecretFinding), and the fingerprint input is the masked value (CTIS spec 5.2).
 - Severity is inferred from the rule id (the report has none): cloud credentials, private keys and personal access tokens are critical, anything else high.
 - The commit author and e-mail are kept: they say who committed the secret, which is who must rotate it.
 

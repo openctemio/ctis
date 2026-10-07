@@ -154,6 +154,7 @@ Every timestamp is an RFC 3339 `date-time` with an offset (`2026-10-02T08:15:00Z
 - No member of a report may hold a usable secret value. This covers `location.snippet`, `location.context_snippet`, `evidence`, `title`, `message`, `description` and `properties`, not only `secret.*`.
 - `secret.masked_value` MUST NOT reveal more than 4 characters at either end, nor more than half of the secret. Receivers SHOULD mask it again rather than trust the producer (OpenCTEM does).
 - A secret finding's snippet SHOULD be the masked value, or `REDACTED`.
+- The raw secret MUST NOT appear in any other field of the finding: title, description, message, evidence, remediation, tags, properties or fingerprints. A scanner message that names the match is masked like the snippet. Receivers SHOULD mask every raw value they can recognise (an unmasked snippet or `masked_value`, and each secret-looking word of it) in every free-text field before storage; the Go module does this with `RedactSecretFinding`.
 - Fingerprint inputs follow section 5.2: never the raw secret.
 
 ### 4.9 Channel and binding
@@ -220,7 +221,7 @@ Producers in other languages MUST reproduce the same input strings and hash them
 - Suppressions: the result's `suppressions` become `suppression`. The suppression carried is the first rejected one, else the first under review, else the first accepted one (an absent SARIF status means accepted); `inSource` is written `in_source`, `underReview` `under_review`. `status` is `suppressed` only when SARIF calls the result suppressed: at least one accepted suppression and none under review or rejected. The justification loses control characters and is cut at 2048 bytes.
 - The fingerprint placeholder `requires login` (Semgrep OSS) is ignored.
 - The asset the options describe gets no criticality.
-- Secrets: secret scanners put the matched secret in the region snippet (gitleaks and betterleaks do unless run with `--redact`). For a finding of type `secret`, or any finding from a secret scanner, the snippet is masked: a value of 16 characters or more keeps its first 4 characters followed by `********`, a shorter one becomes `REDACTED`, and the raw value is masked wherever the title, message or description repeats it. A snippet that is already `REDACTED` or only asterisks is kept; a partial redaction (`--redact=N`) is masked again. The converter does not set `secret.masked_value`, because receivers fingerprint secret findings by it.
+- Secrets: secret scanners put the matched secret in the region snippet (gitleaks and betterleaks do unless run with `--redact`). For a finding of type `secret`, or any finding from a secret scanner, the snippet is masked: a value of 16 characters or more keeps its first 4 characters followed by `********`, a shorter one becomes `REDACTED`, and the raw value and each secret-looking word of it (8 or more characters with a letter and a digit, or 20 or more characters) are masked wherever any other field repeats it, so a snippet holding a whole code line still has the bare secret masked in the title. A snippet that is already `REDACTED` or only asterisks is kept; a partial redaction (`--redact=N`) is masked again. The converter does not set `secret.masked_value`, because receivers fingerprint secret findings by it.
 
 ### 6.2 Recon: `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports`
 

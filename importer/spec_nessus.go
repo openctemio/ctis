@@ -17,7 +17,7 @@ var _ = registerSpec(Spec{
 		"Every finding has network.host (the asset value), network.port and network.protocol; port 0 is a host-level result, and its pseudo-service general is not kept as network.service.",
 		"Severity: the severity attribute (0-4) through ctis.NormalizeNativeSeverity (0 info, 1 low, 2 medium, 3 high, 4 critical); risk_factor when the attribute is unusable. native.severity keeps the attribute; severity 0 sets native.detection_type info.",
 		"Every CVSS version goes to finding.scores with source tenable. The legacy vulnerability.cvss_* members take the first of v3, v4, v2, with cvss_source vendor.",
-		"plugin_output and compliance-actual-value go to evidence after credential redaction: account lines (User:, Login:, Account:) and account labels inside a line, `as '<account>'`, and password, secret, token, API key and community values become [redacted].",
+		"plugin_output and compliance-actual-value go to evidence after credential redaction: account lines (User:, Login:, Account:) and account labels inside a line, `as '<account>'`, and password, secret, token, API key and community values become [redacted]. The passwords, tokens and community strings found there are also masked (ctis.MaskSecretMatch) wherever any other field of the finding repeats them.",
 		"The Policy element (server and plugin preferences, which hold scan credentials and account names) is skipped whole, and smb-login-used, ssh-login-used and compliance-uname are never read.",
 		"Values are cleaned of control characters and cut to the CTIS receiver caps (title 500, description 32 KiB, evidence 64 KiB, remediation 16 KiB).",
 	},
