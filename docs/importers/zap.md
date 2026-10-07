@@ -4,7 +4,7 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 
 - Format: `zap`
 - Source versions: the traditional JSON and XML reports of ZAP 2.12-2.16
-- Fields: 64 mapped, 29 ignored on purpose (69% mapped)
+- Fields: 72 mapped, 13 ignored on purpose (85% mapped)
 
 ## Rules
 
@@ -12,7 +12,7 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 - One website asset per site, named by its origin (scheme, host and port; no path, query or user info). One finding per alert, method, URL template and parameter (at most 100 per alert, the rest counted in an issue), on the site's host and port, with finding.web: the URI without user info, fragment or query values, the method and the parameter (query when the URI names it, form for a request with a body, otherwise left out).
 - Severity: riskcode 0 info, 1 low, 2 medium, 3 high; native.severity keeps it. Confidence 1, 2, 3, 4 become 30, 60, 90, 100; 0 (marked a false positive in ZAP) sets status false_positive.
 - Each instance (method, redacted URI, parameter, attack, evidence) becomes a line of the evidence of its finding, at most 20 per finding; the attack string is kept as text, never as markup. occurrence_count is the number of instances of the finding.
-- Request and response headers and bodies, which hold cookies, authorization headers and session tokens, are never read.
+- The HTTP message of the first 3 instances of a finding (request and response headers and bodies) becomes http_exchange evidence items (CTIS 1.6), capped, with the instance's evidence located in the response body. Cookies, authorization headers, session tokens and sensitive query, form and JSON members, and every repetition of them, are marked in the items' sensitive spans, never masked: the receiver masks them.
 
 ## Fields
 
@@ -60,15 +60,11 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/site[]/alerts[]/instances[]/otherinfo` | `findings[].evidence` |  |
 | `/site[]/alerts[]/instances[]/id` |  | ZAP-internal instance number |
 | `/site[]/alerts[]/instances[]/nodeName` |  | the site tree node; the URI is kept |
-| `/site[]/alerts[]/instances[]/request-header` |  | request headers hold cookies and authorization headers |
-| `/site[]/alerts[]/instances[]/request-body` |  | request bodies hold credentials and personal data |
-| `/site[]/alerts[]/instances[]/response-header` |  | response headers hold session cookies |
-| `/site[]/alerts[]/instances[]/response-body` |  | response bodies hold personal data |
-| `/site[]/alerts[]/instances[]/requestheader` |  | request headers hold cookies and authorization headers |
-| `/site[]/alerts[]/instances[]/requestbody` |  | request bodies hold credentials and personal data |
-| `/site[]/alerts[]/instances[]/responseheader` |  | response headers hold session cookies |
-| `/site[]/alerts[]/instances[]/responsebody` |  | response bodies hold personal data |
 | `/site[]/alerts[]/tags` | (container) |  |
+| `/site[]/alerts[]/instances[]/request-header` | `findings[].evidence_items[http_exchange].http.request (sensitive values marked)` |  |
+| `/site[]/alerts[]/instances[]/request-body` | `findings[].evidence_items[http_exchange].http.request.body (sensitive members marked)` |  |
+| `/site[]/alerts[]/instances[]/response-header` | `findings[].evidence_items[http_exchange].http.response (sensitive values marked)` |  |
+| `/site[]/alerts[]/instances[]/response-body` | `findings[].evidence_items[http_exchange].http.response.body, match` |  |
 | `/site[]/alerts[]/tags/*` | `findings[].tags (the name), references (the link)` |  |
 | `/OWASPZAPReport` | (container) |  |
 | `/OWASPZAPReport/@programName` |  | always ZAP; the tool is named by the format |
@@ -108,15 +104,11 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/otherinfo` | `findings[].evidence` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/id` |  | ZAP-internal instance number |
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/nodeName` |  | the site tree node; the URI is kept |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/request-header` |  | request headers hold cookies and authorization headers |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/request-body` |  | request bodies hold credentials and personal data |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/response-header` |  | response headers hold session cookies |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/response-body` |  | response bodies hold personal data |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/requestheader` |  | request headers hold cookies and authorization headers |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/requestbody` |  | request bodies hold credentials and personal data |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/responseheader` |  | response headers hold session cookies |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/responsebody` |  | response bodies hold personal data |
 | `/OWASPZAPReport/site/alerts/alertitem/tags` | (container) |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/requestheader` | `findings[].evidence_items[http_exchange].http.request (sensitive values marked)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/requestbody` | `findings[].evidence_items[http_exchange].http.request.body (sensitive members marked)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/responseheader` | `findings[].evidence_items[http_exchange].http.response (sensitive values marked)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/responsebody` | `findings[].evidence_items[http_exchange].http.response.body, match` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/tags/tag` | (container) |  |
 | `/OWASPZAPReport/site/alerts/alertitem/tags/tag/tag` | `findings[].tags` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/tags/tag/link` | `findings[].references` |  |

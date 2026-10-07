@@ -4,7 +4,7 @@ Generated from `importer/spec_sarif.go`; do not edit. Regenerate with `go test .
 
 - Format: `sarif`
 - Source versions: SARIF 2.1.0 (OASIS) as written by CodeQL, semgrep, trivy, gitleaks, betterleaks and other static analysis tools
-- Fields: 52 mapped, 29 ignored on purpose (64% mapped)
+- Fields: 69 mapped, 33 ignored on purpose (68% mapped)
 
 ## Rules
 
@@ -95,6 +95,31 @@ Generated from `importer/spec_sarif.go`; do not edit. Regenerate with `go test .
 | `/runs[]/results[]/suppressions[]/kind` | `findings[].suppression.kind` |  |
 | `/runs[]/results[]/suppressions[]/status` | `findings[].suppression.status, status` |  |
 | `/runs[]/results[]/suppressions[]/justification` | `findings[].suppression.justification` |  |
+| `/runs[]/results[]/webRequest` | `findings[].evidence_items[http_exchange].http.request (capped, sensitive values marked)` |  |
+| `/runs[]/results[]/webRequest/protocol` | `findings[].evidence_items[].http.request.http_version` |  |
+| `/runs[]/results[]/webRequest/version` | `findings[].evidence_items[].http.request.http_version` |  |
+| `/runs[]/results[]/webRequest/target` | `findings[].evidence_items[].http.request.url` |  |
+| `/runs[]/results[]/webRequest/method` | `findings[].evidence_items[].http.request.method` |  |
+| `/runs[]/results[]/webRequest/headers` | (container) |  |
+| `/runs[]/results[]/webRequest/headers/*` | `findings[].evidence_items[].http.request.headers[] (Authorization, Cookie and API-key values marked sensitive)` |  |
+| `/runs[]/results[]/webRequest/body` | (container) |  |
+| `/runs[]/results[]/webRequest/body/text` | `findings[].evidence_items[].http.request.body` |  |
+| `/runs[]/results[]/webRequest/body/binary` | `findings[].evidence_items[].http.request.body (base64)` |  |
+| `/runs[]/results[]/webRequest/index` |  | index into run.webRequests; the inline object is kept |
+| `/runs[]/results[]/webRequest/parameters` |  | the request's parameters; the target URL and body hold them |
+| `/runs[]/results[]/webRequest/parameters/*` |  | the request's parameters; the target URL and body hold them |
+| `/runs[]/results[]/webResponse` | `findings[].evidence_items[http_exchange].http.response (capped, sensitive values marked)` |  |
+| `/runs[]/results[]/webResponse/protocol` | `findings[].evidence_items[].http.response.http_version` |  |
+| `/runs[]/results[]/webResponse/version` | `findings[].evidence_items[].http.response.http_version` |  |
+| `/runs[]/results[]/webResponse/statusCode` | `findings[].evidence_items[].http.response.status` |  |
+| `/runs[]/results[]/webResponse/reasonPhrase` | `findings[].evidence_items[].http.response.reason` |  |
+| `/runs[]/results[]/webResponse/headers` | (container) |  |
+| `/runs[]/results[]/webResponse/headers/*` | `findings[].evidence_items[].http.response.headers[] (Set-Cookie values marked sensitive)` |  |
+| `/runs[]/results[]/webResponse/body` | (container) |  |
+| `/runs[]/results[]/webResponse/body/text` | `findings[].evidence_items[].http.response.body` |  |
+| `/runs[]/results[]/webResponse/body/binary` | `findings[].evidence_items[].http.response.body (base64)` |  |
+| `/runs[]/results[]/webResponse/noResponseReceived` | `findings[].evidence_items[].http.response (left out when true)` |  |
+| `/runs[]/results[]/webResponse/index` |  | index into run.webResponses; the inline object is kept |
 | `/runs[]/results[]/properties` | (container) |  |
 | `/runs[]/results[]/properties/tags` | `findings[].tags` |  |
 | `/runs[]/results[]/properties/tags[]` | `findings[].tags` |  |

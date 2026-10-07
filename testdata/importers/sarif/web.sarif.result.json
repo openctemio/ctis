@@ -1,0 +1,21 @@
+{
+  "format": "sarif",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 3,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 1,
+      "low": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "message": "the file names no repository and none was given: findings are filed on webscanner-import"
+    }
+  ]
+}
