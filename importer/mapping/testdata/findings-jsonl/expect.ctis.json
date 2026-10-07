@@ -1,0 +1,73 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-07T08:00:00Z",
+    "source_type": "scanner"
+  },
+  "tool": {
+    "name": "findings-jsonl",
+    "version": "1.0.0"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Git config exposed",
+      "severity": "medium",
+      "rule_id": "git-config",
+      "asset_value": "https://a.example.com",
+      "network": {
+        "host": "192.0.2.10",
+        "port": 443,
+        "protocol": "tcp"
+      },
+      "evidence": "[core]\nbare = false",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-200"
+        ]
+      },
+      "references": [
+        "https://example.org/git"
+      ],
+      "tags": [
+        "exposure",
+        "git"
+      ],
+      "properties": {
+        "matched_at": "https://a.example.com/.git/config"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Path traversal",
+      "severity": "critical",
+      "rule_id": "CVE-2021-41773",
+      "asset_value": "https://b.example.com",
+      "network": {
+        "host": "192.0.2.11",
+        "port": 443,
+        "protocol": "tcp"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2021-41773",
+        "cwe_ids": [
+          "CWE-22"
+        ]
+      },
+      "properties": {
+        "matched_at": "https://b.example.com/cgi-bin/.%2e/etc/passwd"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Odd severity",
+      "severity": "info",
+      "rule_id": "odd-severity",
+      "asset_value": "https://d.example.com",
+      "network": {
+        "protocol": "tcp"
+      }
+    }
+  ]
+}

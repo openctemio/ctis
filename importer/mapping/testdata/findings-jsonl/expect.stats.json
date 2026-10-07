@@ -1,0 +1,15 @@
+{
+  "records": 4,
+  "assets": 0,
+  "findings": 3,
+  "dependencies": 0,
+  "skipped": 1,
+  "truncated": false,
+  "issues": [
+    {
+      "record": 3,
+      "rule": 0,
+      "message": "invalid CTIS report: findings[0]: title is required"
+    }
+  ]
+}

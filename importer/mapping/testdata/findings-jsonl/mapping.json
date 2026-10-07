@@ -1,0 +1,26 @@
+{
+  "apiVersion": "openctem.io/mapping/v1",
+  "source": "jsonl",
+  "notes": "A template scanner that writes one JSON line per match.",
+  "records": [
+    {
+      "when": {"path": "/template-id", "exists": true},
+      "kind": "finding",
+      "set": {
+        "rule_id": "/template-id",
+        "title": "/info/name",
+        "severity": {"path": "/info/severity", "lower": true, "map": {"info": "info", "low": "low", "medium": "medium", "high": "high", "critical": "critical"}, "default": "info"},
+        "asset_value": "/host",
+        "network.host": "/ip",
+        "network.port": {"path": "/port", "as": "integer"},
+        "network.protocol": {"const": "tcp"},
+        "evidence": {"path": "/extracted-results", "join": "\n", "max_bytes": 65536},
+        "vulnerability.cve_id": {"path": "/info/classification/cve-id[0]", "upper": true},
+        "vulnerability.cwe_ids": {"path": "/info/classification/cwe-id", "upper": true},
+        "tags": "/info/tags",
+        "references": "/info/reference",
+        "properties.matched_at": "/matched-at"
+      }
+    }
+  ]
+}

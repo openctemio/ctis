@@ -1,0 +1,64 @@
+{
+  "version": "1.4",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-07T08:00:00Z",
+    "source_type": "scanner"
+  },
+  "tool": {
+    "name": "json-each",
+    "version": "1.0.0"
+  },
+  "assets": [
+    {
+      "type": "certificate",
+      "value": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "technical": {
+        "certificate": {
+          "sans": [
+            "a.example.com",
+            "www.a.example.com"
+          ],
+          "issuer_cn": "Example CA",
+          "not_after": "2026-01-01T00:00:00Z",
+          "fingerprint": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+        }
+      },
+      "properties": {
+        "served_by": "a.example.com:443"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "misconfiguration",
+      "title": "Weak TLS configuration on a.example.com",
+      "severity": "high",
+      "rule_id": "tls-grade-F",
+      "network": {
+        "host": "a.example.com",
+        "port": 443,
+        "protocol": "tcp"
+      },
+      "evidence": "certificate expired\nTLS 1.0 enabled[31m",
+      "tags": [
+        "tls"
+      ]
+    },
+    {
+      "type": "misconfiguration",
+      "title": "Weak TLS configuration on c.example.com",
+      "severity": "low",
+      "rule_id": "tls-grade-C",
+      "network": {
+        "host": "c.example.com",
+        "port": 443,
+        "protocol": "tcp"
+      },
+      "evidence": "weak cipher suites",
+      "tags": [
+        "tls"
+      ]
+    }
+  ]
+}
