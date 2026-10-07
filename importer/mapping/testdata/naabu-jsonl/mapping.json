@@ -1,0 +1,19 @@
+{
+  "apiVersion": "openctem.io/mapping/v1",
+  "source": "jsonl",
+  "notes": "naabu -json: one line per open port.",
+  "records": [
+    {
+      "when": {"path": "/port", "exists": true},
+      "kind": "asset",
+      "set": {
+        "type": {"const": "open_port"},
+        "value": {"template": "{ip}:{port}", "vars": {"ip": "/ip", "port": "/port"}},
+        "properties.host": "/ip",
+        "properties.hostname": "/host",
+        "properties.port": {"path": "/port", "as": "integer"},
+        "properties.protocol": {"path": "/protocol", "lower": true, "default": "tcp"}
+      }
+    }
+  ]
+}

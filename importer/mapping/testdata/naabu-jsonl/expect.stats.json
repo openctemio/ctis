@@ -1,0 +1,15 @@
+{
+  "records": 5,
+  "assets": 3,
+  "findings": 0,
+  "dependencies": 0,
+  "skipped": 1,
+  "truncated": false,
+  "issues": [
+    {
+      "record": 6,
+      "rule": -1,
+      "message": "not a JSON value: invalid character 'o' in literal null (expecting 'u')"
+    }
+  ]
+}

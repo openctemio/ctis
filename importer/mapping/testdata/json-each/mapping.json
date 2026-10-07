@@ -1,0 +1,39 @@
+{
+  "apiVersion": "openctem.io/mapping/v1",
+  "source": "json",
+  "each": "/scan/results",
+  "notes": "A TLS checker that writes one JSON document with a list of results.",
+  "records": [
+    {
+      "when": {"path": "/cert/sha256", "matches": "^[0-9a-fA-F]{64}$"},
+      "kind": "asset",
+      "set": {
+        "type": {"const": "certificate"},
+        "value": {"path": "/cert/sha256", "lower": true},
+        "technical.certificate.fingerprint": {"path": "/cert/sha256", "lower": true},
+        "technical.certificate.issuer_cn": "/cert/issuer",
+        "technical.certificate.not_after": "/cert/not_after",
+        "technical.certificate.sans": {"path": "/cert/names", "split": ","},
+        "properties.served_by": {"template": "{host}:{port}", "vars": {"host": "/host", "port": "/port"}}
+      }
+    },
+    {
+      "when": [
+        {"path": "/issues[0]", "exists": true},
+        {"path": "/grade", "in": ["C", "D", "F"]}
+      ],
+      "kind": "finding",
+      "set": {
+        "type": {"const": "misconfiguration"},
+        "rule_id": {"template": "tls-grade-{grade}", "vars": {"grade": "/grade"}},
+        "title": {"template": "Weak TLS configuration on {host}", "vars": {"host": "/host"}},
+        "severity": {"path": "/grade", "map": {"C": "low", "D": "medium", "F": "high"}, "default": "info"},
+        "network.host": "/host",
+        "network.port": {"path": "/port", "as": "integer"},
+        "network.protocol": {"const": "tcp"},
+        "evidence": {"path": "/issues", "join": "\n", "max_bytes": 65536},
+        "tags": {"const": ["tls"]}
+      }
+    }
+  ]
+}

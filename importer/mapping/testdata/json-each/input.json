@@ -1,0 +1,34 @@
+{
+  "tool": "tlscheck",
+  "scan": {
+    "started": "2026-10-07T08:00:00Z",
+    "results": [
+      {
+        "host": "a.example.com",
+        "port": 443,
+        "grade": "F",
+        "cert": {
+          "sha256": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08",
+          "issuer": "Example CA",
+          "not_after": "2026-01-01T00:00:00Z",
+          "names": "a.example.com, www.a.example.com"
+        },
+        "issues": ["certificate expired", "TLS 1.0 enabled\u001b[31m"]
+      },
+      {
+        "host": "b.example.com",
+        "port": 8443,
+        "grade": "A",
+        "cert": {"sha256": "not-a-hash", "issuer": "Example CA"},
+        "issues": []
+      },
+      {
+        "host": "c.example.com",
+        "port": 443,
+        "grade": "C",
+        "cert": {"sha256": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae", "issuer": "Example CA", "not_after": "not a date"},
+        "issues": ["weak cipher suites"]
+      }
+    ]
+  }
+}

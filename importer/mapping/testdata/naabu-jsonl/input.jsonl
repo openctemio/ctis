@@ -1,0 +1,6 @@
+{"host":"a.example.com","ip":"192.0.2.10","port":443,"protocol":"tcp","tls":true,"timestamp":"2026-10-07T08:00:00Z"}
+{"host":"a.example.com","ip":"192.0.2.10","port":"8080","timestamp":"2026-10-07T08:00:01Z"}
+
+{"ip":"192.0.2.11","port":22,"protocol":"TCP"}
+{"msg":"scan finished"}
+not json
