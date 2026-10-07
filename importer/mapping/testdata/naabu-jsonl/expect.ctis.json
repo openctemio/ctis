@@ -1,0 +1,43 @@
+{
+  "version": "1.5",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-07T08:00:00Z",
+    "source_type": "scanner"
+  },
+  "tool": {
+    "name": "naabu-jsonl",
+    "version": "1.0.0"
+  },
+  "assets": [
+    {
+      "type": "open_port",
+      "value": "192.0.2.10:443",
+      "properties": {
+        "host": "192.0.2.10",
+        "hostname": "a.example.com",
+        "port": 443,
+        "protocol": "tcp"
+      }
+    },
+    {
+      "type": "open_port",
+      "value": "192.0.2.10:8080",
+      "properties": {
+        "host": "192.0.2.10",
+        "hostname": "a.example.com",
+        "port": 8080,
+        "protocol": "tcp"
+      }
+    },
+    {
+      "type": "open_port",
+      "value": "192.0.2.11:22",
+      "properties": {
+        "host": "192.0.2.11",
+        "port": 22,
+        "protocol": "tcp"
+      }
+    }
+  ]
+}

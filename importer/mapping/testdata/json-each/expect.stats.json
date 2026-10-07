@@ -1,0 +1,15 @@
+{
+  "records": 3,
+  "assets": 1,
+  "findings": 2,
+  "dependencies": 0,
+  "skipped": 1,
+  "truncated": false,
+  "issues": [
+    {
+      "record": 3,
+      "rule": 0,
+      "message": "asset: parsing time \"not a date\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"not a date\" as \"2006\""
+    }
+  ]
+}

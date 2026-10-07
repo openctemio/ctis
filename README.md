@@ -159,6 +159,17 @@ violations, err := c.Check(report, capability.CheckOptions{})
 
 `Check` reports outputs the capability may not emit and records that miss a required path; producers run it before upload and receivers again at ingest. The reference page [docs/capabilities.md](docs/capabilities.md) is generated from the data.
 
+## Mapping any JSON tool output
+
+The `importer/mapping` package turns the JSON or JSON Lines output of any command-line tool into CTIS through a declarative mapping file (`openctem.io/mapping/v1`), so wrapping a tool needs no parser code:
+
+```go
+m, err := mapping.Load(mappingJSON)
+report, stats, err := m.Apply(ctx, stdout, mapping.Options{Tool: &ctis.Tool{Name: "acme-portscan"}})
+```
+
+The language is closed: predicates (`exists`, `equals`, `in`, RE2 `matches`), source paths, constants, named templates and a fixed list of transforms. It has no expressions, code, file or network access. Targets are checked against the CTIS types. Ids, links between records and the report's `tool` cannot be set. Input is bounded in size, depth, line length and record count. See [docs/mapping.md](docs/mapping.md).
+
 ## Asset types
 
 | Group | Types |

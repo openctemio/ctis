@@ -1,0 +1,4 @@
+{"template-id":"git-config","info":{"name":"Git config exposed","severity":"Medium","tags":["exposure","git"],"reference":["https://example.org/git"],"classification":{"cwe-id":["cwe-200"]}},"host":"https://a.example.com","matched-at":"https://a.example.com/.git/config","ip":"192.0.2.10","port":"443","extracted-results":["[core]","bare = false"]}
+{"template-id":"CVE-2021-41773","info":{"name":"Path traversal","severity":"critical","classification":{"cve-id":["cve-2021-41773"],"cwe-id":["cwe-22"]}},"host":"https://b.example.com","matched-at":"https://b.example.com/cgi-bin/.%2e/etc/passwd","ip":"192.0.2.11","port":443}
+{"template-id":"tech-detect","info":{"name":"","severity":"info"},"host":"https://c.example.com"}
+{"template-id":"odd-severity","info":{"name":"Odd severity","severity":"urgent"},"host":"https://d.example.com"}

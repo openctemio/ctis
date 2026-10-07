@@ -79,6 +79,8 @@ def main():
 
     valid = sorted(glob.glob(os.path.join(ROOT, "examples", "*.json")))
     valid += sorted(glob.glob(os.path.join(ROOT, "testdata", "**", "*.golden.json"), recursive=True))
+    # Reports made by the sample mappings of importer/mapping.
+    valid += sorted(glob.glob(os.path.join(ROOT, "importer", "mapping", "testdata", "*", "expect.ctis.json")))
     for path in valid:
         errors = sorted(validator.iter_errors(load(path)), key=lambda e: list(e.path))
         rel = os.path.relpath(path, ROOT)
