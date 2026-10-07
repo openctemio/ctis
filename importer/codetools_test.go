@@ -3,11 +3,15 @@ package importer
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/openctemio/ctis"
 )
 
 func TestDetect_CodeFormats(t *testing.T) {
@@ -72,9 +76,13 @@ func TestCodeFormats_RepositoryOptionWins(t *testing.T) {
 }
 
 // No raw secret, credential in a URL, cookie or extracted target data
-// reaches any golden output of the code formats.
+// reaches any golden output of the code formats, but typed evidence (spec
+// 4.8): an evidence item may hold the exchange as captured (target data
+// that proves the finding included), with every credential inside a span
+// it marks.
 func TestCodeFormats_NoSecretsInOutput(t *testing.T) {
-	secrets := []string{"AKIAEXAMPLEEXAMPLE00", "ghp_0000EXAMPLE", "not-a-token", "user:secret", "session=abc", "root:x:0", "admin:hunter2"}
+	credentials := []string{"AKIAEXAMPLEEXAMPLE00", "ghp_0000EXAMPLE", "not-a-token", "user:secret", "session=abc", "admin:hunter2"}
+	targetData := []string{"root:x:0"}
 	for _, dir := range []string{"betterleaks", "trivy", "sarif", "nuclei", "semgrep"} {
 		files, _ := filepath.Glob(filepath.Join(fixtureRoot, dir, "*.golden.json"))
 		res, _ := filepath.Glob(filepath.Join(fixtureRoot, dir, "*.result.json"))
@@ -83,13 +91,85 @@ func TestCodeFormats_NoSecretsInOutput(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, s := range secrets {
+			var doc struct {
+				Findings []map[string]json.RawMessage `json:"findings"`
+			}
+			_ = json.Unmarshal(b, &doc)
+			var items []ctis.EvidenceItem
+			for _, fd := range doc.Findings {
+				if raw, ok := fd["evidence_items"]; ok {
+					var ev []ctis.EvidenceItem
+					if err := json.Unmarshal(raw, &ev); err != nil {
+						t.Fatalf("%s: %v", f, err)
+					}
+					items = append(items, ev...)
+					b = bytes.Replace(b, raw, nil, 1)
+				}
+			}
+			for _, s := range append(append([]string(nil), credentials...), targetData...) {
 				if bytes.Contains(b, []byte(s)) {
-					t.Errorf("%s holds %q", f, s)
+					t.Errorf("%s holds %q outside evidence items", f, s)
+				}
+			}
+			for i := range items {
+				for _, s := range credentials {
+					if ptrs := unmarkedIn(&items[i], s); len(ptrs) > 0 {
+						t.Errorf("%s: evidence holds %q unmarked at %v", f, s, ptrs)
+					}
 				}
 			}
 		}
 	}
+}
+
+// unmarkedIn returns the JSON pointers of the item's strings that hold s
+// outside every marked span.
+func unmarkedIn(it *ctis.EvidenceItem, s string) []string {
+	raw, _ := json.Marshal(it)
+	var doc any
+	_ = json.Unmarshal(raw, &doc)
+	var out []string
+	var walk func(v any, ptr string)
+	walk = func(v any, ptr string) {
+		switch x := v.(type) {
+		case map[string]any:
+			for k, e := range x {
+				if ptr == "" && k == "sensitive" {
+					continue
+				}
+				walk(e, ptr+"/"+strings.ReplaceAll(strings.ReplaceAll(k, "~", "~0"), "/", "~1"))
+			}
+		case []any:
+			for i, e := range x {
+				walk(e, ptr+"/"+strconv.Itoa(i))
+			}
+		case string:
+			for from := 0; ; {
+				i := strings.Index(x[from:], s)
+				if i < 0 {
+					return
+				}
+				start, end := from+i, from+i+len(s)
+				covered := false
+				for _, sp := range it.Sensitive {
+					lo, hi := 0, len(x)
+					if sp.Start != nil {
+						lo = *sp.Start
+					}
+					if sp.End != nil {
+						hi = *sp.End
+					}
+					covered = covered || (sp.Pointer == ptr && lo <= start && end <= hi)
+				}
+				if !covered {
+					out = append(out, ptr)
+				}
+				from = end
+			}
+		}
+	}
+	walk(doc, "")
+	return out
 }
 
 func TestCodeFormats_Hostile(t *testing.T) {
