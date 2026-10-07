@@ -140,8 +140,16 @@ func validateContractReport(r *Report, assetIDs map[string]bool, add func(string
 
 // validateTechnologies checks asset.technologies.
 func validateTechnologies(i int, techs []Technology, add func(string, ...any)) {
+	validateTechnologyList(func(format string, args ...any) {
+		add("assets[%d]: "+format, append([]any{i}, args...)...)
+	}, techs)
+}
+
+// validateTechnologyList checks a technologies list; add's messages are
+// relative to the list's owner.
+func validateTechnologyList(add func(string, ...any), techs []Technology) {
 	if len(techs) > MaxTechnologies {
-		add("assets[%d]: technologies has %d entries, at most %d", i, len(techs), MaxTechnologies)
+		add("technologies has %d entries, at most %d", len(techs), MaxTechnologies)
 	}
 	for j, t := range techs {
 		if j >= MaxTechnologies {
@@ -149,26 +157,26 @@ func validateTechnologies(i int, techs []Technology, add func(string, ...any)) {
 		}
 		switch {
 		case strings.TrimSpace(t.Name) == "":
-			add("assets[%d]: technologies[%d].name is required", i, j)
+			add("technologies[%d].name is required", j)
 		case tooLong(t.Name, MaxTechnologyNameLen):
-			add("assets[%d]: technologies[%d].name longer than %d", i, j, MaxTechnologyNameLen)
+			add("technologies[%d].name longer than %d", j, MaxTechnologyNameLen)
 		}
 		if tooLong(t.Version, MaxTechnologyVerLen) {
-			add("assets[%d]: technologies[%d].version longer than %d", i, j, MaxTechnologyVerLen)
+			add("technologies[%d].version longer than %d", j, MaxTechnologyVerLen)
 		}
 		if tooLong(t.CPE, MaxTechnologyCPELen) {
-			add("assets[%d]: technologies[%d].cpe longer than %d", i, j, MaxTechnologyCPELen)
+			add("technologies[%d].cpe longer than %d", j, MaxTechnologyCPELen)
 		}
 		if len(t.Categories) > MaxTechnologyCategory {
-			add("assets[%d]: technologies[%d].categories has %d entries, at most %d", i, j, len(t.Categories), MaxTechnologyCategory)
+			add("technologies[%d].categories has %d entries, at most %d", j, len(t.Categories), MaxTechnologyCategory)
 		}
 		for k, c := range t.Categories {
 			if k < MaxTechnologyCategory && tooLong(c, MaxTechnologyCatLen) {
-				add("assets[%d]: technologies[%d].categories[%d] longer than %d", i, j, k, MaxTechnologyCatLen)
+				add("technologies[%d].categories[%d] longer than %d", j, k, MaxTechnologyCatLen)
 			}
 		}
 		if t.Confidence < 0 || t.Confidence > 100 {
-			add("assets[%d]: technologies[%d].confidence %d is outside 0-100", i, j, t.Confidence)
+			add("technologies[%d].confidence %d is outside 0-100", j, t.Confidence)
 		}
 	}
 }

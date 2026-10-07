@@ -88,6 +88,8 @@ func (r *Report) Validate() error {
 		}
 	}
 
+	endpointIDs := validateEndpoints(r, assetIDs, add)
+
 	findingIDs := make(map[string]bool, len(r.Findings))
 	for i := range r.Findings {
 		f := &r.Findings[i]
@@ -135,6 +137,8 @@ func (r *Report) Validate() error {
 		}
 		validateInteropFinding(i, f, add)
 		validateFindingTechniques(i, f.Attack, add)
+		validateWebLocation(i, f.Web, endpointIDs, add)
+		validateEvidenceItems(i, f.EvidenceItems, add)
 	}
 
 	depIDs := make(map[string]bool, len(r.Dependencies))

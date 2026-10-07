@@ -1,5 +1,5 @@
 {
-  "version": "1.5",
+  "version": "1.6",
   "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
   "metadata": {
     "id": "import-test",
