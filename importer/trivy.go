@@ -466,6 +466,7 @@ func trivySecretFinding(s *trivySecret, target string) (ctis.Finding, bool) {
 	f.Fingerprint = fingerprint.GenerateSecret(target, s.RuleID, s.StartLine, fingerprintMask(s.Match))
 	f.Tags = addTags(nil, "trivy", "secret", target)
 	extra(&f, "category", s.Category)
+	ctis.RedactSecretFinding(&f, s.Match)
 	return f, true
 }
 

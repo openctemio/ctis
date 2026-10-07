@@ -612,6 +612,9 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 	if xr := v["xref"]; len(xr) > 0 {
 		extra(&f, "xref", strings.Join(xr, "\n"))
 	}
+	// A password or community string the plugin output echoed is masked
+	// wherever else the item repeats it.
+	ctis.RedactSecretFinding(&f, append(credentialValues(first(v, "plugin_output")), credentialValues(first(v, "compliance-actual-value"))...)...)
 	return f, true
 }
 
@@ -779,4 +782,23 @@ func redactCredentials(s string) string {
 	s = reAsAccount.ReplaceAllString(s, "${1}'"+redacted+"'")
 	s = reAccountInline.ReplaceAllString(s, "${1}"+redacted)
 	return s
+}
+
+// credentialValues returns the passwords, tokens and community strings that
+// redactCredentials hides in s (not the account names), so the finding can
+// mask them wherever else they appear.
+func credentialValues(s string) []string {
+	if s == "" {
+		return nil
+	}
+	var out []string
+	for _, m := range reSecretKV.FindAllStringSubmatchIndex(s, -1) {
+		out = append(out, strings.Trim(s[m[3]:m[1]], `'"`))
+	}
+	for _, m := range reAccountLine.FindAllStringSubmatchIndex(s, -1) {
+		if label := strings.ToLower(s[m[2]:m[3]]); strings.Contains(label, "community") || strings.Contains(label, "credential") {
+			out = append(out, strings.Trim(s[m[3]:m[1]], "'\" \t"))
+		}
+	}
+	return out
 }

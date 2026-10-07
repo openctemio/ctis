@@ -15,7 +15,7 @@ var _ = registerSpec(Spec{
 		"The conversion is the module's FromSARIF (sarif.go); the importer adds the input limits and chooses the asset.",
 		"Asset: Options.Repository (a receiver sets it from a verified identity); else the first repository a run names in versionControlProvenance (repositoryUri without user info, branch, revisionId); else Options.DefaultAsset or an unclassified asset named after the tool, with an issue.",
 		"Severity: the security-severity score (result, then rule), else the result level, else the rule's default level, else medium. Type: the rule's tags, a CVE/GHSA rule id, else the tool name. Options.ToolType (sast, sca, secret, iac, web3), when set, decides the type and the tool capabilities instead.",
-		"A secret scanner's region snippet is masked (ctis.MaskSecretMatch) and the raw value is masked in the title, description and message.",
+		"A secret scanner's region snippet is masked (ctis.MaskSecretMatch), and the raw value and each secret-looking word of it are masked in every other field: title, description, message, properties, tags and fingerprints.",
 		"Fingerprint: the result's fingerprints entry with the lowest key (hashed above 64 characters); partialFingerprints pass through.",
 	},
 	Fields: []Field{
