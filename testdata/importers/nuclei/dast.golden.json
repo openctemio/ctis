@@ -1,0 +1,105 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "nuclei",
+    "vendor": "ProjectDiscovery",
+    "info_url": "https://github.com/projectdiscovery/nuclei",
+    "capabilities": [
+      "dast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "domain",
+      "value": "shop.example.com",
+      "name": "shop.example.com"
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Error based SQL injection",
+      "message": "Error based SQL injection at https://shop.example.com/products/42?id=&sid=",
+      "severity": "critical",
+      "confidence": 90,
+      "rule_id": "sqli-error-based",
+      "asset_ref": "asset-1",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "https"
+      },
+      "tags": [
+        "sqli",
+        "dast",
+        "nuclei",
+        "http"
+      ],
+      "fingerprint": "df91f8b0913aa1048421963f0122d31afecaa4b763feca04b40d59aa1dcb3903",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "sqli-error-based",
+        "severity": "critical",
+        "raw_ref": "line 1"
+      },
+      "source_extra": {
+        "timestamp": "2026-10-07T10:00:00Z"
+      },
+      "web": {
+        "url": "https://shop.example.com/products/42?id=&sid=",
+        "method": "GET",
+        "parameter": {
+          "location": "query",
+          "name": "id"
+        }
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Blind SSRF",
+      "message": "Blind SSRF at https://shop.example.com/api/fetch",
+      "severity": "high",
+      "confidence": 90,
+      "rule_id": "blind-ssrf",
+      "asset_ref": "asset-1",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "https"
+      },
+      "tags": [
+        "ssrf",
+        "dast",
+        "nuclei",
+        "http"
+      ],
+      "fingerprint": "89532538af40d873ceedf543a300bff91cc2b924516f162cfcbcb424eacaee30",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "blind-ssrf",
+        "severity": "high",
+        "raw_ref": "line 2"
+      },
+      "source_extra": {
+        "timestamp": "2026-10-07T10:00:01Z"
+      },
+      "web": {
+        "url": "https://shop.example.com/api/fetch",
+        "method": "POST",
+        "parameter": {
+          "location": "json",
+          "name": "url"
+        }
+      }
+    }
+  ]
+}

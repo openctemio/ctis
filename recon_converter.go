@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/openctemio/ctis/weburl"
 )
 
 // ReconConverterOptions configures the conversion from ReconResult to CTIS Report.
@@ -165,6 +167,13 @@ type DiscoveredURLInput struct {
 	Parent     string
 	Type       string
 	Extension  string
+
+	// ContentType of the response (1.6 endpoints).
+	ContentType string
+
+	// Params are parameters seen besides the query: form fields, JSON
+	// members, headers. Names only.
+	Params []EndpointParam
 }
 
 // TechnologyInput represents a detected technology.
@@ -243,6 +252,7 @@ func ConvertReconToCTIS(input *ReconToCTISInput, opts *ReconConverterOptions) (*
 		convertLiveHosts(report, ids, input.LiveHosts, o)
 	case "url_crawl":
 		convertDiscoveredURLs(report, ids, input.URLs, o)
+		convertCrawlEndpoints(report, input.URLs)
 	default:
 		// Try to convert all available data
 		convertSubdomains(report, ids, input.Subdomains, o)
@@ -250,6 +260,7 @@ func ConvertReconToCTIS(input *ReconToCTISInput, opts *ReconConverterOptions) (*
 		convertOpenPorts(report, ids, input.OpenPorts, o)
 		convertLiveHosts(report, ids, input.LiveHosts, o)
 		convertDiscoveredURLs(report, ids, input.URLs, o)
+		convertCrawlEndpoints(report, input.URLs)
 	}
 
 	// Add technologies if present
@@ -866,12 +877,16 @@ func convertDiscoveredURLs(report *Report, ids assetIDs, urls []DiscoveredURLInp
 	seen := make(map[string]bool)
 
 	for _, u := range urls {
-		u.URL = stripURLUserinfo(u.URL)
+		// Query values, user info and fragments never leave the converter:
+		// a crawled URL can carry a session id or a reset token.
+		u.URL = weburl.RedactURL(u.URL)
 		if u.URL == "" || seen[u.URL] {
 			continue
 		}
 		seen[u.URL] = true
-		u.Parent = stripURLUserinfo(u.Parent)
+		if u.Parent != "" {
+			u.Parent = weburl.RedactURL(u.Parent)
+		}
 
 		// Parse URL to extract host
 		host := u.URL
@@ -1029,6 +1044,7 @@ func MergeReconReports(reports []*Report) *Report {
 
 	var order []string
 	byValue := make(map[string]*Asset)
+	endpointIndex := map[string]int{}
 	relatedValues := make(map[string][]string) // asset value -> related asset values
 
 	for _, report := range reports {
@@ -1068,6 +1084,7 @@ func MergeReconReports(reports []*Report) *Report {
 		}
 
 		merged.Findings = append(merged.Findings, report.Findings...)
+		merged.Endpoints = mergeEndpoints(merged.Endpoints, endpointIndex, report.Endpoints)
 	}
 
 	ids := newAssetIDs()

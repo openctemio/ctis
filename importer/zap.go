@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/weburl"
 )
 
 // ZAP traditional report, JSON (`{"@programName": "ZAP", "site": [...]}`) or
@@ -27,9 +28,14 @@ func init() {
 	tools[FormatZAP] = ctis.Tool{Name: "zap", Capabilities: []string{"dast"}}
 }
 
-// zapMaxInstances is how many instances of an alert are written into the
-// finding's evidence; the rest are counted.
+// zapMaxInstances is how many instances of a finding are written into its
+// evidence; the rest are counted.
 const zapMaxInstances = 20
+
+// zapMaxLocations is how many findings one alert becomes, one per method,
+// URL template and parameter; the instances of further locations are
+// counted in an issue.
+const zapMaxLocations = 100
 
 type zapInstance struct {
 	URI       flexStr `json:"uri" xml:"uri"`
@@ -283,8 +289,10 @@ func (b *builder) zapSite(s *zapSite, lineNo int, ptr string) error {
 			b.res.Stats.Skipped++
 			continue
 		}
-		if err := b.finding(f); err != nil {
-			return err
+		for _, lf := range b.zapLocations(f, s.Alerts[i].Instances, lineNo, fmt.Sprintf("%s/alerts/%d", ptr, i)) {
+			if err := b.finding(lf); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -361,18 +369,120 @@ func (b *builder) zapFinding(a *zapAlert, assetID, host string, port, lineNo int
 			f.References = addRefs(f.References, t.Link)
 		}
 	}
-	if n, err := strconv.Atoi(a.Count.String()); err == nil && n > 0 {
+	if n, err := strconv.Atoi(a.Count.String()); err == nil && n > 0 && len(a.Instances) == 0 {
 		f.OccurrenceCount = n
-	} else if len(a.Instances) > 0 {
-		f.OccurrenceCount = len(a.Instances)
 	}
+	extras(&f, "otherinfo", qualysHTML(a.OtherInfo.String()), "wascid", a.WASCID.String(),
+		"sourceid", a.SourceID.String(), "systemic", a.Systemic.String(), "confidence", a.Confidence.String())
+	return f, true
+}
+
+// zapLocation is one finding's share of an alert: the instances at one
+// method, URL template and parameter.
+type zapLocation struct {
+	web       *ctis.WebLocation
+	instances []*zapInstance
+}
+
+// zapLocations splits an alert into one finding per method, URL template
+// and parameter, each with its web location and the evidence of its own
+// instances. An alert without instances stays one finding.
+func (b *builder) zapLocations(f ctis.Finding, instances []zapInstance, lineNo int, ptr string) []ctis.Finding {
+	if len(instances) == 0 {
+		return []ctis.Finding{f}
+	}
+	var order []string
+	groups := map[string]*zapLocation{}
+	dropped := 0
+	for i := range instances {
+		in := &instances[i]
+		w := zapWeb(in)
+		key := "\x00" + line(in.Method.String(), 16) + "\x00" + line(in.Param.String(), 256)
+		if w != nil {
+			origin, tmpl, _, _ := weburl.Template(w.URL)
+			key = origin + "\x00" + weburl.PathHash(w.Method, tmpl) + key
+		}
+		g, ok := groups[key]
+		if !ok {
+			if len(order) == zapMaxLocations {
+				dropped++
+				continue
+			}
+			g = &zapLocation{web: w}
+			groups[key] = g
+			order = append(order, key)
+		}
+		g.instances = append(g.instances, in)
+	}
+	if dropped > 0 {
+		b.issue(Issue{Line: lineNo, Path: ptr, Message: fmt.Sprintf("alert %s: %d instances past %d locations not kept", f.RuleID, dropped, zapMaxLocations)})
+	}
+	out := make([]ctis.Finding, 0, len(order))
+	for _, key := range order {
+		g := groups[key]
+		lf := f
+		lf.Web = g.web
+		lf.OccurrenceCount = len(g.instances)
+		lf.Evidence = zapEvidence(g.instances)
+		if g.web != nil {
+			lf.Message = line(f.Title+" at "+g.web.URL, 8<<10)
+			if p := g.web.Parameter; p != nil {
+				lf.Message += " (" + p.Name + ")"
+			}
+		}
+		lf.Tags = append([]string(nil), f.Tags...)
+		lf.References = append([]string(nil), f.References...)
+		if f.Native != nil {
+			n := *f.Native
+			lf.Native = &n
+		}
+		out = append(out, lf)
+	}
+	return out
+}
+
+// zapWeb is the web location of an instance: the redacted URI, the method
+// and the parameter. ZAP does not say where a parameter is; it is a query
+// parameter when the URI names it, a form field of a request with a body,
+// and otherwise left out (header and cookie alerts name a header).
+func zapWeb(in *zapInstance) *ctis.WebLocation {
+	u, err := weburl.Parse(weburl.RedactURL(strings.TrimSpace(in.URI.String())))
+	if err != nil {
+		return nil
+	}
+	w := &ctis.WebLocation{URL: redactedWebURL(u)}
+	m, ok := weburl.NormalizeMethod(in.Method.String())
+	if ok && in.Method.String() != "" {
+		w.Method = m
+	}
+	name := strings.TrimSpace(in.Param.String())
+	if name == "" || len(name) > ctis.MaxParamNameLen || hasControl(name) {
+		return w
+	}
+	for _, q := range u.Params {
+		if q == name {
+			w.Parameter = &ctis.WebParameter{Location: ctis.ParamLocationQuery, Name: name}
+			return w
+		}
+	}
+	switch w.Method {
+	case "POST", "PUT", "PATCH":
+		w.Parameter = &ctis.WebParameter{Location: ctis.ParamLocationForm, Name: name}
+	}
+	return w
+}
+
+// zapEvidence is one line per instance (at most zapMaxInstances, the rest
+// counted): method, redacted URI, parameter, attack, evidence. A URI never
+// keeps a query value or user info.
+func zapEvidence(instances []*zapInstance) string {
 	var ev []string
-	for i, in := range a.Instances {
+	for i, in := range instances {
 		if i == zapMaxInstances {
-			ev = append(ev, fmt.Sprintf("... %d more instances", len(a.Instances)-zapMaxInstances))
+			ev = append(ev, fmt.Sprintf("... %d more instances", len(instances)-zapMaxInstances))
 			break
 		}
-		parts := []string{line(in.Method.String(), 16), line(zapURI(in.URI.String()), 2048)}
+		parts := []string{line(in.Method.String(), 16), line(weburl.RedactURL(strings.TrimSpace(in.URI.String())), 2048)}
 		for _, kv := range [][2]string{{"param", in.Param.String()}, {"attack", in.Attack.String()}, {"evidence", in.Evidence.String()}, {"otherinfo", in.OtherInfo.String()}} {
 			if v := line(kv[1], 1024); v != "" {
 				parts = append(parts, kv[0]+"="+v)
@@ -380,23 +490,7 @@ func (b *builder) zapFinding(a *zapAlert, assetID, host string, port, lineNo int
 		}
 		ev = append(ev, strings.TrimSpace(strings.Join(parts, " ")))
 	}
-	if len(ev) > 0 {
-		f.Evidence = text(strings.Join(ev, "\n"), capEvidence)
-	}
-	extras(&f, "otherinfo", qualysHTML(a.OtherInfo.String()), "wascid", a.WASCID.String(),
-		"sourceid", a.SourceID.String(), "systemic", a.Systemic.String(), "confidence", a.Confidence.String())
-	return f, true
-}
-
-// zapURI drops the user info of an instance URI (credentials typed into a
-// URL never reach the report).
-func zapURI(s string) string {
-	u, err := url.Parse(strings.TrimSpace(s))
-	if err != nil || u.User == nil {
-		return s
-	}
-	u.User = nil
-	return u.String()
+	return text(strings.Join(ev, "\n"), capEvidence)
 }
 
 func sortedTagNames(m map[string]string) []string {

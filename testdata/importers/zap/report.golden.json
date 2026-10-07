@@ -45,6 +45,7 @@
       "type": "vulnerability",
       "title": "Cross Site Scripting (Reflected)",
       "description": "Cross-site Scripting (XSS) is an attack technique that involves echoing attacker-supplied code into a user's browser instance.",
+      "message": "Cross Site Scripting (Reflected) at https://shop.example.com/search?q= (q)",
       "severity": "high",
       "confidence": 60,
       "rule_id": "40012",
@@ -56,7 +57,7 @@
         "protocol": "tcp",
         "service": "http"
       },
-      "evidence": "GET https://shop.example.com/search?q=%3Cscript%3Ealert%281%29%3C%2Fscript%3E param=q attack=<script>alert(1);</script> evidence=<script>alert(1);</script>",
+      "evidence": "GET https://shop.example.com/search?q= param=q attack=<script>alert(1);</script> evidence=<script>alert(1);</script>",
       "vulnerability": {
         "cwe_ids": [
           "CWE-79"
@@ -89,12 +90,21 @@
         "sourceid": "1",
         "systemic": "false",
         "wascid": "8"
+      },
+      "web": {
+        "url": "https://shop.example.com/search?q=",
+        "method": "GET",
+        "parameter": {
+          "location": "query",
+          "name": "q"
+        }
       }
     },
     {
       "type": "vulnerability",
       "title": "Content Security Policy (CSP) Header Not Set",
       "description": "CSP is an added layer of security.",
+      "message": "Content Security Policy (CSP) Header Not Set at https://shop.example.com/",
       "severity": "medium",
       "confidence": 90,
       "rule_id": "10038",
@@ -106,7 +116,7 @@
         "protocol": "tcp",
         "service": "http"
       },
-      "evidence": "GET https://shop.example.com/\nGET https://shop.example.com/cart",
+      "evidence": "GET https://shop.example.com/",
       "vulnerability": {
         "cwe_ids": [
           "CWE-693"
@@ -119,7 +129,7 @@
       "references": [
         "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"
       ],
-      "occurrence_count": 2,
+      "occurrence_count": 1,
       "native": {
         "scheme": "other",
         "vuln_id": "10038",
@@ -132,6 +142,58 @@
         "sourceid": "3",
         "systemic": "true",
         "wascid": "15"
+      },
+      "web": {
+        "url": "https://shop.example.com/",
+        "method": "GET"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Content Security Policy (CSP) Header Not Set",
+      "description": "CSP is an added layer of security.",
+      "message": "Content Security Policy (CSP) Header Not Set at https://shop.example.com/cart",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "10038",
+      "rule_name": "Content Security Policy (CSP) Header Not Set",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "GET https://shop.example.com/cart",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-693"
+        ],
+        "cwe_id": "CWE-693"
+      },
+      "remediation": {
+        "recommendation": "Set the Content-Security-Policy header."
+      },
+      "references": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"
+      ],
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "10038",
+        "instance_id": "10038-1",
+        "severity": "2",
+        "raw_ref": "/site/0/alerts/1"
+      },
+      "source_extra": {
+        "confidence": "3",
+        "sourceid": "3",
+        "systemic": "true",
+        "wascid": "15"
+      },
+      "web": {
+        "url": "https://shop.example.com/cart",
+        "method": "GET"
       }
     },
     {
@@ -164,6 +226,7 @@
       "type": "vulnerability",
       "title": "Application Error Disclosure",
       "description": "An error message was returned.",
+      "message": "Application Error Disclosure at https://shop.example.com/api",
       "severity": "low",
       "rule_id": "90022",
       "rule_name": "Application Error Disclosure",
@@ -186,12 +249,17 @@
       },
       "source_extra": {
         "confidence": "0"
+      },
+      "web": {
+        "url": "https://shop.example.com/api",
+        "method": "POST"
       }
     },
     {
       "type": "vulnerability",
       "title": "Missing Anti-clickjacking Header",
       "description": "The response does not protect against ClickJacking.",
+      "message": "Missing Anti-clickjacking Header at http://legacy.example.com:8080/",
       "severity": "medium",
       "confidence": 100,
       "rule_id": "10020",
@@ -215,6 +283,10 @@
       },
       "source_extra": {
         "confidence": "4"
+      },
+      "web": {
+        "url": "http://legacy.example.com:8080/",
+        "method": "GET"
       }
     }
   ]

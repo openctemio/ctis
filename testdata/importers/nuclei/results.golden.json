@@ -44,9 +44,6 @@
       "confidence": 90,
       "rule_id": "cve-2023-1234",
       "asset_ref": "asset-1",
-      "location": {
-        "path": "https://example.com/cgi-bin/test"
-      },
       "vulnerability": {
         "cve_id": "CVE-2023-1234",
         "cve_ids": [
@@ -99,6 +96,9 @@
       ],
       "source_extra": {
         "matcher_name": "body"
+      },
+      "web": {
+        "url": "https://example.com/cgi-bin/test"
       }
     },
     {
@@ -110,9 +110,6 @@
       "confidence": 90,
       "rule_id": "tech-detect",
       "asset_ref": "asset-1",
-      "location": {
-        "path": "https://example.com/"
-      },
       "tags": [
         "tech",
         "apache",
@@ -125,6 +122,9 @@
         "vuln_id": "tech-detect",
         "severity": "info",
         "raw_ref": "line 2"
+      },
+      "web": {
+        "url": "https://example.com/"
       }
     },
     {
@@ -136,9 +136,6 @@
       "confidence": 90,
       "rule_id": "ssl-expired",
       "asset_ref": "asset-2",
-      "location": {
-        "path": "https://expired.example.com:443"
-      },
       "references": [
         "https://ssl-config.mozilla.org/"
       ],
@@ -154,6 +151,9 @@
         "vuln_id": "ssl-expired",
         "severity": "high",
         "raw_ref": "line 3"
+      },
+      "web": {
+        "url": "https://expired.example.com/"
       }
     },
     {
@@ -164,9 +164,6 @@
       "confidence": 90,
       "rule_id": "exposed-panel-grafana",
       "asset_ref": "asset-3",
-      "location": {
-        "path": "http://10.0.0.7:3000/login"
-      },
       "tags": [
         "panel",
         "grafana",
@@ -179,6 +176,9 @@
         "vuln_id": "exposed-panel-grafana",
         "severity": "info",
         "raw_ref": "line 4"
+      },
+      "web": {
+        "url": "http://10.0.0.7:3000/login"
       }
     }
   ]

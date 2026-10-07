@@ -34,6 +34,7 @@
       "type": "vulnerability",
       "title": "Absence of Anti-CSRF Tokens",
       "description": "No Anti-CSRF tokens were found in a HTML submission form.",
+      "message": "Absence of Anti-CSRF Tokens at https://api.example.com/login",
       "severity": "medium",
       "confidence": 30,
       "rule_id": "10202",
@@ -76,6 +77,10 @@
         "sourceid": "3",
         "systemic": "false",
         "wascid": "9"
+      },
+      "web": {
+        "url": "https://api.example.com/login",
+        "method": "GET"
       }
     }
   ]
