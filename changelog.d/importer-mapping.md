@@ -31,3 +31,4 @@
 - Issue messages that quote input are one bounded, clean line.
 - Mapping-file limits: 256 KiB, 200 rules, 100 targets per rule, 256 `map` and `in` entries.
 - Secret findings are masked with `ctis.RedactSecretFinding`.
+- `RedactSecretFinding` no longer sizes an allocation from the number of masking candidates, which come from hostile text.
