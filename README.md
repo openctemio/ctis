@@ -11,6 +11,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Severity** (`severity/`) and **fingerprint** (`fingerprint/`) helpers.
 - **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
 - **Examples** (`examples/`): one report per finding type, validated in CI.
+- **Web URLs** (`weburl/`): parse, normalise, template and redact web URLs.
 - **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
 
 The current specification version is **1.5**. See [CHANGELOG.md](CHANGELOG.md).
@@ -145,6 +146,21 @@ res, err := importer.Parse(ctx, file, importer.Options{})
 ```
 
 Each format has a mapping spec: every source field, the CTIS member that keeps it or why it is ignored on purpose ([docs/importers](docs/importers/README.md), generated from the code). The tests fail when a fixture holds a field its spec does not list, or a spec maps a field no fixture holds. Inputs are treated as hostile: size, depth, element, text and record limits; no XML internal subsets, entities or external resources; UTF-8, US-ASCII or ISO-8859-1 only; `OpenZip` refuses traversal, links, nested archives and decompression bombs. Scan credentials and account names are never copied into a report.
+
+## Web URLs
+
+The `weburl` package parses, normalises and templates web URLs, so a crawler, a scanner and the platform give one endpoint the same identity:
+
+```go
+u, err := weburl.Parse("HTTPS://Shop.Example.COM:443/api/v1/orders/42/?token=x")
+u.Origin()   // "https://shop.example.com"
+u.Template() // "/api/v1/orders/{int}"
+u.Params     // ["token"]: names only, never values
+weburl.RedactURL("https://u:p@a.example/x?api_key=k#t") // "https://a.example/x?api_key="
+weburl.PathHash("GET", u.Template())                      // the endpoint's dedup key
+```
+
+`Parse` refuses anything that is not a plain absolute http(s) URL: user info, control and bidi characters, malformed escapes, invalid ports, ambiguous numeric hosts and URLs over 2,048 bytes. A query value is never kept.
 
 ## Capability taxonomy
 
