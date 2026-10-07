@@ -355,6 +355,7 @@ func (b *builder) qualysFinding(d *qDetection, assetID, assetValue string, lineN
 		"affect_running_kernel", d.AffectRunningKernel, "affect_running_service", d.AffectRunningService,
 		"affect_exploitable_config", d.AffectExploitableConf, "last_processed_datetime", d.LastProcessed,
 	)
+	ctis.RedactSecretFinding(&f, credentialValues(d.Results)...)
 	return f, true
 }
 

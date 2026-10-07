@@ -223,6 +223,9 @@ func (b *builder) finding(f ctis.Finding) error {
 	if len(b.res.Report.Findings) >= b.lim.MaxFindings {
 		return b.tooMany("findings", b.lim.MaxFindings)
 	}
+	// Every format: a secret finding's unmasked snippet or masked value is
+	// masked, here and wherever another field repeats it.
+	ctis.RedactSecretFinding(&f)
 	b.res.Report.Findings = append(b.res.Report.Findings, f)
 	b.res.Stats.BySeverity[f.Severity]++
 	return nil
