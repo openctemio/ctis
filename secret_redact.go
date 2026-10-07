@@ -139,7 +139,9 @@ func (c candidates) replacer() *strings.Replacer {
 		}
 		return keys[i] < keys[j]
 	})
-	pairs := make([]string, 0, 2*len(keys))
+	// No size hint computed from the count: the candidates come from
+	// hostile text, and append grows the slice safely.
+	var pairs []string
 	for _, k := range keys {
 		pairs = append(pairs, k, c[k])
 	}
