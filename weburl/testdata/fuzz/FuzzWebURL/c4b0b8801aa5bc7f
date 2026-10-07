@@ -1,0 +1,2 @@
+go test fuzz v1
+string("http://[C001:01:d::1]/x;jsessionid=x;jsessionid=uid=d::2")
