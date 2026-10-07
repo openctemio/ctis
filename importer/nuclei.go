@@ -247,7 +247,7 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 	if r.MatcherStatus {
 		f.Confidence = 90
 	}
-	matched := line(stripUserinfo(r.MatchedAt), 2048)
+	matched := line(redactURLCredentials(r.MatchedAt), 2048)
 	if matched != "" {
 		f.Message = line(name+" at "+matched, 8<<10)
 		f.Location = &ctis.FindingLocation{Path: matched}
@@ -298,7 +298,7 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 	if port > 0 && port <= 65535 {
 		f.Network = &ctis.NetworkLocation{Host: host, Port: port, Protocol: "tcp", Service: line(r.Scheme, 32)}
 	}
-	f.Fingerprint = fingerprint.GenerateSAST(r.Host, r.TemplateID, 0, 0)
+	f.Fingerprint = fingerprint.GenerateSAST(redactURLCredentials(r.Host), r.TemplateID, 0, 0)
 	var meta []string
 	for _, k := range sortedKeysOf(r.Info.Metadata) {
 		meta = append(meta, line(k, 64)+"="+line(string(r.Info.Metadata[k]), 256))
