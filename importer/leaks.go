@@ -98,6 +98,11 @@ func leakFinding(rec *leakRecord, tool string) (ctis.Finding, bool) {
 		f.Tags = addTags(f.Tags, t.String())
 	}
 	extras(&f, "symlink_file", rec.SymlinkFile, "commit_link", rec.Link, "commit_message", maskIn(rec.Message, raw))
+	// The secret, the match line and each secret-looking word of the match
+	// are masked in every field, so a description or commit message that
+	// repeats the bare secret, when only the match line was reported, does
+	// not carry it.
+	ctis.RedactSecretFinding(&f, rec.Secret, rec.Match)
 	return f, true
 }
 

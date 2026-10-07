@@ -16,7 +16,7 @@ var _ = registerSpec(Spec{
 		"Asset: Options.Repository; else the image of an image scan (container asset with image id, OS and digest) or the repository of a repository scan; a file-system scan names a local path, so its findings go to Options.DefaultAsset or an unclassified asset (with an issue).",
 		"One finding per vulnerability, misconfiguration and secret. Severity CRITICAL/HIGH/MEDIUM/LOW/UNKNOWN maps to critical/high/medium/low/info; native.severity keeps the word.",
 		"Every CVSS source (nvd, ghsa, redhat, ...) and version goes to finding.scores; the legacy vulnerability.cvss_* members take the highest v3 score (nvd first on a tie), else v2.",
-		"A secret's match line is masked again with ctis.MaskSecretMatch unless trivy already masked it; the fingerprint input is the masked match.",
+		"A secret's match line is masked again with ctis.MaskSecretMatch unless trivy already masked it; the fingerprint input is the masked match. An unmasked match is also masked in every other field (ctis.RedactSecretFinding).",
 		"Packages (--list-all-pkgs) become dependencies with their PURL.",
 	},
 	Fields: []Field{

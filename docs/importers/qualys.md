@@ -13,7 +13,7 @@ Generated from `importer/spec_qualys.go`; do not edit. Regenerate with `go test 
 - Severity: SEVERITY 1-5 through ctis.NormalizeNativeSeverity (1 info, 2 low, 3 medium, 4 high, 5 critical); native.severity keeps it.
 - TYPE Confirmed / Potential / Info goes to native.detection_type; a Potential detection gets confidence 50.
 - STATUS New / Active / Re-Opened / Fixed goes to native.status, the normalized finding status and source_lifecycle.state. FIRST_FOUND, LAST_FOUND, LAST_FIXED and TIMES_FOUND go to source_lifecycle (and first_seen_at / last_seen_at).
-- RESULTS go to evidence after credential redaction (account lines, passwords, tokens, community strings become [redacted]).
+- RESULTS go to evidence after credential redaction (account lines, passwords, tokens, community strings become [redacted]); the passwords, tokens and community strings found there are also masked wherever any other field of the finding repeats them.
 - Host owner, comments and user-defined fields are never read; asset criticality and risk scores are kept as properties and do not set the CTIS criticality.
 
 ## Fields

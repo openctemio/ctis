@@ -446,26 +446,15 @@ const minMaskedPrefixLen = 16
 // (gitleaks and betterleaks do unless run with --redact), and FromSARIF copied
 // it into location.snippet, so the live credential travelled in the report and
 // was stored wherever the report was. The snippet is masked, and the raw value
-// is also masked wherever the title or description repeats it.
+// and every secret-looking word of it are masked in every other field
+// (redactSecrets), so a message that repeats the bare secret does not carry
+// it into the title.
 //
 // The masked value is not written to secret.masked_value: receivers fingerprint
 // secret findings by it (spec section 5.2), and setting it would change the
 // identity of every finding already ingested from a SARIF secret scan.
 func redactSecretFinding(f *Finding) {
-	if f.Location == nil || f.Location.Snippet == "" {
-		return
-	}
-	raw := f.Location.Snippet
-	if isRedacted(raw) {
-		return
-	}
-	masked := maskSecret(raw)
-	f.Location.Snippet = masked
-	if needle := strings.TrimSpace(raw); len(needle) >= 6 {
-		f.Title = strings.ReplaceAll(f.Title, needle, masked)
-		f.Description = strings.ReplaceAll(f.Description, needle, masked)
-		f.Message = strings.ReplaceAll(f.Message, needle, masked)
-	}
+	redactSecrets(f, true, isRedacted)
 }
 
 // isRedacted reports whether a scanner already fully redacted the snippet:
