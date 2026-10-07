@@ -28,6 +28,7 @@ A capability is an act a scan tool performs. The capability carries the phase, t
 | `container_image` | Container image | `container` |
 | `cloud_account` | Cloud account | `cloud_account` |
 | `finding` | Finding | none |
+| `endpoint` | Web endpoint (method and path) | none |
 
 ## Capabilities
 
@@ -42,11 +43,11 @@ A capability is an act a scan tool performs. The capability carries the phase, t
 | [`fingerprint.tech@1`](#fingerprinttech1) | planned | discover.active | T1 | `url`, `service` | `url`, `service` | T1592.002 | D3-SWI |
 | [`check.tls@1`](#checktls1) | planned | assess | T1 | `service`, `url` | `finding` | T1596.003 | D3-CI |
 | [`capture.screenshot@1`](#capturescreenshot1) | planned | discover.active | T1 | `url` | `url` | T1594 | - |
-| [`crawl.web@1`](#crawlweb1) | routed | discover.active | T1 | `url` | `url` | T1594, T1595.003 | D3-AI |
+| [`crawl.web@1`](#crawlweb1) | routed | discover.active | T1 | `url` | `url`, `endpoint` | T1594, T1595.003 | D3-AI |
 | [`discover.cloud@1`](#discovercloud1) | planned | discover.passive | T0 | `cloud_account` | `cloud_account` | T1580, T1526 | D3-AI |
 | [`discover.repositories@1`](#discoverrepositories1) | later | discover.passive | T0 | none | `repository` | T1593.003 | D3-AI |
-| [`vuln.templates@1`](#vulntemplates1) | routed | assess | T1 | `url`, `service`, `hostname`, `ip` | `finding` | T1595.002, T1190 | D3-AVE, D3-NVA |
-| [`dast.web@1`](#dastweb1) | routed | assess | T2 | `url` | `finding` | T1595.002, T1190 | D3-AVE |
+| [`vuln.templates@1`](#vulntemplates1) | routed | assess | T1 | `url`, `service`, `hostname`, `ip`, `endpoint` | `finding` | T1595.002, T1190 | D3-AVE, D3-NVA |
+| [`dast.web@1`](#dastweb1) | routed | assess | T2 | `url`, `endpoint` | `finding` | T1595.002, T1190 | D3-AVE |
 | [`sast.code@1`](#sastcode1) | routed | assess | T0 | `repository` | `finding` | T1190 | D3-AVE |
 | [`secrets.code@1`](#secretscode1) | routed | assess | T0 | `repository` | `finding` | T1552.001 | D3-CI |
 | [`sca.deps@1`](#scadeps1) | routed | assess | T0 | `repository`, `container_image` | `finding` | T1195.001 | D3-SWI, D3-AVE |
@@ -62,6 +63,7 @@ A capability is an act a scan tool performs. The capability carries the phase, t
 | [`check.credentials@1`](#checkcredentials1) | later | validate | T0 | none | `finding` | T1589.001, T1078 | - |
 | [`simulate.attack@1`](#simulateattack1) | later | validate | T2 | `ip`, `hostname` | `finding` | - | - |
 | [`import.file@1`](#importfile1) | routed | collect | T0 | none | `finding` | - | - |
+| [`import.api_spec@1`](#importapi_spec1) | planned | collect | T0 | none | `endpoint` | - | - |
 
 ### discover.subdomains@1
 
@@ -148,7 +150,7 @@ HTTP probe: Probe web services: status, title, technologies, TLS certificate.
 
 - Status: routed; phase `discover.active` (CTEM discovery); tier floor T1.
 - Ports: in `hostname`, `ip`, `service`, `url`, out `url`, `ip`.
-- Also emits: `asset:certificate`.
+- Also emits: `asset:certificate`, `endpoint`.
 - References: ATT&CK T1595, T1594; D3FEND D3-AI; CAPEC-541.
 
 | Param | Type | Values | Description |
@@ -157,6 +159,7 @@ HTTP probe: Probe web services: status, title, technologies, TLS certificate.
 | `follow_redirects` | boolean |  | Follow redirects on the same host. |
 | `tech_detect` | boolean |  | Detect the technologies a page uses. |
 | `tls_grab` | boolean |  | Record the TLS certificate. |
+| `api_schema` | boolean |  | Fetch API schema documents (OpenAPI, GraphQL introspection) at well-known paths and report their operations as endpoints. |
 
 Required output (every selected record):
 
@@ -201,10 +204,10 @@ Required output (every selected record):
 
 ### crawl.web@1
 
-Web crawl: Crawl web services for URLs, staying on the same host.
+Web crawl: Crawl web services for URLs, staying on the same host. Reports endpoints (CTIS 1.6), or discovered_url assets from producers before 1.6.
 
 - Status: routed; phase `discover.active` (CTEM discovery); tier floor T1.
-- Ports: in `url`, out `url`.
+- Ports: in `url`, out `url`, `endpoint`.
 - References: ATT&CK T1594, T1595.003; D3FEND D3-AI.
 
 | Param | Type | Values | Description |
@@ -216,6 +219,7 @@ Web crawl: Crawl web services for URLs, staying on the same host.
 Required output (every selected record):
 
 - `assets[type=discovered_url]` carries `value`, `properties.host`.
+- `endpoints` carries `origin`, `path`.
 
 ### discover.cloud@1
 
@@ -251,7 +255,7 @@ Required output (every selected record):
 Vulnerability templates: Run non-intrusive vulnerability templates.
 
 - Status: routed; phase `assess` (CTEM discovery); tier floor T1.
-- Ports: in `url`, `service`, `hostname`, `ip`, out `finding`.
+- Ports: in `url`, `service`, `hostname`, `ip`, `endpoint`, out `finding`.
 - References: ATT&CK T1595.002, T1190; D3FEND D3-AVE, D3-NVA.
 
 | Param | Type | Values | Description |
@@ -263,14 +267,14 @@ Vulnerability templates: Run non-intrusive vulnerability templates.
 
 Required output (every selected record):
 
-- `findings` carries `rule_id`, `severity`, `title` and at least one of `network.host`, `asset_ref`, `asset_value`, `location.path`.
+- `findings` carries `rule_id`, `severity`, `title` and at least one of `network.host`, `asset_ref`, `asset_value`, `location.path`, `web.url`.
 
 ### dast.web@1
 
-Web application scan: Dynamic application security testing of a web application.
+Web application scan: Dynamic application security testing of a web application, or of the known endpoints of one.
 
 - Status: routed; phase `assess` (CTEM discovery); tier floor T2.
-- Ports: in `url`, out `finding`.
+- Ports: in `url`, `endpoint`, out `finding`.
 - References: ATT&CK T1595.002, T1190; D3FEND D3-AVE.
 
 | Param | Type | Values | Description |
@@ -280,7 +284,7 @@ Web application scan: Dynamic application security testing of a web application.
 
 Required output (every selected record):
 
-- `findings` carries `rule_id`, `severity`, `title` and at least one of `network.host`, `asset_ref`, `asset_value`.
+- `findings` carries `rule_id`, `severity`, `title` and at least one of `network.host`, `asset_ref`, `asset_value`, `web.url`.
 
 ### sast.code@1
 
@@ -441,7 +445,7 @@ Required output (every selected record):
 
 ### verify.finding@1
 
-Verify a finding: Retest a finding with a tool that can reproduce it. Used by retests, not as a workflow node.
+Verify a finding: Retest a finding with a tool that can reproduce it. A web finding is retested at its finding.web location (URL, method, parameter). Used by retests, not as a workflow node.
 
 - Status: planned; phase `validate` (CTEM validation); tier floor T0; cross-cutting (not a workflow node).
 - Ports: in `finding`, out `finding`.
@@ -497,3 +501,14 @@ Import a file: Read a report file of a known format (SARIF, CycloneDX, SPDX, Nes
 | Param | Type | Values | Description |
 |---|---|---|---|
 | `format` | string |  | The file format; empty means detect it. |
+
+### import.api_spec@1
+
+Import an API specification: Read an API specification (OpenAPI, GraphQL schema, Postman collection) into the endpoints of an origin. Makes no connection to the target.
+
+- Status: planned; phase `collect` (CTEM discovery); tier floor T0; cross-cutting (not a workflow node).
+- Ports: in none, out `endpoint`.
+
+Required output (every selected record):
+
+- `endpoints` carries `origin`, `path`, `method`.
