@@ -14,7 +14,7 @@
       "type": "string",
       "description": "CTIS specification version as MAJOR.MINOR. Receivers accept any minor of their own major; a producer must not send fields newer than the receiver's minor (docs/spec.md, Versioning). The default is the version this schema describes.",
       "pattern": "^1\\.(0|[1-9][0-9]{0,3})$",
-      "default": "1.4"
+      "default": "1.5"
     },
     "$schema": {
       "type": "string",
@@ -48,11 +48,34 @@
         "$ref": "dependency.json"
       }
     },
+    "relationships": {
+      "type": "array",
+      "maxItems": 10000,
+      "description": "Typed relationships between two assets of this report, named by their ids (1.5)",
+      "items": {
+        "$ref": "#/$defs/Relationship"
+      }
+    },
     "properties": {
       "$ref": "#/$defs/Properties"
     }
   },
   "$defs": {
+    "Relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A typed edge between two different assets of the report",
+      "required": ["type", "from_ref", "to_ref"],
+      "properties": {
+        "type": {"$ref": "#/$defs/RelationshipType"},
+        "from_ref": {"type": "string", "minLength": 1, "maxLength": 255, "description": "Id of the source asset in this report"},
+        "to_ref": {"type": "string", "minLength": 1, "maxLength": 255, "description": "Id of the target asset in this report"}
+      }
+    },
+    "RelationshipType": {
+      "type": "string",
+      "enum": ["subdomain_of", "resolves_to", "cname_of", "exposes", "serves_certificate", "hosted_by"]
+    },
     "ReportMetadata": {
       "type": "object",
       "additionalProperties": false,
@@ -99,6 +122,12 @@
         },
         "scope": {
           "$ref": "#/$defs/Scope"
+        },
+        "capability": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+@[1-9][0-9]{0,2}$",
+          "description": "The capability this report answers, as id@major (scan.ports@1). A producer claim; receivers that bound the report to a command use the command's capability (1.5)"
         },
         "properties": {
           "$ref": "#/$defs/Properties"

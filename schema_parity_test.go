@@ -42,6 +42,7 @@ var goEnums = map[reflect.Type][]string{
 	reflect.TypeOf(SourceState("")):          stringsOf(AllSourceStates()),
 	reflect.TypeOf(VulnerabilityIDType("")):  stringsOf(AllVulnerabilityIDTypes()),
 	reflect.TypeOf(SolutionType("")):         stringsOf(AllSolutionTypes()),
+	reflect.TypeOf(RelationshipType("")):     stringsOf(AllRelationshipTypes()),
 }
 
 func stringsOf[T ~string](in []T) []string {
