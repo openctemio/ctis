@@ -133,6 +133,10 @@ jobs:
           for target in FuzzParse FuzzDetect; do
             go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x ./importer
           done
+          # Declarative mappings: hostile tool output and hostile mapping files.
+          for target in FuzzApply FuzzLoad; do
+            go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x ./importer/mapping
+          done
 
   build-compat:
     name: Cross-platform build
