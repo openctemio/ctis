@@ -64,26 +64,35 @@ func redactSecrets(f *Finding, isSecret bool, snippetMasked func(string) bool, k
 		}
 		c.addTokens(k)
 	}
+	// The snippet and masked value are set to their masks after the walk:
+	// the walk must not mask a candidate again inside a mask ("CTED" in
+	// "REDACTED").
+	var snippet, masked *string
+	var snippetMask, maskedMask string
 	if isSecret {
 		if loc := f.Location; loc != nil && strings.TrimSpace(loc.Snippet) != "" {
 			s := loc.Snippet
 			if !snippetMasked(s) {
 				c.addWhole(s)
-				loc.Snippet = maskSecret(s)
+				snippet, snippetMask = &loc.Snippet, maskSecret(s)
 			}
 			c.addTokens(s)
 		}
 		if sd := f.Secret; sd != nil && strings.TrimSpace(sd.MaskedValue) != "" && !isMasked(sd.MaskedValue) {
 			c.addWhole(sd.MaskedValue)
 			c.addTokens(sd.MaskedValue)
-			sd.MaskedValue = maskSecret(sd.MaskedValue)
+			masked, maskedMask = &sd.MaskedValue, maskSecret(sd.MaskedValue)
 		}
 	}
-	if len(c) == 0 {
-		return
+	if len(c) > 0 {
+		redactValue(reflect.ValueOf(f).Elem(), c.replacer(), 0)
 	}
-	r := c.replacer()
-	redactValue(reflect.ValueOf(f).Elem(), r, 0)
+	if snippet != nil {
+		*snippet = snippetMask
+	}
+	if masked != nil {
+		*masked = maskedMask
+	}
 }
 
 // ContainsSecret reports whether s holds one of the raw values, the check a
