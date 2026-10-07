@@ -1,4 +1,4 @@
-# CTIS 1.5 specification
+# CTIS 1.6 specification
 
 CTIS (CTEM Ingest Schema) is the JSON format security tools use to send assets, findings and dependencies to a CTEM platform such as OpenCTEM. This document is normative. The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as described in RFC 2119.
 
@@ -31,7 +31,7 @@ The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be u
 
 ### 2.1 Wire version
 
-`version` is the specification version the producer wrote the report against, as `MAJOR.MINOR` without leading zeros: `1.0`, `1.1`, `1.2`, `1.3`, `1.4`, `1.5`. Producers SHOULD send the version of the specification they implement. The Go module sets it for you: `ctis.NewReport()` stamps `ctis.SchemaVersion` (currently `1.5`) and `ctis.SchemaURL`.
+`version` is the specification version the producer wrote the report against, as `MAJOR.MINOR` without leading zeros: `1.0`, `1.1`, `1.2`, `1.3`, `1.4`, `1.5`, `1.6`. Producers SHOULD send the version of the specification they implement. The Go module sets it for you: `ctis.NewReport()` stamps `ctis.SchemaVersion` (currently `1.6`) and `ctis.SchemaURL`.
 
 | Spec version | Module | Added |
 |---|---|---|
@@ -41,6 +41,7 @@ The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be u
 | 1.3 | v1.3.0 | Schema/Go reconciliation (see CHANGELOG): `suppression.reason`, `suppression.expires_at`, `dependencies[].properties`, asset type `server`, the schema entries for every field the Go types already had |
 | 1.4 | v1.4.0 | Interoperability members (section 4.10): `finding.native`, `finding.scores`, `finding.vex`, `finding.source_lifecycle`, `finding.source_extra`, `vulnerability.ids`, `remediation.solution_type` / `patch_published_at` / `advisories`, `asset.identity_hints` |
 | 1.5 | v1.5.0 | Contract members (section 4.11): `metadata.capability`, `asset.technologies`, `report.relationships`, `finding.attack` |
+| 1.6 | v1.6.0 | Web members (section 4.12): `report.endpoints`, `finding.web`; typed evidence (section 4.13): `finding.evidence_items` |
 
 Reports produced before 1.3 often carry `"1.0"` regardless of the fields they use. Receivers MUST NOT infer the field set from the version.
 
@@ -157,6 +158,7 @@ Every timestamp is an RFC 3339 `date-time` with an offset (`2026-10-02T08:15:00Z
 - A secret finding's snippet SHOULD be the masked value, or `REDACTED`.
 - The raw secret MUST NOT appear in any other field of the finding: title, description, message, evidence, remediation, tags, properties or fingerprints. A scanner message that names the match is masked like the snippet. Receivers SHOULD mask every raw value they can recognise (an unmasked snippet or `masked_value`, and each secret-looking word of it) in every free-text field before storage; the Go module does this with `RedactSecretFinding`.
 - Fingerprint inputs follow section 5.2: never the raw secret.
+- **Exception: typed evidence (section 4.13).** `finding.evidence_items` MAY carry a sensitive value (a session cookie in a captured request, a token a response echoed) only inside a span its `sensitive` list marks, or a value a receiver can detect. Receivers MUST mask such values before display or forwarding, and MAY keep them for an authorized reveal. Every other member stays secret-free. `RedactSecretFinding` masks a known raw value inside evidence too, except inside marked spans, and moves a span that a masked value before it shifts.
 
 ### 4.9 Channel and binding
 
@@ -186,6 +188,30 @@ These members tie a report to the capability it answers and type what was untype
 - `relationships[]` are typed edges between two different assets of the same report, named by their `id`: `subdomain_of`, `resolves_to`, `cname_of`, `exposes`, `serves_certificate`, `hosted_by`. Both ends MUST be assets of the report. They are optional: a receiver may still derive these relationships from technical members, and SHOULD accept an edge only when the capability allows its type.
 - `finding.attack[]` lists the MITRE ATT&CK techniques the finding enables an adversary to use (`T1190`, `T1595.002`), at most 20. It is a producer hint for reporting and coverage; receivers validate the id format and do not prioritize on it alone. The technique a *capability* emulates is a property of the capability, not of the report.
 - `finding.evidence` is capped at 64 KiB by OpenCTEM (section 7). Producers SHOULD put larger evidence in an attachment and keep a short excerpt in `evidence`.
+
+### 4.12 Web members (1.6)
+
+These members describe the web surface: which methods and paths an origin serves, and where on it a finding was observed. A URL in them never carries a query value, user info or fragment; parameters are named, never valued. The Go module's `weburl` package parses, normalises, templates and redacts URLs the same way for producers and receivers.
+
+- `endpoints[]` (top level, like `dependencies[]`): one method and path an origin serves, as a tool saw it.
+  - `origin` is the normalised origin (`scheme://host[:port]`, lowercase, ASCII host, no default port). `origin_ref` MAY name the `http_service` asset of the origin in the same report.
+  - `method` is an HTTP method or `ANY` when unknown. `path` is the concrete path, without query or fragment. `template` is a hint: receivers recompute the template from `path` with `weburl.TemplatePath`.
+  - `kind` (`page`, `api`, `script`, `form`, `graphql`, `websocket`, `static`, `other`), `source` (`crawl`, `js`, `sitemap`, `robots`, `spec`, `har`, `archive`, `dast`, `probe`), `auth` (`none`, `required`, `redirect_login`, `unknown`), `status_code`, `content_type` and `technologies` describe it. `parent` is the page it was found on, redacted.
+  - `params[]` are the parameters it takes: `location` (`query`, `path`, `header`, `cookie`, `form`, `json`, `multipart`, `graphql_arg`), `name`, `type_hint` and `required`. A parameter has no value member, and a receiver that decodes strictly refuses one.
+- `finding.web` is the web location of a finding: the redacted `url`, the `method`, an optional `endpoint_ref` to an endpoint of the report, the `parameter` the finding is about (`location` and `name`), a `request_ref` naming the evidence of the request, and the `status_code`. Web findings SHOULD use it instead of putting a URL in `location.path`.
+- Receivers recompute everything they key on (origin, template, dedup key `weburl.PathHash`) and treat the producer's values as hints.
+
+### 4.13 Typed evidence (1.6)
+
+`finding.evidence_items[]` (at most 20) is typed evidence of a finding. The legacy `evidence` string stays.
+
+- Every item has an envelope: `kind` (`^[a-z0-9][a-z0-9_.-]{0,63}$`), `version` (1), `label`, `captured_at`, an optional `content_sha256` (`sha256:<hex>` over the item as captured, before masking or truncation) and `sensitive[]`, the spans holding secrets or personal data (`pointer`, a JSON pointer into the item; optional byte range `start`..`end`; `kind`).
+- Kinds this version knows are validated whole:
+  - `http_exchange`: `http.request` (`method`, `url`, `http_version`, `headers[]`, `body`, `body_encoding` `text` or `base64`, `body_truncated`, `body_size`) and `http.response` (`status`, `reason`, `http_version`, `headers[]`, `body`, ..., `time_ms`), `match[]` (`location` request or response, `part` status, header, body or url, byte range, `matcher`) and `extracted[]`;
+  - `raw_text` (`text`, `protocol`), `curl` (`text`), `command_output` (`command`, `exit_code`, `text`), `file_excerpt` (`file`: `path`, `start_line`, `end_line`, `snippet`), `screenshot` (`artifact`: `media_type`, `sha256`, `size`, `ref`).
+- An item of another kind is validated by its envelope only and carries its own fields in `data`; receivers keep and render it as text, never refuse it.
+- Producers cap what they send (a body over 64 KiB keeps its head and a window around the first match); receivers enforce the caps of section 7 again.
+- Section 4.8 says where sensitive values may appear and who masks them.
 
 ## 5. Fingerprints
 
@@ -287,6 +313,9 @@ The interoperability and contract members (sections 4.10 and 4.11) carry their l
 | `asset.technologies` | 100 entries; `name` 128, `version` 64, `cpe` 255 characters; 10 `categories` of 64; `confidence` 0-100 |
 | `relationships` | 10,000 entries; `from_ref`, `to_ref` 255 characters, naming two different assets of the report |
 | `finding.attack` | 20 ATT&CK technique ids |
+| `endpoints` | 200,000 entries; `origin`, `path`, `template`, `parent` 2,048 bytes; 100 `params`, names of 128 bytes; `content_type` 255 |
+| `finding.web` | `url` 2,048 bytes, redacted; parameter name 128 bytes |
+| `finding.evidence_items` | 20 items of at most 256 KiB serialized; each body and `text` 64 KiB; 100 headers of 8 KiB; 20 `extracted` of 1 KiB; 50 `match`; 200 `sensitive` spans; `data` 64 KiB |
 
 Producers SHOULD split larger results into several reports (or v2 segments) and SHOULD keep text within these caps, since a cut value may lose what made it useful.
 
@@ -323,6 +352,7 @@ CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into Ope
 | `$schema` | string (uri) |  |  | JSON Schema URL for validation, normally https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json |
 | `assets` | array of `asset.json` |  |  | Discovered assets |
 | `dependencies` | array of `dependency.json` |  |  | Software dependencies (SBOM) |
+| `endpoints` | array of `endpoint.json` |  |  | Methods and paths web origins serve, as a tool saw them (1.6); parameters are named, never valued |
 | `findings` | array of `finding.json` |  |  | Security findings |
 | `metadata` | `ReportMetadata` | yes |  |  |
 | `properties` | `Properties` |  |  |  |
@@ -675,6 +705,7 @@ Security finding schema for CTEM Ingest Schema
 | `data_flow` | `DataFlow` |  |  |  |
 | `description` | string |  |  | Detailed description |
 | `evidence` | string |  |  | Scanner raw proof/output for this finding (e.g. Nessus plugin_output) |
+| `evidence_items` | array of `evidence-item.json` |  |  | Typed evidence of the finding (1.6); sensitive values only inside marked spans |
 | `exposure` | `FindingExposure` |  |  |  |
 | `fingerprint` | string |  |  | Producer-computed identity of this finding for deduplication, stable across scans. Send a lowercase hex SHA-256 (64 characters); OpenCTEM ignores values that are not hex of at least 16 characters and computes its own. See docs/spec.md, Fingerprints, for the recipe per finding type. |
 | `first_seen_at` | string (date-time) |  |  |  |
@@ -714,6 +745,7 @@ Security finding schema for CTEM Ingest Schema
 | `vex` | `VEX` |  |  |  |
 | `vulnerability` | `VulnerabilityDetails` |  |  |  |
 | `vulnerability_class` | array of string |  |  | Vulnerability classes (e.g., SQL Injection, XSS) |
+| `web` | `WebLocation` |  |  |  |
 | `web3` | `web3-finding.json` |  |  |  |
 | `work_item_uris` | array of string (uri) |  |  | URIs of work items (issues, tickets) associated with this finding |
 
@@ -1134,6 +1166,26 @@ One identifier of a vulnerability with its namespace
 | `id` | string | yes | pattern `^[A-Za-z0-9][A-Za-z0-9._:/+\-]*$`; maxLength 128 |  |
 | `source` | string |  | maxLength 64 | Issuer of a vendor id (redhat, microsoft, ...) |
 | `type` | string | yes | one of: cve, ghsa, osv, vendor |  |
+
+#### WebLocation
+
+Where on a web origin the finding was observed (1.6); the URL carries no query value, user info or fragment
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `endpoint_ref` | string |  |  | Id of an endpoint of this report |
+| `method` | string |  | one of: , GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE, CONNECT, ANY |  |
+| `parameter` | `WebParameter` |  |  |  |
+| `request_ref` | string |  | pattern `^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$` | Evidence of the request: sha256:<hex> or an attachment id |
+| `status_code` | integer |  | minimum 0; maximum 599 |  |
+| `url` | string | yes | minLength 1; maxLength 2048 |  |
+
+#### WebParameter
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `location` | `ParamLocation` | yes |  |  |
+| `name` | string | yes | minLength 1; maxLength 128 |  |
 
 ### CTIS Dependency (`dependency.json`)
 

@@ -1,0 +1,145 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "6b0c9a52-1f3e-4d8a-9f61-2a7c3e5d4b10",
+    "timestamp": "2026-10-07T10:00:00Z",
+    "source_type": "scanner",
+    "capability": "crawl.web@1"
+  },
+  "tool": {
+    "name": "katana",
+    "version": "1.7.0"
+  },
+  "assets": [
+    {
+      "id": "origin-1",
+      "type": "http_service",
+      "value": "https://shop.example.com"
+    }
+  ],
+  "endpoints": [
+    {
+      "id": "ep-1",
+      "origin": "https://shop.example.com",
+      "origin_ref": "origin-1",
+      "method": "GET",
+      "path": "/products/42",
+      "template": "/products/{int}",
+      "kind": "page",
+      "source": "crawl",
+      "parent": "https://shop.example.com/",
+      "status_code": 200,
+      "content_type": "text/html",
+      "auth": "none",
+      "params": [
+        {
+          "location": "query",
+          "name": "ref"
+        }
+      ]
+    },
+    {
+      "id": "ep-2",
+      "origin": "https://shop.example.com",
+      "origin_ref": "origin-1",
+      "method": "POST",
+      "path": "/api/v1/cart",
+      "kind": "api",
+      "source": "js",
+      "auth": "required",
+      "params": [
+        {
+          "location": "json",
+          "name": "/item_id",
+          "type_hint": "integer",
+          "required": true
+        },
+        {
+          "location": "header",
+          "name": "X-CSRF-Token"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Reflected XSS in ref",
+      "severity": "medium",
+      "asset_ref": "origin-1",
+      "rule_id": "reflected-xss",
+      "web": {
+        "url": "https://shop.example.com/products/42",
+        "method": "GET",
+        "endpoint_ref": "ep-1",
+        "parameter": {
+          "location": "query",
+          "name": "ref"
+        },
+        "status_code": 200
+      },
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "label": "reflected payload",
+          "captured_at": "2026-10-07T09:59:03Z",
+          "http": {
+            "request": {
+              "method": "GET",
+              "url": "https://shop.example.com/products/42?ref=%3Cscript%3E",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Host",
+                  "value": "shop.example.com"
+                },
+                {
+                  "name": "Cookie",
+                  "value": "session=EXAMPLE-SESSION-VALUE"
+                }
+              ]
+            },
+            "response": {
+              "status": 200,
+              "reason": "OK",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/html"
+                }
+              ],
+              "body": "<p>ref: <script></p>",
+              "body_encoding": "text",
+              "body_size": 21,
+              "time_ms": 42
+            }
+          },
+          "match": [
+            {
+              "location": "response",
+              "part": "body",
+              "start": 8,
+              "end": 16,
+              "matcher": "word-1"
+            }
+          ],
+          "sensitive": [
+            {
+              "pointer": "/http/request/headers/1/value",
+              "start": 8,
+              "end": 29,
+              "kind": "cookie"
+            }
+          ]
+        },
+        {
+          "kind": "curl",
+          "text": "curl 'https://shop.example.com/products/42?ref=%3Cscript%3E'"
+        }
+      ]
+    }
+  ]
+}

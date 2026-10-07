@@ -1,0 +1,37 @@
+{
+  "@programName": "ZAP",
+  "@version": "2.16.0",
+  "@generated": "Tue, 7 Oct 2026 10:00:00",
+  "site": [
+    {
+      "@name": "https://shop.example.com",
+      "@host": "shop.example.com",
+      "@port": "443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "40018",
+          "alertRef": "40018",
+          "alert": "SQL Injection",
+          "name": "SQL Injection",
+          "riskcode": "3",
+          "confidence": "2",
+          "desc": "<p>SQL injection may be possible.</p>",
+          "count": "5",
+          "solution": "<p>Use parameterised queries.</p>",
+          "reference": "<p>https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html</p>",
+          "cweid": "89",
+          "wascid": "19",
+          "sourceid": "7",
+          "instances": [
+            {"uri": "https://shop.example.com/products/42?id=42%27&sid=s3cr3t-session", "method": "GET", "param": "id", "attack": "42'", "evidence": "SQL syntax"},
+            {"uri": "https://shop.example.com/products/77?id=77%27&sid=s3cr3t-session", "method": "GET", "param": "id", "attack": "77'", "evidence": "SQL syntax"},
+            {"uri": "https://shop.example.com/products/42?sort=name%27", "method": "GET", "param": "sort", "attack": "name'", "evidence": "SQL syntax"},
+            {"uri": "https://user:pw@shop.example.com/cart", "method": "POST", "param": "qty", "attack": "1 OR 1=1", "evidence": "SQL syntax"},
+            {"uri": "https://shop.example.com/cart#frag", "method": "POST", "param": "qty", "attack": "1 AND 1=2", "evidence": "SQL syntax"}
+          ]
+        }
+      ]
+    }
+  ]
+}

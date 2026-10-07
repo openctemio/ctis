@@ -32,6 +32,10 @@ type Report struct {
 	// a receiver may also derive relationships from technical members.
 	Relationships []Relationship `json:"relationships,omitempty"`
 
+	// Endpoints are the methods and paths web origins serve, as a tool
+	// saw them (1.6). Names of parameters only, never values.
+	Endpoints []Endpoint `json:"endpoints,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
 }
@@ -1144,6 +1148,16 @@ type Finding struct {
 	// ("T1190"), at most 20 (1.5). A producer hint; receivers validate the
 	// id format and never trust it for prioritization alone.
 	Attack []string `json:"attack,omitempty"`
+
+	// Web is where on a web origin the finding was observed: the redacted
+	// URL, the method and the parameter (1.6).
+	Web *WebLocation `json:"web,omitempty"`
+
+	// EvidenceItems are typed evidence of the finding (1.6, at most 20):
+	// HTTP exchanges, raw text, command output, file excerpts, screenshots.
+	// They MAY carry sensitive values only inside spans marked in their
+	// sensitive list; receivers mask those before display or forwarding.
+	EvidenceItems []EvidenceItem `json:"evidence_items,omitempty"`
 
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
