@@ -10,7 +10,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/openctemio/ctis"
 	"github.com/openctemio/ctis/fingerprint"
@@ -49,24 +51,27 @@ type nucleiInfo struct {
 }
 
 type nucleiResult struct {
-	TemplateID    string     `json:"template-id"`
-	TemplatePath  string     `json:"template-path"`
-	Template      string     `json:"template"`
-	TemplateURL   string     `json:"template-url"`
-	Info          nucleiInfo `json:"info"`
-	Type          string     `json:"type"`
-	Host          string     `json:"host"`
-	Port          flexStr    `json:"port"`
-	Scheme        string     `json:"scheme"`
-	URL           string     `json:"url"`
-	Path          string     `json:"path"`
-	MatchedAt     string     `json:"matched-at"`
-	IP            string     `json:"ip"`
-	Timestamp     string     `json:"timestamp"`
-	MatcherName   string     `json:"matcher-name"`
-	MatcherStatus bool       `json:"matcher-status"`
-	ExtractorName string     `json:"extractor-name"`
-	Request       string     `json:"request"`
+	TemplateID    string          `json:"template-id"`
+	TemplatePath  string          `json:"template-path"`
+	Template      string          `json:"template"`
+	TemplateURL   string          `json:"template-url"`
+	Info          nucleiInfo      `json:"info"`
+	Type          string          `json:"type"`
+	Host          string          `json:"host"`
+	Port          flexStr         `json:"port"`
+	Scheme        string          `json:"scheme"`
+	URL           string          `json:"url"`
+	Path          string          `json:"path"`
+	MatchedAt     string          `json:"matched-at"`
+	IP            string          `json:"ip"`
+	Timestamp     string          `json:"timestamp"`
+	MatcherName   string          `json:"matcher-name"`
+	MatcherStatus bool            `json:"matcher-status"`
+	ExtractorName string          `json:"extractor-name"`
+	Request       string          `json:"request"`
+	Response      string          `json:"response"`
+	CurlCommand   string          `json:"curl-command"`
+	Extracted     json.RawMessage `json:"extracted-results"`
 
 	// DAST (fuzzing) results.
 	FuzzingMethod    string `json:"fuzzing_method"`
@@ -266,6 +271,7 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 		f.Message = name
 	}
 	f.Web = nucleiWeb(r)
+	f.EvidenceItems = nucleiEvidence(r)
 	if c := r.Info.Classification; c != nil {
 		vd := &ctis.VulnerabilityDetails{}
 		for _, id := range stringList(c.CVEID) {
@@ -355,6 +361,81 @@ func nucleiWeb(r *nucleiResult) *ctis.WebLocation {
 		}
 	}
 	return w
+}
+
+// nucleiEvidence is the evidence of an http result: the request and the
+// response as one http_exchange (with the extracted values, located in the
+// response body when they occur there) and the curl command. Sensitive
+// values (credentials, sessions, tokens, extracted secrets) are marked for
+// the receiver to mask, never masked here.
+func nucleiEvidence(r *nucleiResult) []ctis.EvidenceItem {
+	var items []ctis.EvidenceItem
+	ex, ok := ctis.HTTPExchangeFromRaw(r.Request, r.Response, r.MatchedAt)
+	if ok {
+		ex.Label = line(r.TemplateID, ctis.MaxEvidenceLabelLen)
+		if t, err := time.Parse(time.RFC3339, strings.TrimSpace(r.Timestamp)); err == nil {
+			t = t.UTC()
+			ex.CapturedAt = &t
+		}
+		var body string
+		if resp := ex.HTTP.Response; resp != nil && resp.BodyEncoding == ctis.BodyEncodingText {
+			body = resp.Body
+		}
+		matcher := line(r.MatcherName, 128)
+		for _, v := range stringList(r.Extracted) {
+			if len(ex.Extracted) == ctis.MaxEvidenceExtracted {
+				break
+			}
+			v = cutBytes(v, ctis.MaxEvidenceExtractLen)
+			if v == "" {
+				continue
+			}
+			k := len(ex.Extracted)
+			ex.Extracted = append(ex.Extracted, v)
+			if looksSecretValue(v) {
+				ex.Sensitive = append(ex.Sensitive, ctis.SensitiveSpan{Pointer: "/extracted/" + strconv.Itoa(k), Kind: "extracted"})
+			}
+			if i := strings.Index(body, v); i >= 0 && len(ex.Match) < ctis.MaxEvidenceMatches {
+				start, end := i, i+len(v)
+				ex.Match = append(ex.Match, ctis.EvidenceMatch{Location: ctis.MatchLocationResponse, Part: ctis.MatchPartBody, Start: &start, End: &end, Matcher: matcher})
+			}
+		}
+		if matcher != "" && len(ex.Match) == 0 {
+			ex.Label = line(ex.Label+" ("+matcher+")", ctis.MaxEvidenceLabelLen)
+		}
+		items = append(items, ex)
+	}
+	if curl, ok := ctis.CurlEvidence(r.CurlCommand); ok {
+		items = append(items, curl)
+	}
+	ptrs := make([]*ctis.EvidenceItem, len(items))
+	for i := range items {
+		ptrs[i] = &items[i]
+	}
+	ctis.MarkSensitive(ptrs...)
+	return items
+}
+
+// looksSecretValue reports whether an extracted value looks like a
+// credential: a long run of letters and digits, or a known key prefix.
+func looksSecretValue(v string) bool {
+	for _, w := range strings.FieldsFunc(v, func(r rune) bool { return unicode.IsSpace(r) || strings.ContainsRune("\"'=:;,", r) }) {
+		if len(w) >= 16 && strings.IndexFunc(w, unicode.IsDigit) >= 0 && strings.IndexFunc(w, unicode.IsLetter) >= 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// cutBytes cuts s to at most n bytes on a rune boundary.
+func cutBytes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
 }
 
 // redactedWebURL is the normalised URL with its query parameter names and

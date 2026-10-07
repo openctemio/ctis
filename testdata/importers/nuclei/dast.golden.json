@@ -60,7 +60,50 @@
           "location": "query",
           "name": "id"
         }
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "label": "sqli-error-based",
+          "captured_at": "2026-10-07T10:00:00Z",
+          "http": {
+            "request": {
+              "method": "GET",
+              "url": "https://shop.example.com/products/42?id=42%27&sid=s3cr3t-session",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Host",
+                  "value": "shop.example.com"
+                },
+                {
+                  "name": "Cookie",
+                  "value": "sid=s3cr3t-session"
+                }
+              ]
+            }
+          },
+          "sensitive": [
+            {
+              "pointer": "/http/request/headers/1/value",
+              "kind": "cookie"
+            },
+            {
+              "pointer": "/http/request/url",
+              "start": 50,
+              "end": 64,
+              "kind": "secret"
+            },
+            {
+              "pointer": "/http/request/url",
+              "start": 46,
+              "end": 64,
+              "kind": "cookie"
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "vulnerability",
@@ -99,7 +142,35 @@
           "location": "json",
           "name": "url"
         }
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "label": "blind-ssrf",
+          "captured_at": "2026-10-07T10:00:01Z",
+          "http": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/api/fetch",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Host",
+                  "value": "shop.example.com"
+                },
+                {
+                  "name": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\"url\":\"http://oast.example\"}",
+              "body_encoding": "text",
+              "body_size": 29
+            }
+          }
+        }
+      ]
     }
   ]
 }

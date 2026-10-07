@@ -44,6 +44,54 @@ type zapInstance struct {
 	Attack    flexStr `json:"attack" xml:"attack"`
 	Evidence  flexStr `json:"evidence" xml:"evidence"`
 	OtherInfo flexStr `json:"otherinfo" xml:"otherinfo"`
+
+	// The HTTP message, JSON and XML names.
+	RequestHeader     flexStr `json:"request-header" xml:"-"`
+	RequestBody       flexStr `json:"request-body" xml:"-"`
+	ResponseHeader    flexStr `json:"response-header" xml:"-"`
+	ResponseBody      flexStr `json:"response-body" xml:"-"`
+	RequestHeaderXML  flexStr `json:"-" xml:"requestheader"`
+	RequestBodyXML    flexStr `json:"-" xml:"requestbody"`
+	ResponseHeaderXML flexStr `json:"-" xml:"responseheader"`
+	ResponseBodyXML   flexStr `json:"-" xml:"responsebody"`
+}
+
+// zapMaxExchanges is how many HTTP messages of a finding's instances become
+// evidence items.
+const zapMaxExchanges = 3
+
+// exchange is the instance's HTTP message as an http_exchange item, with
+// what ZAP matched located in the response body.
+func (in *zapInstance) exchange() (ctis.EvidenceItem, bool) {
+	reqH := firstNonEmpty(in.RequestHeader.String(), in.RequestHeaderXML.String())
+	respH := firstNonEmpty(in.ResponseHeader.String(), in.ResponseHeaderXML.String())
+	if strings.TrimSpace(reqH) == "" && strings.TrimSpace(respH) == "" {
+		return ctis.EvidenceItem{}, false
+	}
+	req := joinMessage(reqH, firstNonEmpty(in.RequestBody.String(), in.RequestBodyXML.String()))
+	resp := joinMessage(respH, firstNonEmpty(in.ResponseBody.String(), in.ResponseBodyXML.String()))
+	it, ok := ctis.HTTPExchangeFromRaw(req, resp, strings.TrimSpace(in.URI.String()))
+	if !ok {
+		return it, false
+	}
+	if ev := in.Evidence.String(); ev != "" {
+		if r := it.HTTP.Response; r != nil && r.BodyEncoding == ctis.BodyEncodingText {
+			if i := strings.Index(r.Body, ev); i >= 0 {
+				start, end := i, i+len(ev)
+				it.Match = append(it.Match, ctis.EvidenceMatch{Location: ctis.MatchLocationResponse, Part: ctis.MatchPartBody, Start: &start, End: &end})
+			}
+		}
+	}
+	return it, true
+}
+
+// joinMessage joins a header block and a body into one raw message.
+func joinMessage(head, body string) string {
+	head = strings.TrimRight(head, "\r\n")
+	if head == "" {
+		return ""
+	}
+	return head + "\r\n\r\n" + body
 }
 
 type zapTag struct {
@@ -424,6 +472,7 @@ func (b *builder) zapLocations(f ctis.Finding, instances []zapInstance, lineNo i
 		lf.Web = g.web
 		lf.OccurrenceCount = len(g.instances)
 		lf.Evidence = zapEvidence(g.instances)
+		lf.EvidenceItems = zapExchanges(g.instances)
 		if g.web != nil {
 			lf.Message = line(f.Title+" at "+g.web.URL, 8<<10)
 			if p := g.web.Parameter; p != nil {
@@ -470,6 +519,26 @@ func zapWeb(in *zapInstance) *ctis.WebLocation {
 		w.Parameter = &ctis.WebParameter{Location: ctis.ParamLocationForm, Name: name}
 	}
 	return w
+}
+
+// zapExchanges is the evidence items of a finding's first instances that
+// carry their HTTP message, with sensitive values marked.
+func zapExchanges(instances []*zapInstance) []ctis.EvidenceItem {
+	var items []ctis.EvidenceItem
+	for _, in := range instances {
+		if len(items) == zapMaxExchanges {
+			break
+		}
+		if it, ok := in.exchange(); ok {
+			items = append(items, it)
+		}
+	}
+	ptrs := make([]*ctis.EvidenceItem, len(items))
+	for i := range items {
+		ptrs[i] = &items[i]
+	}
+	ctis.MarkSensitive(ptrs...)
+	return items
 }
 
 // zapEvidence is one line per instance (at most zapMaxInstances, the rest

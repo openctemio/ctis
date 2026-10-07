@@ -16,14 +16,14 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | `gitleaks` | [gitleaks JSON report](gitleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `grype` | [grype JSON output](grype.md) | 84 | 49 | 63% | 155 | 54% |
 | `nessus` | [Nessus v2 XML (.nessus)](nessus.md) | 128 | 40 | 76% | 162 | 80% |
-| `nuclei` | [nuclei JSON lines](nuclei.md) | 40 | 14 | 74% | 50 | 82% |
+| `nuclei` | [nuclei JSON lines](nuclei.md) | 43 | 10 | 81% | 49 | 90% |
 | `openvex` | [OpenVEX](openvex.md) | 29 | 11 | 72% | 40 | 72% |
 | `osv` | [osv-scanner JSON results (OSV records)](osv.md) | 43 | 13 | 77% | 78 | 72% |
 | `qualys` | [Qualys VM host list detection XML](qualys.md) | 60 | 15 | 80% | 76 | 80% |
 | `qualys_kb` | [Qualys KnowledgeBase XML](qualys_kb.md) | 53 | 30 | 64% | 97 | 61% |
-| `sarif` | [SARIF 2.1.0](sarif.md) | 52 | 29 | 64% | 106 | 55% |
+| `sarif` | [SARIF 2.1.0](sarif.md) | 69 | 33 | 68% | 130 | 60% |
 | `semgrep` | [semgrep JSON output](semgrep.md) | 52 | 23 | 69% | 173 | 47% |
 | `spdx` | [SPDX JSON](spdx.md) | 28 | 34 | 45% | 79 | 35% |
 | `trivy` | [trivy JSON](trivy.md) | 76 | 24 | 76% | 108 | 74% |
 | `vuls` | [vuls JSON scan result](vuls.md) | 62 | 58 | 52% | 135 | 60% |
-| `zap` | [ZAP traditional report (JSON and XML)](zap.md) | 64 | 29 | 69% | 90 | 72% |
+| `zap` | [ZAP traditional report (JSON and XML)](zap.md) | 72 | 13 | 85% | 90 | 81% |

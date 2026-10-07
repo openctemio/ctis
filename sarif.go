@@ -86,6 +86,37 @@ type SARIFResult struct {
 	// 3.27.23), e.g. a nosemgrep comment or a CodeQL alert suppression.
 	Suppressions []SARIFSuppression `json:"suppressions,omitempty"`
 	Properties   map[string]any     `json:"properties,omitempty"`
+	// WebRequest and WebResponse are the HTTP exchange of a web result
+	// (SARIF 2.1.0 sections 3.46 and 3.47).
+	WebRequest  *SARIFWebRequest  `json:"webRequest,omitempty"`
+	WebResponse *SARIFWebResponse `json:"webResponse,omitempty"`
+}
+
+// SARIFWebRequest is a SARIF webRequest object (section 3.46).
+type SARIFWebRequest struct {
+	Protocol string            `json:"protocol,omitempty"`
+	Version  string            `json:"version,omitempty"`
+	Target   string            `json:"target,omitempty"`
+	Method   string            `json:"method,omitempty"`
+	Headers  map[string]string `json:"headers,omitempty"`
+	Body     *SARIFContent     `json:"body,omitempty"`
+}
+
+// SARIFWebResponse is a SARIF webResponse object (section 3.47).
+type SARIFWebResponse struct {
+	Protocol           string            `json:"protocol,omitempty"`
+	Version            string            `json:"version,omitempty"`
+	StatusCode         int               `json:"statusCode,omitempty"`
+	ReasonPhrase       string            `json:"reasonPhrase,omitempty"`
+	Headers            map[string]string `json:"headers,omitempty"`
+	Body               *SARIFContent     `json:"body,omitempty"`
+	NoResponseReceived bool              `json:"noResponseReceived,omitempty"`
+}
+
+// SARIFContent is a SARIF artifactContent object: text, or base64 binary.
+type SARIFContent struct {
+	Text   string `json:"text,omitempty"`
+	Binary string `json:"binary,omitempty"`
 }
 
 // SARIFSuppression is one SARIF suppression object (section 3.35).
@@ -423,6 +454,9 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 		ruleProps = rule.Properties
 	}
 	finding.Tags = sarifTags(result.Properties, ruleProps)
+	if ex, ok := sarifHTTPExchange(result.WebRequest, result.WebResponse); ok {
+		finding.EvidenceItems = []EvidenceItem{ex}
+	}
 	if finding.Type == FindingTypeSecret || isSecretTool(strings.ToLower(toolName)) {
 		redactSecretFinding(&finding)
 	}
