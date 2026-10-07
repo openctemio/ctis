@@ -11,6 +11,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Severity** (`severity/`) and **fingerprint** (`fingerprint/`) helpers.
 - **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
 - **Examples** (`examples/`): one report per finding type, validated in CI.
+- **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
 
 The current specification version is **1.4**. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -144,6 +145,19 @@ res, err := importer.Parse(ctx, file, importer.Options{})
 ```
 
 Each format has a mapping spec: every source field, the CTIS member that keeps it or why it is ignored on purpose ([docs/importers](docs/importers/README.md), generated from the code). The tests fail when a fixture holds a field its spec does not list, or a spec maps a field no fixture holds. Inputs are treated as hostile: size, depth, element, text and record limits; no XML internal subsets, entities or external resources; UTF-8, US-ASCII or ISO-8859-1 only; `OpenZip` refuses traversal, links, nested archives and decompression bombs. Scan credentials and account names are never copied into a report.
+
+## Capability taxonomy
+
+The `capability` package is the closed, versioned list of acts a scan tool can perform (`discover.subdomains@1`, `scan.ports@1`, `sast.code@1`, ...). The capability, not the tool, carries the facts about the act: its phase and CTEM stage, its tier floor (how intrusive it is at minimum), its typed input and output ports with the CTIS asset types they carry, its standard params, the CTIS paths every report of it must carry, and its MITRE ATT&CK, D3FEND and CAPEC references. A tool only declares which capabilities it implements.
+
+```go
+c, ok := capability.Lookup("scan.ports@1")
+c.Accepts("ip_address")          // true: an input port carries it
+c.MayEmit("asset:repository")    // false: no port carries it
+violations, err := c.Check(report, capability.CheckOptions{})
+```
+
+`Check` reports outputs the capability may not emit and records that miss a required path; producers run it before upload and receivers again at ingest. The reference page [docs/capabilities.md](docs/capabilities.md) is generated from the data.
 
 ## Asset types
 
