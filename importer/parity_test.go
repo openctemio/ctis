@@ -29,6 +29,8 @@ var parityAllowed = map[string]string{
 	"semgrep:finding.fingerprint": "semgrep's placeholder \"requires login\" is no fingerprint; one is derived from path, rule and line",
 	// betterleaks.
 	"betterleaks:finding.secret_type": "secret types are the CTIS schema's (generic_secret, aws_key, ...); the old words were refused by the schema",
+	// nuclei.
+	"nuclei:finding.path": "a matched URL is no file: it is finding.web.url (CTIS 1.6), redacted, and location.path stays empty",
 	// trivy.
 	"trivy:finding.secret_type": "secret types are the CTIS schema's; trivy's category is kept in source_extra.category",
 }

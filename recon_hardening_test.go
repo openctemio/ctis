@@ -70,8 +70,8 @@ func TestReconHostileInput(t *testing.T) {
 	if got := http.Properties["redirect_url"]; got != "https://sso.example.com/" {
 		t.Errorf("redirect_url = %q", got)
 	}
-	if _, ok := byValue["https://app.example.com/a?x=1"]; !ok {
-		t.Errorf("crawled URL not stripped of userinfo: %v", keys(byValue))
+	if _, ok := byValue["https://app.example.com/a?x="]; !ok {
+		t.Errorf("crawled URL not stripped of userinfo and query values: %v", keys(byValue))
 	}
 	ports := byValue["192.0.2.1"].Technical.IPAddress.Ports
 	if len(ports) != 1 || ports[0].Service != "ssh]0;pwned" || ports[0].Banner != "SSH-2.0-OpenSSH_9.6\r\nline2[2J" {

@@ -1,0 +1,187 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "properties": {
+      "generated": "Tue, 7 Oct 2026 10:00:00"
+    }
+  },
+  "tool": {
+    "name": "zap",
+    "version": "2.16.0",
+    "capabilities": [
+      "dast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "site-https://shop.example.com",
+      "type": "website",
+      "value": "https://shop.example.com",
+      "name": "https://shop.example.com",
+      "properties": {
+        "host": "shop.example.com",
+        "port": "443",
+        "scheme": "https"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "SQL Injection",
+      "description": "SQL injection may be possible.",
+      "message": "SQL Injection at https://shop.example.com/products/42?id=&sid= (id)",
+      "severity": "high",
+      "confidence": 60,
+      "rule_id": "40018",
+      "rule_name": "SQL Injection",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "GET https://shop.example.com/products/42?id=&sid= param=id attack=42' evidence=SQL syntax\nGET https://shop.example.com/products/77?id=&sid= param=id attack=77' evidence=SQL syntax",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "cwe_id": "CWE-89"
+      },
+      "remediation": {
+        "recommendation": "Use parameterised queries."
+      },
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+      ],
+      "occurrence_count": 2,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "40018",
+        "instance_id": "40018",
+        "severity": "3",
+        "raw_ref": "/site/0/alerts/0"
+      },
+      "source_extra": {
+        "confidence": "2",
+        "sourceid": "7",
+        "wascid": "19"
+      },
+      "web": {
+        "url": "https://shop.example.com/products/42?id=&sid=",
+        "method": "GET",
+        "parameter": {
+          "location": "query",
+          "name": "id"
+        }
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "SQL Injection",
+      "description": "SQL injection may be possible.",
+      "message": "SQL Injection at https://shop.example.com/products/42?sort= (sort)",
+      "severity": "high",
+      "confidence": 60,
+      "rule_id": "40018",
+      "rule_name": "SQL Injection",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "GET https://shop.example.com/products/42?sort= param=sort attack=name' evidence=SQL syntax",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "cwe_id": "CWE-89"
+      },
+      "remediation": {
+        "recommendation": "Use parameterised queries."
+      },
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+      ],
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "40018",
+        "instance_id": "40018",
+        "severity": "3",
+        "raw_ref": "/site/0/alerts/0"
+      },
+      "source_extra": {
+        "confidence": "2",
+        "sourceid": "7",
+        "wascid": "19"
+      },
+      "web": {
+        "url": "https://shop.example.com/products/42?sort=",
+        "method": "GET",
+        "parameter": {
+          "location": "query",
+          "name": "sort"
+        }
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "SQL Injection",
+      "description": "SQL injection may be possible.",
+      "message": "SQL Injection at https://shop.example.com/cart (qty)",
+      "severity": "high",
+      "confidence": 60,
+      "rule_id": "40018",
+      "rule_name": "SQL Injection",
+      "asset_ref": "site-https://shop.example.com",
+      "network": {
+        "host": "shop.example.com",
+        "port": 443,
+        "protocol": "tcp",
+        "service": "http"
+      },
+      "evidence": "POST https://shop.example.com/cart param=qty attack=1 OR 1=1 evidence=SQL syntax\nPOST https://shop.example.com/cart param=qty attack=1 AND 1=2 evidence=SQL syntax",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "cwe_id": "CWE-89"
+      },
+      "remediation": {
+        "recommendation": "Use parameterised queries."
+      },
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+      ],
+      "occurrence_count": 2,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "40018",
+        "instance_id": "40018",
+        "severity": "3",
+        "raw_ref": "/site/0/alerts/0"
+      },
+      "source_extra": {
+        "confidence": "2",
+        "sourceid": "7",
+        "wascid": "19"
+      },
+      "web": {
+        "url": "https://shop.example.com/cart",
+        "method": "POST",
+        "parameter": {
+          "location": "form",
+          "name": "qty"
+        }
+      }
+    }
+  ]
+}

@@ -9,6 +9,12 @@
   - An unknown kind is validated by its envelope and carries its fields in `data`; it is never refused.
 - New schemas `schemas/v1/endpoint.json` and `schemas/v1/evidence-item.json`, spec sections 4.12 and 4.13, the section 7 limits, an example `examples/web-endpoints-evidence.json` and five invalid examples.
 - Go: `Endpoint`, `EndpointParam`, `WebLocation`, `WebParameter`, `EvidenceItem` and its parts, `SensitiveSpan`, the enums with their `All*` lists, `KnownEvidenceKinds` and `IsKnownEvidenceKind`.
+- Recon converter: a `url_crawl` emits `endpoints[]`. There is one endpoint per origin, method and path template, holding the query parameter names of every URL that fell into it, the kind, source, parent, status and content type. `DiscoveredURLInput` gains `ContentType` and `Params`. The legacy `discovered_url` assets stay for one release train, and `MergeReconReports` combines endpoints.
+- nuclei importer: the URL credential helper of the previous release is replaced by `weburl.RedactURL`, which drops every query value instead of only credential-named ones; the fingerprint of a host without credentials is unchanged. An http `matched-at` becomes `finding.web`, holding the URL, the method, and for DAST results the fuzzed parameter (`fuzzing_parameter` at `fuzzing_position`). A URL is no longer put in `location.path`.
+- ZAP importer: one finding per alert, method, URL template and parameter (at most 100 per alert), each with `finding.web`, its own instances as evidence (at most 20) and its own `occurrence_count`.
+- Recon converter: a `url_crawl` emits `endpoints[]`. There is one endpoint per origin, method and path template, holding the query parameter names of every URL that fell into it, the kind, source, parent, status and content type. `DiscoveredURLInput` gains `ContentType` and `Params`. The legacy `discovered_url` assets stay for one release train, and `MergeReconReports` combines endpoints.
+- nuclei importer: an http `matched-at` becomes `finding.web`, holding the URL, the method, and for DAST results the fuzzed parameter (`fuzzing_parameter` at `fuzzing_position`). A URL is no longer put in `location.path`.
+- ZAP importer: one finding per alert, method, URL template and parameter (at most 100 per alert), each with `finding.web`, its own instances as evidence (at most 20) and its own `occurrence_count`.
 
 ### Upgrade notes
 
@@ -17,6 +23,8 @@
 ### Security
 
 - A URL in `endpoints` and `finding.web` must carry no query value, user info or fragment, and `Validate` refuses one that does. A parameter value is refused by strict decoding and by the schema.
+- No query value, user info or fragment reaches the output of the recon converter or the nuclei and ZAP importers. This covers the legacy `discovered_url` asset values, messages and ZAP evidence lines; names are kept as `name=`.
+- No query value, user info or fragment reaches the output of the recon converter or the nuclei and ZAP importers. This covers the legacy `discovered_url` asset values, messages and ZAP evidence lines; names are kept as `name=`.
 - `Validate` refuses:
   - hostile ids;
   - unknown enums;
