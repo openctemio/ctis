@@ -9,9 +9,9 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 ## Rules
 
 - The JSON and XML forms are one format; the first character of the file decides which parser reads it. The paths below list both forms.
-- One website asset per site, named by its origin (scheme, host and port; no path, query or user info). One finding per alert per site, on the site's host and port.
+- One website asset per site, named by its origin (scheme, host and port; no path, query or user info). One finding per alert, method, URL template and parameter (at most 100 per alert, the rest counted in an issue), on the site's host and port, with finding.web: the URI without user info, fragment or query values, the method and the parameter (query when the URI names it, form for a request with a body, otherwise left out).
 - Severity: riskcode 0 info, 1 low, 2 medium, 3 high; native.severity keeps it. Confidence 1, 2, 3, 4 become 30, 60, 90, 100; 0 (marked a false positive in ZAP) sets status false_positive.
-- Each instance (method, URI, parameter, attack, evidence) becomes a line of evidence, at most 20 per alert; the attack string is kept as text, never as markup.
+- Each instance (method, redacted URI, parameter, attack, evidence) becomes a line of the evidence of its finding, at most 20 per finding; the attack string is kept as text, never as markup. occurrence_count is the number of instances of the finding.
 - Request and response headers and bodies, which hold cookies, authorization headers and session tokens, are never read.
 
 ## Fields
@@ -42,7 +42,7 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/site[]/alerts[]/riskdesc` |  | riskcode and confidence as words |
 | `/site[]/alerts[]/confidencedesc` |  | confidence as a word |
 | `/site[]/alerts[]/desc` | `findings[].description (HTML reduced to text)` |  |
-| `/site[]/alerts[]/count` | `findings[].occurrence_count` |  |
+| `/site[]/alerts[]/count` | `findings[].occurrence_count (an alert without instances)` |  |
 | `/site[]/alerts[]/systemic` | `findings[].source_extra.systemic` |  |
 | `/site[]/alerts[]/solution` | `findings[].remediation.recommendation (HTML reduced to text)` |  |
 | `/site[]/alerts[]/otherinfo` | `findings[].source_extra.otherinfo (HTML reduced to text)` |  |
@@ -51,10 +51,10 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/site[]/alerts[]/wascid` | `findings[].source_extra.wascid` |  |
 | `/site[]/alerts[]/sourceid` | `findings[].source_extra.sourceid` |  |
 | `/site[]/alerts[]/instances` | (container) |  |
-| `/site[]/alerts[]/instances[]` | `findings[].evidence (one line per instance, at most 20, the rest counted)` |  |
-| `/site[]/alerts[]/instances[]/uri` | `findings[].evidence (user info removed)` |  |
-| `/site[]/alerts[]/instances[]/method` | `findings[].evidence` |  |
-| `/site[]/alerts[]/instances[]/param` | `findings[].evidence` |  |
+| `/site[]/alerts[]/instances[]` | `findings[] (one per method, URL template and parameter), evidence (one line per instance, at most 20, the rest counted)` |  |
+| `/site[]/alerts[]/instances[]/uri` | `findings[].web.url, evidence (no user info, fragment or query values)` |  |
+| `/site[]/alerts[]/instances[]/method` | `findings[].web.method, evidence` |  |
+| `/site[]/alerts[]/instances[]/param` | `findings[].web.parameter.name, evidence` |  |
 | `/site[]/alerts[]/instances[]/attack` | `findings[].evidence (text)` |  |
 | `/site[]/alerts[]/instances[]/evidence` | `findings[].evidence (text)` |  |
 | `/site[]/alerts[]/instances[]/otherinfo` | `findings[].evidence` |  |
@@ -90,7 +90,7 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/OWASPZAPReport/site/alerts/alertitem/riskdesc` |  | riskcode and confidence as words |
 | `/OWASPZAPReport/site/alerts/alertitem/confidencedesc` |  | confidence as a word |
 | `/OWASPZAPReport/site/alerts/alertitem/desc` | `findings[].description (HTML reduced to text)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/count` | `findings[].occurrence_count` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/count` | `findings[].occurrence_count (an alert without instances)` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/systemic` | `findings[].source_extra.systemic` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/solution` | `findings[].remediation.recommendation (HTML reduced to text)` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/otherinfo` | `findings[].source_extra.otherinfo (HTML reduced to text)` |  |
@@ -99,10 +99,10 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/OWASPZAPReport/site/alerts/alertitem/wascid` | `findings[].source_extra.wascid` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/sourceid` | `findings[].source_extra.sourceid` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/instances` | (container) |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance` | `findings[].evidence (one line per instance, at most 20, the rest counted)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/uri` | `findings[].evidence (user info removed)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/method` | `findings[].evidence` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/param` | `findings[].evidence` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance` | `findings[] (one per method, URL template and parameter), evidence (one line per instance, at most 20, the rest counted)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/uri` | `findings[].web.url, evidence (no user info, fragment or query values)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/method` | `findings[].web.method, evidence` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/param` | `findings[].web.parameter.name, evidence` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/attack` | `findings[].evidence (text)` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/evidence` | `findings[].evidence (text)` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/otherinfo` | `findings[].evidence` |  |

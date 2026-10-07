@@ -10,9 +10,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/openctemio/ctis"
 	"github.com/openctemio/ctis/fingerprint"
+	"github.com/openctemio/ctis/weburl"
 )
 
 // nuclei results: JSON lines (nuclei -jsonl), or a JSON array (nuclei
@@ -64,6 +66,12 @@ type nucleiResult struct {
 	MatcherName   string     `json:"matcher-name"`
 	MatcherStatus bool       `json:"matcher-status"`
 	ExtractorName string     `json:"extractor-name"`
+	Request       string     `json:"request"`
+
+	// DAST (fuzzing) results.
+	FuzzingMethod    string `json:"fuzzing_method"`
+	FuzzingParameter string `json:"fuzzing_parameter"`
+	FuzzingPosition  string `json:"fuzzing_position"`
 }
 
 func parseNuclei(b *builder, r io.Reader) error {
@@ -247,13 +255,17 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 	if r.MatcherStatus {
 		f.Confidence = 90
 	}
-	matched := line(redactURLCredentials(r.MatchedAt), 2048)
+	// matched-at is a URL for http templates and host:port for network
+	// ones. It is never a file: the URL goes to finding.web, redacted (no
+	// query value, user info or fragment), and only names the place in the
+	// message.
+	matched := line(weburl.RedactURL(r.MatchedAt), 2048)
 	if matched != "" {
 		f.Message = line(name+" at "+matched, 8<<10)
-		f.Location = &ctis.FindingLocation{Path: matched}
 	} else {
 		f.Message = name
 	}
+	f.Web = nucleiWeb(r)
 	if c := r.Info.Classification; c != nil {
 		vd := &ctis.VulnerabilityDetails{}
 		for _, id := range stringList(c.CVEID) {
@@ -298,7 +310,7 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 	if port > 0 && port <= 65535 {
 		f.Network = &ctis.NetworkLocation{Host: host, Port: port, Protocol: "tcp", Service: line(r.Scheme, 32)}
 	}
-	f.Fingerprint = fingerprint.GenerateSAST(redactURLCredentials(r.Host), r.TemplateID, 0, 0)
+	f.Fingerprint = fingerprint.GenerateSAST(fingerprintHost(r.Host), r.TemplateID, 0, 0)
 	var meta []string
 	for _, k := range sortedKeysOf(r.Info.Metadata) {
 		meta = append(meta, line(k, 64)+"="+line(string(r.Info.Metadata[k]), 256))
@@ -307,6 +319,87 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 		"template_path", firstNonEmpty(r.TemplatePath, r.Template), "timestamp", r.Timestamp,
 		"template_metadata", strings.Join(meta, "\n"), "authors", strings.Join(stringList(r.Info.Author), ", "))
 	return f
+}
+
+// fingerprintHost is the host a finding is fingerprinted by: as given, or,
+// when it carries user info, a query or a fragment, redacted. Fingerprints
+// of hosts without credentials are unchanged.
+func fingerprintHost(h string) string {
+	if strings.ContainsAny(h, "@?#") {
+		return weburl.RedactURL(h)
+	}
+	return h
+}
+
+// nucleiWeb is the web location of an http result: the redacted matched
+// URL, the method (the fuzzing method, else the request line's) and, for a
+// DAST result, the fuzzed parameter.
+func nucleiWeb(r *nucleiResult) *ctis.WebLocation {
+	u, err := weburl.Parse(weburl.RedactURL(strings.TrimSpace(r.MatchedAt)))
+	if err != nil {
+		return nil
+	}
+	w := &ctis.WebLocation{URL: redactedWebURL(u)}
+	method := r.FuzzingMethod
+	if method == "" {
+		if sp := strings.IndexByte(r.Request, ' '); sp > 0 {
+			method = r.Request[:sp]
+		}
+	}
+	if m, ok := weburl.NormalizeMethod(method); ok && method != "" {
+		w.Method = m
+	}
+	if loc, ok := nucleiParamLocation(r.FuzzingPosition); ok {
+		if n := strings.TrimSpace(r.FuzzingParameter); n != "" && len(n) <= ctis.MaxParamNameLen && !hasControl(n) {
+			w.Parameter = &ctis.WebParameter{Location: loc, Name: n}
+		}
+	}
+	return w
+}
+
+// redactedWebURL is the normalised URL with its query parameter names and
+// no values: https://h/p?a=&b=.
+func redactedWebURL(u *weburl.URL) string {
+	s := u.String()
+	for i, n := range u.Params {
+		sep := "&"
+		if i == 0 {
+			sep = "?"
+		}
+		s += sep + url.QueryEscape(n) + "="
+	}
+	return s
+}
+
+// nucleiParamLocation maps a nuclei fuzzing position to a parameter
+// location.
+func nucleiParamLocation(pos string) (ctis.ParamLocation, bool) {
+	switch strings.ToLower(strings.TrimSpace(pos)) {
+	case "query":
+		return ctis.ParamLocationQuery, true
+	case "path":
+		return ctis.ParamLocationPath, true
+	case "header":
+		return ctis.ParamLocationHeader, true
+	case "cookie":
+		return ctis.ParamLocationCookie, true
+	case "body", "form":
+		return ctis.ParamLocationForm, true
+	case "json":
+		return ctis.ParamLocationJSON, true
+	case "multipart":
+		return ctis.ParamLocationMultipart, true
+	}
+	return "", false
+}
+
+func hasControl(s string) bool {
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f || unicode.IsControl(r) {
+			return true
+		}
+	}
+	return false
 }
 
 // stripUserinfo removes credentials from a URL (https://user:pass@host/).

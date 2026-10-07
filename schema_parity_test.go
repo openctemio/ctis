@@ -42,6 +42,10 @@ var goEnums = map[reflect.Type][]string{
 	reflect.TypeOf(SourceState("")):          stringsOf(AllSourceStates()),
 	reflect.TypeOf(VulnerabilityIDType("")):  stringsOf(AllVulnerabilityIDTypes()),
 	reflect.TypeOf(SolutionType("")):         stringsOf(AllSolutionTypes()),
+	reflect.TypeOf(EndpointKind("")):         stringsOf(AllEndpointKinds()),
+	reflect.TypeOf(EndpointSource("")):       stringsOf(AllEndpointSources()),
+	reflect.TypeOf(EndpointAuth("")):         stringsOf(AllEndpointAuths()),
+	reflect.TypeOf(ParamLocation("")):        stringsOf(AllParamLocations()),
 	reflect.TypeOf(RelationshipType("")):     stringsOf(AllRelationshipTypes()),
 }
 
@@ -119,8 +123,8 @@ func TestSchemaVersionMatchesGo(t *testing.T) {
 
 func TestSchemaIDsAndDialect(t *testing.T) {
 	s := loadSchemaSet(t)
-	if len(s.docs) != 6 {
-		t.Errorf("expected 6 schema files, found %d", len(s.docs))
+	if len(s.docs) != 8 {
+		t.Errorf("expected 8 schema files, found %d", len(s.docs))
 	}
 	for file, doc := range s.docs {
 		if got, want := doc["$id"], SchemaBaseURL+file; got != want {

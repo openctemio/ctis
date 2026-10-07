@@ -4,14 +4,14 @@ Generated from `importer/spec_nuclei.go`; do not edit. Regenerate with `go test 
 
 - Format: `nuclei`
 - Source versions: nuclei v3 -jsonl (one result per line) or -json-export (an array of the same objects)
-- Fields: 36 mapped, 14 ignored on purpose (72% mapped)
+- Fields: 40 mapped, 14 ignored on purpose (74% mapped)
 
 ## Rules
 
 - One finding per result, on a domain or ip_address asset named by host, else matched-at, else ip (ids asset-1, asset-2, ... in order of first appearance). A result that names no host is skipped with an issue.
 - Each line (or array element) is checked on its own: invalid JSON, a value over a limit or a wrong type skips that record with an issue at its line; the other records are imported.
 - Raw HTTP requests and responses, the curl command and extracted values are never read: they can hold cookies, tokens and other data of the target.
-- User info in matched-at is removed.
+- An http matched-at becomes finding.web (CTIS 1.6): the URL without user info, fragment or query values (names kept, as name=), the method (fuzzing_method, else the request line's) and, for a DAST result, the fuzzed parameter (fuzzing_parameter at fuzzing_position). A URL is never put in location.path, the code-file field.
 
 ## Fields
 
@@ -52,7 +52,11 @@ Generated from `importer/spec_nuclei.go`; do not edit. Regenerate with `go test 
 | `/scheme` | `findings[].network.service` |  |
 | `/url` |  | the target URL; host and matched-at are kept |
 | `/path` |  | template path on the target; matched-at is kept |
-| `/matched-at` | `findings[].location.path, message (user info removed)` |  |
+| `/matched-at` | `findings[].web.url, message (no user info, fragment or query values)` |  |
+| `/fuzzing_method` | `findings[].web.method` |  |
+| `/fuzzing_parameter` | `findings[].web.parameter.name` |  |
+| `/fuzzing_position` | `findings[].web.parameter.location (query, path, header, cookie, body as form, json, multipart)` |  |
+| `/is_fuzzing_result` |  | a DAST result; fuzzing_parameter says which parameter |
 | `/ip` | `assets[].properties.ip_address, asset (when no host)` |  |
 | `/timestamp` | `findings[].source_extra.timestamp` |  |
 | `/matcher-name` | `findings[].source_extra.matcher_name` |  |
@@ -61,7 +65,7 @@ Generated from `importer/spec_nuclei.go`; do not edit. Regenerate with `go test 
 | `/extracted-results` |  | values a template extracted from the target: can hold tokens or personal data |
 | `/extracted-results[]` |  | values a template extracted from the target: can hold tokens or personal data |
 | `/curl-command` |  | the request as a command line: can hold cookies and credentials |
-| `/request` |  | raw HTTP request: can hold cookies and credentials |
+| `/request` | `findings[].web.method (the request line's method only; the rest is never read)` |  |
 | `/response` |  | raw HTTP response: can hold data of the target |
 | `/meta` |  | template variables |
 | `/meta/**` |  | template variables |

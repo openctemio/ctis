@@ -235,6 +235,17 @@
       "description": "MITRE ATT&CK techniques the finding enables (T1190, T1595.002) (1.5)",
       "items": {"type": "string", "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$"}
     },
+    "web": {
+      "$ref": "#/$defs/WebLocation"
+    },
+    "evidence_items": {
+      "type": "array",
+      "maxItems": 20,
+      "description": "Typed evidence of the finding (1.6); sensitive values only inside marked spans",
+      "items": {
+        "$ref": "evidence-item.json"
+      }
+    },
     "source_extra": {
       "type": "object",
       "maxProperties": 64,
@@ -247,6 +258,29 @@
     }
   },
   "$defs": {
+    "WebLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where on a web origin the finding was observed (1.6); the URL carries no query value, user info or fragment",
+      "required": ["url"],
+      "properties": {
+        "url": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "method": {"type": "string", "enum": ["", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT", "ANY"]},
+        "endpoint_ref": {"type": "string", "description": "Id of an endpoint of this report"},
+        "parameter": {"$ref": "#/$defs/WebParameter"},
+        "request_ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$", "description": "Evidence of the request: sha256:<hex> or an attachment id"},
+        "status_code": {"type": "integer", "minimum": 0, "maximum": 599}
+      }
+    },
+    "WebParameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["location", "name"],
+      "properties": {
+        "location": {"$ref": "endpoint.json#/$defs/ParamLocation"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
     "NativeIdentity": {
       "type": "object",
       "additionalProperties": false,
