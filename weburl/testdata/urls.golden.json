@@ -1,0 +1,1941 @@
+[
+  {
+    "in": "http://10.0.0.5:3000/item/a1b2c3d4e5f6?token=secret\u0026redirect=https://evil.example#/route/42",
+    "origin": "http://10.0.0.5:3000",
+    "path": "/item/a1b2c3d4e5f6",
+    "template": "/item/{id}",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://10.0.0.5:3000/item/a1b2c3d4e5f6?token=\u0026redirect="
+  },
+  {
+    "in": "https://API.Example.COM:443/caf%c3%a9/menu?q=test#access_token=secret-frag",
+    "origin": "https://api.example.com",
+    "path": "/caf%C3%A9/menu",
+    "template": "/caf%C3%A9/menu",
+    "params": [
+      "q"
+    ],
+    "redacted": "https://API.Example.COM:443/caf%c3%a9/menu?q="
+  },
+  {
+    "in": "HTTP://[2001:db8::1]:80?flag#top",
+    "origin": "http://[2001:db8::1]",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://[2001:db8::1]:80?flag="
+  },
+  {
+    "in": "http://[2001:db8::1]:8443/api/v1/users/42/?id=1;drop",
+    "origin": "http://[2001:db8::1]:8443",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://[2001:db8::1]:8443/api/v1/users/42/?id="
+  },
+  {
+    "in": "https://пример.example:80/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?q=test#top",
+    "origin": "https://xn--e1afmkfd.example:80",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "q"
+    ],
+    "redacted": "https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:80/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?q="
+  },
+  {
+    "in": "https://10.0.0.5:80/search?id=1;drop#top",
+    "origin": "https://10.0.0.5:80",
+    "path": "/search",
+    "template": "/search",
+    "params": [
+      "id"
+    ],
+    "redacted": "https://10.0.0.5:80/search?id="
+  },
+  {
+    "in": "http://under_score.example.net:80/item/a1b2c3d4e5f6?b=2\u0026a=1\u0026a=3#top",
+    "origin": "http://under_score.example.net",
+    "path": "/item/a1b2c3d4e5f6",
+    "template": "/item/{id}",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://under_score.example.net:80/item/a1b2c3d4e5f6?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "https://shop.example.com.:8443/obj/d41d8cd98f00b204e9800998ecf8427e?\u0026\u0026=x\u0026y",
+    "origin": "https://shop.example.com:8443",
+    "path": "/obj/d41d8cd98f00b204e9800998ecf8427e",
+    "template": "/obj/{hex}",
+    "params": [
+      "y"
+    ],
+    "redacted": "https://shop.example.com.:8443/obj/d41d8cd98f00b204e9800998ecf8427e?y="
+  },
+  {
+    "in": "http://[2001:db8::1]:443?flag",
+    "origin": "http://[2001:db8::1]:443",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://[2001:db8::1]:443?flag="
+  },
+  {
+    "in": "http://[2001:db8::1]:8080/users/alice%40example.com?\u0026\u0026=x\u0026y#/route/42",
+    "origin": "http://[2001:db8::1]:8080",
+    "path": "/users/alice%40example.com",
+    "template": "/users/{email}",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://[2001:db8::1]:8080/users/alice%40example.com?y="
+  },
+  {
+    "in": "HTTP://a.b.c.example.org:8443/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?a%20b=1#/route/42",
+    "origin": "http://a.b.c.example.org:8443",
+    "path": "/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl",
+    "template": "/t/{token}",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://a.b.c.example.org:8443/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?a%20b="
+  },
+  {
+    "in": "http://[::1]:80/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?\u0026\u0026=x\u0026y#/route/42",
+    "origin": "http://[::1]",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://[::1]:80/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?y="
+  },
+  {
+    "in": "https://example.com:80/static/app.3f9a2c1b4d5e6f70.js?b=2\u0026a=1\u0026a=3#access_token=secret-frag",
+    "origin": "https://example.com:80",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "https://example.com:80/static/app.3f9a2c1b4d5e6f70.js?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "HTTPS://example.com:80?flag#access_token=secret-frag",
+    "origin": "https://example.com:80",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "flag"
+    ],
+    "redacted": "https://example.com:80?flag="
+  },
+  {
+    "in": "https://under_score.example.net:8443/index.html#access_token=secret-frag",
+    "origin": "https://under_score.example.net:8443",
+    "path": "/index.html",
+    "template": "/index.html",
+    "redacted": "https://under_score.example.net:8443/index.html"
+  },
+  {
+    "in": "HTTPS://a.b.c.example.org:3000/?a%20b=1#/route/42",
+    "origin": "https://a.b.c.example.org:3000",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "a b"
+    ],
+    "redacted": "https://a.b.c.example.org:3000/?a%20b="
+  },
+  {
+    "in": "HTTP://[2001:db8::1]:80/?id=1;drop#top",
+    "origin": "http://[2001:db8::1]",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://[2001:db8::1]:80/?id="
+  },
+  {
+    "in": "https://[::1]:8443/blog/this-is-a-long-article-slug-2024?flag#top",
+    "origin": "https://[::1]:8443",
+    "path": "/blog/this-is-a-long-article-slug-2024",
+    "template": "/blog/this-is-a-long-article-slug-2024",
+    "params": [
+      "flag"
+    ],
+    "redacted": "https://[::1]:8443/blog/this-is-a-long-article-slug-2024?flag="
+  },
+  {
+    "in": "http://example.com/App/Login?password=hunter2#access_token=secret-frag",
+    "origin": "http://example.com",
+    "path": "/App/Login",
+    "template": "/App/Login",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://example.com/App/Login?password="
+  },
+  {
+    "in": "http://192.0.2.10:80/?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "http://192.0.2.10",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://192.0.2.10:80/?token=\u0026redirect="
+  },
+  {
+    "in": "http://пример.example:3000/api/users/42/orders/77/items/9?api_key=secret-abc123\u0026page=2#top",
+    "origin": "http://xn--e1afmkfd.example:3000",
+    "path": "/api/users/42/orders/77/items/9",
+    "template": "/api/users/{int}/orders/{int}/items/{int}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:3000/api/users/42/orders/77/items/9?api_key=\u0026page="
+  },
+  {
+    "in": "http://under_score.example.net:443/api/v1/users/42/?a%20b=1#top",
+    "origin": "http://under_score.example.net:443",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://under_score.example.net:443/api/v1/users/42/?a%20b="
+  },
+  {
+    "in": "http://a.b.c.example.org:8080/v2/graphql?id=1;drop",
+    "origin": "http://a.b.c.example.org:8080",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://a.b.c.example.org:8080/v2/graphql?id="
+  },
+  {
+    "in": "https://under_score.example.net:80/x/%2e%2e/y?token=secret\u0026redirect=https://evil.example",
+    "origin": "https://under_score.example.net:80",
+    "path": "/y",
+    "template": "/y",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://under_score.example.net:80/x/%2e%2e/y?token=\u0026redirect="
+  },
+  {
+    "in": "http://a.b.c.example.org/?id=1;drop#access_token=secret-frag",
+    "origin": "http://a.b.c.example.org",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://a.b.c.example.org/?id="
+  },
+  {
+    "in": "https://EXAMPLE.co.uk:3000/%7Euser/home?a%20b=1#/route/42",
+    "origin": "https://example.co.uk:3000",
+    "path": "/~user/home",
+    "template": "/~user/home",
+    "params": [
+      "a b"
+    ],
+    "redacted": "https://EXAMPLE.co.uk:3000/%7Euser/home?a%20b="
+  },
+  {
+    "in": "HTTPS://under_score.example.net:80/search#/route/42",
+    "origin": "https://under_score.example.net:80",
+    "path": "/search",
+    "template": "/search",
+    "redacted": "https://under_score.example.net:80/search"
+  },
+  {
+    "in": "HTTP://under_score.example.net:8080/files/%2Fetc%2Fpasswd?q=test#access_token=secret-frag",
+    "origin": "http://under_score.example.net:8080",
+    "path": "/files/%2Fetc%2Fpasswd",
+    "template": "/files/%2Fetc%2Fpasswd",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://under_score.example.net:8080/files/%2Fetc%2Fpasswd?q="
+  },
+  {
+    "in": "HTTPS://[2001:db8::1]:443/api/v1/users/42?password=hunter2#top",
+    "origin": "https://[2001:db8::1]",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://[2001:db8::1]:443/api/v1/users/42?password="
+  },
+  {
+    "in": "HTTPS://EXAMPLE.co.uk:8443/users/alice@example.com/profile?password=hunter2#access_token=secret-frag",
+    "origin": "https://example.co.uk:8443",
+    "path": "/users/alice@example.com/profile",
+    "template": "/users/{email}/profile",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://EXAMPLE.co.uk:8443/users/alice@example.com/profile?password="
+  },
+  {
+    "in": "https://192.0.2.10:8443/api/users/42/orders/77/items/9#/route/42",
+    "origin": "https://192.0.2.10:8443",
+    "path": "/api/users/42/orders/77/items/9",
+    "template": "/api/users/{int}/orders/{int}/items/{int}",
+    "redacted": "https://192.0.2.10:8443/api/users/42/orders/77/items/9"
+  },
+  {
+    "in": "http://пример.example/static/app.3f9a2c1b4d5e6f70.js?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "http://xn--e1afmkfd.example",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example/static/app.3f9a2c1b4d5e6f70.js?token=\u0026redirect="
+  },
+  {
+    "in": "http://пример.example:80/a//b///c?id=1;drop#access_token=secret-frag",
+    "origin": "http://xn--e1afmkfd.example",
+    "path": "/a/b/c",
+    "template": "/a/b/c",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:80/a//b///c?id="
+  },
+  {
+    "in": "http://under_score.example.net:3000/api/users/42/orders/77/items/9?token=secret\u0026redirect=https://evil.example",
+    "origin": "http://under_score.example.net:3000",
+    "path": "/api/users/42/orders/77/items/9",
+    "template": "/api/users/{int}/orders/{int}/items/{int}",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://under_score.example.net:3000/api/users/42/orders/77/items/9?token=\u0026redirect="
+  },
+  {
+    "in": "HTTPS://[2001:db8::1]:80/users/alice@example.com/profile",
+    "origin": "https://[2001:db8::1]:80",
+    "path": "/users/alice@example.com/profile",
+    "template": "/users/{email}/profile",
+    "redacted": "https://[2001:db8::1]:80/users/alice@example.com/profile"
+  },
+  {
+    "in": "HTTPS://shop.example.com.:8080/v2/graphql?api_key=secret-abc123\u0026page=2",
+    "origin": "https://shop.example.com:8080",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://shop.example.com.:8080/v2/graphql?api_key=\u0026page="
+  },
+  {
+    "in": "https://bücher.example:8080/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?password=hunter2#access_token=secret-frag",
+    "origin": "https://xn--bcher-kva.example:8080",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://b%C3%BCcher.example:8080/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?password="
+  },
+  {
+    "in": "https://192.0.2.10:8443/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?flag",
+    "origin": "https://192.0.2.10:8443",
+    "path": "/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl",
+    "template": "/t/{token}",
+    "params": [
+      "flag"
+    ],
+    "redacted": "https://192.0.2.10:8443/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?flag="
+  },
+  {
+    "in": "HTTPS://a.b.c.example.org:80/v2/graphql?password=hunter2#/route/42",
+    "origin": "https://a.b.c.example.org:80",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://a.b.c.example.org:80/v2/graphql?password="
+  },
+  {
+    "in": "http://a.b.c.example.org:8080/files/%2Fetc%2Fpasswd?q=test#access_token=secret-frag",
+    "origin": "http://a.b.c.example.org:8080",
+    "path": "/files/%2Fetc%2Fpasswd",
+    "template": "/files/%2Fetc%2Fpasswd",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://a.b.c.example.org:8080/files/%2Fetc%2Fpasswd?q="
+  },
+  {
+    "in": "http://a.b.c.example.org:8443/users/alice%40example.com?\u0026\u0026=x\u0026y#/route/42",
+    "origin": "http://a.b.c.example.org:8443",
+    "path": "/users/alice%40example.com",
+    "template": "/users/{email}",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://a.b.c.example.org:8443/users/alice%40example.com?y="
+  },
+  {
+    "in": "http://[::1]:8080/%7Euser/home?\u0026\u0026=x\u0026y#top",
+    "origin": "http://[::1]:8080",
+    "path": "/~user/home",
+    "template": "/~user/home",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://[::1]:8080/%7Euser/home?y="
+  },
+  {
+    "in": "HTTP://10.0.0.5:8443/v2/graphql?flag",
+    "origin": "http://10.0.0.5:8443",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://10.0.0.5:8443/v2/graphql?flag="
+  },
+  {
+    "in": "http://API.Example.COM:8080/?a%20b=1#access_token=secret-frag",
+    "origin": "http://api.example.com:8080",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://API.Example.COM:8080/?a%20b="
+  },
+  {
+    "in": "http://bücher.example:8443/../../etc/passwd?\u0026\u0026=x\u0026y#access_token=secret-frag",
+    "origin": "http://xn--bcher-kva.example:8443",
+    "path": "/etc/passwd",
+    "template": "/etc/passwd",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://b%C3%BCcher.example:8443/../../etc/passwd?y="
+  },
+  {
+    "in": "https://shop.example.com.:443/static/app.3f9a2c1b4d5e6f70.js?b=2\u0026a=1\u0026a=3#top",
+    "origin": "https://shop.example.com",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "https://shop.example.com.:443/static/app.3f9a2c1b4d5e6f70.js?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "HTTP://a.b.c.example.org:3000/static/app.3f9a2c1b4d5e6f70.js?id=1;drop#/route/42",
+    "origin": "http://a.b.c.example.org:3000",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://a.b.c.example.org:3000/static/app.3f9a2c1b4d5e6f70.js?id="
+  },
+  {
+    "in": "HTTPS://under_score.example.net:8443/obj/d41d8cd98f00b204e9800998ecf8427e?token=secret\u0026redirect=https://evil.example",
+    "origin": "https://under_score.example.net:8443",
+    "path": "/obj/d41d8cd98f00b204e9800998ecf8427e",
+    "template": "/obj/{hex}",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://under_score.example.net:8443/obj/d41d8cd98f00b204e9800998ecf8427e?token=\u0026redirect="
+  },
+  {
+    "in": "https://shop.example.com.:443/users/alice@example.com/profile?b=2\u0026a=1\u0026a=3#top",
+    "origin": "https://shop.example.com",
+    "path": "/users/alice@example.com/profile",
+    "template": "/users/{email}/profile",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "https://shop.example.com.:443/users/alice@example.com/profile?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "http://a.b.c.example.org:443/.env?id=1;drop#top",
+    "origin": "http://a.b.c.example.org:443",
+    "path": "/.env",
+    "template": "/.env",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://a.b.c.example.org:443/.env?id="
+  },
+  {
+    "in": "http://API.Example.COM/../../etc/passwd?api_key=secret-abc123\u0026page=2#access_token=secret-frag",
+    "origin": "http://api.example.com",
+    "path": "/etc/passwd",
+    "template": "/etc/passwd",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "http://API.Example.COM/../../etc/passwd?api_key=\u0026page="
+  },
+  {
+    "in": "http://192.0.2.10:3000/blog/this-is-a-long-article-slug-2024?q=test#access_token=secret-frag",
+    "origin": "http://192.0.2.10:3000",
+    "path": "/blog/this-is-a-long-article-slug-2024",
+    "template": "/blog/this-is-a-long-article-slug-2024",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://192.0.2.10:3000/blog/this-is-a-long-article-slug-2024?q="
+  },
+  {
+    "in": "https://пример.example:3000/reset/Zx9QkLm3PqR7sT2vWy8aBc?api_key=secret-abc123\u0026page=2",
+    "origin": "https://xn--e1afmkfd.example:3000",
+    "path": "/reset/Zx9QkLm3PqR7sT2vWy8aBc",
+    "template": "/reset/{token}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:3000/reset/Zx9QkLm3PqR7sT2vWy8aBc?api_key=\u0026page="
+  },
+  {
+    "in": "HTTP://under_score.example.net/x/%2e%2e/y?flag#top",
+    "origin": "http://under_score.example.net",
+    "path": "/y",
+    "template": "/y",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://under_score.example.net/x/%2e%2e/y?flag="
+  },
+  {
+    "in": "HTTP://API.Example.COM:3000/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?flag#access_token=secret-frag",
+    "origin": "http://api.example.com:3000",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://API.Example.COM:3000/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?flag="
+  },
+  {
+    "in": "HTTPS://EXAMPLE.co.uk/a/./b/../c?a%20b=1#top",
+    "origin": "https://example.co.uk",
+    "path": "/a/c",
+    "template": "/a/c",
+    "params": [
+      "a b"
+    ],
+    "redacted": "https://EXAMPLE.co.uk/a/./b/../c?a%20b="
+  },
+  {
+    "in": "https://under_score.example.net:8443",
+    "origin": "https://under_score.example.net:8443",
+    "path": "/",
+    "template": "/",
+    "redacted": "https://under_score.example.net:8443"
+  },
+  {
+    "in": "http://xn--bcher-kva.example:80/api/v1/users/42/?b=2\u0026a=1\u0026a=3#/route/42",
+    "origin": "http://xn--bcher-kva.example",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://xn--bcher-kva.example:80/api/v1/users/42/?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "https://пример.example:8080/obj/d41d8cd98f00b204e9800998ecf8427e?flag",
+    "origin": "https://xn--e1afmkfd.example:8080",
+    "path": "/obj/d41d8cd98f00b204e9800998ecf8427e",
+    "template": "/obj/{hex}",
+    "params": [
+      "flag"
+    ],
+    "redacted": "https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:8080/obj/d41d8cd98f00b204e9800998ecf8427e?flag="
+  },
+  {
+    "in": "HTTP://localhost:3000/static/app.3f9a2c1b4d5e6f70.js?id=1;drop",
+    "origin": "http://localhost:3000",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://localhost:3000/static/app.3f9a2c1b4d5e6f70.js?id="
+  },
+  {
+    "in": "http://a.b.c.example.org:80/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?b=2\u0026a=1\u0026a=3",
+    "origin": "http://a.b.c.example.org",
+    "path": "/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl",
+    "template": "/t/{token}",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://a.b.c.example.org:80/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "HTTP://API.Example.COM:3000?b=2\u0026a=1\u0026a=3#top",
+    "origin": "http://api.example.com:3000",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://API.Example.COM:3000?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "http://пример.example:8443/app;jsessionid=ABCDEF123/login?b=2\u0026a=1\u0026a=3#top",
+    "origin": "http://xn--e1afmkfd.example:8443",
+    "path": "/app/login",
+    "template": "/app/login",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:8443/app;jsessionid=ABCDEF123/login?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "https://EXAMPLE.co.uk:8080/wp-admin/admin-ajax.php?password=hunter2#top",
+    "origin": "https://example.co.uk:8080",
+    "path": "/wp-admin/admin-ajax.php",
+    "template": "/wp-admin/admin-ajax.php",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://EXAMPLE.co.uk:8080/wp-admin/admin-ajax.php?password="
+  },
+  {
+    "in": "HTTP://xn--bcher-kva.example:3000/v2/graphql?password=hunter2#/route/42",
+    "origin": "http://xn--bcher-kva.example:3000",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://xn--bcher-kva.example:3000/v2/graphql?password="
+  },
+  {
+    "in": "http://under_score.example.net:80/app;jsessionid=ABCDEF123/login?\u0026\u0026=x\u0026y#/route/42",
+    "origin": "http://under_score.example.net",
+    "path": "/app/login",
+    "template": "/app/login",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://under_score.example.net:80/app;jsessionid=ABCDEF123/login?y="
+  },
+  {
+    "in": "http://shop.example.com.:3000/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?b=2\u0026a=1\u0026a=3",
+    "origin": "http://shop.example.com:3000",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://shop.example.com.:3000/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "HTTPS://EXAMPLE.co.uk:80/api/v1/users/42?flag",
+    "origin": "https://example.co.uk:80",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "flag"
+    ],
+    "redacted": "https://EXAMPLE.co.uk:80/api/v1/users/42?flag="
+  },
+  {
+    "in": "http://shop.example.com.:3000/../../etc/passwd?q=test#access_token=secret-frag",
+    "origin": "http://shop.example.com:3000",
+    "path": "/etc/passwd",
+    "template": "/etc/passwd",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://shop.example.com.:3000/../../etc/passwd?q="
+  },
+  {
+    "in": "http://example.com:443/item/a1b2c3d4e5f6?token=secret\u0026redirect=https://evil.example",
+    "origin": "http://example.com:443",
+    "path": "/item/a1b2c3d4e5f6",
+    "template": "/item/{id}",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://example.com:443/item/a1b2c3d4e5f6?token=\u0026redirect="
+  },
+  {
+    "in": "HTTP://[2001:db8::1]:80?q=test#top",
+    "origin": "http://[2001:db8::1]",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://[2001:db8::1]:80?q="
+  },
+  {
+    "in": "http://bücher.example:8080/%7Euser/home",
+    "origin": "http://xn--bcher-kva.example:8080",
+    "path": "/~user/home",
+    "template": "/~user/home",
+    "redacted": "http://b%C3%BCcher.example:8080/%7Euser/home"
+  },
+  {
+    "in": "http://EXAMPLE.co.uk:80/static/app.3f9a2c1b4d5e6f70.js#access_token=secret-frag",
+    "origin": "http://example.co.uk",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "redacted": "http://EXAMPLE.co.uk:80/static/app.3f9a2c1b4d5e6f70.js"
+  },
+  {
+    "in": "HTTPS://EXAMPLE.co.uk:8443/item/a1b2c3d4e5f6?api_key=secret-abc123\u0026page=2#/route/42",
+    "origin": "https://example.co.uk:8443",
+    "path": "/item/a1b2c3d4e5f6",
+    "template": "/item/{id}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://EXAMPLE.co.uk:8443/item/a1b2c3d4e5f6?api_key=\u0026page="
+  },
+  {
+    "in": "https://[2001:db8::1]:443/wp-admin/admin-ajax.php#top",
+    "origin": "https://[2001:db8::1]",
+    "path": "/wp-admin/admin-ajax.php",
+    "template": "/wp-admin/admin-ajax.php",
+    "redacted": "https://[2001:db8::1]:443/wp-admin/admin-ajax.php"
+  },
+  {
+    "in": "http://API.Example.COM:443/reset/Zx9QkLm3PqR7sT2vWy8aBc?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "http://api.example.com:443",
+    "path": "/reset/Zx9QkLm3PqR7sT2vWy8aBc",
+    "template": "/reset/{token}",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://API.Example.COM:443/reset/Zx9QkLm3PqR7sT2vWy8aBc?token=\u0026redirect="
+  },
+  {
+    "in": "HTTPS://10.0.0.5:443/wp-admin/admin-ajax.php?password=hunter2#access_token=secret-frag",
+    "origin": "https://10.0.0.5",
+    "path": "/wp-admin/admin-ajax.php",
+    "template": "/wp-admin/admin-ajax.php",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://10.0.0.5:443/wp-admin/admin-ajax.php?password="
+  },
+  {
+    "in": "https://xn--bcher-kva.example:8443/v2/graphql?api_key=secret-abc123\u0026page=2#top",
+    "origin": "https://xn--bcher-kva.example:8443",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://xn--bcher-kva.example:8443/v2/graphql?api_key=\u0026page="
+  },
+  {
+    "in": "https://[::1]:8443/obj/d41d8cd98f00b204e9800998ecf8427e?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "https://[::1]:8443",
+    "path": "/obj/d41d8cd98f00b204e9800998ecf8427e",
+    "template": "/obj/{hex}",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://[::1]:8443/obj/d41d8cd98f00b204e9800998ecf8427e?token=\u0026redirect="
+  },
+  {
+    "in": "HTTPS://shop.example.com.:3000/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?password=hunter2#access_token=secret-frag",
+    "origin": "https://shop.example.com:3000",
+    "path": "/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl",
+    "template": "/t/{token}",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://shop.example.com.:3000/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?password="
+  },
+  {
+    "in": "HTTP://[2001:db8::1]:8080/static/app.3f9a2c1b4d5e6f70.js?a%20b=1#/route/42",
+    "origin": "http://[2001:db8::1]:8080",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://[2001:db8::1]:8080/static/app.3f9a2c1b4d5e6f70.js?a%20b="
+  },
+  {
+    "in": "http://[2001:db8::1]:80/users/alice@example.com/profile#access_token=secret-frag",
+    "origin": "http://[2001:db8::1]",
+    "path": "/users/alice@example.com/profile",
+    "template": "/users/{email}/profile",
+    "redacted": "http://[2001:db8::1]:80/users/alice@example.com/profile"
+  },
+  {
+    "in": "https://10.0.0.5:3000/%7Euser/home?flag#/route/42",
+    "origin": "https://10.0.0.5:3000",
+    "path": "/~user/home",
+    "template": "/~user/home",
+    "params": [
+      "flag"
+    ],
+    "redacted": "https://10.0.0.5:3000/%7Euser/home?flag="
+  },
+  {
+    "in": "http://localhost:443/search?flag",
+    "origin": "http://localhost:443",
+    "path": "/search",
+    "template": "/search",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://localhost:443/search?flag="
+  },
+  {
+    "in": "HTTPS://xn--bcher-kva.example:8443/api/users/42/orders/77/items/9?api_key=secret-abc123\u0026page=2#access_token=secret-frag",
+    "origin": "https://xn--bcher-kva.example:8443",
+    "path": "/api/users/42/orders/77/items/9",
+    "template": "/api/users/{int}/orders/{int}/items/{int}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://xn--bcher-kva.example:8443/api/users/42/orders/77/items/9?api_key=\u0026page="
+  },
+  {
+    "in": "http://[2001:db8::1]:80/obj/d41d8cd98f00b204e9800998ecf8427e?a%20b=1#top",
+    "origin": "http://[2001:db8::1]",
+    "path": "/obj/d41d8cd98f00b204e9800998ecf8427e",
+    "template": "/obj/{hex}",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://[2001:db8::1]:80/obj/d41d8cd98f00b204e9800998ecf8427e?a%20b="
+  },
+  {
+    "in": "http://API.Example.COM:3000/api/users/42/orders/77/items/9?b=2\u0026a=1\u0026a=3#/route/42",
+    "origin": "http://api.example.com:3000",
+    "path": "/api/users/42/orders/77/items/9",
+    "template": "/api/users/{int}/orders/{int}/items/{int}",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://API.Example.COM:3000/api/users/42/orders/77/items/9?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "http://пример.example:443/wp-admin/admin-ajax.php?b=2\u0026a=1\u0026a=3#access_token=secret-frag",
+    "origin": "http://xn--e1afmkfd.example:443",
+    "path": "/wp-admin/admin-ajax.php",
+    "template": "/wp-admin/admin-ajax.php",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:443/wp-admin/admin-ajax.php?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "https://xn--bcher-kva.example:8080/.git/config?api_key=secret-abc123\u0026page=2#access_token=secret-frag",
+    "origin": "https://xn--bcher-kva.example:8080",
+    "path": "/.git/config",
+    "template": "/.git/config",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://xn--bcher-kva.example:8080/.git/config?api_key=\u0026page="
+  },
+  {
+    "in": "HTTPS://shop.example.com.:443/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?token=secret\u0026redirect=https://evil.example",
+    "origin": "https://shop.example.com",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://shop.example.com.:443/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?token=\u0026redirect="
+  },
+  {
+    "in": "http://under_score.example.net:8443/a/./b/../c?password=hunter2#/route/42",
+    "origin": "http://under_score.example.net:8443",
+    "path": "/a/c",
+    "template": "/a/c",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://under_score.example.net:8443/a/./b/../c?password="
+  },
+  {
+    "in": "HTTP://API.Example.COM:443/index.html?id=1;drop#access_token=secret-frag",
+    "origin": "http://api.example.com:443",
+    "path": "/index.html",
+    "template": "/index.html",
+    "params": [
+      "id"
+    ],
+    "redacted": "http://API.Example.COM:443/index.html?id="
+  },
+  {
+    "in": "http://localhost:443/blog/this-is-a-long-article-slug-2024?api_key=secret-abc123\u0026page=2#access_token=secret-frag",
+    "origin": "http://localhost:443",
+    "path": "/blog/this-is-a-long-article-slug-2024",
+    "template": "/blog/this-is-a-long-article-slug-2024",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "http://localhost:443/blog/this-is-a-long-article-slug-2024?api_key=\u0026page="
+  },
+  {
+    "in": "HTTPS://пример.example/api/users/42/orders/77/items/9?\u0026\u0026=x\u0026y#/route/42",
+    "origin": "https://xn--e1afmkfd.example",
+    "path": "/api/users/42/orders/77/items/9",
+    "template": "/api/users/{int}/orders/{int}/items/{int}",
+    "params": [
+      "y"
+    ],
+    "redacted": "https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example/api/users/42/orders/77/items/9?y="
+  },
+  {
+    "in": "HTTPS://[::1]/%7Euser/home?token=secret\u0026redirect=https://evil.example#access_token=secret-frag",
+    "origin": "https://[::1]",
+    "path": "/~user/home",
+    "template": "/~user/home",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://[::1]/%7Euser/home?token=\u0026redirect="
+  },
+  {
+    "in": "HTTP://localhost:443/app;jsessionid=ABCDEF123/login?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "http://localhost:443",
+    "path": "/app/login",
+    "template": "/app/login",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://localhost:443/app;jsessionid=ABCDEF123/login?token=\u0026redirect="
+  },
+  {
+    "in": "http://under_score.example.net:3000/static/app.3f9a2c1b4d5e6f70.js?a%20b=1#/route/42",
+    "origin": "http://under_score.example.net:3000",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://under_score.example.net:3000/static/app.3f9a2c1b4d5e6f70.js?a%20b="
+  },
+  {
+    "in": "HTTPS://[::1]:80/.git/config?b=2\u0026a=1\u0026a=3#top",
+    "origin": "https://[::1]:80",
+    "path": "/.git/config",
+    "template": "/.git/config",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "https://[::1]:80/.git/config?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "HTTPS://пример.example:80/app;jsessionid=ABCDEF123/login?password=hunter2#/route/42",
+    "origin": "https://xn--e1afmkfd.example:80",
+    "path": "/app/login",
+    "template": "/app/login",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:80/app;jsessionid=ABCDEF123/login?password="
+  },
+  {
+    "in": "HTTPS://пример.example:8443/.env?password=hunter2#access_token=secret-frag",
+    "origin": "https://xn--e1afmkfd.example:8443",
+    "path": "/.env",
+    "template": "/.env",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:8443/.env?password="
+  },
+  {
+    "in": "HTTP://bücher.example/reports/2026-10-07/summary?password=hunter2#/route/42",
+    "origin": "http://xn--bcher-kva.example",
+    "path": "/reports/2026-10-07/summary",
+    "template": "/reports/{date}/summary",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://b%C3%BCcher.example/reports/2026-10-07/summary?password="
+  },
+  {
+    "in": "https://[::1]:80/files/%2Fetc%2Fpasswd?password=hunter2#access_token=secret-frag",
+    "origin": "https://[::1]:80",
+    "path": "/files/%2Fetc%2Fpasswd",
+    "template": "/files/%2Fetc%2Fpasswd",
+    "params": [
+      "password"
+    ],
+    "redacted": "https://[::1]:80/files/%2Fetc%2Fpasswd?password="
+  },
+  {
+    "in": "HTTPS://bücher.example/reset/Zx9QkLm3PqR7sT2vWy8aBc?q=test#top",
+    "origin": "https://xn--bcher-kva.example",
+    "path": "/reset/Zx9QkLm3PqR7sT2vWy8aBc",
+    "template": "/reset/{token}",
+    "params": [
+      "q"
+    ],
+    "redacted": "https://b%C3%BCcher.example/reset/Zx9QkLm3PqR7sT2vWy8aBc?q="
+  },
+  {
+    "in": "HTTP://localhost:3000/item/a1b2c3d4e5f6?password=hunter2#top",
+    "origin": "http://localhost:3000",
+    "path": "/item/a1b2c3d4e5f6",
+    "template": "/item/{id}",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://localhost:3000/item/a1b2c3d4e5f6?password="
+  },
+  {
+    "in": "HTTPS://localhost:8443/.env?flag#/route/42",
+    "origin": "https://localhost:8443",
+    "path": "/.env",
+    "template": "/.env",
+    "params": [
+      "flag"
+    ],
+    "redacted": "https://localhost:8443/.env?flag="
+  },
+  {
+    "in": "HTTP://192.0.2.10:8443/a//b///c",
+    "origin": "http://192.0.2.10:8443",
+    "path": "/a/b/c",
+    "template": "/a/b/c",
+    "redacted": "http://192.0.2.10:8443/a//b///c"
+  },
+  {
+    "in": "HTTPS://under_score.example.net:443/static/app.3f9a2c1b4d5e6f70.js?q=test#access_token=secret-frag",
+    "origin": "https://under_score.example.net",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "q"
+    ],
+    "redacted": "https://under_score.example.net:443/static/app.3f9a2c1b4d5e6f70.js?q="
+  },
+  {
+    "in": "HTTP://under_score.example.net:8080/static/app.3f9a2c1b4d5e6f70.js?password=hunter2#top",
+    "origin": "http://under_score.example.net:8080",
+    "path": "/static/app.3f9a2c1b4d5e6f70.js",
+    "template": "/static/app.3f9a2c1b4d5e6f70.js",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://under_score.example.net:8080/static/app.3f9a2c1b4d5e6f70.js?password="
+  },
+  {
+    "in": "https://under_score.example.net:8080/app;jsessionid=ABCDEF123/login?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "https://under_score.example.net:8080",
+    "path": "/app/login",
+    "template": "/app/login",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://under_score.example.net:8080/app;jsessionid=ABCDEF123/login?token=\u0026redirect="
+  },
+  {
+    "in": "HTTP://xn--bcher-kva.example:3000/obj/d41d8cd98f00b204e9800998ecf8427e?password=hunter2#access_token=secret-frag",
+    "origin": "http://xn--bcher-kva.example:3000",
+    "path": "/obj/d41d8cd98f00b204e9800998ecf8427e",
+    "template": "/obj/{hex}",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://xn--bcher-kva.example:3000/obj/d41d8cd98f00b204e9800998ecf8427e?password="
+  },
+  {
+    "in": "http://192.0.2.10:8443/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?b=2\u0026a=1\u0026a=3#/route/42",
+    "origin": "http://192.0.2.10:8443",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "http://192.0.2.10:8443/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "https://shop.example.com.:3000/item/a1b2c3d4e5f6?api_key=secret-abc123\u0026page=2#top",
+    "origin": "https://shop.example.com:3000",
+    "path": "/item/a1b2c3d4e5f6",
+    "template": "/item/{id}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://shop.example.com.:3000/item/a1b2c3d4e5f6?api_key=\u0026page="
+  },
+  {
+    "in": "HTTPS://192.0.2.10:443/api/v1/users/42/?\u0026\u0026=x\u0026y#access_token=secret-frag",
+    "origin": "https://192.0.2.10",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "y"
+    ],
+    "redacted": "https://192.0.2.10:443/api/v1/users/42/?y="
+  },
+  {
+    "in": "HTTP://bücher.example/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?\u0026\u0026=x\u0026y#access_token=secret-frag",
+    "origin": "http://xn--bcher-kva.example",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://b%C3%BCcher.example/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?y="
+  },
+  {
+    "in": "https://bücher.example/a/./b/../c?token=secret\u0026redirect=https://evil.example#/route/42",
+    "origin": "https://xn--bcher-kva.example",
+    "path": "/a/c",
+    "template": "/a/c",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://b%C3%BCcher.example/a/./b/../c?token=\u0026redirect="
+  },
+  {
+    "in": "HTTPS://[2001:db8::1]:8443/reports/2026-10-07/summary?api_key=secret-abc123\u0026page=2#top",
+    "origin": "https://[2001:db8::1]:8443",
+    "path": "/reports/2026-10-07/summary",
+    "template": "/reports/{date}/summary",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://[2001:db8::1]:8443/reports/2026-10-07/summary?api_key=\u0026page="
+  },
+  {
+    "in": "http://192.0.2.10:443/users/alice@example.com/profile?a%20b=1",
+    "origin": "http://192.0.2.10:443",
+    "path": "/users/alice@example.com/profile",
+    "template": "/users/{email}/profile",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://192.0.2.10:443/users/alice@example.com/profile?a%20b="
+  },
+  {
+    "in": "http://shop.example.com.:8080/.git/config?password=hunter2#/route/42",
+    "origin": "http://shop.example.com:8080",
+    "path": "/.git/config",
+    "template": "/.git/config",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://shop.example.com.:8080/.git/config?password="
+  },
+  {
+    "in": "http://[2001:db8::1]/v2/graphql?a%20b=1#/route/42",
+    "origin": "http://[2001:db8::1]",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://[2001:db8::1]/v2/graphql?a%20b="
+  },
+  {
+    "in": "https://[::1]/caf%c3%a9/menu?token=secret\u0026redirect=https://evil.example#access_token=secret-frag",
+    "origin": "https://[::1]",
+    "path": "/caf%C3%A9/menu",
+    "template": "/caf%C3%A9/menu",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://[::1]/caf%c3%a9/menu?token=\u0026redirect="
+  },
+  {
+    "in": "HTTP://API.Example.COM:3000/caf%c3%a9/menu?q=test#access_token=secret-frag",
+    "origin": "http://api.example.com:3000",
+    "path": "/caf%C3%A9/menu",
+    "template": "/caf%C3%A9/menu",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://API.Example.COM:3000/caf%c3%a9/menu?q="
+  },
+  {
+    "in": "HTTP://bücher.example:3000/api/v1/users/42/#access_token=secret-frag",
+    "origin": "http://xn--bcher-kva.example:3000",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "redacted": "http://b%C3%BCcher.example:3000/api/v1/users/42/"
+  },
+  {
+    "in": "https://bücher.example/caf%c3%a9/menu?api_key=secret-abc123\u0026page=2#top",
+    "origin": "https://xn--bcher-kva.example",
+    "path": "/caf%C3%A9/menu",
+    "template": "/caf%C3%A9/menu",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://b%C3%BCcher.example/caf%c3%a9/menu?api_key=\u0026page="
+  },
+  {
+    "in": "http://EXAMPLE.co.uk/search?q=test#access_token=secret-frag",
+    "origin": "http://example.co.uk",
+    "path": "/search",
+    "template": "/search",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://EXAMPLE.co.uk/search?q="
+  },
+  {
+    "in": "HTTPS://пример.example:443/x/%2e%2e/y?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "https://xn--e1afmkfd.example",
+    "path": "/y",
+    "template": "/y",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example:443/x/%2e%2e/y?token=\u0026redirect="
+  },
+  {
+    "in": "http://10.0.0.5:443/a/./b/../c?a%20b=1#top",
+    "origin": "http://10.0.0.5:443",
+    "path": "/a/c",
+    "template": "/a/c",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://10.0.0.5:443/a/./b/../c?a%20b="
+  },
+  {
+    "in": "http://bücher.example:8080/x/%2e%2e/y?\u0026\u0026=x\u0026y",
+    "origin": "http://xn--bcher-kva.example:8080",
+    "path": "/y",
+    "template": "/y",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://b%C3%BCcher.example:8080/x/%2e%2e/y?y="
+  },
+  {
+    "in": "https://a.b.c.example.org:8443/a/./b/../c?b=2\u0026a=1\u0026a=3#/route/42",
+    "origin": "https://a.b.c.example.org:8443",
+    "path": "/a/c",
+    "template": "/a/c",
+    "params": [
+      "a",
+      "b"
+    ],
+    "redacted": "https://a.b.c.example.org:8443/a/./b/../c?b=\u0026a=\u0026a="
+  },
+  {
+    "in": "HTTP://[::1]/reset/Zx9QkLm3PqR7sT2vWy8aBc?q=test#top",
+    "origin": "http://[::1]",
+    "path": "/reset/Zx9QkLm3PqR7sT2vWy8aBc",
+    "template": "/reset/{token}",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://[::1]/reset/Zx9QkLm3PqR7sT2vWy8aBc?q="
+  },
+  {
+    "in": "http://under_score.example.net:3000/x/%2e%2e/y?flag#access_token=secret-frag",
+    "origin": "http://under_score.example.net:3000",
+    "path": "/y",
+    "template": "/y",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://under_score.example.net:3000/x/%2e%2e/y?flag="
+  },
+  {
+    "in": "http://localhost:8080/users/alice@example.com/profile?flag#top",
+    "origin": "http://localhost:8080",
+    "path": "/users/alice@example.com/profile",
+    "template": "/users/{email}/profile",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://localhost:8080/users/alice@example.com/profile?flag="
+  },
+  {
+    "in": "http://10.0.0.5:443/../../etc/passwd?token=secret\u0026redirect=https://evil.example#top",
+    "origin": "http://10.0.0.5:443",
+    "path": "/etc/passwd",
+    "template": "/etc/passwd",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "http://10.0.0.5:443/../../etc/passwd?token=\u0026redirect="
+  },
+  {
+    "in": "https://[::1]:80/api/v1/users/42?id=1;drop#top",
+    "origin": "https://[::1]:80",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "id"
+    ],
+    "redacted": "https://[::1]:80/api/v1/users/42?id="
+  },
+  {
+    "in": "http://EXAMPLE.co.uk/%7Euser/home?password=hunter2#top",
+    "origin": "http://example.co.uk",
+    "path": "/~user/home",
+    "template": "/~user/home",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://EXAMPLE.co.uk/%7Euser/home?password="
+  },
+  {
+    "in": "HTTP://10.0.0.5:3000/a//b///c?a%20b=1",
+    "origin": "http://10.0.0.5:3000",
+    "path": "/a/b/c",
+    "template": "/a/b/c",
+    "params": [
+      "a b"
+    ],
+    "redacted": "http://10.0.0.5:3000/a//b///c?a%20b="
+  },
+  {
+    "in": "http://API.Example.COM:8443/blog/this-is-a-long-article-slug-2024#top",
+    "origin": "http://api.example.com:8443",
+    "path": "/blog/this-is-a-long-article-slug-2024",
+    "template": "/blog/this-is-a-long-article-slug-2024",
+    "redacted": "http://API.Example.COM:8443/blog/this-is-a-long-article-slug-2024"
+  },
+  {
+    "in": "HTTP://[::1]:443/blog/this-is-a-long-article-slug-2024?api_key=secret-abc123\u0026page=2#access_token=secret-frag",
+    "origin": "http://[::1]:443",
+    "path": "/blog/this-is-a-long-article-slug-2024",
+    "template": "/blog/this-is-a-long-article-slug-2024",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "http://[::1]:443/blog/this-is-a-long-article-slug-2024?api_key=\u0026page="
+  },
+  {
+    "in": "HTTPS://API.Example.COM:3000/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?api_key=secret-abc123\u0026page=2",
+    "origin": "https://api.example.com:3000",
+    "path": "/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e",
+    "template": "/orders/{uuid}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://API.Example.COM:3000/orders/8f14e45f-ceea-467a-9575-0d1a2b3c4d5e?api_key=\u0026page="
+  },
+  {
+    "in": "https://10.0.0.5/reset/Zx9QkLm3PqR7sT2vWy8aBc?api_key=secret-abc123\u0026page=2#top",
+    "origin": "https://10.0.0.5",
+    "path": "/reset/Zx9QkLm3PqR7sT2vWy8aBc",
+    "template": "/reset/{token}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://10.0.0.5/reset/Zx9QkLm3PqR7sT2vWy8aBc?api_key=\u0026page="
+  },
+  {
+    "in": "HTTP://[::1]:443/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?password=hunter2#/route/42",
+    "origin": "http://[::1]:443",
+    "path": "/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl",
+    "template": "/t/{token}",
+    "params": [
+      "password"
+    ],
+    "redacted": "http://[::1]:443/t/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl?password="
+  },
+  {
+    "in": "HTTPS://shop.example.com.:8080/reset/Zx9QkLm3PqR7sT2vWy8aBc#/route/42",
+    "origin": "https://shop.example.com:8080",
+    "path": "/reset/Zx9QkLm3PqR7sT2vWy8aBc",
+    "template": "/reset/{token}",
+    "redacted": "https://shop.example.com.:8080/reset/Zx9QkLm3PqR7sT2vWy8aBc"
+  },
+  {
+    "in": "HTTPS://192.0.2.10:3000/api/v1/users/42?api_key=secret-abc123\u0026page=2#/route/42",
+    "origin": "https://192.0.2.10:3000",
+    "path": "/api/v1/users/42",
+    "template": "/api/v1/users/{int}",
+    "params": [
+      "api_key",
+      "page"
+    ],
+    "redacted": "https://192.0.2.10:3000/api/v1/users/42?api_key=\u0026page="
+  },
+  {
+    "in": "HTTPS://xn--bcher-kva.example:8443/.git/config#access_token=secret-frag",
+    "origin": "https://xn--bcher-kva.example:8443",
+    "path": "/.git/config",
+    "template": "/.git/config",
+    "redacted": "https://xn--bcher-kva.example:8443/.git/config"
+  },
+  {
+    "in": "http://shop.example.com.:8080/users/alice@example.com/profile?\u0026\u0026=x\u0026y",
+    "origin": "http://shop.example.com:8080",
+    "path": "/users/alice@example.com/profile",
+    "template": "/users/{email}/profile",
+    "params": [
+      "y"
+    ],
+    "redacted": "http://shop.example.com.:8080/users/alice@example.com/profile?y="
+  },
+  {
+    "in": "HTTPS://bücher.example:443/.git/config?q=test",
+    "origin": "https://xn--bcher-kva.example",
+    "path": "/.git/config",
+    "template": "/.git/config",
+    "params": [
+      "q"
+    ],
+    "redacted": "https://b%C3%BCcher.example:443/.git/config?q="
+  },
+  {
+    "in": "HTTPS://[2001:db8::1]:8443/blog/this-is-a-long-article-slug-2024?token=secret\u0026redirect=https://evil.example#access_token=secret-frag",
+    "origin": "https://[2001:db8::1]:8443",
+    "path": "/blog/this-is-a-long-article-slug-2024",
+    "template": "/blog/this-is-a-long-article-slug-2024",
+    "params": [
+      "redirect",
+      "token"
+    ],
+    "redacted": "https://[2001:db8::1]:8443/blog/this-is-a-long-article-slug-2024?token=\u0026redirect="
+  },
+  {
+    "in": "http://10.0.0.5/users/alice%40example.com?flag",
+    "origin": "http://10.0.0.5",
+    "path": "/users/alice%40example.com",
+    "template": "/users/{email}",
+    "params": [
+      "flag"
+    ],
+    "redacted": "http://10.0.0.5/users/alice%40example.com?flag="
+  },
+  {
+    "in": "https://API.Example.COM:443/item/a1b2c3d4e5f6?id=1;drop#access_token=secret-frag",
+    "origin": "https://api.example.com",
+    "path": "/item/a1b2c3d4e5f6",
+    "template": "/item/{id}",
+    "params": [
+      "id"
+    ],
+    "redacted": "https://API.Example.COM:443/item/a1b2c3d4e5f6?id="
+  },
+  {
+    "in": "http://[::1]:80/../../etc/passwd?q=test#top",
+    "origin": "http://[::1]",
+    "path": "/etc/passwd",
+    "template": "/etc/passwd",
+    "params": [
+      "q"
+    ],
+    "redacted": "http://[::1]:80/../../etc/passwd?q="
+  },
+  {
+    "in": "HTTP://пример.example/v2/graphql#/route/42",
+    "origin": "http://xn--e1afmkfd.example",
+    "path": "/v2/graphql",
+    "template": "/v2/graphql",
+    "redacted": "http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.example/v2/graphql"
+  },
+  {
+    "in": "",
+    "redacted": "",
+    "error": true
+  },
+  {
+    "in": " ",
+    "redacted": "%20",
+    "error": true
+  },
+  {
+    "in": "example.com/path",
+    "redacted": "example.com/path",
+    "error": true
+  },
+  {
+    "in": "//example.com/x",
+    "redacted": "//example.com/x",
+    "error": true
+  },
+  {
+    "in": "ftp://example.com/",
+    "redacted": "ftp://example.com/",
+    "error": true
+  },
+  {
+    "in": "file:///etc/passwd",
+    "redacted": "file:///etc/passwd",
+    "error": true
+  },
+  {
+    "in": "javascript:alert(1)",
+    "redacted": "javascript:alert(1)",
+    "error": true
+  },
+  {
+    "in": "data:text/html,\u003cscript\u003ealert(1)\u003c/script\u003e",
+    "redacted": "data:text/html,\u003cscript\u003ealert(1)\u003c/script\u003e",
+    "error": true
+  },
+  {
+    "in": "http:///nohost",
+    "redacted": "http:///nohost",
+    "error": true
+  },
+  {
+    "in": "http://user:hunter2@example.com/",
+    "redacted": "http://example.com/",
+    "error": true
+  },
+  {
+    "in": "https://:secret@example.com/",
+    "redacted": "https://example.com/",
+    "error": true
+  },
+  {
+    "in": "http://example.com/a\nb",
+    "redacted": "http://example.com/a\nb",
+    "error": true
+  },
+  {
+    "in": "http://example.com/\tx",
+    "redacted": "http://example.com/\tx",
+    "error": true
+  },
+  {
+    "in": "http://example.com/a b",
+    "redacted": "http://example.com/a%20b",
+    "error": true
+  },
+  {
+    "in": "http://exa mple.com/",
+    "redacted": "http://exa mple.com/",
+    "error": true
+  },
+  {
+    "in": "http://example.com/‮gnp.exe",
+    "redacted": "http://example.com/%E2%80%AEgnp.exe",
+    "error": true
+  },
+  {
+    "in": "http://example.com/\u0000",
+    "redacted": "http://example.com/\u0000",
+    "error": true
+  },
+  {
+    "in": "http://example.com:0/",
+    "redacted": "http://example.com:0/",
+    "error": true
+  },
+  {
+    "in": "http://example.com:65536/",
+    "redacted": "http://example.com:65536/",
+    "error": true
+  },
+  {
+    "in": "http://example.com:-1/",
+    "redacted": "http://example.com:-1/",
+    "error": true
+  },
+  {
+    "in": "http://example.com:080/",
+    "redacted": "http://example.com:080/",
+    "error": true
+  },
+  {
+    "in": "http://example.com/%zz",
+    "redacted": "http://example.com/%zz",
+    "error": true
+  },
+  {
+    "in": "http://example.com/%",
+    "redacted": "http://example.com/%",
+    "error": true
+  },
+  {
+    "in": "http://example.com/%4",
+    "redacted": "http://example.com/%4",
+    "error": true
+  },
+  {
+    "in": "http://-lead.example.com/",
+    "redacted": "http://-lead.example.com/",
+    "error": true
+  },
+  {
+    "in": "http://trail-.example.com/",
+    "redacted": "http://trail-.example.com/",
+    "error": true
+  },
+  {
+    "in": "http://a..b.example/",
+    "redacted": "http://a..b.example/",
+    "error": true
+  },
+  {
+    "in": "http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example/",
+    "redacted": "http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example/",
+    "error": true
+  },
+  {
+    "in": "http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example/",
+    "redacted": "http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example/",
+    "error": true
+  },
+  {
+    "in": "http://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "redacted": "http://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "error": true
+  },
+  {
+    "in": "http://exa!mple.com/",
+    "redacted": "http://exa!mple.com/",
+    "error": true
+  },
+  {
+    "in": "http://[::1/",
+    "redacted": "http://[::1/",
+    "error": true
+  },
+  {
+    "in": "http://[zz::1]/",
+    "redacted": "http://[zz::1]/",
+    "error": true
+  },
+  {
+    "in": "http://example.com:80:80/",
+    "redacted": "http://example.com:80:80/",
+    "error": true
+  },
+  {
+    "in": "HtTp://ExAmPlE.CoM",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://ExAmPlE.CoM"
+  },
+  {
+    "in": "http://example.com?x=1",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "x"
+    ],
+    "redacted": "http://example.com?x="
+  },
+  {
+    "in": "http://example.com#frag",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://example.com"
+  },
+  {
+    "in": "https://example.com/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg",
+    "origin": "https://example.com",
+    "path": "/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg",
+    "template": "/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg",
+    "redacted": "https://example.com/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg"
+  },
+  {
+    "in": "http://127.0.0.1:8080/admin",
+    "origin": "http://127.0.0.1:8080",
+    "path": "/admin",
+    "template": "/admin",
+    "redacted": "http://127.0.0.1:8080/admin"
+  },
+  {
+    "in": "http://0x7f.0.0.1/",
+    "redacted": "http://0x7f.0.0.1/",
+    "error": true
+  },
+  {
+    "in": "http://2130706433/",
+    "redacted": "http://2130706433/",
+    "error": true
+  },
+  {
+    "in": "http://example.com/%00",
+    "redacted": "http://example.com/%00",
+    "error": true
+  },
+  {
+    "in": "http://example.com/%C0%AE%C0%AE/",
+    "origin": "http://example.com",
+    "path": "/%C0%AE%C0%AE",
+    "template": "/%C0%AE%C0%AE",
+    "redacted": "http://example.com/%C0%AE%C0%AE/"
+  },
+  {
+    "in": "https://例え.テスト/パス",
+    "origin": "https://xn--r8jz45g.xn--zckzah",
+    "path": "/%E3%83%91%E3%82%B9",
+    "template": "/%E3%83%91%E3%82%B9",
+    "redacted": "https://%E4%BE%8B%E3%81%88.%E3%83%86%E3%82%B9%E3%83%88/%E3%83%91%E3%82%B9"
+  },
+  {
+    "in": "http://exämple.com/",
+    "origin": "http://xn--exmple-cua.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://ex%C3%A4mple.com/"
+  },
+  {
+    "in": "http://EXAMPLE.COM./",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://EXAMPLE.COM./"
+  },
+  {
+    "in": "http://example.com../",
+    "redacted": "http://example.com../",
+    "error": true
+  },
+  {
+    "in": "http://example.com/a;jsessionid=1;b=2/c",
+    "origin": "http://example.com",
+    "path": "/a;b=2/c",
+    "template": "/a;b=2/c",
+    "redacted": "http://example.com/a;jsessionid=1;b=2/c"
+  },
+  {
+    "in": "http://example.com/;JSESSIONID=xyz",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://example.com/;JSESSIONID=xyz"
+  },
+  {
+    "in": "https://u@example.com/x",
+    "redacted": "https://example.com/x",
+    "error": true
+  },
+  {
+    "in": "http://example.com/a/b/c/../../../../d",
+    "origin": "http://example.com",
+    "path": "/d",
+    "template": "/d",
+    "redacted": "http://example.com/a/b/c/../../../../d"
+  },
+  {
+    "in": "http://example.com/./././",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://example.com/./././"
+  },
+  {
+    "in": "https://example.com/%2E%2E/%2e%2E/x",
+    "origin": "https://example.com",
+    "path": "/x",
+    "template": "/x",
+    "redacted": "https://example.com/%2E%2E/%2e%2E/x"
+  },
+  {
+    "in": "http://[2001:DB8:0:0:0:0:0:1]:443/",
+    "origin": "http://[2001:db8::1]:443",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://[2001:DB8:0:0:0:0:0:1]:443/"
+  },
+  {
+    "in": "https://[2001:db8::1]:443/",
+    "origin": "https://[2001:db8::1]",
+    "path": "/",
+    "template": "/",
+    "redacted": "https://[2001:db8::1]:443/"
+  },
+  {
+    "in": "http://192.0.2.10:80/a",
+    "origin": "http://192.0.2.10",
+    "path": "/a",
+    "template": "/a",
+    "redacted": "http://192.0.2.10:80/a"
+  },
+  {
+    "in": "https://example.com:443",
+    "origin": "https://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "https://example.com:443"
+  },
+  {
+    "in": "http://example.com/?",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://example.com/"
+  },
+  {
+    "in": "http://example.com/??x=1",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "params": [
+      "?x"
+    ],
+    "redacted": "http://example.com/??x="
+  },
+  {
+    "in": "http://example.com/#",
+    "origin": "http://example.com",
+    "path": "/",
+    "template": "/",
+    "redacted": "http://example.com/"
+  },
+  {
+    "in": "http://example.com/a?b=c#d=e",
+    "origin": "http://example.com",
+    "path": "/a",
+    "template": "/a",
+    "params": [
+      "b"
+    ],
+    "redacted": "http://example.com/a?b="
+  },
+  {
+    "in": "http://example.com/\u2028",
+    "redacted": "http://example.com/%E2%80%A8",
+    "error": true
+  },
+  {
+    "in": "http://example.com/ok?\u2029=1",
+    "redacted": "http://example.com/ok?\u2029=",
+    "error": true
+  },
+  {
+    "in": "http://example.com/%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41",
+    "origin": "http://example.com",
+    "path": "/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "template": "/{hex}",
+    "redacted": "http://example.com/%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41%41"
+  },
+  {
+    "in": "http://xn--.example/",
+    "redacted": "http://xn--.example/",
+    "error": true
+  },
+  {
+    "in": "http://xn--zz-.example/",
+    "redacted": "http://xn--zz-.example/",
+    "error": true
+  },
+  {
+    "in": "http://x.example/éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+    "redacted": "http://x.example/%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9",
+    "error": true
+  },
+  {
+    "in": "https://example.com/reset?code=secret-oauth-code\u0026state=abc",
+    "origin": "https://example.com",
+    "path": "/reset",
+    "template": "/reset",
+    "params": [
+      "code",
+      "state"
+    ],
+    "redacted": "https://example.com/reset?code=\u0026state="
+  },
+  {
+    "in": "https://example.com/cb#id_token=secret.jwt.token",
+    "origin": "https://example.com",
+    "path": "/cb",
+    "template": "/cb",
+    "redacted": "https://example.com/cb"
+  },
+  {
+    "in": "http://example.com/a%2fb",
+    "origin": "http://example.com",
+    "path": "/a%2Fb",
+    "template": "/a%2Fb",
+    "redacted": "http://example.com/a%2fb"
+  },
+  {
+    "in": "http://example.com/A%2Fb",
+    "origin": "http://example.com",
+    "path": "/A%2Fb",
+    "template": "/A%2Fb",
+    "redacted": "http://example.com/A%2Fb"
+  },
+  {
+    "in": "http://example.com/a%2Fb/",
+    "origin": "http://example.com",
+    "path": "/a%2Fb",
+    "template": "/a%2Fb",
+    "redacted": "http://example.com/a%2Fb/"
+  },
+  {
+    "in": "http://example.com/~user",
+    "origin": "http://example.com",
+    "path": "/~user",
+    "template": "/~user",
+    "redacted": "http://example.com/~user"
+  }
+]
