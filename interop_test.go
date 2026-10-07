@@ -513,7 +513,7 @@ func TestInteropBackwardCompatibleAndRoundTrip(t *testing.T) {
 
 func TestSupportedSchemaVersions(t *testing.T) {
 	got := SupportedSchemaVersions()
-	want := []string{"1.0", "1.1", "1.2", "1.3", "1.4"}
+	want := []string{"1.0", "1.1", "1.2", "1.3", "1.4", "1.5"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("SupportedSchemaVersions = %v, want %v", got, want)
 	}
@@ -534,7 +534,7 @@ func TestSupportedSchemaVersions(t *testing.T) {
 			t.Errorf("%s: %v", v, err)
 		}
 	}
-	for _, v := range []string{"1.5", "2.0", "0.9", "", "1.03"} {
+	for _, v := range []string{"1.6", "2.0", "0.9", "", "1.03"} {
 		if IsSupportedVersion(v) {
 			t.Errorf("%q reported supported", v)
 		}

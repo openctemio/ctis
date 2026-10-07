@@ -12,7 +12,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
 - **Examples** (`examples/`): one report per finding type, validated in CI.
 
-The current specification version is **1.4**. See [CHANGELOG.md](CHANGELOG.md).
+The current specification version is **1.5**. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Installation (Go)
 
@@ -30,7 +30,7 @@ import (
 )
 
 // Produce
-report := ctis.NewReport() // version 1.4, $schema set, timestamp now
+report := ctis.NewReport() // version 1.5, $schema set, timestamp now
 report.Tool = &ctis.Tool{Name: "my-scanner", Version: "1.0.0", Capabilities: []string{"sast"}}
 report.Assets = append(report.Assets, ctis.Asset{ID: "repo", Type: ctis.AssetTypeRepository, Value: "github.com/org/repo"})
 report.Findings = append(report.Findings, ctis.Finding{
@@ -135,7 +135,7 @@ Schema validation checks shape. `Report.Validate()` in Go also checks what a sch
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 1.4: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, and the native JSON of trivy, nuclei, semgrep, betterleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 1.5: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, and the native JSON of trivy, nuclei, semgrep, betterleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})
