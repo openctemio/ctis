@@ -212,6 +212,12 @@ These members describe the web surface: which methods and paths an origin serves
 - An item of another kind is validated by its envelope only and carries its own fields in `data`; receivers keep and render it as text, never refuse it.
 - Producers cap what they send (a body over 64 KiB keeps its head and a window around the first match); receivers enforce the caps of section 7 again.
 - Section 4.8 says where sensitive values may appear and who masks them.
+- Producers mark, never mask. A producer marks these values:
+  - Authorization, Proxy-Authorization, Cookie, Set-Cookie and X-Api-Key headers;
+  - headers named like a token, secret, session or auth;
+  - query, form and JSON members named like a credential;
+  - every repetition of these values elsewhere in the evidence (a curl command repeating the cookie).
+- The Go module builds items from what tools capture. It caps them and marks these values: `HTTPExchangeFromRaw` (raw HTTP text), `HTTPExchangeFromHAR` (a HAR 1.2 entry), `CurlEvidence`, `MarkSensitive` and `FitEvidenceItem`.
 
 ## 5. Fingerprints
 

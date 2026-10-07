@@ -125,7 +125,7 @@ jobs:
 
       - name: Fuzz each target briefly
         run: |
-          for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion; do
+          for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion FuzzHTTPExchangeFromRaw; do
             go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s .
           done
           # The importers read hostile files; a short minimization keeps the

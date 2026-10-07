@@ -1,0 +1,104 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "webscanner",
+          "version": "1.0.0",
+          "rules": [
+            {
+              "id": "WEB-SQLI",
+              "shortDescription": {
+                "text": "SQL injection"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "dast"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "WEB-SQLI",
+          "level": "error",
+          "message": {
+            "text": "SQL injection in id"
+          },
+          "webRequest": {
+            "index": 0,
+            "protocol": "http",
+            "version": "1.1",
+            "target": "https://shop.example.com/products?id=1%27&api_key=EXAMPLEKEY0123456789",
+            "method": "POST",
+            "headers": {
+              "Host": "shop.example.com",
+              "Authorization": "Bearer EXAMPLEBEARER0123456789",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "parameters": {
+              "id": "1'"
+            },
+            "body": {
+              "text": "id=1%27&password=EXAMPLEPASS0123"
+            }
+          },
+          "webResponse": {
+            "index": 0,
+            "protocol": "http",
+            "version": "1.1",
+            "statusCode": 500,
+            "reasonPhrase": "Internal Server Error",
+            "headers": {
+              "Set-Cookie": "sid=EXAMPLESESSION0123; HttpOnly",
+              "Content-Type": "text/html"
+            },
+            "body": {
+              "text": "You have an error in your SQL syntax"
+            },
+            "noResponseReceived": false
+          }
+        },
+        {
+          "ruleId": "WEB-SQLI",
+          "level": "warning",
+          "message": {
+            "text": "binary body"
+          },
+          "webRequest": {
+            "target": "https://shop.example.com/upload",
+            "method": "PUT",
+            "body": {
+              "binary": "AAEC/w=="
+            }
+          },
+          "webResponse": {
+            "statusCode": 201,
+            "body": {
+              "binary": "iVBORw0KGgo="
+            }
+          }
+        },
+        {
+          "ruleId": "WEB-SQLI",
+          "level": "note",
+          "message": {
+            "text": "no response"
+          },
+          "webRequest": {
+            "target": "https://shop.example.com/slow",
+            "method": "GET"
+          },
+          "webResponse": {
+            "noResponseReceived": true
+          }
+        }
+      ]
+    }
+  ]
+}

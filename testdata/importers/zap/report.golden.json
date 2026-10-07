@@ -98,7 +98,58 @@
           "location": "query",
           "name": "q"
         }
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "http": {
+            "request": {
+              "method": "GET",
+              "url": "https://shop.example.com/search",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Cookie",
+                  "value": "session=fake-session-cookie-value"
+                },
+                {
+                  "name": "Authorization",
+                  "value": "Bearer fake-bearer-token"
+                }
+              ]
+            },
+            "response": {
+              "status": 200,
+              "reason": "OK",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Set-Cookie",
+                  "value": "session=fake-session-cookie-value"
+                }
+              ],
+              "body": "<html>Hello Jane Example</html>",
+              "body_encoding": "text",
+              "body_size": 31
+            }
+          },
+          "sensitive": [
+            {
+              "pointer": "/http/request/headers/0/value",
+              "kind": "cookie"
+            },
+            {
+              "pointer": "/http/request/headers/1/value",
+              "kind": "authorization"
+            },
+            {
+              "pointer": "/http/response/headers/0/value",
+              "kind": "cookie"
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "vulnerability",

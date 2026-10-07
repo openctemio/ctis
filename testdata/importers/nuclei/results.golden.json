@@ -99,7 +99,14 @@
       },
       "web": {
         "url": "https://example.com/cgi-bin/test"
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "curl",
+          "version": 1,
+          "text": "curl -X GET https://example.com/cgi-bin/test"
+        }
+      ]
     },
     {
       "type": "vulnerability",

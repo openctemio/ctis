@@ -72,8 +72,18 @@ func TestWebFindings(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Evidence items may carry the exchange as captured, with sensitive
+	// values marked (spec 4.8); every other member carries no value.
+	if ev := fs[0].EvidenceItems; len(ev) != 1 || ev[0].Kind != ctis.EvidenceKindHTTPExchange || len(ev[0].Sensitive) == 0 {
+		t.Errorf("nuclei evidence %+v", ev)
+	}
 	for name, r := range map[string]*ctis.Report{"zap": res.Report, "nuclei": nres.Report} {
-		out, _ := json.Marshal(r)
+		cp := *r
+		cp.Findings = append([]ctis.Finding(nil), r.Findings...)
+		for i := range cp.Findings {
+			cp.Findings[i].EvidenceItems = nil
+		}
+		out, _ := json.Marshal(&cp)
 		for _, bad := range []string{"s3cr3t", "pw@", "frag", "%27", "42'&", "1'"} {
 			if strings.Contains(string(out), bad) {
 				t.Errorf("%s: %q is in the output", name, bad)

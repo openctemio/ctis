@@ -1,0 +1,171 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "webscanner",
+    "version": "1.0.0",
+    "capabilities": [
+      "vulnerability"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-webscanner-import",
+      "type": "unclassified",
+      "value": "webscanner-import",
+      "name": "webscanner-import"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "vulnerability",
+      "title": "SQL injection in id",
+      "description": "SQL injection",
+      "severity": "high",
+      "confidence": 90,
+      "rule_id": "WEB-SQLI",
+      "asset_ref": "unclassified-webscanner-import",
+      "tags": [
+        "security",
+        "dast"
+      ],
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "http": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/products?id=1%27&api_key=EXAMPLEKEY0123456789",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Authorization",
+                  "value": "Bearer EXAMPLEBEARER0123456789"
+                },
+                {
+                  "name": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "name": "Host",
+                  "value": "shop.example.com"
+                }
+              ],
+              "body": "id=1%27&password=EXAMPLEPASS0123",
+              "body_encoding": "text",
+              "body_size": 32
+            },
+            "response": {
+              "status": 500,
+              "reason": "Internal Server Error",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/html"
+                },
+                {
+                  "name": "Set-Cookie",
+                  "value": "sid=EXAMPLESESSION0123; HttpOnly"
+                }
+              ],
+              "body": "You have an error in your SQL syntax",
+              "body_encoding": "text",
+              "body_size": 36
+            }
+          },
+          "sensitive": [
+            {
+              "pointer": "/http/request/headers/0/value",
+              "kind": "authorization"
+            },
+            {
+              "pointer": "/http/request/url",
+              "start": 50,
+              "end": 70,
+              "kind": "secret"
+            },
+            {
+              "pointer": "/http/request/body",
+              "start": 17,
+              "end": 32,
+              "kind": "secret"
+            },
+            {
+              "pointer": "/http/response/headers/1/value",
+              "kind": "cookie"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finding-2",
+      "type": "vulnerability",
+      "title": "binary body",
+      "description": "SQL injection",
+      "severity": "medium",
+      "confidence": 90,
+      "rule_id": "WEB-SQLI",
+      "asset_ref": "unclassified-webscanner-import",
+      "tags": [
+        "security",
+        "dast"
+      ],
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "http": {
+            "request": {
+              "method": "PUT",
+              "url": "https://shop.example.com/upload",
+              "body": "AAEC/w==",
+              "body_encoding": "base64",
+              "body_size": 4
+            },
+            "response": {
+              "status": 201,
+              "body": "iVBORw0KGgo=",
+              "body_encoding": "base64",
+              "body_size": 8
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "finding-3",
+      "type": "vulnerability",
+      "title": "no response",
+      "description": "SQL injection",
+      "severity": "low",
+      "confidence": 90,
+      "rule_id": "WEB-SQLI",
+      "asset_ref": "unclassified-webscanner-import",
+      "tags": [
+        "security",
+        "dast"
+      ],
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "http": {
+            "request": {
+              "method": "GET",
+              "url": "https://shop.example.com/slow"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

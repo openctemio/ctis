@@ -1,5 +1,7 @@
 package importer
 
+import "strings"
+
 // zapAlertFields lists the members of an alert under prefix p and the
 // instance list under inst (the JSON and XML forms name them alike).
 func zapAlertFields(p, inst, tags string, tagFields []Field) []Field {
@@ -32,17 +34,25 @@ func zapAlertFields(p, inst, tags string, tagFields []Field) []Field {
 		{Path: inst + "/otherinfo", Target: "findings[].evidence"},
 		{Path: inst + "/id", Ignored: "ZAP-internal instance number"},
 		{Path: inst + "/nodeName", Ignored: "the site tree node; the URI is kept"},
-		{Path: inst + "/request-header", Ignored: "request headers hold cookies and authorization headers"},
-		{Path: inst + "/request-body", Ignored: "request bodies hold credentials and personal data"},
-		{Path: inst + "/response-header", Ignored: "response headers hold session cookies"},
-		{Path: inst + "/response-body", Ignored: "response bodies hold personal data"},
-		{Path: inst + "/requestheader", Ignored: "request headers hold cookies and authorization headers"},
-		{Path: inst + "/requestbody", Ignored: "request bodies hold credentials and personal data"},
-		{Path: inst + "/responseheader", Ignored: "response headers hold session cookies"},
-		{Path: inst + "/responsebody", Ignored: "response bodies hold personal data"},
 		{Path: tags, Target: Container},
 	}
+	out = append(out, zapMessageFields(inst)...)
 	return append(out, tagFields...)
+}
+
+// zapMessageFields lists an instance's HTTP message: request-header and so
+// on in the JSON form, requestheader in the XML form.
+func zapMessageFields(inst string) []Field {
+	sep := ""
+	if strings.HasSuffix(inst, "[]") {
+		sep = "-"
+	}
+	return []Field{
+		{Path: inst + "/request" + sep + "header", Target: "findings[].evidence_items[http_exchange].http.request (sensitive values marked)"},
+		{Path: inst + "/request" + sep + "body", Target: "findings[].evidence_items[http_exchange].http.request.body (sensitive members marked)"},
+		{Path: inst + "/response" + sep + "header", Target: "findings[].evidence_items[http_exchange].http.response (sensitive values marked)"},
+		{Path: inst + "/response" + sep + "body", Target: "findings[].evidence_items[http_exchange].http.response.body, match"},
+	}
 }
 
 const (
@@ -61,7 +71,7 @@ var _ = registerSpec(Spec{
 		"One website asset per site, named by its origin (scheme, host and port; no path, query or user info). One finding per alert, method, URL template and parameter (at most 100 per alert, the rest counted in an issue), on the site's host and port, with finding.web: the URI without user info, fragment or query values, the method and the parameter (query when the URI names it, form for a request with a body, otherwise left out).",
 		"Severity: riskcode 0 info, 1 low, 2 medium, 3 high; native.severity keeps it. Confidence 1, 2, 3, 4 become 30, 60, 90, 100; 0 (marked a false positive in ZAP) sets status false_positive.",
 		"Each instance (method, redacted URI, parameter, attack, evidence) becomes a line of the evidence of its finding, at most 20 per finding; the attack string is kept as text, never as markup. occurrence_count is the number of instances of the finding.",
-		"Request and response headers and bodies, which hold cookies, authorization headers and session tokens, are never read.",
+		"The HTTP message of the first 3 instances of a finding (request and response headers and bodies) becomes http_exchange evidence items (CTIS 1.6), capped, with the instance's evidence located in the response body. Cookies, authorization headers, session tokens and sensitive query, form and JSON members, and every repetition of them, are marked in the items' sensitive spans, never masked: the receiver masks them.",
 	},
 	Fields: append(append(append([]Field{
 		{Path: "/@programName", Ignored: "always ZAP; the tool is named by the format"},

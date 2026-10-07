@@ -81,7 +81,40 @@
       "web": {
         "url": "https://api.example.com/login",
         "method": "GET"
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "version": 1,
+          "http": {
+            "request": {
+              "method": "GET",
+              "url": "https://api.example.com/login",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "Cookie",
+                  "value": "session=fake-xml-session"
+                }
+              ]
+            },
+            "response": {
+              "status": 200,
+              "reason": "OK",
+              "http_version": "HTTP/1.1",
+              "body": "<html></html>",
+              "body_encoding": "text",
+              "body_size": 13
+            }
+          },
+          "sensitive": [
+            {
+              "pointer": "/http/request/headers/0/value",
+              "kind": "cookie"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
