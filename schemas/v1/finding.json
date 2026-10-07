@@ -229,6 +229,12 @@
     "source_lifecycle": {
       "$ref": "#/$defs/SourceLifecycle"
     },
+    "attack": {
+      "type": "array",
+      "maxItems": 20,
+      "description": "MITRE ATT&CK techniques the finding enables (T1190, T1595.002) (1.5)",
+      "items": {"type": "string", "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$"}
+    },
     "source_extra": {
       "type": "object",
       "maxProperties": 64,

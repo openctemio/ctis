@@ -30,7 +30,11 @@ const maxValidateProblems = 100
 //   - the interoperability members (CTIS 1.4): enums, score ranges per
 //     system, VEX consistency, typed vulnerability ids, and the size limits
 //     of interop.go (scores, ids, advisories, source_extra, identity hints);
-//   - dependencies: name set, unique non-empty IDs.
+//   - dependencies: name set, unique non-empty IDs;
+//   - the contract members (CTIS 1.5): metadata.capability is id@major,
+//     technologies and finding.attack within their limits and formats,
+//     relationships of a known type between two different assets of this
+//     report.
 //
 // Validate reports all problems it finds (up to 100) in one error, joined
 // with "; ". It does not modify the report and does no I/O.
@@ -75,6 +79,7 @@ func (r *Report) Validate() error {
 			add("assets[%d]: confidence %d is outside 0-100", i, a.Confidence)
 		}
 		validateIdentityHints(i, a.IdentityHints, add)
+		validateTechnologies(i, a.Technologies, add)
 		if a.ID != "" {
 			if assetIDs[a.ID] {
 				add("assets[%d]: duplicate id %q", i, a.ID)
@@ -129,6 +134,7 @@ func (r *Report) Validate() error {
 			}
 		}
 		validateInteropFinding(i, f, add)
+		validateFindingTechniques(i, f.Attack, add)
 	}
 
 	depIDs := make(map[string]bool, len(r.Dependencies))
@@ -143,6 +149,8 @@ func (r *Report) Validate() error {
 			depIDs[d.ID] = true
 		}
 	}
+
+	validateContractReport(r, assetIDs, add)
 
 	if len(problems) > 0 {
 		return fmt.Errorf("invalid CTIS report: %s", strings.Join(problems, "; "))
