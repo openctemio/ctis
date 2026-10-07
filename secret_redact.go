@@ -85,7 +85,13 @@ func redactSecrets(f *Finding, isSecret bool, snippetMasked func(string) bool, k
 		}
 	}
 	if len(c) > 0 {
+		// Evidence is masked outside its marked spans only
+		// (evidence_redact.go); every other member everywhere.
+		evidence := f.EvidenceItems
+		f.EvidenceItems = nil
 		redactValue(reflect.ValueOf(f).Elem(), c.replacer(), 0)
+		redactEvidenceItems(evidence, c)
+		f.EvidenceItems = evidence
 	}
 	if snippet != nil {
 		*snippet = snippetMask
