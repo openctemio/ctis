@@ -137,6 +137,8 @@ jobs:
           for target in FuzzApply FuzzLoad; do
             go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x ./importer/mapping
           done
+          # Web URLs: hostile URLs from crawlers, specs and scanners.
+          go test -run '^$' -fuzz '^FuzzWebURL$' -fuzztime 20s -fuzzminimizetime 1x ./weburl
 
   build-compat:
     name: Cross-platform build
