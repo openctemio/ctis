@@ -71,12 +71,30 @@
     "identity_hints": {
       "$ref": "#/$defs/IdentityHints"
     },
+    "technologies": {
+      "type": "array",
+      "maxItems": 100,
+      "description": "Technologies the asset runs, as a fingerprinting tool identified them (1.5)",
+      "items": {"$ref": "#/$defs/Technology"}
+    },
     "properties": {
       "type": "object",
       "additionalProperties": true
     }
   },
   "$defs": {
+    "Technology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 128},
+        "version": {"type": "string", "maxLength": 64},
+        "cpe": {"type": "string", "maxLength": 255, "description": "CPE 2.3 name"},
+        "categories": {"type": "array", "maxItems": 10, "items": {"type": "string", "maxLength": 64}},
+        "confidence": {"type": "integer", "minimum": 0, "maximum": 100}
+      }
+    },
     "AssetType": {
       "type": "string",
       "enum": [

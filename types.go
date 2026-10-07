@@ -28,6 +28,10 @@ type Report struct {
 	// Dependencies (SBOM)
 	Dependencies []Dependency `json:"dependencies,omitempty"`
 
+	// Typed relationships between assets of this report (1.5). Optional:
+	// a receiver may also derive relationships from technical members.
+	Relationships []Relationship `json:"relationships,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
 }
@@ -61,6 +65,11 @@ type ReportMetadata struct {
 
 	// Target scope of the scan/collection
 	Scope *Scope `json:"scope,omitempty"`
+
+	// The capability this report answers, "scan.ports@1" (1.5). A
+	// producer claim: a receiver that bound the report to a command uses
+	// the command's capability and treats this as a hint.
+	Capability string `json:"capability,omitempty"`
 
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
@@ -188,6 +197,10 @@ type Asset struct {
 	// tools (FQDN, NetBIOS name, MACs, OS CPE, cloud id, agent id). Weaker
 	// than Identifiers.
 	IdentityHints *IdentityHints `json:"identity_hints,omitempty"`
+
+	// Technologies the asset runs, as a fingerprinting tool identified
+	// them (1.5). Replaces the untyped properties.technologies list.
+	Technologies []Technology `json:"technologies,omitempty"`
 
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
@@ -1126,6 +1139,11 @@ type Finding struct {
 	// nothing silently. Bounded: at most 64 entries, keys of 128 and values
 	// of 4096 bytes, 32 KiB in all. Use SetSourceExtra to stay within it.
 	SourceExtra map[string]string `json:"source_extra,omitempty"`
+
+	// MITRE ATT&CK techniques the finding enables an adversary to use
+	// ("T1190"), at most 20 (1.5). A producer hint; receivers validate the
+	// id format and never trust it for prioritization alone.
+	Attack []string `json:"attack,omitempty"`
 
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`

@@ -1,0 +1,39 @@
+{
+  "version": "1.5",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "c6f1d1a2-7a35-4c2e-9d77-0d6f2b3c4e5f",
+    "timestamp": "2026-10-07T08:00:00Z",
+    "source_type": "scanner",
+    "capability": "probe.http@1"
+  },
+  "tool": {"name": "httpx", "version": "1.6.10"},
+  "assets": [
+    {"id": "name-1", "type": "subdomain", "value": "shop.example.com"},
+    {"id": "ip-1", "type": "ip_address", "value": "192.0.2.10"},
+    {
+      "id": "http-1",
+      "type": "http_service",
+      "value": "https://shop.example.com",
+      "technologies": [
+        {"name": "nginx", "version": "1.25.3", "cpe": "cpe:2.3:a:f5:nginx:1.25.3:*:*:*:*:*:*:*", "categories": ["web-server"], "confidence": 100},
+        {"name": "WordPress", "version": "6.4", "categories": ["cms"], "confidence": 90}
+      ],
+      "properties": {"status_code": 200, "title": "Shop"}
+    }
+  ],
+  "relationships": [
+    {"type": "resolves_to", "from_ref": "name-1", "to_ref": "ip-1"},
+    {"type": "exposes", "from_ref": "ip-1", "to_ref": "http-1"}
+  ],
+  "findings": [
+    {
+      "type": "misconfiguration",
+      "title": "WordPress login page is exposed",
+      "severity": "low",
+      "rule_id": "wordpress-login",
+      "asset_ref": "http-1",
+      "attack": ["T1190", "T1078"]
+    }
+  ]
+}

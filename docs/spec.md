@@ -1,4 +1,4 @@
-# CTIS 1.3 specification
+# CTIS 1.5 specification
 
 CTIS (CTEM Ingest Schema) is the JSON format security tools use to send assets, findings and dependencies to a CTEM platform such as OpenCTEM. This document is normative. The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as described in RFC 2119.
 
@@ -31,7 +31,7 @@ The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be u
 
 ### 2.1 Wire version
 
-`version` is the specification version the producer wrote the report against, as `MAJOR.MINOR` without leading zeros: `1.0`, `1.1`, `1.2`, `1.3`, `1.4`. Producers SHOULD send the version of the specification they implement. The Go module sets it for you: `ctis.NewReport()` stamps `ctis.SchemaVersion` (currently `1.4`) and `ctis.SchemaURL`.
+`version` is the specification version the producer wrote the report against, as `MAJOR.MINOR` without leading zeros: `1.0`, `1.1`, `1.2`, `1.3`, `1.4`, `1.5`. Producers SHOULD send the version of the specification they implement. The Go module sets it for you: `ctis.NewReport()` stamps `ctis.SchemaVersion` (currently `1.5`) and `ctis.SchemaURL`.
 
 | Spec version | Module | Added |
 |---|---|---|
@@ -40,6 +40,7 @@ The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be u
 | 1.2 | v1.2.0 | `asset.identifiers` |
 | 1.3 | v1.3.0 | Schema/Go reconciliation (see CHANGELOG): `suppression.reason`, `suppression.expires_at`, `dependencies[].properties`, asset type `server`, the schema entries for every field the Go types already had |
 | 1.4 | v1.4.0 | Interoperability members (section 4.10): `finding.native`, `finding.scores`, `finding.vex`, `finding.source_lifecycle`, `finding.source_extra`, `vulnerability.ids`, `remediation.solution_type` / `patch_published_at` / `advisories`, `asset.identity_hints` |
+| 1.5 | v1.5.0 | Contract members (section 4.11): `metadata.capability`, `asset.technologies`, `report.relationships`, `finding.attack` |
 
 Reports produced before 1.3 often carry `"1.0"` regardless of the fields they use. Receivers MUST NOT infer the field set from the version.
 
@@ -176,6 +177,16 @@ These members let a report converted from another format (Nessus, Qualys, Defect
 - `source_extra` keeps source fields no member holds, as strings, so an importer drops nothing silently. It is bounded (section 7); `ctis.SetSourceExtra` stays within the bounds.
 - **Normalized location.** `ctis.LocationKey` derives a finding's location on its asset (`pkg:`, `url:`, `file:`, `net:`, `resource:`), the location part of a cross-source deduplication key *(asset, vulnerability, location)*. It is computed by the receiver and never sent: a producer must not be able to choose the key another producer's finding merges under.
 
+### 4.11 Contract members (1.5)
+
+These members tie a report to the capability it answers and type what was untyped. A capability is an act from the OpenCTEM capability taxonomy (the `capability` package of this module, reference in [capabilities.md](capabilities.md)).
+
+- `metadata.capability` is the capability the report answers, as `id@major` (`scan.ports@1`). It is the producer's claim. A receiver that bound the report to a command (section 4.9) MUST use the command's capability and treat this value as a hint; it MUST NOT widen what the report may create because of it.
+- `asset.technologies[]` is what a fingerprinting tool identified: `name` (required), `version`, `cpe` (CPE 2.3), `categories` and `confidence` (0-100). It replaces the untyped `properties.technologies` list; producers SHOULD send the typed member only to receivers that accept 1.5 (section 2.2) and MAY keep the property for older receivers.
+- `relationships[]` are typed edges between two different assets of the same report, named by their `id`: `subdomain_of`, `resolves_to`, `cname_of`, `exposes`, `serves_certificate`, `hosted_by`. Both ends MUST be assets of the report. They are optional: a receiver may still derive these relationships from technical members, and SHOULD accept an edge only when the capability allows its type.
+- `finding.attack[]` lists the MITRE ATT&CK techniques the finding enables an adversary to use (`T1190`, `T1595.002`), at most 20. It is a producer hint for reporting and coverage; receivers validate the id format and do not prioritize on it alone. The technique a *capability* emulates is a property of the capability, not of the report.
+- `finding.evidence` is capped at 64 KiB by OpenCTEM (section 7). Producers SHOULD put larger evidence in an attachment and keep a short excerpt in `evidence`.
+
 ## 5. Fingerprints
 
 `finding.fingerprint` is the producer's identity for a finding: the same issue in the same place MUST get the same fingerprint in every scan, and different issues MUST get different ones. Receivers use it to deduplicate across scans and to carry triage (false positive, accepted risk) forward. A fingerprint that changes when nothing about the issue changed reopens it as a new finding and loses its triage.
@@ -260,7 +271,7 @@ OpenCTEM cuts these finding members to a length (in characters) and appends `…
 | `vulnerability_class`, `subcategory` | 50 of 200 |
 | misconfiguration texts | 4 KiB |
 
-The interoperability members (section 4.10) carry their limits in the schema, and `Validate` refuses a report that exceeds them:
+The interoperability and contract members (sections 4.10 and 4.11) carry their limits in the schema, and `Validate` refuses a report that exceeds them:
 
 | Member | Limit |
 |---|---|
@@ -272,6 +283,10 @@ The interoperability members (section 4.10) carry their limits in the schema, an
 | `source_lifecycle.times_found` | 0 to 10^9 |
 | `source_extra` | 64 entries; keys 128 characters without control characters, values 4096 characters, 32 KiB of keys and values in all |
 | `asset.identity_hints` | each string 255 characters; 32 MAC addresses of up to 64 |
+| `metadata.capability` | 128 characters, `id@major` |
+| `asset.technologies` | 100 entries; `name` 128, `version` 64, `cpe` 255 characters; 10 `categories` of 64; `confidence` 0-100 |
+| `relationships` | 10,000 entries; `from_ref`, `to_ref` 255 characters, naming two different assets of the report |
+| `finding.attack` | 20 ATT&CK technique ids |
 
 Producers SHOULD split larger results into several reports (or v2 segments) and SHOULD keep text within these caps, since a cut value may lose what made it useful.
 
@@ -311,6 +326,7 @@ CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into Ope
 | `findings` | array of `finding.json` |  |  | Security findings |
 | `metadata` | `ReportMetadata` | yes |  |  |
 | `properties` | `Properties` |  |  |  |
+| `relationships` | array of `Relationship` |  |  | Typed relationships between two assets of this report, named by their ids (1.5) |
 | `tool` | `Tool` |  |  |  |
 | `version` | string | yes | pattern `^1\.(0\|[1-9][0-9]{0,3})$` | CTIS specification version as MAJOR.MINOR. Receivers accept any minor of their own major; a producer must not send fields newer than the receiver's minor (docs/spec.md, Versioning). The default is the version this schema describes. |
 
@@ -334,6 +350,20 @@ Custom properties
 
 Type: object (free-form). 
 
+#### Relationship
+
+A typed edge between two different assets of the report
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `from_ref` | string | yes | minLength 1; maxLength 255 | Id of the source asset in this report |
+| `to_ref` | string | yes | minLength 1; maxLength 255 | Id of the target asset in this report |
+| `type` | `RelationshipType` | yes |  |  |
+
+#### RelationshipType
+
+Type: string. one of: subdomain_of, resolves_to, cname_of, exposes, serves_certificate, hosted_by
+
 #### ReportMetadata
 
 Report metadata
@@ -341,6 +371,7 @@ Report metadata
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
 | `branch` | `BranchInfo` |  |  |  |
+| `capability` | string |  | pattern `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+@[1-9][0-9]{0,2}$`; maxLength 128 | The capability this report answers, as id@major (scan.ports@1). A producer claim; receivers that bound the report to a command use the command's capability (1.5) |
 | `coverage_type` | string |  | one of: full, incremental, partial | Coverage type: full (complete scan), incremental (diff scan), partial (specific directories) |
 | `duration_ms` | integer |  | minimum 0 | Scan duration in milliseconds |
 | `id` | string |  |  | Unique report/scan identifier |
@@ -395,6 +426,7 @@ Asset schema for CTEM Ingest Schema
 | `services` | array of `ServiceInfo` |  |  | Services running on this asset (CTEM) |
 | `tags` | array of string |  |  | Categorization tags |
 | `technical` | `AssetTechnical` |  |  |  |
+| `technologies` | array of `Technology` |  |  | Technologies the asset runs, as a fingerprinting tool identified them (1.5) |
 | `type` | `AssetType` | yes |  |  |
 | `value` | string | yes |  | Primary value (domain name, IP address, contract address, etc.) |
 
@@ -610,6 +642,16 @@ Technical details for network services (SSH, SMTP, FTP, DNS, HTTP, database serv
 | `transport` | string |  | one of: tcp, udp | Transport protocol |
 | `version` | string |  |  | Service version |
 
+#### Technology
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `categories` | array of string |  | items: maxLength 64 |  |
+| `confidence` | integer |  | minimum 0; maximum 100 |  |
+| `cpe` | string |  | maxLength 255 | CPE 2.3 name |
+| `name` | string | yes | minLength 1; maxLength 128 |  |
+| `version` | string |  | maxLength 64 |  |
+
 ### CTIS Finding (`finding.json`)
 
 Security finding schema for CTEM Ingest Schema
@@ -620,6 +662,7 @@ Security finding schema for CTEM Ingest Schema
 | `asset_type` | `AssetType` |  |  |  |
 | `asset_value` | string |  |  | Direct asset value (if not using asset_ref) |
 | `attachments` | array of `Attachment` |  |  | Relevant artifacts or evidence files |
+| `attack` | array of string |  | items: pattern `^T[0-9]{4}(\.[0-9]{3})?$` | MITRE ATT&CK techniques the finding enables (T1190, T1595.002) (1.5) |
 | `author` | string |  |  | Git author name |
 | `author_email` | string (email) |  |  | Git author email |
 | `baseline_state` | string |  | one of: new, unchanged, updated, absent | Status relative to previous scan (SARIF baselineState) |
