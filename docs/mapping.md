@@ -6,7 +6,7 @@ A mapping turns the JSON or JSON Lines output of a command-line tool into a CTIS
 m, err := mapping.Load(mappingJSON)          // strict; refuses anything outside the language
 report, stats, err := m.Apply(ctx, toolStdout, mapping.Options{
     Now:  clock,                              // injected for reproducible output
-    Tool: &ctis.Tool{Name: "acme-portscan", Version: "1.2.0"},
+    Tool: &ctis.Tool{Name: "example-portscan", Version: "1.2.0"},
 })
 digest := m.Digest()                          // "sha256:<hex>" of the canonical mapping
 ```

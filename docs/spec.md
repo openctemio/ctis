@@ -23,6 +23,8 @@ A CTIS document is one JSON object, the **report**:
 | `assets` | no | Things that exist (hosts, domains, repositories, cloud resources, ...) |
 | `findings` | no | Security findings, each optionally tied to an asset |
 | `dependencies` | no | Software components (SBOM) |
+| `relationships` | no | Typed edges between two assets of the report (1.5, section 4.11) |
+| `endpoints` | no | Web endpoints an origin serves (1.6, section 4.12) |
 | `properties` | no | Free-form producer data |
 
 The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be used; strict receivers reject them.
@@ -274,7 +276,7 @@ URLs lose any user and password before they become asset values or properties. V
 
 ## 7. Limits
 
-The schema sets no size limits. OpenCTEM enforces these (API develop, 2026-10):
+The schema sets no size limits for the members before 1.4. OpenCTEM enforces these (as of October 2026):
 
 | Limit | Value |
 |---|---|
@@ -285,7 +287,7 @@ The schema sets no size limits. OpenCTEM enforces these (API develop, 2026-10):
 | JSON nesting depth (v2) | 64 |
 | Size of one property value | 1 MiB |
 | Properties per asset / tags per asset | 100 / 50 |
-| Request body (v1) | 50 MB |
+| Request body of a CI run upload | 50 MB |
 
 OpenCTEM cuts these finding members to a length (in characters) and appends `…[truncated]`; it never refuses a report for them:
 
@@ -327,7 +329,7 @@ Producers SHOULD split larger results into several reports (or v2 segments) and 
 
 ## 8. What OpenCTEM stores
 
-CTIS carries more than OpenCTEM persists today. As of API develop (2026-10), these members are accepted and validated but not stored or not used. Producers MAY send them; they are informational until the platform reads them:
+CTIS carries more than OpenCTEM persists today. As of October 2026, these members are accepted and validated but not stored or not used. Producers MAY send them; they are informational until the platform reads them:
 
 - `finding.evidence`, `vulnerability.vpr_score`
 - `finding.first_seen_at`, `finding.last_seen_at` (imported findings start their age at import time)
