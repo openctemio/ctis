@@ -1,8 +1,10 @@
 # Proposals for CTIS 1.4
 
-Status: draft, not implemented. These came out of the 2026-10 review of CTIS 1.2 and were left out of 1.3, which only reconciles the schema with the Go types and hardens the tooling. Each item is additive, so it fits a minor release under the rule in [spec.md section 2.2](spec.md#22-compatibility-rule), and each needs receivers (OpenCTEM API) upgraded before producers send it.
+Status: design record. These proposals came out of a review of CTIS 1.2 and were left out of 1.3, which only reconciles the schema with the Go types and hardens the tooling. Several have since shipped in 1.4 to 1.6, as noted under each heading; the others are open and are not part of the specification. Each item is additive, so it fits a minor release under the rule in [spec.md section 2.2](spec.md#22-compatibility-rule), and each needs receivers (OpenCTEM API) upgraded before producers send it.
 
 ## 1. Detection technique
+
+**Superseded** by the capability taxonomy: `metadata.capability` (1.5, spec section 4.11) names the act a report answers, and the capability carries the technique. `tool.techniques` and `finding.technique` were not added. The text below is the original proposal.
 
 **Problem.** OpenCTEM derives the technique (SAST, SCA, DAST, VA, EASM, ...) from report-level `tool.capabilities`. That list mixes three axes (technique, finding type, asset type), contains synonyms (`secret` / `secrets_detection`), and is per report, so a merged or imported report cannot say "finding A is VA, finding B is DAST". OpenCTEM's own producers already send values outside the enum (`smart-contract`, `custom`, `vulnerability_scanning`, `vuln-scan`).
 
@@ -14,11 +16,15 @@ Status: draft, not implemented. These came out of the 2026-10 review of CTIS 1.2
 
 ## 2. Web / DAST location
 
-**Problem.** There is nowhere to put a URL, an HTTP method, a parameter or request/response evidence. The OpenCTEM Nuclei adapter puts the URL in `location.path` (a file path) and fingerprints with the SAST recipe, so every endpoint of one host with the same template collapses into one finding.
+**Implemented in 1.6** as `finding.web`, top-level `endpoints[]` and typed evidence `finding.evidence_items` (spec sections 4.12 and 4.13). The text below is the original proposal.
+
+**Problem.** There is nowhere to put a URL, an HTTP method, a parameter or request/response evidence. A DAST producer had to put the URL in `location.path` (a file path) and fingerprints with the SAST recipe, so every endpoint of one host with the same template collapses into one finding.
 
 **Proposal.** `finding.web`: `url`, `method`, `parameter`, `request`, `response` (each capped, e.g. 64 KiB), `matcher`. Receivers fingerprint with `GenerateDAST(template, host, path, parameter)`.
 
 ## 3. Typed relationships
+
+**Implemented in 1.5** as report-level `relationships[]` with the types `subdomain_of`, `resolves_to`, `cname_of`, `exposes`, `serves_certificate` and `hosted_by` (spec section 4.11). `related_assets` is kept. The text below is the original proposal.
 
 **Problem.** `asset.related_assets` is an untyped list of IDs, and OpenCTEM drops it. Attack-path analysis needs typed edges from discovery tools (domain resolves to IP, IP hosts service, service exposes application).
 
@@ -42,17 +48,23 @@ Status: draft, not implemented. These came out of the 2026-10 review of CTIS 1.2
 
 ## 6. KEV detail
 
+**Open.**
+
 **Problem.** `in_cisa_kev` is a boolean; the KEV due date (which drives SLAs) and ransomware use are lost.
 
 **Proposal.** `vulnerability.kev`: `date_added`, `due_date`, `known_ransomware_use`.
 
 ## 7. Scan outcome
 
+**Open.** Spec section 4.5 already forbids auto-resolving from a report without `coverage_type`.
+
 **Problem.** `coverage_type: full` drives auto-resolve, but a crashed full scan looks like "everything fixed".
 
 **Proposal.** `metadata.execution`: `successful` (boolean), `errors[]`, and per-target coverage. Receivers MUST NOT auto-resolve from a report whose execution was not successful.
 
 ## 8. Smaller items
+
+**Open**, except the size limits, which the 1.4 to 1.6 members state in the schema.
 
 - Tri-state booleans: make the CTEM booleans (`exposure.is_internet_accessible`, `asset.is_internet_accessible`, `remediation_context.remedy_available`, `services[].is_public`, `vulnerability.exploit_available`) `*bool` in Go so "verified false" differs from "unknown". This changes Go field types, so it needs a migration note for Go consumers.
 - `dependencies[].asset_ref`, so a dependency names its asset instead of receivers guessing from the manifest path.

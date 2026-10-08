@@ -3,7 +3,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/openctemio/ctis/actions/workflows/ci.yml/badge.svg)](https://github.com/openctemio/ctis/actions/workflows/ci.yml)
 
-CTIS is the JSON format security tools use to send assets, findings and dependencies (SBOM) to a CTEM platform such as [OpenCTEM](https://github.com/openctemio). This repository is the single source of truth for:
+CTIS is the JSON format security tools use to send assets, findings and dependencies (SBOM) to a CTEM platform such as [OpenCTEM](https://openctem.io). Product documentation: <https://docs.openctem.io>. This repository is the single source of truth for:
 
 - **The specification**: [`docs/spec.md`](docs/spec.md), normative, with a field reference generated from the schema.
 - **JSON Schemas** (`schemas/v1/`): draft-07, language-agnostic.
@@ -79,15 +79,17 @@ https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/asset.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/finding.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/dependency.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/endpoint.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/evidence-item.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-asset.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.json
 ```
 
-Replace `main` with a release tag (`v1.3.0`) for an immutable copy. Every object sets `additionalProperties: false` except the `properties` bags: put producer-specific data in `properties`.
+Replace `main` with a release tag (`vX.Y.Z`) for an immutable copy. Every object sets `additionalProperties: false` except the `properties` bags: put producer-specific data in `properties`.
 
 ## Validating CTIS reports
 
-`report.json` references the other schemas, so load all six.
+`report.json` references the other schemas, so load all eight.
 
 ### Python
 
@@ -139,7 +141,7 @@ Schema validation checks shape. `Report.Validate()` in Go also checks what a sch
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 1.6: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, and the native JSON of trivy, nuclei, semgrep, betterleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 1.6: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP traditional report (JSON and XML), and the native JSON of trivy, grype, nuclei, semgrep, betterleaks, gitleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})
@@ -183,7 +185,7 @@ The `importer/mapping` package turns the JSON or JSON Lines output of any comman
 
 ```go
 m, err := mapping.Load(mappingJSON)
-report, stats, err := m.Apply(ctx, stdout, mapping.Options{Tool: &ctis.Tool{Name: "acme-portscan"}})
+report, stats, err := m.Apply(ctx, stdout, mapping.Options{Tool: &ctis.Tool{Name: "example-portscan"}})
 ```
 
 The language is closed: predicates (`exists`, `equals`, `in`, RE2 `matches`), source paths, constants, named templates and a fixed list of transforms. It has no expressions, code, file or network access. Targets are checked against the CTIS types. Ids, links between records and the report's `tool` cannot be set. Input is bounded in size, depth, line length and record count. See [docs/mapping.md](docs/mapping.md).
@@ -223,7 +225,11 @@ Details: [docs/spec.md, section 2](docs/spec.md#2-versioning-and-compatibility).
 
 ## Contributing
 
-Every change to the format updates the schema, the Go types, the examples and the CHANGELOG together. `go test ./...` fails when the schema and the Go types disagree, when an example does not validate, or when the generated field reference in `docs/spec.md` is stale (refresh it with `go test -run TestSpecFieldReference -update`). Proposed additions are collected in [docs/proposals-1.4.md](docs/proposals-1.4.md).
+Every change to the format updates the schema, the Go types, the examples and the CHANGELOG together. `go test ./...` fails when the schema and the Go types disagree, when an example does not validate, or when the generated field reference in `docs/spec.md` is stale (refresh it with `go test -run TestSpecFieldReference -update`). The design record of the 1.4 to 1.6 additions, with the status of each proposal, is [docs/proposals-1.4.md](docs/proposals-1.4.md).
+
+## Security
+
+Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
 
 ## License
 
