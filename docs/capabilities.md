@@ -37,6 +37,8 @@ A capability is an act a scan tool performs. The capability carries the phase, t
 | [`discover.subdomains@1`](#discoversubdomains1) | routed | discover.passive | T0 | `root_domain` | `hostname` | T1596.001, T1590.002, T1593.002 | D3-AI |
 | [`intel.passive@1`](#intelpassive1) | planned | discover.passive | T0 | `root_domain`, `ip`, `cidr` | `hostname`, `cidr`, `ip` | T1596.002, T1596.003, T1596.005 | D3-AI, D3-NM |
 | [`resolve.dns@1`](#resolvedns1) | routed | discover.passive | T0 | `hostname` | `hostname`, `ip` | T1590.002 | D3-NM |
+| [`lookup.rdap@1`](#lookuprdap1) | routed | discover.passive | T0 | `root_domain` | `root_domain` | T1596.002, T1590.001 | D3-AI |
+| [`lookup.asn@1`](#lookupasn1) | routed | discover.passive | T0 | `ip`, `cidr` | `ip`, `cidr` | T1590.005, T1596.002 | D3-AI, D3-NM |
 | [`scan.ports@1`](#scanports1) | routed | discover.active | T1 | `hostname`, `ip` | `service`, `ip` | T1595.001, T1046 | D3-NM |
 | [`detect.services@1`](#detectservices1) | planned | discover.active | T1 | `service` | `service` | T1595.001, T1592.002 | D3-SWI |
 | [`probe.http@1`](#probehttp1) | routed | discover.active | T1 | `hostname`, `ip`, `service`, `url` | `url`, `ip` | T1595, T1594 | D3-AI |
@@ -85,7 +87,7 @@ Required output (every selected record):
 
 ### intel.passive@1
 
-Passive intelligence: Names, ranges and addresses from certificate transparency, RDAP and ASN data.
+Passive intelligence: Names, ranges and addresses from certificate transparency and passive DNS data.
 
 - Status: planned; phase `discover.passive` (CTEM discovery); tier floor T0.
 - Ports: in `root_domain`, `ip`, `cidr`, out `hostname`, `cidr`, `ip`.
@@ -111,6 +113,40 @@ DNS resolution: Resolve names to addresses and aliases.
 Required output (every selected record):
 
 - `assets[type=domain|subdomain]` carries `value`, `technical.domain.dns_records[].type`, `technical.domain.dns_records[].value`.
+
+### lookup.rdap@1
+
+Domain registration lookup: Registrar, registrant organization, name servers and registration dates of a root domain, from the RDAP service of its registry.
+
+- Status: routed; phase `discover.passive` (CTEM discovery); tier floor T0.
+- Ports: in `root_domain`, out `root_domain`.
+- References: ATT&CK T1596.002, T1590.001; D3FEND D3-AI; CAPEC-169.
+
+| Param | Type | Values | Description |
+|---|---|---|---|
+| `follow_registrar` | boolean |  | Also ask the registrar RDAP service the registry answer links to (registrant details a thin registry does not hold). |
+
+Required output (every selected record):
+
+- `assets[type=domain]` carries `value`, `technical.domain.whois`.
+
+### lookup.asn@1
+
+Network ownership lookup: Origin autonomous system, its holder and the announced range of an address or network, from public routing data; optionally the other ranges the same system announces.
+
+- Status: routed; phase `discover.passive` (CTEM discovery); tier floor T0.
+- Ports: in `ip`, `cidr`, out `ip`, `cidr`.
+- References: ATT&CK T1590.005, T1596.002; D3FEND D3-AI, D3-NM; CAPEC-169.
+
+| Param | Type | Values | Description |
+|---|---|---|---|
+| `include_announced` | boolean |  | Also report the other ranges the origin system announces, as discovered networks. |
+| `max_ranges` | integer | 1..5000 | Report at most this many announced ranges per autonomous system. |
+
+Required output (every selected record):
+
+- `assets[type=ip_address]` carries `value`, `technical.ip_address.asn`.
+- `assets[type=network]` carries `value`, `properties.asn`.
 
 ### scan.ports@1
 
