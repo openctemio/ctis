@@ -40,10 +40,12 @@ The encoding MUST be UTF-8 JSON (RFC 8259). Duplicate member names MUST NOT be u
 | 1.0 | v1.0.0 | Initial format |
 | 1.1 | v1.1.0 | `vulnerability.cve_ids`, `vulnerability.vpr_score`, `finding.network`, `finding.evidence` |
 | 1.2 | v1.2.0 | `asset.identifiers` |
-| 1.3 | v1.3.0 | Schema/Go reconciliation (see CHANGELOG): `suppression.reason`, `suppression.expires_at`, `dependencies[].properties`, asset type `server`, the schema entries for every field the Go types already had |
-| 1.4 | v1.4.0 | Interoperability members (section 4.10): `finding.native`, `finding.scores`, `finding.vex`, `finding.source_lifecycle`, `finding.source_extra`, `vulnerability.ids`, `remediation.solution_type` / `patch_published_at` / `advisories`, `asset.identity_hints` |
-| 1.5 | v1.5.0 | Contract members (section 4.11): `metadata.capability`, `asset.technologies`, `report.relationships`, `finding.attack` |
+| 1.3 | v1.6.0 | Schema/Go reconciliation (see CHANGELOG): `suppression.reason`, `suppression.expires_at`, `dependencies[].properties`, asset type `server`, the schema entries for every field the Go types already had |
+| 1.4 | v1.6.0 | Interoperability members (section 4.10): `finding.native`, `finding.scores`, `finding.vex`, `finding.source_lifecycle`, `finding.source_extra`, `vulnerability.ids`, `remediation.solution_type` / `patch_published_at` / `advisories`, `asset.identity_hints` |
+| 1.5 | v1.6.0 | Contract members (section 4.11): `metadata.capability`, `asset.technologies`, `report.relationships`, `finding.attack` |
 | 1.6 | v1.6.0 | Web members (section 4.12): `report.endpoints`, `finding.web`; typed evidence (section 4.13): `finding.evidence_items` |
+
+Spec versions 1.3 to 1.5 were not tagged as module releases of their own; v1.6.0 is the first module release that implements them.
 
 Reports produced before 1.3 often carry `"1.0"` regardless of the fields they use. Receivers MUST NOT infer the field set from the version.
 
@@ -73,7 +75,7 @@ https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-asset.jso
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.json
 ```
 
-`main` always serves the latest 1.x schema. For an immutable copy, replace `main` with a release tag, for example `.../ctis/v1.3.0/schemas/v1/report.json`.
+`main` always serves the latest 1.x schema. For an immutable copy, replace `main` with a release tag, for example `.../ctis/v1.6.0/schemas/v1/report.json`.
 
 `report.json` references the other five files by relative `$ref`, so a validator needs all six loaded (see the README for Python and Node recipes, and `scripts/validate_schemas.py`).
 
