@@ -12,6 +12,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
 - **Examples** (`examples/`): one report per finding type, validated in CI.
 - **Web URLs** (`weburl/`): parse, normalise, template and redact web URLs.
+- **Politeness keys** (`politeness/`): which hosts a scan job touches and when two jobs touch the same host.
 - **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
 
 The current specification version is **1.6**. See [CHANGELOG.md](CHANGELOG.md).
@@ -165,6 +166,18 @@ weburl.PathHash("GET", u.Template())                      // the endpoint's dedu
 ```
 
 `Parse` refuses anything that is not a plain absolute http(s) URL: user info, control and bidi characters, malformed escapes, invalid ports, ambiguous numeric hosts and URLs over 2,048 bytes. A query value is never kept.
+
+## Politeness keys
+
+The `politeness` package is the one definition of the per-host politeness keys of scan work, shared by the platform (which holds the keys while a job runs and sends them with the job) and the sensor runtime (which admits the job under the same keys):
+
+```go
+keys := politeness.Keys([]string{"https://www.example.com/x", "10.0.0.5", "10.0.1.0/24"}, "")
+// ["10.0.0.5" "in:10.0.0.0/24" "net:10.0.1.0/24" "www.example.com"]
+politeness.Conflicts(keys) // the keys another job must not hold at the same time
+```
+
+A name, the host of a URL or a service, an address (with the marker of its /24 or /120 bucket) and a range (one key per bucket) each have a key. An address and a range scan of its bucket conflict, two addresses of one bucket do not. With a network id, the keys of private addresses and of names carry the network, so overlapping private ranges at two sites stay two sets of hosts; public addresses never do.
 
 ## Capability taxonomy
 
