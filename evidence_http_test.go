@@ -191,6 +191,7 @@ func FuzzHTTPExchangeFromRaw(f *testing.F) {
 	f.Add("GET /a?token=x HTTP/1.1\r\nCookie: sid=abcdef\r\n\r\nbody", "HTTP/1.1 200 OK\r\nSet-Cookie: a=bcdefg\r\n\r\nok")
 	f.Add("\n\n", "HTTP/")
 	f.Add("GET /ab HTTP/1.1\r\nCookie: ab\r\n\r\n", "")
+	f.Add("GET / HTTP/1.1\r\nCookie: oo\r\n\r\n", "")
 	f.Fuzz(func(t *testing.T, req, resp string) {
 		it, ok := HTTPExchangeFromRaw(req, resp, "https://a.example")
 		if !ok {
@@ -210,7 +211,7 @@ func FuzzHTTPExchangeFromRaw(f *testing.F) {
 					continue
 				}
 				for _, ptr := range unmarked(&it, h.Value) {
-					if len(h.Value) >= minRedactLen || strings.HasPrefix(ptr, "/http/request/headers/") {
+					if len(h.Value) >= minRedactLen || (strings.HasPrefix(ptr, "/http/request/headers/") && strings.HasSuffix(ptr, "/value")) {
 						t.Fatalf("sensitive header %s unmarked at %s", h.Name, ptr)
 					}
 				}
