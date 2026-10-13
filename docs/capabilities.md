@@ -39,6 +39,7 @@ A capability is an act a scan tool performs. The capability carries the phase, t
 | [`resolve.dns@1`](#resolvedns1) | routed | discover.passive | T0 | `hostname` | `hostname`, `ip` | T1590.002 | D3-NM |
 | [`lookup.rdap@1`](#lookuprdap1) | routed | discover.passive | T0 | `root_domain` | `root_domain` | T1596.002, T1590.001 | D3-AI |
 | [`lookup.asn@1`](#lookupasn1) | routed | discover.passive | T0 | `ip`, `cidr` | `ip`, `cidr` | T1590.005, T1596.002 | D3-AI, D3-NM |
+| [`discover.hosts@1`](#discoverhosts1) | routed | discover.active | T1 | `ip`, `cidr` | `ip` | T1595.001, T1018 | D3-NM |
 | [`scan.ports@1`](#scanports1) | routed | discover.active | T1 | `hostname`, `ip` | `service`, `ip` | T1595.001, T1046 | D3-NM |
 | [`detect.services@1`](#detectservices1) | planned | discover.active | T1 | `service` | `service` | T1595.001, T1592.002 | D3-SWI |
 | [`probe.http@1`](#probehttp1) | routed | discover.active | T1 | `hostname`, `ip`, `service`, `url` | `url`, `ip` | T1595, T1594 | D3-AI |
@@ -147,6 +148,23 @@ Required output (every selected record):
 
 - `assets[type=ip_address]` carries `value`, `technical.ip_address.asn`.
 - `assets[type=network]` carries `value`, `properties.asn`.
+
+### discover.hosts@1
+
+Host discovery: Find the live addresses of a range or an address list with light probes (ICMP echo or a TCP connection to a few common ports), before deeper scans.
+
+- Status: routed; phase `discover.active` (CTEM discovery); tier floor T1.
+- Ports: in `ip`, `cidr`, out `ip`.
+- References: ATT&CK T1595.001, T1018; D3FEND D3-NM; CAPEC-292.
+
+| Param | Type | Values | Description |
+|---|---|---|---|
+| `ports` | port_list |  | TCP ports a host is probed on; a host that answers on any of them is live. |
+| `rate` | integer | 1..100000 | Maximum probes per second. |
+
+Required output (every selected record):
+
+- `assets[type=ip_address]` carries `value`, `properties.live_by`.
 
 ### scan.ports@1
 
