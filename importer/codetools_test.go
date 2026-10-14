@@ -188,6 +188,7 @@ func TestCodeFormats_Hostile(t *testing.T) {
 		"trivy wrong type":    {FormatTrivy, "{\"SchemaVersion\":2,\n\"Results\":\"x\"}", ErrMalformed, 2},
 		"semgrep no results":  {FormatSemgrep, `{"errors":[]}`, ErrMalformed, 0},
 		"semgrep bad utf-8":   {FormatSemgrep, "{\"results\":[\n{\"check_id\":\"\xff\"}]}", ErrMalformed, 2},
+		"opengrep no results": {FormatOpengrep, `{"errors":[]}`, ErrMalformed, 0},
 		"vuls deep":           {FormatVuls, `{"jsonVersion":4,"x":` + deep + `}`, ErrTooLarge, 0},
 		"vuls cves wrong":     {FormatVuls, `{"jsonVersion":4,"serverName":"a","scannedCves":"x"}`, ErrMalformed, 0},
 		"betterleaks object":  {FormatBetterleaks, `{"RuleID":"a"}`, ErrMalformed, 0},
