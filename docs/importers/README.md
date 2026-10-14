@@ -17,6 +17,7 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | `grype` | [grype JSON output](grype.md) | 84 | 49 | 63% | 155 | 54% |
 | `nessus` | [Nessus v2 XML (.nessus)](nessus.md) | 128 | 40 | 76% | 162 | 80% |
 | `nuclei` | [nuclei JSON lines](nuclei.md) | 43 | 10 | 81% | 49 | 90% |
+| `opengrep` | [opengrep JSON output](opengrep.md) | 52 | 23 | 69% | 116 | 70% |
 | `openvex` | [OpenVEX](openvex.md) | 29 | 11 | 72% | 40 | 72% |
 | `osv` | [osv-scanner JSON results (OSV records)](osv.md) | 43 | 13 | 77% | 78 | 72% |
 | `qualys` | [Qualys VM host list detection XML](qualys.md) | 60 | 15 | 80% | 76 | 80% |
