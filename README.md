@@ -13,6 +13,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Examples** (`examples/`): one report per finding type, validated in CI.
 - **Web URLs** (`weburl/`): parse, normalise, template and redact web URLs.
 - **Politeness keys** (`politeness/`): which hosts a scan job touches and when two jobs touch the same host.
+- **Repository source** (`source/`): the repository, branch and exact commit a platform code scan fetches.
 - **Per-target outcomes** (`outcome/`): how each target of a scan task ended (done, failed, skipped, unfinished), so only unfinished targets are run again.
 - **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
 - **Tool settings** (`settings/`): the closed JSON Schema subset a tool manifest declares its configuration in, the validator, and layered resolution of the values a scan runs with.
@@ -181,6 +182,18 @@ politeness.Conflicts(keys) // the keys another job must not hold at the same tim
 ```
 
 A name, the host of a URL or a service, an address (with the marker of its /24 or /120 bucket) and a range (one key per bucket) each have a key. An address and a range scan of its bucket conflict, two addresses of one bucket do not. With a network id, the keys of private addresses and of names carry the network, so overlapping private ranges at two sites stay two sets of hosts; public addresses never do.
+
+## Repository source
+
+The `source` package is the source of a platform code scan (a full scan of a protected branch): the platform puts a `source.Repository` in the job, the sensor fetches exactly that commit read-only, and both validate it with the same code:
+
+```json
+{"kind": "github", "clone_url": "https://github.com/acme/api.git", "branch": "main",
+ "commit": "4f2c…(40 or 64 hex)", "depth": 1, "credential": "scm",
+ "capabilities": ["sast.code@1", "secrets.code@1", "sca.deps@1", "iac.misconfig@1"]}
+```
+
+`Validate` accepts only an HTTPS URL with a DNS host (no address, no user information, query or fragment, plain path segments), a branch git accepts as a ref (no leading `-`), a full commit id, a depth of 1 to 10000 and capabilities that take a repository as input. `credential` is the name of the credential the sensor asks the platform for when the job starts (a short-lived, read-only token for this repository); a token never travels in the job.
 
 ## Per-target outcomes
 
