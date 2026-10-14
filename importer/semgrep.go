@@ -162,12 +162,33 @@ func sgTraceLocs(raw json.RawMessage) []sgTraceLoc {
 // run is not logged in; it is no value.
 const sgPlaceholder = "requires login"
 
-func parseSemgrep(b *builder, r io.Reader) error {
-	data, err := readAll(r, FormatSemgrep, b.lim)
+// sgMatchBasedID is the partial fingerprint key of the engine's match-based
+// id, the key SARIF output uses for the same value.
+const sgMatchBasedID = "matchBasedId/v1"
+
+// sgEngine is the engine that wrote a report of the semgrep JSON shape.
+type sgEngine struct {
+	format Format
+	// name tags the findings and prefixes the reported errors.
+	name string
+	// matchID: the engine writes a real match-based id in extra.fingerprint
+	// (opengrep). It becomes the partial fingerprint "matchBasedId/v1" and
+	// the finding's own fingerprint stays the path, rule and line key a
+	// semgrep run without a login gave, so a finding first reported by
+	// semgrep keeps its identity when opengrep reports it.
+	matchID bool
+}
+
+var semgrepEngine = sgEngine{format: FormatSemgrep, name: "semgrep"}
+
+func parseSemgrep(b *builder, r io.Reader) error { return parseSemgrepShape(b, r, semgrepEngine) }
+
+func parseSemgrepShape(b *builder, r io.Reader, eng sgEngine) error {
+	data, err := readAll(r, eng.format, b.lim)
 	if err != nil {
 		return err
 	}
-	doc, err := scanJSON(data, FormatSemgrep, b.lim, b.obs, "/results[]")
+	doc, err := scanJSON(data, eng.format, b.lim, b.obs, "/results[]")
 	if err != nil {
 		return err
 	}
@@ -176,7 +197,7 @@ func parseSemgrep(b *builder, r io.Reader) error {
 		return err
 	}
 	if out.Results == nil {
-		return &ParseError{Format: FormatSemgrep, Msg: "no results array", Err: ErrMalformed}
+		return &ParseError{Format: eng.format, Msg: "no results array", Err: ErrMalformed}
 	}
 	if v := line(out.Version, 64); v != "" {
 		b.res.Report.Tool.Version = v
@@ -185,7 +206,7 @@ func parseSemgrep(b *builder, r io.Reader) error {
 		if len(b.res.Issues) >= b.lim.MaxIssues {
 			break
 		}
-		b.issue(Issue{Path: line(e.Path, 1024), Message: "semgrep reported: " + line(sgErrorKind(e.Type)+" "+e.Message, 512)})
+		b.issue(Issue{Path: line(e.Path, 1024), Message: eng.name + " reported: " + line(sgErrorKind(e.Type)+" "+e.Message, 512)})
 	}
 	for i, raw := range out.Results {
 		b.res.Stats.Records++
@@ -199,7 +220,7 @@ func parseSemgrep(b *builder, r io.Reader) error {
 			b.res.Stats.Skipped++
 			continue
 		}
-		f, ok := sgFinding(&res)
+		f, ok := sgFinding(&res, eng)
 		if !ok {
 			b.issue(doc.issueAt("/results[]", i, ptr, "result without check_id or path: skipped"))
 			b.res.Stats.Skipped++
@@ -228,7 +249,7 @@ func sgErrorKind(raw json.RawMessage) string {
 	return ""
 }
 
-func sgFinding(r *sgResult) (ctis.Finding, bool) {
+func sgFinding(r *sgResult, eng sgEngine) (ctis.Finding, bool) {
 	rule := line(r.CheckID, capShort)
 	path := line(r.Path, 1024)
 	if rule == "" || path == "" {
@@ -291,16 +312,23 @@ func sgFinding(r *sgResult) (ctis.Finding, bool) {
 	f.References = addRefs(f.References, stringList(md.References)...)
 	f.References = addRefs(f.References, md.SourceRuleURL.String(), md.Shortlink.String())
 	f.Tags = addTags(f.Tags, stringList(md.Technology)...)
-	f.Tags = addTags(f.Tags, "semgrep")
+	f.Tags = addTags(f.Tags, eng.name)
 	if r.Extra.Fix != "" || r.Extra.FixRegex != nil {
 		f.Remediation = &ctis.Remediation{Recommendation: "Apply the suggested fix code.", FixAvailable: true, FixCode: text(r.Extra.Fix, capRemediation)}
 		if fr := r.Extra.FixRegex; fr != nil {
 			f.Remediation.FixRegex = &ctis.FixRegex{Regex: line(fr.Regex, 2048), Replacement: line(fr.Replacement, 2048), Count: nonNeg(fr.Count)}
 		}
 	}
-	if fp := line(r.Extra.Fingerprint, 512); fp != "" && fp != sgPlaceholder {
+	fp := line(r.Extra.Fingerprint, 512)
+	switch {
+	case eng.matchID:
+		if fp != "" && fp != sgPlaceholder {
+			f.PartialFingerprints = map[string]string{sgMatchBasedID: fp}
+		}
+		f.Fingerprint = fingerprint.GenerateSAST(r.Path, r.CheckID, r.Start.Line, 0)
+	case fp != "" && fp != sgPlaceholder:
 		f.Fingerprint = fp
-	} else {
+	default:
 		f.Fingerprint = fingerprint.GenerateSAST(r.Path, r.CheckID, r.Start.Line, 0)
 	}
 	if t := r.Extra.Dataflow; t != nil {

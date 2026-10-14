@@ -39,6 +39,9 @@ const (
 	FormatNuclei Format = "nuclei"
 	// semgrep JSON (--json).
 	FormatSemgrep Format = "semgrep"
+	// opengrep JSON (--json): the semgrep JSON shape; Detect names that
+	// shape semgrep, so choose opengrep with Options.Format.
+	FormatOpengrep Format = "opengrep"
 	// betterleaks JSON report (the gitleaks-compatible array).
 	FormatBetterleaks Format = "betterleaks"
 	// vuls JSON scan result (one server).

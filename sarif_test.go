@@ -257,3 +257,11 @@ func TestFromSARIFEdgeCases(t *testing.T) {
 		t.Errorf("unknown tool capabilities = %v", got)
 	}
 }
+
+// opengrep SARIF (driver "Opengrep OSS") is code analysis, as semgrep's is.
+func TestDetectCapabilities_Opengrep(t *testing.T) {
+	got := detectCapabilities("Opengrep OSS", "")
+	if len(got) == 0 || got[0] != "sast" {
+		t.Errorf("opengrep capabilities = %v", got)
+	}
+}
