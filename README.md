@@ -15,6 +15,8 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Politeness keys** (`politeness/`): which hosts a scan job touches and when two jobs touch the same host.
 - **Per-target outcomes** (`outcome/`): how each target of a scan task ended (done, failed, skipped, unfinished), so only unfinished targets are run again.
 - **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
+- **Tool settings** (`settings/`): the closed JSON Schema subset a tool manifest declares its configuration in, the validator, and layered resolution of the values a scan runs with.
+- **Tool options** (`tooloption/`): the common execution options of scan tools (timeout, rate, concurrency, retries), their bounds and how layers may narrow them.
 
 The current specification version is **1.6**. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -204,6 +206,41 @@ violations, err := c.Check(report, capability.CheckOptions{})
 ```
 
 `Check` reports outputs the capability may not emit and records that miss a required path; producers run it before upload and receivers again at ingest. The reference page [docs/capabilities.md](docs/capabilities.md) is generated from the data.
+
+## Tool settings
+
+The `settings` package is the tool settings contract: the closed subset of JSON Schema 2020-12 (plus `x-octm-*` annotations) in which a tool manifest declares its configuration, the validator, and the layered resolution of the values a task runs with. The platform validates what an administrator enters with it and the sensor validates the same values again before a task uses them; both import this one implementation, so the two never disagree.
+
+```go
+s, err := settings.ParseSchema(manifestConfigJSON)
+err = s.Validate(map[string]any{"rate_limit": 100})
+eff, err := s.Resolve(
+	settings.Layer{Source: settings.SourceSensor, Values: sensorValues},
+	settings.Layer{Source: settings.SourceScan, Values: scanValues},
+)
+eff.Source("rate_limit") // which layer set the effective value
+```
+
+Annotations: `x-octm-scope` (`sensor` or `scan`: the lowest layer that may set the key), `x-octm-tier` (the safety class of a non-default value: `T0` safe, `T1` impact, `T2` dangerous), `x-octm-common` (the key is a common tool option, see below), `x-octm-flag` (the tool's native flag, shown in a job's effective configuration), and presentation hints. Layers, in order: tenant policy, the sensor's configuration, a scan profile or workflow step, the scan, the platform's decision for one job; only tenant and sensor layers may set `sensor`-scope keys.
+
+## Tool options
+
+The `tooloption` package defines the execution options almost every scan tool has, once, so every tool, the sensor runtime and the platform mean the same thing by each name:
+
+| Option | Unit | Bounds | Narrows |
+|---|---|---|---|
+| `timeout` | seconds per request or probe | 1..300 | no |
+| `rate` | requests or packets per second | 1..100000 | down |
+| `concurrency` | targets or requests at once | 1..1000 | down |
+| `retries` | repeats of an unanswered request | 0..10 | down |
+
+A tool declares its options in the configuration schema of its tool manifest; a property that is a common option carries `"x-octm-common": "<name>"`, must have the common type and may only narrow the common bounds (`CheckProperty`). Settings are layered (platform defaults, tenant policy, sensor configuration, scan or workflow step, the platform's decision for one job); for an option that narrows down, a layer closer to the job may only lower the value (`NarrowValue`). `proxy`, `user_agent` and `headers` are reserved: the platform's egress and HTTP policy set them, never a tool option (`Reserved`).
+
+```go
+o, _ := tooloption.Lookup("rate")
+o.CheckProperty("integer", nil, &max) // a tool's "rate" property is compatible
+v, ok := o.NarrowValue(100, 500)      // 100, false: a scan cannot raise the sensor's rate
+```
 
 ## Mapping any JSON tool output
 
