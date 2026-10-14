@@ -117,8 +117,15 @@ func TestResolveNarrowsCommonOptions(t *testing.T) {
 	); err == nil {
 		t.Fatal("sensor raised the tenant's concurrency")
 	}
-	// Above the tool's default is fine when no layer set a value.
-	if _, err := s.Resolve(Layer{Source: SourceScan, Values: map[string]any{"rate_limit": 1000}}); err != nil {
+	// A scan may not raise the tool's default: only an administrator may.
+	if _, err := s.Resolve(Layer{Source: SourceScan, Values: map[string]any{"rate_limit": 1000}}); err == nil || !strings.Contains(err.Error(), "default") {
+		t.Fatalf("scan raised the default: %v", err)
+	}
+	if _, err := s.Resolve(Layer{Source: SourceSensor, Values: map[string]any{"rate_limit": 1000}}); err != nil {
+		t.Fatalf("an administrator could not raise the default: %v", err)
+	}
+	// Without a default, the scan sets it freely within the bounds.
+	if _, err := s.Resolve(Layer{Source: SourceScan, Values: map[string]any{"concurrency": 50}}); err != nil {
 		t.Fatal(err)
 	}
 }

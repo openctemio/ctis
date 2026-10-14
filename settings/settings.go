@@ -485,7 +485,7 @@ func (s *Schema) Resolve(layers ...Layer) (*Values, error) {
 					continue
 				}
 			}
-			if msg := s.narrowing(k, ts, v); msg != "" {
+			if msg := s.narrowing(k, ts, v, l.Source); msg != "" {
 				errs = append(errs, Error{Path: "/" + strings.ReplaceAll(k, ".", "/"), Message: msg})
 				continue
 			}
@@ -505,16 +505,22 @@ func (s *Schema) Resolve(layers ...Layer) (*Values, error) {
 	return ts, nil
 }
 
-// narrowing returns why a layer may not set key to v, or "": a common
-// option that narrows down may only be lowered below a value an earlier
-// layer (not the tool's default) set.
-func (s *Schema) narrowing(key string, ts *Values, v any) string {
+// narrowing returns why layer src may not set key to v, or "". For a
+// common option that narrows down:
+//
+//   - an administrator's layer (tenant, sensor) may not raise a value an
+//     earlier administrator's layer set (a tenant cap binds the sensor);
+//     the tool's default is not a cap for them;
+//   - every other layer (profile, scan, job, local) may only lower the
+//     value in force, the tool's default included: raising a rate or a
+//     concurrency is an administrator's decision.
+func (s *Schema) narrowing(key string, ts *Values, v any, src Source) string {
 	p := s.Property(key)
 	if p == nil || p.Common == "" {
 		return ""
 	}
-	src, set := ts.sources[key]
-	if !set || src == SourceDefault {
+	cur, set := ts.sources[key]
+	if !set || (cur == SourceDefault && (src == SourceTenant || src == SourceSensor)) {
 		return ""
 	}
 	o, _ := tooloption.Lookup(p.Common)
@@ -524,7 +530,10 @@ func (s *Schema) narrowing(key string, ts *Values, v any) string {
 		return ""
 	}
 	if _, ok := o.NarrowValue(earlier, later); !ok {
-		return fmt.Sprintf("may only lower the value the %s set (%s)", src, formatSettingNumber(earlier))
+		if cur == SourceDefault {
+			return fmt.Sprintf("may only lower the tool's default (%s); an administrator raises it in the sensor's settings", formatSettingNumber(earlier))
+		}
+		return fmt.Sprintf("may only lower the value the %s set (%s)", cur, formatSettingNumber(earlier))
 	}
 	return ""
 }

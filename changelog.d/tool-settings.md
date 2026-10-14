@@ -4,7 +4,7 @@
 - New annotations: `x-octm-common` names the common tool option a top-level key is (type and bounds checked against `tooloption`; an unbounded side takes the common bound; each common option at most once per tool), and `x-octm-flag` names the tool's native flag (one flag, no value) for display.
 - Top-level keys named `proxy`, `user_agent` or `headers` are refused: the platform's egress and HTTP policy own them.
 - Layers `tenant` (before the sensor's), `job` (the platform's decision for one job, after the scan's) and `local` (the sensor's local policy, last; it only lowers). Tenant, sensor and local layers may set keys of scope `sensor`; profile, scan and job layers only keys of scope `scan`.
-- For a common option that narrows down (`rate`, `concurrency`, `retries`), a later layer that raises the value an earlier layer set is an error, never applied silently.
+- For a common option that narrows down (`rate`, `concurrency`, `retries`): a tenant or sensor layer may not raise what an earlier administrator layer set (the tool's default is not a cap for them); a profile, scan, job or local layer may only lower the value in force, the tool's default included. A raise is an error, never applied silently.
 
 ### Upgrade notes
 
