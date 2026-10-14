@@ -175,3 +175,41 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+
+  # transfer/ is its own module (it needs the Prometheus client; the root
+  # module keeps zero external dependencies), so the root jobs do not see it.
+  transfer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: transfer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.26
+          cache: true
+          cache-dependency-path: transfer/go.sum
+
+      - name: Only the Prometheus client outside the standard library
+        run: |
+          EXTRA=$(go list -deps -f "{{if not .Standard}}{{.Module.Path}}{{end}}" ./... | sort -u | grep -v -e "^$" -e "^github.com/openctemio/ctis/transfer$" -e "^github.com/prometheus/" -e "^github.com/beorn7/perks$" -e "^github.com/cespare/xxhash/v2$" -e "^github.com/munnerz/goautoneg$" -e "^golang.org/x/sys$" -e "^google.golang.org/protobuf$" || true)
+          if [ -n "$EXTRA" ]; then
+            echo "ERROR: transfer depends on more than the Prometheus client:"
+            echo "$EXTRA"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test (includes the golden bytes of the v0.1.0 format)
+        run: go test -race ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          working-directory: transfer
+          args: --config=../.golangci.yml
