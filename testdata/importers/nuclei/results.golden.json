@@ -95,7 +95,8 @@
         }
       ],
       "source_extra": {
-        "matcher_name": "body"
+        "matcher_name": "body",
+        "target": "https://example.com"
       },
       "web": {
         "url": "https://example.com/cgi-bin/test"
@@ -130,6 +131,9 @@
         "severity": "info",
         "raw_ref": "line 2"
       },
+      "source_extra": {
+        "target": "https://example.com"
+      },
       "web": {
         "url": "https://example.com/"
       }
@@ -159,6 +163,9 @@
         "severity": "high",
         "raw_ref": "line 3"
       },
+      "source_extra": {
+        "target": "https://expired.example.com"
+      },
       "web": {
         "url": "https://expired.example.com/"
       }
@@ -183,6 +190,9 @@
         "vuln_id": "exposed-panel-grafana",
         "severity": "info",
         "raw_ref": "line 4"
+      },
+      "source_extra": {
+        "target": "10.0.0.7:3000"
       },
       "web": {
         "url": "http://10.0.0.7:3000/login"

@@ -41,7 +41,7 @@ var _ = registerSpec(Spec{
 		{Path: "/info/classification/epss-percentile", Target: "findings[].vulnerability.epss_percentile"},
 		{Path: "/info/classification/cpe", Target: "findings[].vulnerability.cpe"},
 		{Path: "/type", Target: "findings[].tags (protocol)"},
-		{Path: "/host", Target: "assets[] (the host), fingerprint input"},
+		{Path: "/host", Target: "assets[] (the host), fingerprint input, findings[].source_extra.target (redacted)"},
 		{Path: "/port", Target: "findings[].network.port"},
 		{Path: "/scheme", Target: "findings[].network.service"},
 		{Path: "/url", Ignored: "the target URL; host and matched-at are kept"},
