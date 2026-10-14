@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // Fuzz targets. `go test` runs only the seeds; fuzz with e.g.
@@ -58,7 +59,9 @@ func FuzzValidate(f *testing.F) {
 
 func FuzzFromSARIF(f *testing.F) {
 	addTestdataSeeds(f, "sarif/*.sarif")
+	addTestdataSeeds(f, "importers/sarif/codeflows.sarif.json")
 	f.Add([]byte(`{"runs":[{"tool":{"driver":{"rules":[{"id":"r"}]}},"results":[{"ruleIndex":-1,"rule":{"index":99},"message":{"text":""}}]}]}`))
+	f.Add([]byte(`{"runs":[{"originalUriBaseIds":{"R":{"uri":"file:///w/"}},"results":[{"message":{"text":"t"},"codeFlows":[{"threadFlows":[{"locations":[{"kinds":["source"],"location":{"physicalLocation":{"artifactLocation":{"uri":"file:///w/a.js"},"region":{"startLine":1,"snippet":{"text":"password = \"hunter2hunter2\""}}}}},{"location":{"physicalLocation":{"artifactLocation":{"uri":"../x"}}}}]}]}]}]}]}`))
 	f.Fuzz(func(t *testing.T, data []byte) {
 		r, err := FromSARIF(data, nil)
 		if err != nil {
@@ -77,6 +80,9 @@ func FuzzFromSARIF(f *testing.F) {
 			if !isRedacted(s) && !strings.HasSuffix(s, "********") {
 				t.Fatalf("secret finding snippet not redacted: %q", s)
 			}
+		}
+		for _, fd := range r.Findings {
+			checkDataFlow(t, fd.DataFlow)
 		}
 	})
 }
@@ -111,5 +117,51 @@ func FuzzParseVersion(f *testing.F) {
 		if IsCompatibleVersion(s) && !ok {
 			t.Fatalf("compatible but unparsable: %q", s)
 		}
+	})
+}
+
+// checkDataFlow asserts what NormalizeDataFlow promises of any flow.
+func checkDataFlow(t *testing.T, df *DataFlow) {
+	t.Helper()
+	if df == nil {
+		return
+	}
+	steps := append(df.GetFullPath(), df.Sanitizers...)
+	if len(steps) == 0 || len(steps) > MaxDataFlowSteps {
+		t.Fatalf("steps %d", len(steps))
+	}
+	seen := make([]bool, len(steps))
+	for _, l := range steps {
+		if l.Index < 0 || l.Index >= len(steps) || seen[l.Index] {
+			t.Fatalf("index %d of %d", l.Index, len(steps))
+		}
+		seen[l.Index] = true
+		if strings.HasPrefix(l.Path, "/") || strings.HasPrefix(l.Path, "../") || l.Path == ".." || strings.Contains(l.Path, "://") {
+			t.Fatalf("path not repository-relative: %q", l.Path)
+		}
+		if utf8.RuneCountInString(l.Path) > MaxDataFlowPathLen || utf8.RuneCountInString(l.Content) > MaxDataFlowContentLen || utf8.RuneCountInString(l.Label) > MaxDataFlowLabelLen {
+			t.Fatalf("text not bounded: %+v", l)
+		}
+		if l.Line < 0 || l.Column < 0 || l.EndLine < 0 || l.EndColumn < 0 {
+			t.Fatalf("negative position: %+v", l)
+		}
+		if RedactCodeSecrets(l.Content) != l.Content {
+			t.Fatalf("content not redacted: %q", l.Content)
+		}
+	}
+}
+
+func FuzzNormalizeDataFlow(f *testing.F) {
+	f.Add("src/a.go", "file:///w/", `password = "hunter2hunter2"`, 3, 1)
+	f.Add("/w/src/a.go", "/w", "x := AKIAIOSFODNN7EXAMPLE", -1, 0)
+	f.Add(`..\..\etc`, "", "-----BEGIN PRIVATE KEY-----", 1<<40, 7)
+	f.Fuzz(func(t *testing.T, p, root, content string, line, idx int) {
+		df := &DataFlow{
+			Sources:       []DataFlowLocation{{Path: p, Line: line, Content: content, Index: idx}},
+			Intermediates: []DataFlowLocation{{Path: root + "/" + p, Content: content + content, Index: -idx}},
+			Sanitizers:    []DataFlowLocation{{Path: "x/" + p, Label: content, Index: idx}},
+			Sinks:         []DataFlowLocation{{Path: p, Index: idx + 1}},
+		}
+		checkDataFlow(t, NormalizeDataFlow(df, root))
 	})
 }

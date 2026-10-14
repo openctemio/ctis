@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQL",
+          "version": "2.19.0",
+          "rules": [
+            {
+              "id": "js/sql-injection",
+              "name": "SqlInjection",
+              "shortDescription": {"text": "Database query built from user-controlled sources"},
+              "properties": {"tags": ["security", "external/cwe/cwe-089"], "precision": "high", "security-severity": "8.8"}
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {"%SRCROOT%": {"uri": "file:///home/runner/work/shop/shop/"}},
+      "results": [
+        {
+          "ruleId": "js/sql-injection",
+          "level": "error",
+          "message": {"text": "This query string depends on a user-provided value."},
+          "locations": [
+            {"physicalLocation": {"artifactLocation": {"uri": "src/db/orders.js", "uriBaseId": "%SRCROOT%"}, "region": {"startLine": 22, "startColumn": 18, "endColumn": 41}}}
+          ],
+          "codeFlows": [
+            {
+              "message": {"text": "path 1"},
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "kinds": ["source"],
+                      "location": {
+                        "physicalLocation": {"artifactLocation": {"uri": "file:///home/runner/work/shop/shop/src/routes/orders.js"}, "region": {"startLine": 9, "startColumn": 14, "endLine": 9, "endColumn": 26, "snippet": {"text": "const id = req.query.id;"}}},
+                        "logicalLocations": [{"name": "getOrder", "fullyQualifiedName": "routes.orders.getOrder"}],
+                        "message": {"text": "req.query.id"}
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {"artifactLocation": {"uri": "src/db/orders.js", "uriBaseId": "%SRCROOT%"}, "region": {"startLine": 20, "snippet": {"text": "const conn = connect('postgres://shop:Sup3rS3cretPassw0rd@db/shop');"}}},
+                        "logicalLocations": [{"name": "findOrder"}],
+                        "message": {"text": "id"}
+                      }
+                    },
+                    {
+                      "kinds": ["sanitizer"],
+                      "location": {
+                        "physicalLocation": {"artifactLocation": {"uri": "src/db/orders.js"}, "region": {"startLine": 21, "snippet": {"text": "const safe = escapeLike(id);"}}},
+                        "message": {"text": "escapeLike(id)"}
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {"artifactLocation": {"uri": "src/db/orders.js"}, "region": {"startLine": 22, "startColumn": 18, "endColumn": 41, "snippet": {"text": "db.query(\"SELECT * FROM orders WHERE id = \" + id)"}}},
+                        "message": {"text": "... + id"}
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "js/sql-injection",
+          "level": "error",
+          "message": {"text": "Untrusted data reaches a query."},
+          "locations": [
+            {"physicalLocation": {"artifactLocation": {"uri": "src/db/users.js"}, "region": {"startLine": 7}}}
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "/opt/build/other-checkout/src/db/users.js"}, "region": {"startLine": 3, "snippet": {"text": "const apiKey = \"abcd1234efgh5678ijkl\";"}}}, "message": {"text": "Source: 'name' @ 'src/db/users.js:3'"}}},
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "../outside/escape.js"}, "region": {"startLine": 5}}, "message": {"text": "Propagator : 'q' @ 'src/db/users.js:5'"}}},
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "src/db/users.js"}, "region": {"startLine": 7}}, "message": {"text": "Sink: 'db.query(q)' @ 'src/db/users.js:7'"}}}
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

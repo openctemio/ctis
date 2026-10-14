@@ -32,6 +32,11 @@ type SARIFRun struct {
 	Results     []SARIFResult     `json:"results"`
 	Artifacts   []SARIFArtifact   `json:"artifacts,omitempty"`
 	Invocations []SARIFInvocation `json:"invocations,omitempty"`
+	// OriginalURIBaseIDs maps a uriBaseId to the absolute location it stood
+	// for on the scanning machine (SARIF 2.1.0 section 3.14.14). Only used
+	// to make the absolute paths of a taint trace repository-relative; kept
+	// raw so a malformed value never fails the log.
+	OriginalURIBaseIDs json.RawMessage `json:"originalUriBaseIds,omitempty"`
 }
 
 // SARIFTool describes the tool.
@@ -90,6 +95,10 @@ type SARIFResult struct {
 	// (SARIF 2.1.0 sections 3.46 and 3.47).
 	WebRequest  *SARIFWebRequest  `json:"webRequest,omitempty"`
 	WebResponse *SARIFWebResponse `json:"webResponse,omitempty"`
+	// CodeFlows are the result's taint paths (SARIF 2.1.0 section 3.36),
+	// mapped to the finding's data_flow (sarif_codeflow.go). Kept raw and
+	// read leniently: a malformed trace never fails the result.
+	CodeFlows json.RawMessage `json:"codeFlows,omitempty"`
 }
 
 // SARIFWebRequest is a SARIF webRequest object (section 3.46).
@@ -303,6 +312,7 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 	for ri := range sarif.Runs {
 		run := &sarif.Runs[ri]
 		driver := run.Tool.Driver
+		roots := sarifRoots(run.OriginalURIBaseIDs)
 		ruleMap := make(map[string]*SARIFRule, len(driver.Rules))
 		for i := range driver.Rules {
 			ruleMap[driver.Rules[i].ID] = &driver.Rules[i]
@@ -311,7 +321,7 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 		for _, result := range run.Results {
 			n++
 			rule, ruleID := lookupRule(&result, driver.Rules, ruleMap)
-			finding := convertSARIFResult(&result, rule, ruleID, driver.Name, opts)
+			finding := convertSARIFResult(&result, rule, ruleID, driver.Name, roots, opts)
 			finding.ID = fmt.Sprintf("finding-%d", n)
 			finding.AssetRef = assetID
 			if multiRun {
@@ -354,7 +364,7 @@ func lookupRule(result *SARIFResult, rules []SARIFRule, byID map[string]*SARIFRu
 	return nil, id
 }
 
-func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName string, opts *ConvertOptions) Finding {
+func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName string, roots []string, opts *ConvertOptions) Finding {
 	finding := Finding{
 		Type:       detectResultType(rule, ruleID, toolName, opts.ToolType),
 		Title:      result.Message.Text,
@@ -457,6 +467,7 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 	if ex, ok := sarifHTTPExchange(result.WebRequest, result.WebResponse); ok {
 		finding.EvidenceItems = []EvidenceItem{ex}
 	}
+	finding.DataFlow = sarifDataFlow(result.CodeFlows, roots)
 	if finding.Type == FindingTypeSecret || isSecretTool(strings.ToLower(toolName)) {
 		redactSecretFinding(&finding)
 	}

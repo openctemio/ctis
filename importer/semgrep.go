@@ -347,21 +347,18 @@ func sgDataFlow(t *sgTrace) *ctis.DataFlow {
 	idx := 0
 	add := func(dst *[]ctis.DataFlowLocation, locs []sgTraceLoc, typ ctis.DataFlowLocationType) {
 		for _, l := range locs {
-			if idx >= 100 {
+			if idx >= ctis.MaxDataFlowSteps {
 				return
 			}
-			*dst = append(*dst, ctis.DataFlowLocation{Path: line(l.Path, 1024), Line: nonNeg(l.Line), Column: nonNeg(l.Col), Content: text(l.Content, 2048), Index: idx, Type: typ})
+			*dst = append(*dst, ctis.DataFlowLocation{Path: l.Path, Line: l.Line, Column: l.Col, Content: l.Content, Index: idx, Type: typ})
 			idx++
 		}
 	}
 	add(&df.Sources, t.Source, ctis.DataFlowLocationSource)
 	add(&df.Intermediates, t.Intermediates, ctis.DataFlowLocationPropagator)
 	add(&df.Sinks, t.Sink, ctis.DataFlowLocationSink)
-	if idx == 0 {
-		return nil
-	}
-	df.Tainted = len(df.Sources) > 0 && len(df.Sinks) > 0
-	return df
+	// Bounds, repository-relative paths, credentials in snippets masked.
+	return ctis.NormalizeDataFlow(df)
 }
 
 // stringList reads a JSON string or a list of strings.
