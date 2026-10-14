@@ -1,0 +1,158 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "CodeQL",
+    "version": "2.19.0",
+    "capabilities": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "unclassified-codeql-import",
+      "type": "unclassified",
+      "value": "codeql-import",
+      "name": "codeql-import"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "vulnerability",
+      "title": "This query string depends on a user-provided value.",
+      "description": "Database query built from user-controlled sources",
+      "severity": "high",
+      "confidence": 85,
+      "rule_id": "js/sql-injection",
+      "rule_name": "SqlInjection",
+      "asset_ref": "unclassified-codeql-import",
+      "location": {
+        "path": "src/db/orders.js",
+        "start_line": 22,
+        "start_column": 18,
+        "end_column": 41
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "cwe_id": "CWE-89"
+      },
+      "tags": [
+        "security",
+        "external/cwe/cwe-089"
+      ],
+      "data_flow": {
+        "sources": [
+          {
+            "path": "src/routes/orders.js",
+            "line": 9,
+            "end_line": 9,
+            "column": 14,
+            "end_column": 26,
+            "content": "const id = req.query.id;",
+            "label": "req.query.id",
+            "type": "source",
+            "function": "routes.orders.getOrder"
+          }
+        ],
+        "intermediates": [
+          {
+            "path": "src/db/orders.js",
+            "line": 20,
+            "content": "const conn = connect('postgres://shop:Sup3********@db/shop');",
+            "label": "id",
+            "index": 1,
+            "type": "propagator",
+            "function": "findOrder"
+          }
+        ],
+        "sinks": [
+          {
+            "path": "src/db/orders.js",
+            "line": 22,
+            "column": 18,
+            "end_column": 41,
+            "content": "db.query(\"SELECT * FROM orders WHERE id = \" + id)",
+            "label": "... + id",
+            "index": 3,
+            "type": "sink"
+          }
+        ],
+        "sanitizers": [
+          {
+            "path": "src/db/orders.js",
+            "line": 21,
+            "content": "const safe = escapeLike(id);",
+            "label": "escapeLike(id)",
+            "index": 2,
+            "type": "sanitizer",
+            "taint_state": "sanitized"
+          }
+        ],
+        "tainted": true,
+        "cross_file": true
+      }
+    },
+    {
+      "id": "finding-2",
+      "type": "vulnerability",
+      "title": "Untrusted data reaches a query.",
+      "description": "Database query built from user-controlled sources",
+      "severity": "high",
+      "confidence": 85,
+      "rule_id": "js/sql-injection",
+      "rule_name": "SqlInjection",
+      "asset_ref": "unclassified-codeql-import",
+      "location": {
+        "path": "src/db/users.js",
+        "start_line": 7
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "cwe_id": "CWE-89"
+      },
+      "tags": [
+        "security",
+        "external/cwe/cwe-089"
+      ],
+      "data_flow": {
+        "sources": [
+          {
+            "path": "src/db/users.js",
+            "line": 3,
+            "content": "const apiKey = \"abcd********\";",
+            "label": "Source: 'name' @ 'src/db/users.js:3'",
+            "type": "source"
+          }
+        ],
+        "intermediates": [
+          {
+            "line": 5,
+            "label": "Propagator : 'q' @ 'src/db/users.js:5'",
+            "index": 1,
+            "type": "propagator"
+          }
+        ],
+        "sinks": [
+          {
+            "path": "src/db/users.js",
+            "line": 7,
+            "label": "Sink: 'db.query(q)' @ 'src/db/users.js:7'",
+            "index": 2,
+            "type": "sink"
+          }
+        ],
+        "tainted": true
+      }
+    }
+  ]
+}
