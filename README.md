@@ -13,6 +13,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Examples** (`examples/`): one report per finding type, validated in CI.
 - **Web URLs** (`weburl/`): parse, normalise, template and redact web URLs.
 - **Politeness keys** (`politeness/`): which hosts a scan job touches and when two jobs touch the same host.
+- **Per-target outcomes** (`outcome/`): how each target of a scan task ended (done, failed, skipped, unfinished), so only unfinished targets are run again.
 - **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
 
 The current specification version is **1.6**. See [CHANGELOG.md](CHANGELOG.md).
@@ -178,6 +179,18 @@ politeness.Conflicts(keys) // the keys another job must not hold at the same tim
 ```
 
 A name, the host of a URL or a service, an address (with the marker of its /24 or /120 bucket) and a range (one key per bucket) each have a key. An address and a range scan of its bucket conflict, two addresses of one bucket do not. With a network id, the keys of private addresses and of names carry the network, so overlapping private ranges at two sites stay two sets of hosts; public addresses never do.
+
+## Per-target outcomes
+
+The `outcome` package is the shape a sensor uses to say how each target of a scan task ended, and the platform uses to settle targets one by one. A command result carries the list under `target_outcomes`:
+
+```json
+[{"target": "https://a.example", "state": "done"},
+ {"target": "https://b.example", "state": "failed", "class": "timeout"},
+ {"target": "https://c.example", "state": "unfinished"}]
+```
+
+States are `done`, `failed` (class `unreachable`, `timeout` or `tool_error`), `skipped` (class `refused` or `excluded`) and `unfinished` (the task stopped first). Done, failed and skipped settle a target; only unfinished targets are handed out again. `outcome.Normalize(reported, taskTargets)` reads a sensor's list against the task's own targets: unknown targets and invalid entries are dropped, and a task target without a valid entry is unfinished, so a sensor can never add work. `outcome.Remaining` returns the targets to run again.
 
 ## Capability taxonomy
 
