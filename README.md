@@ -146,7 +146,7 @@ Schema validation checks shape. `Report.Validate()` in Go also checks what a sch
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 1.6: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP traditional report (JSON and XML), and the native JSON of trivy, grype, nuclei, semgrep, betterleaks, gitleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 1.6: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP traditional report (JSON and XML), and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. `Detect` cannot tell opengrep JSON from semgrep JSON (same shape), so a caller that ran opengrep sets `Options.Format` to `opengrep`; its findings keep the fingerprint a semgrep run gave them. `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})
@@ -194,6 +194,11 @@ The `source` package is the source of a platform code scan (a full scan of a pro
 ```
 
 `Validate` accepts only an HTTPS URL with a DNS host (no address, no user information, query or fragment, plain path segments), a branch git accepts as a ref (no leading `-`), a full commit id, a depth of 1 to 10000 and capabilities that take a repository as input. `credential` is the name of the credential the sensor asks the platform for when the job starts (a short-lived, read-only token for this repository); a token never travels in the job.
+
+## SAST code identity and data flow
+
+- `fingerprint.SnippetHash` hashes the code a SAST finding flags, independent of its line and indentation. A producer that has the scanned tree but no snippet sends it as the partial fingerprint `snippetHash/v1` (`fingerprint.PartialSnippetHash`) instead of the code, so a receiver can key the finding on the flagged code and a decision on it survives code moving above it.
+- A finding's `data_flow` is its taint trace: source, intermediate steps and sink, each with file, lines, snippet and label. `FromSARIF` maps `codeFlows` to it, and the semgrep and opengrep importers keep their traces. `NormalizeDataFlow` bounds a trace (at most `MaxDataFlowSteps`, 100, steps), makes paths repository-relative (dropping a path that leaves the repository) and masks credentials in snippets and labels. A malformed trace leaves the finding without a data flow and never fails the report. The data flow never feeds the fingerprint.
 
 ## Per-target outcomes
 
