@@ -239,7 +239,7 @@ eff, err := s.Resolve(
 eff.Source("rate_limit") // which layer set the effective value
 ```
 
-Annotations: `x-octm-scope` (`sensor` or `scan`: the lowest layer that may set the key), `x-octm-tier` (the safety class of a non-default value: `T0` safe, `T1` impact, `T2` dangerous), `x-octm-common` (the key is a common tool option, see below), `x-octm-flag` (the tool's native flag, shown in a job's effective configuration), and presentation hints. Layers, in order: tenant policy, the sensor's configuration, a scan profile or workflow step, the scan, the platform's decision for one job; only tenant and sensor layers may set `sensor`-scope keys.
+Annotations: `x-octm-scope` (`sensor` or `scan`: the lowest layer that may set the key), `x-octm-tier` (the safety class of a non-default value: `T0` safe, `T1` impact, `T2` dangerous), `x-octm-common` (the key is a common tool option, see below), `x-octm-flag` (the tool's native flag, shown in a job's effective configuration), and presentation hints. Layers, in order: tenant policy, the sensor's configuration, a scan profile or workflow step, the scan, the platform's decision for one job, and last the sensor's local policy, which only lowers; only the tenant, sensor and local layers may set `sensor`-scope keys. Top-level keys named `proxy`, `user_agent` or `headers` make a schema invalid. Limits: 32 KiB per schema, 64 properties, 256 enum values.
 
 ## Tool options
 
