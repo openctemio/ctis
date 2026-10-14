@@ -234,7 +234,7 @@ The `tooloption` package defines the execution options almost every scan tool ha
 | `concurrency` | targets or requests at once | 1..1000 | down |
 | `retries` | repeats of an unanswered request | 0..10 | down |
 
-A tool declares its options in the configuration schema of its tool manifest; a property that is a common option carries `"x-octm-common": "<name>"`, must have the common type and may only narrow the common bounds (`CheckProperty`). Settings are layered (platform defaults, tenant policy, sensor configuration, scan or workflow step, the platform's decision for one job); for an option that narrows down, a layer closer to the job may only lower the value (`NarrowValue`). `proxy`, `user_agent` and `headers` are reserved: the platform's egress and HTTP policy set them, never a tool option (`Reserved`).
+A tool declares its options in the configuration schema of its tool manifest; a property that is a common option carries `"x-octm-common": "<name>"`, must have the common type and may only narrow the common bounds (`CheckProperty`). Settings are layered (platform defaults, tenant policy, sensor configuration, scan or workflow step, the platform's decision for one job); for an option that narrows down, only an administrator's layer (tenant, sensor) may raise it above the tool's default, and a layer closer to the job may only lower the value in force (`NarrowValue`). `proxy`, `user_agent` and `headers` are reserved: the platform's egress and HTTP policy set them, never a tool option (`Reserved`).
 
 ```go
 o, _ := tooloption.Lookup("rate")
