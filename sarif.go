@@ -925,7 +925,7 @@ func isSecretTool(name string) bool {
 
 // sastToolNames are static analysers whose SARIF is code findings.
 var sastToolNames = []string{
-	"semgrep", "codeql", "gosec", "bandit", "sonarqube", "sonarcloud",
+	"semgrep", "opengrep", "codeql", "gosec", "bandit", "sonarqube", "sonarcloud",
 	"eslint", "brakeman", "spotbugs", "njsscan", "horusec", "bearer",
 	"psalm", "phpstan", "flawfinder", "cppcheck",
 }
