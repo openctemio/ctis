@@ -152,6 +152,8 @@ jobs:
           done
           # Web URLs: hostile URLs from crawlers, specs and scanners.
           go test -run '^$' -fuzz '^FuzzWebURL$' -fuzztime 20s -fuzzminimizetime 1x ./weburl
+          # Tool settings schemas come from sensors (untrusted on the platform).
+          go test -run '^$' -fuzz '^FuzzParseSettingsSchema$' -fuzztime 20s -fuzzminimizetime 1x ./settings
 
   build-compat:
     name: Cross-platform build
