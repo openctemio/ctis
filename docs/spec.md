@@ -233,6 +233,7 @@ These members describe the web surface: which methods and paths an origin serves
 - OpenCTEM uses a producer fingerprint only when it is hexadecimal and at least 16 characters long; otherwise it computes its own from the finding. Values such as CodeQL's `39fa2ee980eb94b0:1` are therefore not used as fingerprints; put them in `partial_fingerprints`.
 - Receivers scope fingerprints to the tenant and asset: two assets may share a fingerprint without colliding.
 - `partial_fingerprints` carries SARIF `partialFingerprints` (for example `primaryLocationLineHash`) unchanged. It is evidence for the receiver, not a replacement for `fingerprint`.
+- `partial_fingerprints["snippetHash/v1"]` (Go: `fingerprint.PartialSnippetHash`) is `fingerprint.SnippetHash` of the source lines a SAST finding flags (at most `fingerprint.MaxSnippetHashLines`, the first lines of a longer match). A producer that has the scanned tree but whose scanner left `location.snippet` empty sends this hash instead of the code. The receiver computes the same hash from `location.snippet` when there is one, so both key the finding on the flagged code, not on its line. `SnippetHash` trims each line, turns every run of ASCII whitespace into one space, drops empty lines, and returns the first 16 bytes of the SHA-256 of the lines joined with LF, in lowercase hex.
 
 ### 5.2 Recipes
 
