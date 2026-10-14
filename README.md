@@ -183,6 +183,13 @@ politeness.Conflicts(keys) // the keys another job must not hold at the same tim
 
 A name, the host of a URL or a service, an address (with the marker of its /24 or /120 bucket) and a range (one key per bucket) each have a key. An address and a range scan of its bucket conflict, two addresses of one bucket do not. With a network id, the keys of private addresses and of names carry the network, so overlapping private ranges at two sites stay two sets of hosts; public addresses never do.
 
+A port never makes a separate host: `203.0.113.5`, `203.0.113.5:8443` and `https://203.0.113.5/` all have the key `203.0.113.5`. `Group` cuts a target list into groups of one host, so parts built from whole groups (the chunks of a step, the waves of a running job) never conflict with each other:
+
+```go
+politeness.Group([]string{"203.0.113.5", "198.51.100.7", "203.0.113.5:8443"}, "")
+// [["203.0.113.5" "203.0.113.5:8443"] ["198.51.100.7"]]
+```
+
 ## Repository source
 
 The `source` package is the source of a platform code scan (a full scan of a protected branch): the platform puts a `source.Repository` in the job, the sensor fetches exactly that commit read-only, and both validate it with the same code:
