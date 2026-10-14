@@ -102,6 +102,7 @@
         "extractor_name": "users",
         "impact": "Arbitrary file read.",
         "matcher_name": "passwd",
+        "target": "app.example.com",
         "template_metadata": "max-request=1\nvendor=\"example\"",
         "template_path": "/home/scanner/nuclei-templates/http/cves/2024/CVE-2024-0001.yaml",
         "timestamp": "2026-10-05T10:00:00.000000000Z"
