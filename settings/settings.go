@@ -100,11 +100,16 @@ const (
 	SourceScan    Source = "scan"
 	// SourceJob: the platform's decision for one job (learned budgets).
 	SourceJob Source = "job"
+	// SourceLocal: the sensor's local policy, applied last; it only ever
+	// lowers a value (its host owner's caps).
+	SourceLocal Source = "local"
 )
 
 // adminSource reports whether a layer is set by an administrator for the
 // sensor (or every sensor), so it may set keys of scope "sensor".
-func adminSource(src Source) bool { return src == SourceTenant || src == SourceSensor }
+func adminSource(src Source) bool {
+	return src == SourceTenant || src == SourceSensor || src == SourceLocal
+}
 
 // Setting types.
 const (
@@ -463,7 +468,7 @@ func (s *Schema) Resolve(layers ...Layer) (*Values, error) {
 	}
 	for _, l := range layers {
 		switch l.Source {
-		case SourceTenant, SourceSensor, SourceProfile, SourceScan, SourceJob:
+		case SourceTenant, SourceSensor, SourceProfile, SourceScan, SourceJob, SourceLocal:
 		default:
 			return nil, fmt.Errorf("settings layer: unknown source %q", l.Source)
 		}

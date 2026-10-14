@@ -141,3 +141,19 @@ func TestValidName(t *testing.T) {
 		}
 	}
 }
+
+func TestLocalLayerNarrowsAnyKey(t *testing.T) {
+	s := MustParseSchema(testNucleiSchema)
+	// The local policy may lower a sensor-scope key, never raise it past an
+	// earlier layer's narrowing value.
+	if _, err := s.Resolve(Layer{Source: SourceLocal, Values: map[string]any{"concurrency": 5}}); err != nil {
+		t.Fatal(err)
+	}
+	c := MustParseSchema(commonSchema)
+	if _, err := c.Resolve(
+		Layer{Source: SourceSensor, Values: map[string]any{"rate_limit": 100}},
+		Layer{Source: SourceLocal, Values: map[string]any{"rate_limit": 200}},
+	); err == nil {
+		t.Fatal("local layer raised the rate")
+	}
+}
