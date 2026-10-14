@@ -4,7 +4,7 @@ Generated from `importer/spec_sarif.go`; do not edit. Regenerate with `go test .
 
 - Format: `sarif`
 - Source versions: SARIF 2.1.0 (OASIS) as written by CodeQL, semgrep, trivy, gitleaks, betterleaks and other static analysis tools
-- Fields: 69 mapped, 33 ignored on purpose (68% mapped)
+- Fields: 85 mapped, 48 ignored on purpose (64% mapped)
 
 ## Rules
 
@@ -13,6 +13,8 @@ Generated from `importer/spec_sarif.go`; do not edit. Regenerate with `go test .
 - Severity: the security-severity score (result, then rule), else the result level, else the rule's default level, else medium. Type: the rule's tags, a CVE/GHSA rule id, else the tool name. Options.ToolType (sast, sca, secret, iac, web3), when set, decides the type and the tool capabilities instead.
 - A secret scanner's region snippet is masked (ctis.MaskSecretMatch), and the raw value and each secret-looking word of it are masked in every other field: title, description, message, properties, tags and fingerprints.
 - Fingerprint: the result's fingerprints entry with the lowest key (hashed above 64 characters); partialFingerprints pass through.
+- Data flow: the first threadFlow with a location, of the first 10 codeFlows (10 threadFlows each), becomes findings[].data_flow; at most ctis.MaxDataFlowSteps steps, in order. A step's role comes from its kinds (source, sink, sanitizer), else its message (starts with Source, Sink or Propagator; says sanitized), else its position: the first unmarked step is the source and the last the sink when no step is marked so. A malformed trace leaves the finding without a data flow and never fails it.
+- Data flow paths are repository-relative: a file URI or absolute path is made relative to the run's originalUriBaseIds or to the root a relative path of the same flow reveals, else dropped (the step is kept); a path leaving the repository is dropped. Credentials in step snippets and messages are masked (ctis.RedactCodeSecrets); a secret finding's raw match is masked in its data flow as everywhere else. The data flow never feeds the fingerprint.
 
 ## Fields
 
@@ -126,8 +128,50 @@ Generated from `importer/spec_sarif.go`; do not edit. Regenerate with `go test .
 | `/runs[]/results[]/properties/tags[]/**` |  | a tag that is not a string |
 | `/runs[]/results[]/properties/security-severity` | `findings[].severity` |  |
 | `/runs[]/results[]/properties/*` |  | other result properties (tool specific) |
-| `/runs[]/results[]/codeFlows` |  | taint paths; the result's location is kept |
-| `/runs[]/results[]/codeFlows[]/**` |  | taint paths; the result's location is kept |
+| `/runs[]/results[]/codeFlows` | `findings[].data_flow (the first threadFlow with a location)` |  |
+| `/runs[]/results[]/codeFlows[]` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/message` |  | the path's summary; each step keeps its own message |
+| `/runs[]/results[]/codeFlows[]/message/**` |  | the path's summary; each step keeps its own message |
+| `/runs[]/results[]/codeFlows[]/properties` |  | tool specific |
+| `/runs[]/results[]/codeFlows[]/properties/**` |  | tool specific |
+| `/runs[]/results[]/codeFlows[]/threadFlows` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]` | `findings[].data_flow (the first with a location)` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/id` |  | thread id; one flow is kept |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/message` |  | thread summary; each step keeps its own message |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/message/**` |  | thread summary; each step keeps its own message |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/initialState` |  | debugger state; not a step |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/initialState/**` |  | debugger state; not a step |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/immutableState` |  | debugger state; not a step |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/immutableState/**` |  | debugger state; not a step |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/properties` |  | tool specific |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/properties/**` |  | tool specific |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]` | `findings[].data_flow.sources[], intermediates[], sanitizers[] or sinks[] (in step order, index renumbered)` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/kinds` | `findings[].data_flow.*[].type (source, sink, sanitizer)` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/kinds[]` | `findings[].data_flow.*[].type (source, sink, sanitizer)` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/artifactLocation` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/artifactLocation/uri` | `findings[].data_flow.*[].path (repository-relative; absolute runner paths dropped)` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/artifactLocation/uriBaseId` |  | base of a relative uri on the scanning machine; the relative path is kept |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/artifactLocation/index` |  | index into run.artifacts; the uri is kept |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region/startLine` | `findings[].data_flow.*[].line` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region/endLine` | `findings[].data_flow.*[].end_line` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region/startColumn` | `findings[].data_flow.*[].column` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region/endColumn` | `findings[].data_flow.*[].end_column` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region/snippet` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region/snippet/text` | `findings[].data_flow.*[].content (credentials masked)` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/physicalLocation/region/**` |  | other region members (char offsets, source language) |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/logicalLocations` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/logicalLocations[]` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/logicalLocations[]/fullyQualifiedName` | `findings[].data_flow.*[].function` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/logicalLocations[]/name` | `findings[].data_flow.*[].function (when no fullyQualifiedName)` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/logicalLocations[]/**` |  | other logical location members |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/message` | (container) |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/message/text` | `findings[].data_flow.*[].label (credentials masked), step role` |  |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/location/**` |  | other location members (id, annotations, relationships) |
+| `/runs[]/results[]/codeFlows[]/threadFlows[]/locations[]/**` |  | other thread flow location members (nesting level, execution order, state, module, stack) |
 | `/runs[]/results[]/relatedLocations` |  | secondary locations; the primary location is kept |
 | `/runs[]/results[]/relatedLocations[]/**` |  | secondary locations; the primary location is kept |
 | `/runs[]/versionControlProvenance` | (container) |  |
@@ -139,8 +183,8 @@ Generated from `importer/spec_sarif.go`; do not edit. Regenerate with `go test .
 | `/runs[]/invocations[]/**` |  | how the tool ran: scan operation details |
 | `/runs[]/artifacts` |  | the files the tool read; findings name their own file |
 | `/runs[]/artifacts[]/**` |  | the files the tool read; findings name their own file |
-| `/runs[]/originalUriBaseIds` |  | root paths of the scanning machine |
-| `/runs[]/originalUriBaseIds/**` |  | root paths of the scanning machine |
+| `/runs[]/originalUriBaseIds` | `roots stripped from absolute data flow paths (never stored)` |  |
+| `/runs[]/originalUriBaseIds/**` | `roots stripped from absolute data flow paths (never stored)` |  |
 | `/runs[]/columnKind` |  | column unit (UTF-16 or Unicode code points) |
 | `/runs[]/automationDetails` |  | run category of a code-scanning upload |
 | `/runs[]/automationDetails/**` |  | run category of a code-scanning upload |

@@ -73,7 +73,33 @@
         "security",
         "high"
       ],
-      "fingerprint": "abc123def456"
+      "fingerprint": "abc123def456",
+      "data_flow": {
+        "sources": [
+          {
+            "path": "src/auth/login.go",
+            "line": 38,
+            "type": "source"
+          }
+        ],
+        "intermediates": [
+          {
+            "path": "src/auth/login.go",
+            "line": 40,
+            "index": 1,
+            "type": "propagator"
+          }
+        ],
+        "sinks": [
+          {
+            "path": "src/auth/login.go",
+            "line": 42,
+            "index": 2,
+            "type": "sink"
+          }
+        ],
+        "tainted": true
+      }
     },
     {
       "id": "finding-2",
