@@ -51,6 +51,7 @@
         "raw_ref": "line 1"
       },
       "source_extra": {
+        "target": "https://shop.example.com",
         "timestamp": "2026-10-07T10:00:00Z"
       },
       "web": {
@@ -133,6 +134,7 @@
         "raw_ref": "line 2"
       },
       "source_extra": {
+        "target": "https://shop.example.com",
         "timestamp": "2026-10-07T10:00:01Z"
       },
       "web": {

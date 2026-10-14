@@ -323,6 +323,7 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 	}
 	extras(&f, "impact", r.Info.Impact, "matcher_name", r.MatcherName, "extractor_name", r.ExtractorName,
 		"template_path", firstNonEmpty(r.TemplatePath, r.Template), "timestamp", r.Timestamp,
+		"target", line(weburl.RedactURL(strings.TrimSpace(r.Host)), 2048),
 		"template_metadata", strings.Join(meta, "\n"), "authors", strings.Join(stringList(r.Info.Author), ", "))
 	return f
 }

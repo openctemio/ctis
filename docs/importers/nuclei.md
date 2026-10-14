@@ -47,7 +47,7 @@ Generated from `importer/spec_nuclei.go`; do not edit. Regenerate with `go test 
 | `/info/classification/epss-percentile` | `findings[].vulnerability.epss_percentile` |  |
 | `/info/classification/cpe` | `findings[].vulnerability.cpe` |  |
 | `/type` | `findings[].tags (protocol)` |  |
-| `/host` | `assets[] (the host), fingerprint input` |  |
+| `/host` | `assets[] (the host), fingerprint input, findings[].source_extra.target (redacted)` |  |
 | `/port` | `findings[].network.port` |  |
 | `/scheme` | `findings[].network.service` |  |
 | `/url` |  | the target URL; host and matched-at are kept |
