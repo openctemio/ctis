@@ -205,7 +205,7 @@ The `outcome` package is the shape a sensor uses to say how each target of a sca
  {"target": "https://c.example", "state": "unfinished"}]
 ```
 
-States are `done`, `failed` (class `unreachable`, `timeout` or `tool_error`), `skipped` (class `refused` or `excluded`) and `unfinished` (the task stopped first). Done, failed and skipped settle a target; only unfinished targets are handed out again. `outcome.Normalize(reported, taskTargets)` reads a sensor's list against the task's own targets: unknown targets and invalid entries are dropped, and a task target without a valid entry is unfinished, so a sensor can never add work. `outcome.Remaining` returns the targets to run again.
+States are `done`, `failed` (class `unreachable`, `timeout`, `tool_error` or `egress_refused`: the sensor's network confinement refused every connection toward the target), `skipped` (class `refused` or `excluded`) and `unfinished` (the task stopped first). Done, failed and skipped settle a target; only unfinished targets are handed out again. `outcome.Normalize(reported, taskTargets)` reads a sensor's list against the task's own targets: unknown targets and invalid entries are dropped, and a task target without a valid entry is unfinished, so a sensor can never add work. `outcome.Remaining` returns the targets to run again.
 
 ## Capability taxonomy
 
