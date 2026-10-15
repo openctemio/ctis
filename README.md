@@ -18,6 +18,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
 - **Tool settings** (`settings/`): the closed JSON Schema subset a tool manifest declares its configuration in, the validator, and layered resolution of the values a scan runs with.
 - **Tool options** (`tooloption/`): the common execution options of scan tools (timeout, rate, concurrency, retries), their bounds and how layers may narrow them.
+- **Feed transfer** (`transfer/`, its own module): download of signed, chunked feed bundles from ordered origins with retries, resume and fall-back, and the bundle format, writer and consumer.
 
 The current specification version is **1.6**. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -277,6 +278,16 @@ report, stats, err := m.Apply(ctx, stdout, mapping.Options{Tool: &ctis.Tool{Name
 ```
 
 The language is closed: predicates (`exists`, `equals`, `in`, RE2 `matches`), source paths, constants, named templates and a fixed list of transforms. It has no expressions, code, file or network access. Targets are checked against the CTIS types. Ids, links between records and the report's `tool` cannot be set. Input is bounded in size, depth, line length and record count. See [docs/mapping.md](docs/mapping.md).
+
+## Feed transfer
+
+`github.com/openctemio/ctis/transfer` is a separate Go module (tagged `transfer/vX.Y.Z`) so the root module keeps zero dependencies; it needs the standard library and the Prometheus client. `transfer` fetches files from an ordered list of origins (release URL, mirrors, a local directory) with retries, Range resume, a content-addressed blob cache and per-origin circuits; `transfer/bundle` is the signed (DSSE, Ed25519), chunked JSON Lines bundle format, its writer and a resumable consumer.
+
+```sh
+go get github.com/openctemio/ctis/transfer
+```
+
+The caller supplies the HTTP client, and it must be SSRF-guarded: there is no unguarded default. The format is pinned by a golden test to the bytes of `github.com/openctemio/sdk-go/pkg/transfer` v0.1.0, where the package lived before; switching the import path changes nothing on the wire or on disk.
 
 ## Asset types
 
