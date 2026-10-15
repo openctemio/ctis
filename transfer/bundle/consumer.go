@@ -64,12 +64,12 @@ func (c *Chunk) Records(fn func(line []byte) error) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	gz, err := gzip.NewReader(f)
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrChunk, c.Ref.SHA256[:12], err)
 	}
-	defer gz.Close()
+	defer func() { _ = gz.Close() }()
 	lr := &io.LimitedReader{R: gz, N: c.Ref.Uncompressed + 1}
 	sc := bufio.NewScanner(lr)
 	sc.Buffer(make([]byte, 0, min(64<<10, c.limits.MaxRecordBytes+1)), c.limits.MaxRecordBytes+1)

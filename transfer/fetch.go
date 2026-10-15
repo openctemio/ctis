@@ -663,7 +663,7 @@ func readLocal(dir, name string, maxBytes int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer fh.Close()
+	defer func() { _ = fh.Close() }()
 	b, err := io.ReadAll(io.LimitReader(fh, maxBytes+1))
 	if err != nil {
 		return nil, err
@@ -679,7 +679,7 @@ func copyLocalBlob(dir, name, want string, size int64, part string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 	out, err := os.OpenFile(part, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
@@ -714,7 +714,7 @@ func fileMatches(path, want string, size int64) bool {
 	if err != nil {
 		return false
 	}
-	defer fh.Close()
+	defer func() { _ = fh.Close() }()
 	if st, err := fh.Stat(); err != nil || st.Size() != size || !st.Mode().IsRegular() {
 		return false
 	}

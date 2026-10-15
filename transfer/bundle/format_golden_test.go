@@ -71,7 +71,7 @@ func TestBundleBytesMatchGolden(t *testing.T) {
 			t.Fatal(err)
 		}
 		sum := sha256.Sum256(b)
-		fmt.Fprintf(h, "%s %x\n", n, sum)
+		_, _ = fmt.Fprintf(h, "%s %x\n", n, sum)
 	}
 	if got := hex.EncodeToString(h.Sum(nil)); got != goldenBundleDigest {
 		t.Fatalf("bundle bytes drifted from the v0.1.0 writer: %d files, digest %s, want %s", len(names), got, goldenBundleDigest)
