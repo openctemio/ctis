@@ -1,0 +1,573 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual",
+    "scope": {
+      "name": "github.com/example/shop"
+    }
+  },
+  "tool": {
+    "name": "trivy",
+    "vendor": "Aqua Security",
+    "capabilities": [
+      "sca",
+      "misconfiguration",
+      "secret"
+    ]
+  },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "repository",
+      "value": "github.com/example/shop",
+      "name": "github.com/example/shop",
+      "properties": {
+        "branch": "main",
+        "commit_sha": "3f1c2a9e",
+        "source": "import_options"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "python-idna: potential DoS via resource consumption via specially crafted inputs to idna.encode()",
+      "description": "A vulnerability was identified in the kjd/idna library, specifically within the `idna.encode()` function, affecting version 3.6. The issue arises from the funct",
+      "severity": "medium",
+      "rule_id": "CVE-2024-3651",
+      "asset_ref": "asset-1",
+      "location": {
+        "path": "poetry.lock"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2024-3651",
+        "cve_ids": [
+          "CVE-2024-3651"
+        ],
+        "cwe_ids": [
+          "CWE-1333"
+        ],
+        "cwe_id": "CWE-1333",
+        "cvss_version": "3.1",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+        "cvss_source": "nvd",
+        "package": "idna",
+        "purl": "pkg:pypi/idna@2.7",
+        "affected_version": "2.7",
+        "fixed_version": "3.7",
+        "published_at": "2024-07-07T18:15:09.827Z",
+        "modified_at": "2026-06-17T07:44:44.377Z",
+        "dependency_path": [
+          "requests@2.19.1",
+          "idna@2.7"
+        ],
+        "data_source": {
+          "id": "ghsa",
+          "name": "GitHub Security Advisory pip",
+          "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+        },
+        "severity_source": "ghsa",
+        "vendor_severity": {
+          "alma": 2,
+          "amazon": 2,
+          "azure": 3,
+          "cbl-mariner": 3,
+          "ghsa": 2,
+          "nvd": 3,
+          "oracle-oval": 2,
+          "photon": 3,
+          "redhat": 2,
+          "rocky": 2,
+          "ubuntu": 2
+        },
+        "vuln_status": "fixed",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-3651"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade idna to 3.7",
+        "fix_available": true,
+        "solution_type": "upgrade"
+      },
+      "references": [
+        "https://avd.aquasec.com/nvd/cve-2024-3651",
+        "https://access.redhat.com/errata/RHSA-2024:3846",
+        "https://access.redhat.com/security/cve/CVE-2024-3651"
+      ],
+      "tags": [
+        "trivy",
+        "poetry.lock"
+      ],
+      "fingerprint": "ac0987a3a09aec9496bf8fe7b01e1d5531d2b8ae785a2c03fe79f53843e8e3a8",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2024-3651",
+        "severity": "MEDIUM"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+          "value": 6.9,
+          "source": "ghsa"
+        },
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "value": 6.2,
+          "source": "ghsa"
+        },
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "value": 7.5,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+          "value": 6.5,
+          "source": "redhat"
+        }
+      ],
+      "source_extra": {
+        "pkg_id": "idna@2.7",
+        "target": "poetry.lock"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "python-jinja2: str.format_map allows sandbox escape",
+      "description": "In Pallets Jinja before 2.10.1, str.format_map allows a sandbox escape.",
+      "severity": "high",
+      "rule_id": "CVE-2019-10906",
+      "asset_ref": "asset-1",
+      "location": {
+        "path": "poetry.lock"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2019-10906",
+        "cve_ids": [
+          "CVE-2019-10906"
+        ],
+        "cvss_version": "3.0",
+        "cvss_score": 9,
+        "cvss_vector": "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H",
+        "cvss_source": "redhat",
+        "package": "jinja2",
+        "purl": "pkg:pypi/jinja2@2.10",
+        "affected_version": "2.10",
+        "fixed_version": "2.10.1",
+        "published_at": "2019-04-07T00:29:00.213Z",
+        "modified_at": "2026-06-17T02:11:52.25Z",
+        "is_direct": true,
+        "dependency_path": [
+          "jinja2@2.10"
+        ],
+        "data_source": {
+          "id": "ghsa",
+          "name": "GitHub Security Advisory pip",
+          "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+        },
+        "severity_source": "ghsa",
+        "vendor_severity": {
+          "amazon": 3,
+          "azure": 3,
+          "ghsa": 3,
+          "nvd": 3,
+          "oracle-oval": 3,
+          "redhat": 3,
+          "rocky": 3,
+          "ubuntu": 2
+        },
+        "vuln_status": "fixed",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2019-10906"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade jinja2 to 2.10.1",
+        "fix_available": true,
+        "solution_type": "upgrade"
+      },
+      "references": [
+        "https://avd.aquasec.com/nvd/cve-2019-10906",
+        "http://lists.opensuse.org/opensuse-security-announce/2019-05/msg00030.html",
+        "http://lists.opensuse.org/opensuse-security-announce/2019-06/msg00064.html"
+      ],
+      "tags": [
+        "trivy",
+        "poetry.lock"
+      ],
+      "fingerprint": "33d37c51238300ece75d466e9ef8b8108a93236db9416dd7b0531f86b799231d",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2019-10906",
+        "severity": "HIGH"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:N/SC:H/SI:N/SA:N",
+          "value": 7.7,
+          "source": "ghsa"
+        },
+        {
+          "system": "cvss",
+          "version": "3.0",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N",
+          "value": 8.6,
+          "source": "ghsa"
+        },
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N",
+          "value": 8.6,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+          "value": 5,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "3.0",
+          "vector": "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H",
+          "value": 9,
+          "source": "redhat"
+        }
+      ],
+      "source_extra": {
+        "pkg_id": "jinja2@2.10",
+        "target": "poetry.lock"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "python-requests: Redirect from HTTPS to HTTP does not remove Authorization header",
+      "description": "The Requests package before 2.20.0 for Python sends an HTTP Authorization header to an http URI upon receiving a same-hostname https-to-http redirect, which mak",
+      "severity": "high",
+      "rule_id": "CVE-2018-18074",
+      "asset_ref": "asset-1",
+      "location": {
+        "path": "poetry.lock"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2018-18074",
+        "cve_ids": [
+          "CVE-2018-18074"
+        ],
+        "cwe_ids": [
+          "CWE-522"
+        ],
+        "cwe_id": "CWE-522",
+        "cvss_version": "3.1",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+        "cvss_source": "nvd",
+        "package": "requests",
+        "purl": "pkg:pypi/requests@2.19.1",
+        "affected_version": "2.19.1",
+        "fixed_version": "2.20.0",
+        "published_at": "2018-10-09T17:29:01.897Z",
+        "modified_at": "2026-06-17T01:46:44.62Z",
+        "is_direct": true,
+        "dependency_path": [
+          "requests@2.19.1"
+        ],
+        "data_source": {
+          "id": "ghsa",
+          "name": "GitHub Security Advisory pip",
+          "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+        },
+        "severity_source": "ghsa",
+        "vendor_severity": {
+          "alma": 2,
+          "amazon": 2,
+          "ghsa": 3,
+          "nvd": 3,
+          "oracle-oval": 2,
+          "photon": 3,
+          "redhat": 1,
+          "rocky": 2,
+          "ubuntu": 2
+        },
+        "vuln_status": "fixed",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2018-18074"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade requests to 2.20.0",
+        "fix_available": true,
+        "solution_type": "upgrade"
+      },
+      "references": [
+        "https://avd.aquasec.com/nvd/cve-2018-18074",
+        "http://docs.python-requests.org/en/master/community/updates/#release-and-version-history",
+        "http://lists.opensuse.org/opensuse-security-announce/2019-07/msg00024.html"
+      ],
+      "tags": [
+        "trivy",
+        "poetry.lock"
+      ],
+      "fingerprint": "0f0d1f47e930fa58a0d16bb019443080aa60d00795baa806ceb3d97fadeb410a",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2018-18074",
+        "severity": "HIGH"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "value": 7.5,
+          "source": "ghsa"
+        },
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "value": 7.5,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+          "value": 5,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "3.0",
+          "vector": "CVSS:3.0/AV:A/AC:H/PR:N/UI:R/S:U/C:L/I:N/A:N",
+          "value": 2.6,
+          "source": "redhat"
+        }
+      ],
+      "source_extra": {
+        "pkg_id": "requests@2.19.1",
+        "target": "poetry.lock"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "python-urllib3: Certification mishandle when error should be thrown",
+      "description": "The urllib3 library before 1.24.2 for Python mishandles certain cases where the desired set of CA certificates is different from the OS store of CA certificates",
+      "severity": "high",
+      "rule_id": "CVE-2019-11324",
+      "asset_ref": "asset-1",
+      "location": {
+        "path": "poetry.lock"
+      },
+      "vulnerability": {
+        "cve_id": "CVE-2019-11324",
+        "cve_ids": [
+          "CVE-2019-11324"
+        ],
+        "cwe_ids": [
+          "CWE-295"
+        ],
+        "cwe_id": "CWE-295",
+        "cvss_version": "3.0",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+        "cvss_source": "nvd",
+        "package": "urllib3",
+        "purl": "pkg:pypi/urllib3@1.23",
+        "affected_version": "1.23",
+        "fixed_version": "1.24.2",
+        "published_at": "2019-04-18T21:29:00.883Z",
+        "modified_at": "2026-06-17T02:12:42.91Z",
+        "dependency_path": [
+          "requests@2.19.1",
+          "urllib3@1.23"
+        ],
+        "data_source": {
+          "id": "ghsa",
+          "name": "GitHub Security Advisory pip",
+          "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+        },
+        "severity_source": "ghsa",
+        "vendor_severity": {
+          "alma": 2,
+          "amazon": 2,
+          "ghsa": 3,
+          "nvd": 3,
+          "oracle-oval": 2,
+          "photon": 3,
+          "redhat": 2,
+          "rocky": 2,
+          "ubuntu": 2
+        },
+        "vuln_status": "fixed",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2019-11324"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade urllib3 to 1.24.2",
+        "fix_available": true,
+        "solution_type": "upgrade"
+      },
+      "references": [
+        "https://avd.aquasec.com/nvd/cve-2019-11324",
+        "http://lists.opensuse.org/opensuse-security-announce/2019-09/msg00039.html",
+        "http://lists.opensuse.org/opensuse-security-announce/2019-09/msg00041.html"
+      ],
+      "tags": [
+        "trivy",
+        "poetry.lock"
+      ],
+      "fingerprint": "d6eb436201ab506245ffbf644e45c88e79a417c4e523ac22fa24014da006d1f0",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "CVE-2019-11324",
+        "severity": "HIGH"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "4.0",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N",
+          "value": 8.7,
+          "source": "ghsa"
+        },
+        {
+          "system": "cvss",
+          "version": "3.0",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+          "value": 7.5,
+          "source": "ghsa"
+        },
+        {
+          "system": "cvss",
+          "version": "3.0",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+          "value": 7.5,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "2.0",
+          "vector": "AV:N/AC:L/Au:N/C:N/I:P/A:N",
+          "value": 5,
+          "source": "nvd"
+        },
+        {
+          "system": "cvss",
+          "version": "3.0",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+          "value": 7.5,
+          "source": "redhat"
+        }
+      ],
+      "source_extra": {
+        "pkg_id": "urllib3@1.23",
+        "target": "poetry.lock"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "jinja2@2.10",
+      "name": "jinja2",
+      "version": "2.10",
+      "purl": "pkg:pypi/jinja2@2.10",
+      "uid": "4f87aee05498ac05",
+      "relationship": "direct",
+      "depends_on": [
+        "markupsafe@3.0.4"
+      ],
+      "path": "poetry.lock"
+    },
+    {
+      "id": "requests@2.19.1",
+      "name": "requests",
+      "version": "2.19.1",
+      "purl": "pkg:pypi/requests@2.19.1",
+      "uid": "c4bcbcded2bcf3a6",
+      "relationship": "direct",
+      "depends_on": [
+        "certifi@2026.7.22",
+        "chardet@3.0.4",
+        "idna@2.7",
+        "urllib3@1.23"
+      ],
+      "path": "poetry.lock"
+    },
+    {
+      "id": "certifi@2026.7.22",
+      "name": "certifi",
+      "version": "2026.7.22",
+      "purl": "pkg:pypi/certifi@2026.7.22",
+      "uid": "b82a90d1d8ace2e",
+      "relationship": "indirect",
+      "path": "poetry.lock"
+    },
+    {
+      "id": "chardet@3.0.4",
+      "name": "chardet",
+      "version": "3.0.4",
+      "purl": "pkg:pypi/chardet@3.0.4",
+      "uid": "98d39c385129905d",
+      "relationship": "indirect",
+      "path": "poetry.lock"
+    },
+    {
+      "id": "idna@2.7",
+      "name": "idna",
+      "version": "2.7",
+      "purl": "pkg:pypi/idna@2.7",
+      "uid": "7ab38a537928f668",
+      "relationship": "indirect",
+      "path": "poetry.lock"
+    },
+    {
+      "id": "markupsafe@3.0.4",
+      "name": "markupsafe",
+      "version": "3.0.4",
+      "purl": "pkg:pypi/markupsafe@3.0.4",
+      "uid": "dd9c5b69589af143",
+      "relationship": "indirect",
+      "path": "poetry.lock"
+    },
+    {
+      "id": "urllib3@1.23",
+      "name": "urllib3",
+      "version": "1.23",
+      "purl": "pkg:pypi/urllib3@1.23",
+      "uid": "6d72f3b70deb7ff7",
+      "relationship": "indirect",
+      "path": "poetry.lock"
+    }
+  ]
+}
