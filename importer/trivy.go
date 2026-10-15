@@ -93,13 +93,21 @@ type trivySecret struct {
 }
 
 type trivyPackage struct {
-	ID           string      `json:"ID"`
-	Name         string      `json:"Name"`
-	Version      string      `json:"Version"`
-	Identifier   *trivyPkgID `json:"Identifier"`
-	Licenses     []string    `json:"Licenses"`
-	DependsOn    []string    `json:"DependsOn"`
-	Relationship string      `json:"Relationship"`
+	ID           string          `json:"ID"`
+	Name         string          `json:"Name"`
+	Version      string          `json:"Version"`
+	Identifier   *trivyPkgID     `json:"Identifier"`
+	Licenses     []string        `json:"Licenses"`
+	DependsOn    []string        `json:"DependsOn"`
+	Relationship string          `json:"Relationship"`
+	Indirect     *bool           `json:"Indirect"`
+	Locations    []trivyLocation `json:"Locations"`
+}
+
+// trivyLocation is the lines of the lockfile that declare a package.
+type trivyLocation struct {
+	StartLine int `json:"StartLine"`
+	EndLine   int `json:"EndLine"`
 }
 
 type trivyResult struct {
@@ -145,13 +153,24 @@ func parseTrivy(b *builder, r io.Reader) error {
 	for ri := range rep.Results {
 		res := &rep.Results[ri]
 		target := line(res.Target, 1024)
+		// A language result's target is the manifest or lockfile the
+		// packages come from; an OS result's target names the image.
+		file := ""
+		if res.Class == "lang-pkgs" {
+			file = target
+		}
 		for i := range res.Packages {
-			if err := b.trivyPackage(&res.Packages[i]); err != nil {
+			if err := b.trivyPackage(&res.Packages[i], file); err != nil {
 				return err
 			}
 		}
+		g := newTrivyGraph(res.Packages)
 		for i := range res.Vulnerabilities {
-			if err := b.trivyRecord(trivyVulnFinding(&res.Vulnerabilities[i], target)); err != nil {
+			f, ok := trivyVulnFinding(&res.Vulnerabilities[i], target)
+			if ok && file != "" {
+				g.place(&f, &res.Vulnerabilities[i], file)
+			}
+			if err := b.trivyRecord(f, ok); err != nil {
 				return err
 			}
 		}
@@ -186,12 +205,19 @@ func (b *builder) trivyRecord(f ctis.Finding, ok bool) error {
 	return b.finding(f)
 }
 
-func (b *builder) trivyPackage(p *trivyPackage) error {
+func (b *builder) trivyPackage(p *trivyPackage, file string) error {
 	name := line(p.Name, capShort)
 	if name == "" {
 		return nil
 	}
-	d := ctis.Dependency{Name: name, Version: line(p.Version, 128), ID: line(p.ID, capShort), Relationship: line(strings.ToLower(p.Relationship), 32)}
+	d := ctis.Dependency{Name: name, Version: line(p.Version, 128), ID: line(p.ID, capShort), Relationship: trivyRelationship(p), Path: file}
+	if file != "" {
+		for _, l := range p.Locations {
+			if l.StartLine > 0 && len(d.Locations) < 20 {
+				d.Locations = append(d.Locations, ctis.DependencyLocation{Path: file, StartLine: l.StartLine, EndLine: nonNeg(l.EndLine)})
+			}
+		}
+	}
 	if p.Identifier != nil {
 		d.PURL = sanePURL(p.Identifier.PURL)
 		d.UID = line(p.Identifier.UID, capShort)
