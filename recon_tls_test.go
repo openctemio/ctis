@@ -218,3 +218,31 @@ func TestMergeKeepsCertificateLink(t *testing.T) {
 		}
 	}
 }
+
+// A live host's technologies are properties, never tags.
+func TestLiveHostTechnologiesAreNotTags(t *testing.T) {
+	r, err := ConvertReconToCTIS(probeWithLeaf(LiveHostInput{
+		URL: "https://example.com", Host: "example.com", Scheme: "https", Port: 443, StatusCode: 200,
+		Technologies: []string{"HSTS", "Vercel", "Next.js:13.4.1"},
+	}), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, a := range r.Assets {
+		for _, tag := range a.Tags {
+			if tag == "HSTS" || tag == "Vercel" || tag == "Next.js:13.4.1" {
+				t.Fatalf("technology %q copied into tags of %s", tag, a.Value)
+			}
+		}
+		if v, ok := a.Properties["technologies"]; ok {
+			found = true
+			if fmt.Sprint(v) != "[HSTS Vercel Next.js:13.4.1]" {
+				t.Fatalf("technologies = %v", v)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("technologies property lost")
+	}
+}

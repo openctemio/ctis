@@ -643,10 +643,11 @@ func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts 
 			asset.Properties[k] = v
 		}
 
-		// Add technologies
+		// Technologies are facts about the host, not labels: receivers keep
+		// them as the asset's detected technologies. Copying them into
+		// tags made every fingerprint ("HSTS", "Vercel") a user label too.
 		if len(h.Technologies) > 0 {
 			asset.Properties["technologies"] = h.Technologies
-			asset.Tags = append(asset.Tags, h.Technologies...)
 		}
 		if cdn := boundLine(h.CDN, maxProviderLen); cdn != "" {
 			asset.Properties["cdn"] = cdn
