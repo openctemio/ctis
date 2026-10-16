@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Fixed
+
+- The recon converter no longer copies a live host's technologies into the asset's tags. They stay in `properties.technologies`; receivers keep them as detected technologies, and every fingerprint ("HSTS", a hosting platform) no longer becomes a user label.
+
 ## [1.6.0] - 2026-10-12
 
 The first tagged release since v1.2.0. It implements CTIS 1.6 and includes everything listed under 1.3.0 below, which was never tagged, plus CTIS 1.4 and 1.5.
