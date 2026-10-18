@@ -1,0 +1,7 @@
+# Verified false positives in the history (commit:file:rule:line): documentation
+# placeholders and test fixtures, none a real credential (history audit 2026-10-18).
+# Add a line only after confirming the match is not a real credential.
+2b77559a3c983080c37478b36761979f0e08cf62:importer/nuclei.go:generic-credential-uri:312
+797078e5535a186bf0d12f3199fa57d0b610df93:CHANGELOG.md:generic-credential-uri:9
+797078e5535a186bf0d12f3199fa57d0b610df93:recon_converter.go:generic-credential-uri:664
+bc0ed1b96ea424429fa253daf04f8ef924720145:importer/urlcreds.go:generic-credential-uri:18
