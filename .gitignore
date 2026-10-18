@@ -1,0 +1,10 @@
+
+# Secrets and runtime state: never committed
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+/data/
