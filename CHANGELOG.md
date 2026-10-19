@@ -4,9 +4,124 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-19
+
+Additive release on CTIS 1.6: new contract packages (`addrscope`, `outcome`, `politeness`, `settings`, `source`, `tooloption`), the `transfer` module, the opengrep importer, and fixes. Nothing existing changed meaning.
+
+### Added: `addrscope`, the one definition of an internal network address
+
+- New package `addrscope` with `IsInternal(netip.Addr)`, `IsInternalPrefix(netip.Prefix)` and `EmbeddedIPv4`. The platform checks the targets of jobs for scanners that serve several organizations with it, and sensors check every address they connect to with the same function.
+- Internal: private, loopback, link-local (cloud metadata), CGNAT, `0.0.0.0/8`, `192.0.0.0/24`, `198.18.0.0/15`, multicast, reserved and broadcast IPv4; unspecified, loopback, link-local, site-local, unique-local and multicast IPv6; and every IPv6 address that carries an internal IPv4 address (IPv4-mapped, IPv4-compatible, NAT64 `64:ff9b::/96` and `64:ff9b:1::/48`, 6to4 `2002::/16`, Teredo `2001::/32`). Invalid input is internal (fail closed). Documentation ranges are public.
+
+### Added: host discovery in the capability taxonomy
+
+- New `discover.hosts@1` (discover.active, T1, routed): in `ip`, `cidr`; out `ip`. Finds the live addresses of a range or an address list with light probes (ICMP echo or a TCP connection to a few common ports) before deeper scans. Each live address is reported as an `ip_address` asset with the probe that answered in `properties.live_by` (for example `tcp:443` or `icmp`). Params `ports` (TCP probe ports) and `rate`.
+- `docs/capabilities.md` is regenerated.
+
+### Added: a nuclei finding names the target it was run against
+
+- The nuclei importer keeps the scan input (`host`, redacted) as `source_extra.target`. A receiver compares it with the matched URL to tell a path the template itself requested (one issue per origin, however many of its fixed paths matched) from a path that came from the target (one finding per endpoint).
+
+### Added: opengrep JSON importer format
+
+- New importer format `opengrep` (`importer.FormatOpengrep`) for `opengrep scan --json`. The output has the semgrep JSON shape and is read by the same parser; the report names the tool `opengrep` (vendor Opengrep) and tags findings `opengrep`. `Detect` cannot tell the two engines apart and still names the shape `semgrep`, so callers that ran opengrep choose the format with `Options.Format`.
+- opengrep writes a real match-based id in `extra.fingerprint`. It is kept as the partial fingerprint `matchBasedId/v1`, and the finding's `fingerprint` is derived from path, rule and line, the value a semgrep run without a login produced. A finding first reported by semgrep therefore keeps its fingerprint when opengrep reports it.
+- SARIF from opengrep (driver `Opengrep OSS`) is classified as SAST, as semgrep's is.
+- `docs/importers/opengrep.md` is generated.
+
+### Added: a failed target can say the sensor's egress refused it
+
+- `outcome.EgressRefused` (`egress_refused`) is a new class of a `failed` target: the sensor's network confinement refused every connection the tool made toward that target. A receiver shows it as "not reached", never as "nothing found".
+
+### Added: groups of one host for cutting a job's targets
+
+- `politeness.Group(targets, network)` partitions targets into groups of one host: the targets whose keys conflict, directly or through other targets. Two parts built from whole groups never conflict, so the chunks of one step never wait on each other and the waves of a running job release whole hosts.
+- `politeness.GroupKeys(keys)` is the same over keys a caller computed itself, for example a name with the keys of the addresses it is known to resolve to.
+- One host is one group whatever form names it: `203.0.113.5`, `203.0.113.5:8443`, `203.0.113.5:443:tcp` and `https://203.0.113.5/` share the key `203.0.113.5` (a port never makes a separate host). Two addresses of one /24 bucket stay apart; a range joins the addresses of its buckets.
+
+### Added: per-host politeness keys (`politeness/`)
+
+- New package `github.com/openctemio/ctis/politeness` (standard library only): which hosts a scan job touches and when two jobs touch the same host. `Keys`, `TargetKeys`, `HostOf`, `Conflicts`, `Lock`, `AddrBucket`.
+- A name, the host of a URL or a service, an address with the marker of its /24 (IPv6 /120) bucket, a range with one key per bucket, a repository clone URL or scp form (`host/owner`) and a local path each have a key; addresses are canonical (an IPv4-mapped address is the IPv4 address, `a.b.c.d/32` is the address).
+- Network context: with a network id, the keys of private, shared, loopback and link-local addresses and of names end in `#<network>`; public addresses are never scoped; an unreadable id leaves the keys global.
+- The platform and the sensor SDK both import it, so neither depends on the other for this contract. It replaces `github.com/openctemio/sdk-go/pkg/politeness` with the same API and keys.
+
+### Added: release a running job's hosts target by target
+
+- `politeness.Holding` (`NewHolding(held, targets, network)`, `Settle(target)`, `Held()`) tracks the keys a running job holds while its targets settle. A key is released once a settled target produced it and no pending target does. The holder (a sensor's local queue) frees it at once, so other work on that host starts before the job ends.
+- A held key that no target produces is never released, and neither is a target the job never had. A bucket marker stays held while any pending address of its bucket does. Targets are keyed with and without the network, so keys computed either way are released alike.
+
+### Added: repository source of a platform code scan
+
+- New package `source`: `Repository` (SCM kind, HTTPS clone URL, branch, full commit id, depth, credential name, capabilities) with `Normalize`, `Validate`, `CheckCloneURL` and `ValidBranch`. The platform puts it in a code-scan job; the sensor fetches exactly that commit and refuses what `Validate` refuses.
+- `Validate` refuses non-HTTPS URLs, address hosts, user information, queries, fragments, `..` or option-like path segments, branches git would read as an option or a revision expression, abbreviated commits, and capabilities that do not take a repository. A fuzz test pins these properties.
+
+### Added: SARIF codeFlows become the finding's data flow
+
+- `FromSARIF` (and the `sarif` importer format) maps a result's `codeFlows[].threadFlows[].locations[]` to `findings[].data_flow`: the first thread flow with a location, at most `MaxDataFlowSteps` (100) steps in order. A step's role comes from its `kinds` (`source`, `sink`, `sanitizer`), else its message (`Source:`, `Sink:`, `Propagator`, or a message that says the data is sanitized), else its position: the first unmarked step is the source and the last the sink. A step keeps its file, lines, columns, snippet, message (as `label`) and function. A malformed trace leaves the finding without a data flow and never fails the log. The mapping spec and `docs/importers/sarif.md` no longer list `codeFlows` as ignored.
+- New `NormalizeDataFlow(df, roots...)`, applied by `FromSARIF` and by the semgrep and opengrep importers: bounds the steps and text (`MaxDataFlowContentLen`, `MaxDataFlowPathLen`, `MaxDataFlowLabelLen`), renumbers the step indexes, makes paths repository-relative (a file URI or absolute path is made relative to the run's `originalUriBaseIds` or to the root a relative path of the same flow reveals; otherwise, or when the path leaves the repository, the path is dropped and the step kept), and masks credentials in snippets, labels and notes.
+- New `RedactCodeSecrets`: masks the credentials in a line of source code (a quoted value assigned to a credential name, a URL's password, tokens of a recognisable form, private key blocks) with `MaskSecretMatch`, and leaves the rest of the code as it is.
+
+### Added: a line-independent SAST snippet hash a producer can send instead of the code
+
+- `fingerprint.SnippetHash` hashes the code a SAST finding flags, independent of its line and indentation, and `fingerprint.PartialSnippetHash` (`snippetHash/v1`) is the `partial_fingerprints` key that carries it. A producer that has the scanned tree but no snippet from its scanner sends the hash, not the code; the receiver keys the finding on the flagged code, so a finding marked a false positive stays one when code above it moves.
+- `fingerprint.MaxSnippetHashLines` (10) is where a producer reading the lines from the file cuts a long match, the same place the scanners cut it.
+
+### Added: per-target outcomes (`outcome/`)
+
+- New package `github.com/openctemio/ctis/outcome` (standard library only): how each target of a scan task ended. States `done`, `failed` (classes `unreachable`, `timeout`, `tool_error`), `skipped` (classes `refused`, `excluded`) and `unfinished`; a command result carries them under `target_outcomes`.
+- `Normalize` reads a reported list against the task's own targets (unknown targets and invalid entries dropped, a missing target is unfinished, at most `MaxTargets` entries read); `Remaining` lists the targets to run again; `Count` counts the states.
+- The platform and the sensor SDK both import it, so neither depends on the other for this contract.
+
+### Added: common tool execution options (`tooloption/`)
+
+- New package `github.com/openctemio/ctis/tooloption` (standard library only): the options almost every scan tool has, defined once: `timeout` (seconds per request, 1..300), `rate` (per second, 1..100000), `concurrency` (1..1000) and `retries` (0..10), with their unit, bounds, English title and description.
+- `CheckProperty` checks that a tool manifest's property declared as a common option (`x-octm-common`) has the common type and only narrows the common bounds.
+- `NarrowValue`: `rate`, `concurrency` and `retries` narrow down, so a layer closer to the job (a scan, a job decision) may only lower what an earlier layer (the sensor's configuration) set; `timeout` does not narrow.
+- `Reserved`: `proxy`, `user_agent` and `headers` may not be tool options; the platform's egress and HTTP policy set them.
+- The platform and the sensor SDK both import it, so neither depends on the other for what an option means.
+
+### Added: tool settings contract (`settings/`)
+
+- New package `github.com/openctemio/ctis/settings` (standard library and `tooloption` only): the closed JSON Schema 2020-12 subset a tool manifest declares its configuration in, its validator, defaults, digest and layered resolution. It is the validator the sensor SDK used (`sdk-go/pkg/core` settings), moved here so the platform validates administrators' values with the same code instead of a copy; the test vectors moved with it (`settings/testdata/vectors`).
+- New annotations: `x-octm-common` names the common tool option a top-level key is (type and bounds checked against `tooloption`; an unbounded side takes the common bound; each common option at most once per tool), and `x-octm-flag` names the tool's native flag (one flag, no value) for display.
+- Top-level keys named `proxy`, `user_agent` or `headers` are refused: the platform's egress and HTTP policy own them.
+- Layers `tenant` (before the sensor's), `job` (the platform's decision for one job, after the scan's) and `local` (the sensor's local policy, last; it only lowers). Tenant, sensor and local layers may set keys of scope `sensor`; profile, scan and job layers only keys of scope `scan`.
+- For a common option that narrows down (`rate`, `concurrency`, `retries`): a tenant or sensor layer may not raise what an earlier administrator layer set (the tool's default is not a cap for them); a profile, scan, job or local layer may only lower the value in force, the tool's default included. A raise is an error, never applied silently.
+
+### Added: feed transfer module
+
+- `github.com/openctemio/ctis/transfer` (own module, tag `transfer/vX.Y.Z`): fetch from ordered origins with retries, resume, blob cache and circuits; `transfer/bundle`: the signed chunked bundle format, writer and consumer.
+- Moved unchanged from `github.com/openctemio/sdk-go/pkg/transfer` v0.1.0. A golden test pins every published byte (chunks, signed manifest, signed pointer) to that version, so publishers and consumers can switch in any order.
+
+### Added: trivy findings say whether the package is direct and how it comes in
+
+- With the package list of a language result (`trivy --list-all-pkgs`), each vulnerability gets `vulnerability.is_direct`, `vulnerability.dependency_path` (the shortest chain of package ids from the project or the direct dependency to the vulnerable package, at most 32 entries), the package's PURL when the record has none, and the lockfile with the package's first line as its location.
+- Dependencies of a language result carry the lockfile as `path` and their lockfile lines as `locations`; `Indirect` sets the relationship when trivy gives no `Relationship`.
+- OS-package results are unchanged: their target names an image, not a file.
+
 ### Fixed
 
 - The recon converter no longer copies a live host's technologies into the asset's tags. They stay in `properties.technologies`; receivers keep them as detected technologies, and every fingerprint ("HSTS", a hosting platform) no longer becomes a user label.
+
+### Upgrade notes
+
+- Additive.
+- Additive: no existing capability, param or rule changed.
+- Additive: a new `source_extra` key.
+- Additive. The semgrep format, its mapping and its fingerprints are unchanged.
+- Additive. A receiver on an older version ignores the entry and treats the target as unfinished (handed out again), so update receivers (the platform) before senders (the sensor SDK) emit it.
+- Additive: no existing function changed.
+- Additive: no existing type, schema or rule changed.
+- Additive: no existing function changed.
+- Additive: a new package; nothing existing changed.
+- `SARIFResult.CodeFlows` and `SARIFRun.OriginalURIBaseIDs` are new raw members. A SARIF log with code flows now yields findings with `data_flow`; the fingerprint is unchanged (the data flow never feeds it).
+- A semgrep or opengrep trace step with an absolute path outside the repository, or one longer than 1024 characters, now has no path instead of a cut one.
+- Additive: new functions and constants; nothing existing changed.
+- Additive: no existing type, schema or rule changed.
+- Additive: no existing type, schema or rule changed.
+- Additive for this module. Schemas that declared a top-level `proxy`, `user_agent` or `headers` key no longer parse.
+- Replace the import path `github.com/openctemio/sdk-go/pkg/transfer` with `github.com/openctemio/ctis/transfer`; nothing else changes. The ctis root module still has zero external dependencies.
 
 ## [1.6.0] - 2026-10-12
 
