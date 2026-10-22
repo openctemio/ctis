@@ -90,6 +90,11 @@ func TestBountyReport_URLs(t *testing.T) {
 		"data:text/html,<script>alert(1)</script>", "https://user:pass@example.com/r/1", "ftp://example.com/",
 		"/relative/path", "//example.com/x", "https:///nohost", "https://exa mple.com/", "https://example.com/\u202e",
 		"https:example.com", "https://example.com/" + strings.Repeat("a", 2049),
+		// Look-alike or invisible host characters, raw unicode, markup and
+		// backslash tricks: an internationalised host is kept only as xn--.
+		"https://\u0435xample.com/r/1", "https://exa\u200bmple.com/", "https://exa\u00admple.com/",
+		"https://example.com/\u00e9", "https://evil.example\\@example.com/", "https://example.com/#\"><img src=x>",
+		"https://example.com@evil.example/", "https://@example.com/",
 	}
 	for _, u := range bad {
 		res := brParse(t, brOne(`"url":`+jstr(u)), Options{})
@@ -99,6 +104,9 @@ func TestBountyReport_URLs(t *testing.T) {
 		if !hasIssue(res, "url is not an https URL") {
 			t.Errorf("url %.40q: no issue", u)
 		}
+	}
+	if res := brParse(t, brOne(`"url":"https://xn--xample-2of.com/r/1"`), Options{}); brProps(t, res.Report.Findings[0])["url"] != "https://xn--xample-2of.com/r/1" {
+		t.Errorf("punycode host dropped: %v", res.Report.Findings[0].Properties)
 	}
 	res := brParse(t, brOne(`"url":"https://example.com/r/1?x=1#y","asset":"https://example.com/r/1"`), Options{})
 	f := res.Report.Findings[0]

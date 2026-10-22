@@ -555,10 +555,17 @@ func (b *builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string
 }
 
 // brHTTPS reports whether u may be kept as the record's url: https only, a
-// host, no credentials, at most 2048 characters, nothing unprintable.
+// host, no credentials, at most 2048 characters, printable ASCII without
+// spaces, quotes, angle brackets or backslashes. An internationalised host
+// must come in its xn-- form, so a look-alike host shows as such.
 func brHTTPS(u string) bool {
-	if len(u) > capBountyURL || strings.ContainsAny(u, " \\") || !plainID(u) {
+	if len(u) > capBountyURL {
 		return false
+	}
+	for i := 0; i < len(u); i++ {
+		if u[i] < 0x21 || u[i] > 0x7E || strings.IndexByte("\"<>\\^`{|}", u[i]) >= 0 {
+			return false
+		}
 	}
 	p, err := url.Parse(u)
 	if err != nil || p.Scheme != "https" || p.Hostname() == "" || p.User != nil || p.Opaque != "" {
