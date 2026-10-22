@@ -1,0 +1,3 @@
+﻿report_ref,intake,title,submitted_at,researcher,reported_severity,state,weakness,cvss_vector,url,asset,parameter,description,steps,impact,reward_amount,reward_currency,reward_status,disclosure_state,disclosure_agreed_date
+BB-1,intake-a,"SQL injection in search, authenticated",2026-09-03T08:00:00Z,carol,medium,triaged,CWE-89,CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N,https://shop.example.com/search,shop.example.com,q,"The ""q"" parameter reaches the query.","Send q=' OR 1=1 --","Read access to orders.",250,USD,paid,private,2026-11-15
+BB-2,,=HYPERLINK(),,+dave,low,new,,,,vpn.example.com,,-1+1,@SUM(A1),,,,,,

@@ -1,0 +1,91 @@
+{
+  "format": "bounty_report",
+  "stats": {
+    "records": 7,
+    "assets": 4,
+    "findings": 4,
+    "components": 0,
+    "statements": 0,
+    "skipped": 3,
+    "by_severity": {
+      "critical": 1,
+      "high": 1,
+      "info": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "unknown reported_severity: not kept"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "unknown state: not kept"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "weakness is not of the form CWE-<n>: dropped"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "cvss_vector is not a CVSS 3.0, 3.1 or 4.0 vector: dropped"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "url is not an https URL without credentials of at most 2048 characters: dropped"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "reward amount is not a decimal of at most 12 digits and 2 decimals: dropped"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "reward currency is not three capital letters: dropped"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "reward status is not none, pending or paid: dropped"
+    },
+    {
+      "line": 42,
+      "column": 5,
+      "path": "/bounty_reports/3",
+      "message": "asset URL carried credentials: removed"
+    },
+    {
+      "line": 54,
+      "column": 5,
+      "path": "/bounty_reports/4",
+      "message": "report_ref repeated for the same intake: the first record is kept, this one skipped"
+    },
+    {
+      "line": 58,
+      "column": 5,
+      "path": "/bounty_reports/5",
+      "message": "record without a report_ref: skipped"
+    },
+    {
+      "line": 61,
+      "column": 5,
+      "path": "/bounty_reports/6",
+      "message": "record without a title: skipped"
+    }
+  ]
+}

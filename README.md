@@ -147,7 +147,7 @@ Schema validation checks shape. `Report.Validate()` in Go also checks what a sch
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 1.6: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP traditional report (JSON and XML), and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. `Detect` cannot tell opengrep JSON from semgrep JSON (same shape), so a caller that ran opengrep sets `Options.Format` to `opengrep`; its findings keep the fingerprint a semgrep run gave them. `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 1.6: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP traditional report (JSON and XML), generic bug-bounty reports (`bounty_report`, JSON and CSV), and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. `Detect` cannot tell opengrep JSON from semgrep JSON (same shape), so a caller that ran opengrep sets `Options.Format` to `opengrep`; its findings keep the fingerprint a semgrep run gave them. `Detect` names bounty report JSON by its top-level `bounty_reports` member but never CSV, which a caller forces with `Options.Format`; `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})

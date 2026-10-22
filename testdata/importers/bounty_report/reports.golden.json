@@ -1,0 +1,183 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "source_type": "manual"
+  },
+  "tool": {
+    "name": "bounty_report"
+  },
+  "assets": [
+    {
+      "id": "host-app.example.com",
+      "type": "domain",
+      "value": "app.example.com",
+      "name": "app.example.com"
+    },
+    {
+      "id": "host-203.0.113.7",
+      "type": "ip_address",
+      "value": "203.0.113.7",
+      "name": "203.0.113.7"
+    },
+    {
+      "id": "app-acme-mobile-ios",
+      "type": "web_application",
+      "value": "acme-mobile-ios",
+      "name": "acme-mobile-ios"
+    },
+    {
+      "id": "host-api.example.com",
+      "type": "domain",
+      "value": "api.example.com",
+      "name": "api.example.com"
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Stored XSS in profile bio",
+      "description": "The **bio** field is rendered unescaped.\n\n<script>alert(1)</script>\n\n## Steps to reproduce\n\n1. Open the profile.\n2. Save the payload.\n\n## Impact\n\nSession theft of any visitor.",
+      "severity": "high",
+      "asset_ref": "host-app.example.com",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-79"
+        ],
+        "cwe_id": "CWE-79"
+      },
+      "fingerprint": "bounty_report:v1:d543782f08f020a7ca3b588fc1f6cd3d86f0435decfae3d9fb59eaf14fd2fb8e",
+      "first_seen_at": "2026-09-01T03:30:00Z",
+      "native": {
+        "scheme": "other",
+        "instance_id": "RPT-1001",
+        "severity": "High",
+        "status": "Not Applicable",
+        "raw_ref": "/bounty_reports/0"
+      },
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N",
+          "source": "reporter"
+        }
+      ],
+      "source_lifecycle": {
+        "first_found": "2026-09-01T03:30:00Z"
+      },
+      "properties": {
+        "bounty_report": {
+          "disclosure": {
+            "agreed_date": "2026-12-01",
+            "state": "coordinated"
+          },
+          "endpoint_path": "/profile/edit",
+          "intake": "acme-program",
+          "parameter": "bio",
+          "ref": "RPT-1001",
+          "reported_severity": "high",
+          "researcher": "alice_sec",
+          "reward": {
+            "amount": "1500.50",
+            "currency": "USD",
+            "status": "paid"
+          },
+          "state": "not_applicable",
+          "submitted_at": "2026-09-01T03:30:00Z",
+          "url": "https://app.example.com/profile/edit?x=1",
+          "weakness": "CWE-79"
+        }
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Open admin panel",
+      "description": "The panel needs no login.",
+      "severity": "critical",
+      "asset_ref": "host-203.0.113.7",
+      "fingerprint": "bounty_report:v1:4a4dbe5e49dec72ea5d7c86b19b2cec1950789a524e629baf3671503cb2c0a22",
+      "first_seen_at": "2026-09-02T00:00:00Z",
+      "native": {
+        "scheme": "other",
+        "instance_id": "RPT-1002",
+        "severity": "critical",
+        "status": "triaged",
+        "raw_ref": "/bounty_reports/1"
+      },
+      "source_lifecycle": {
+        "first_found": "2026-09-02T00:00:00Z"
+      },
+      "properties": {
+        "bounty_report": {
+          "intake": "import",
+          "ref": "RPT-1002",
+          "reported_severity": "critical",
+          "reward": {
+            "amount": "500",
+            "currency": "EUR",
+            "status": "pending"
+          },
+          "state": "triaged",
+          "submitted_at": "2026-09-02T00:00:00Z"
+        }
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Mobile app leaks token to logs",
+      "severity": "info",
+      "asset_ref": "app-acme-mobile-ios",
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-532"
+        ],
+        "cwe_id": "CWE-532"
+      },
+      "fingerprint": "bounty_report:v1:c8ef5c898273e922b600c0d7c52d557baf591cea4962363d903e1eeb0716f7f3",
+      "native": {
+        "scheme": "other",
+        "instance_id": "PLT-77",
+        "severity": "informational",
+        "status": "resolved",
+        "raw_ref": "/bounty_reports/2"
+      },
+      "properties": {
+        "bounty_report": {
+          "disclosure": {
+            "state": "disclosed"
+          },
+          "intake": "platform.acme",
+          "ref": "PLT-77",
+          "reported_severity": "info",
+          "state": "resolved",
+          "weakness": "CWE-532"
+        }
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Password reset poisoning",
+      "severity": "medium",
+      "asset_ref": "host-api.example.com",
+      "fingerprint": "bounty_report:v1:c2ce3ad1fe50d5dbe2cf668fc80c1604cdb87ab994bf84016fa13db4f2491845",
+      "native": {
+        "scheme": "other",
+        "instance_id": "RPT-1003",
+        "severity": "severe",
+        "status": "in progress",
+        "raw_ref": "/bounty_reports/3"
+      },
+      "properties": {
+        "bounty_report": {
+          "endpoint_path": "/v1/reset",
+          "intake": "import",
+          "ref": "RPT-1003",
+          "researcher": "bob"
+        }
+      }
+    }
+  ]
+}

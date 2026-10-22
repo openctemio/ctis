@@ -4,6 +4,13 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: bounty report importer format
+
+- New importer format `bounty_report` (`importer.FormatBountyReport`) for bug-bounty and disclosure reports: JSON `{"bounty_reports": [...]}` or CSV with a header row. One report is one finding; `Detect` names the JSON shape by its top-level `bounty_reports` member, CSV is read only when the caller sets `Options.Format`.
+- New option `Options.BountyIntake`: the intake of records that carry none (default `import`). The fingerprint is `bounty_report:v1:` + hex(sha256(intake + NUL + report_ref)).
+- The report-specific members (intake, ref, researcher, submitted_at, reported_severity, state, weakness, endpoint_path, parameter, url, reward, disclosure) are in `findings[].properties.bounty_report`. Markup stays data; a `url` is kept only as an https URL without credentials and is never a reference; credentials in the asset URL are removed; bidirectional and control characters are removed; the importer opens no connection and resolves no name.
+- `docs/importers/bounty_report.md` is generated.
+
 ## [1.6.1] - 2026-10-19
 
 Additive release on CTIS 1.6: new contract packages (`addrscope`, `outcome`, `politeness`, `settings`, `source`, `tooloption`), the `transfer` module, the opengrep importer, and fixes. Nothing existing changed meaning.
