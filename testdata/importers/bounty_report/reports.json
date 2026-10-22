@@ -1,0 +1,65 @@
+{
+  "bounty_reports": [
+    {
+      "report_ref": "RPT-1001",
+      "intake": "Acme-Program",
+      "title": "Stored XSS in profile bio",
+      "submitted_at": "2026-09-01T10:30:00+07:00",
+      "researcher": "alice_sec",
+      "reported_severity": "High",
+      "state": "Not Applicable",
+      "weakness": "CWE-79",
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N",
+      "url": "https://app.example.com/profile/edit?x=1",
+      "asset": "https://app.example.com/profile/edit?tab=bio#top",
+      "parameter": "bio",
+      "description": "The **bio** field is rendered unescaped.\n\n<script>alert(1)</script>",
+      "steps": "1. Open the profile.\n2. Save the payload.",
+      "impact": "Session theft of any visitor.",
+      "reward": {"amount": "1500.50", "currency": "USD", "status": "paid"},
+      "disclosure": {"state": "coordinated", "agreed_date": "2026-12-01"}
+    },
+    {
+      "report_ref": "RPT-1002",
+      "title": "Open admin panel",
+      "submitted_at": "2026-09-02T00:00:00Z",
+      "reported_severity": "critical",
+      "state": "triaged",
+      "asset": "203.0.113.7",
+      "description": "The panel needs no login.",
+      "reward": {"amount": 500, "currency": "EUR", "status": "pending"}
+    },
+    {
+      "report_ref": "PLT-77",
+      "intake": "platform.acme",
+      "title": "Mobile app leaks token to logs",
+      "reported_severity": "informational",
+      "state": "resolved",
+      "weakness": "CWE-532",
+      "asset": "acme-mobile-ios",
+      "disclosure": {"state": "disclosed"}
+    },
+    {
+      "report_ref": "RPT-1003",
+      "title": "Password reset poisoning",
+      "reported_severity": "severe",
+      "state": "in progress",
+      "weakness": "79",
+      "cvss_vector": "not-a-vector",
+      "url": "http://insecure.example.com/",
+      "asset": "https://user:secret@api.example.com/v1/reset",
+      "researcher": "bob",
+      "reward": {"amount": "-5", "currency": "usd", "status": "maybe"}
+    },
+    {
+      "report_ref": "RPT-1002",
+      "title": "Duplicate of the open admin panel report"
+    },
+    {
+      "title": "No reference"
+    },
+    {
+      "report_ref": "RPT-1004"
+    }
+  ]
+}

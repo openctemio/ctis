@@ -53,6 +53,10 @@ const (
 	FormatGrype Format = "grype"
 	// ZAP traditional JSON or XML report.
 	FormatZAP Format = "zap"
+	// Generic bug-bounty / disclosure reports: {"bounty_reports": [...]} as
+	// JSON, or one report per CSV row. Detect names the JSON shape only; CSV
+	// is read when Options.Format forces this format.
+	FormatBountyReport Format = "bounty_report"
 )
 
 // AllFormats returns every format Parse reads, sorted.
@@ -220,6 +224,9 @@ func detectJSON(head []byte) (Format, bool) {
 			}
 		}
 		return "", false
+	}
+	if _, ok := top["bounty_reports"]; ok {
+		return FormatBountyReport, true
 	}
 	if _, ok := top["matches"]; ok {
 		if _, src := top["source"]; src {

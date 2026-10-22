@@ -10,6 +10,7 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | Format | Spec | Mapped | Ignored | Spec coverage | Fixture paths | Fixture coverage |
 |---|---|---|---|---|---|---|
 | `betterleaks` | [betterleaks JSON report](betterleaks.md) | 20 | 1 | 95% | 21 | 95% |
+| `bounty_report` | [Bug-bounty / disclosure reports (JSON and CSV)](bounty_report.md) | 21 | 0 | 100% | 21 | 100% |
 | `csaf` | [CSAF 2.0 (VEX and security advisory profiles)](csaf.md) | 45 | 55 | 45% | 168 | 39% |
 | `cyclonedx` | [CycloneDX JSON (SBOM, VDR, VEX)](cyclonedx.md) | 75 | 77 | 49% | 119 | 63% |
 | `defectdojo` | [DefectDojo Generic Findings Import JSON](defectdojo.md) | 65 | 8 | 89% | 74 | 88% |

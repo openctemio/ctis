@@ -138,8 +138,10 @@ jobs:
 
       - name: Fuzz each target briefly
         run: |
+          # A short minimization keeps a new input from running past the
+          # time budget (the run then fails with "context deadline exceeded").
           for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion FuzzHTTPExchangeFromRaw; do
-            go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s .
+            go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x .
           done
           # The importers read hostile files; a short minimization keeps the
           # time budget on new inputs.

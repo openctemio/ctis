@@ -64,6 +64,12 @@ type Options struct {
 	ToolType          string
 	DefaultConfidence int
 
+	// bounty_report only. The intake of records that carry none (the program
+	// or platform the reports came from). Lower-cased; 1 to 64 characters of
+	// a-z, 0-9, '.', '_' and '-', starting with a letter or digit. Empty:
+	// "import". An invalid value fails the parse.
+	BountyIntake string
+
 	// The Qualys KnowledgeBase XML for a Qualys detection file. Optional:
 	// without it, detections keep their QID and results but have no title
 	// beyond the QID, CVEs or CVSS.

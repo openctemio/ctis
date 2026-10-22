@@ -1,6 +1,7 @@
 package ctis
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -203,15 +204,17 @@ func FuzzHTTPExchangeFromRaw(f *testing.F) {
 			t.Fatalf("invalid item %v", errs)
 		}
 		if r := it.HTTP.Request; r != nil {
-			for _, h := range r.Headers {
+			for i, h := range r.Headers {
 				// A value shorter than minRedactLen is marked in its own
-				// header only: repeating it elsewhere is not marked, or a
-				// two-letter cookie would mark every "ab" in the item.
+				// header only: repeating it elsewhere (another header's
+				// value included) is not marked, or a two-letter cookie
+				// would mark every "ab" in the item.
 				if !IsSensitiveHeader(h.Name) || h.Value == "" {
 					continue
 				}
+				own := fmt.Sprintf("/http/request/headers/%d/value", i)
 				for _, ptr := range unmarked(&it, h.Value) {
-					if len(h.Value) >= minRedactLen || (strings.HasPrefix(ptr, "/http/request/headers/") && strings.HasSuffix(ptr, "/value")) {
+					if len(h.Value) >= minRedactLen || ptr == own {
 						t.Fatalf("sensitive header %s unmarked at %s", h.Name, ptr)
 					}
 				}
