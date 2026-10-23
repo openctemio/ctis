@@ -11,5 +11,19 @@
       "rule": 0,
       "message": "invalid CTIS report: findings[0]: title is required"
     }
+  ],
+  "fields": [
+    "/extracted-results",
+    "/host",
+    "/info/classification/cve-id",
+    "/info/classification/cwe-id",
+    "/info/name",
+    "/info/reference",
+    "/info/severity",
+    "/info/tags",
+    "/ip",
+    "/matched-at",
+    "/port",
+    "/template-id"
   ]
 }

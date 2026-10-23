@@ -11,5 +11,19 @@
       "rule": -1,
       "message": "not a JSON value: invalid character 'o' in literal null (expecting 'u')"
     }
+  ],
+  "fields": [
+    "/host",
+    "/ip",
+    "/msg",
+    "/port",
+    "/protocol",
+    "/timestamp",
+    "/tls"
+  ],
+  "unmapped": [
+    "/msg",
+    "/timestamp",
+    "/tls"
   ]
 }

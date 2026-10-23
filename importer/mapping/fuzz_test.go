@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -34,6 +35,14 @@ func FuzzApply(f *testing.F) {
 	}
 	f.Add([]byte(`{"port": 1e999, "ip": "\u0000"}`))
 	f.Add([]byte(`[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[`))
+	// CSV and XML hostile seeds: formula cells, an unterminated quote, a
+	// UTF-16 mark, billion laughs, an external entity, a depth bomb.
+	f.Add([]byte("title,severity,description\n=cmd|' /C calc'!A0,high,\"+1\"\n\"open,low\n"))
+	f.Add([]byte("\xff\xfet\x00"))
+	f.Add([]byte(`<!DOCTYPE l [<!ENTITY a "aaaa"><!ENTITY b "&a;&a;&a;">]><testsuites><testcase name="&b;"><failure/></testcase></testsuites>`))
+	f.Add([]byte(`<!DOCTYPE r [<!ENTITY x SYSTEM "file:///etc/passwd">]><r><testcase name="&x;"/></r>`))
+	f.Add([]byte(strings.Repeat("<testcase>", 80)))
+	f.Add([]byte(`<r><testcase name="a" classname="b"><failure message="m" type="high">t</failure><failure/></testcase></r>`))
 	opts := Options{Now: fixedNow, MaxRecords: 500, MaxOutputs: 500, MaxRecordBytes: 64 << 10, MaxInputBytes: 1 << 20}
 	f.Fuzz(func(t *testing.T, data []byte) {
 		for _, m := range maps {

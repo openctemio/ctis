@@ -4,6 +4,15 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: CSV and XML inputs, identity and field observation in declarative mappings
+
+- `importer/mapping` reads `source: "csv"`. It reads a header row and detects the delimiter (`,` `;` tab `|`), or takes it from `csv.delimiter`. It skips preamble lines with `csv.skip_rows` and follows RFC 4180 quoting. Cells are capped (`Options.MaxCellBytes`, default 64 KiB), at most 1024 columns are read, and a UTF-16 input is refused (`ErrEncoding`). Cells are text and never evaluated.
+- `importer/mapping` reads `source: "xml"` with `each` naming the record elements (`/a/b/c` or `//name`). The reader is the new `importer.SafeXMLTokenReader`, which refuses every document type declaration (no entities, no external resources) and bounds depth, elements, attributes, text and record size. Paths walk repeated and single elements alike.
+- New mapping member `identity`: the finding members that identify a finding. A constant identity, and a constant `fingerprint`, are refused at load. A finding whose identity is empty is skipped. `Mapping.Identity()` and `Mapping.Rules()` let a receiver check its policy and compare versions.
+- New `Options.Observe`: `Stats.Fields` lists the input's fields and `Stats.Unmapped` the ones no rule reads.
+- One value set on a list member is now a one-item list. Before, the record was skipped.
+- Three new samples, `generic-csv`, `generic-json` and `junit-xml`, which double as starter mappings.
+
 ### Added: bounty report importer format
 
 - New importer format `bounty_report` (`importer.FormatBountyReport`) for bug-bounty and disclosure reports: JSON `{"bounty_reports": [...]}` or CSV with a header row. One report is one finding; `Detect` names the JSON shape by its top-level `bounty_reports` member, CSV is read only when the caller sets `Options.Format`.

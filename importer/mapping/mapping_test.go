@@ -77,8 +77,13 @@ func TestLoadRefusals(t *testing.T) {
 		"unknown member":       {`{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": [], "x": 1}`, "unknown field"},
 		"trailing":             {doc("jsonl", "", assetRule) + " {}", "trailing data"},
 		"api version":          {`{"apiVersion": "v2", "source": "jsonl", "records": [` + assetRule + `]}`, "apiVersion"},
-		"source":               {doc("xml", "", assetRule), "source \"xml\""},
-		"each on jsonl":        {doc("jsonl", "/a", assetRule), "each is for source json"},
+		"source":               {doc("yaml", "", assetRule), "source \"yaml\""},
+		"xml without each":     {doc("xml", "", assetRule), "source xml needs each"},
+		"xml each relative":    {doc("xml", "a/b", assetRule), "starts with / or //"},
+		"xml each bad name":    {doc("xml", "/a/1b", assetRule), "element name"},
+		"xml each deep any":    {doc("xml", "//a/b", assetRule), "one element name"},
+		"each on csv":          {doc("csv", "/a", assetRule), "each is for source json or xml"},
+		"each on jsonl":        {doc("jsonl", "/a", assetRule), "each is for source json or xml"},
 		"each malformed":       {doc("json", "a", assetRule), "starts with /"},
 		"no records":           {`{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": []}`, "records is empty"},
 		"too many rules":       {doc("jsonl", "", strings.Join(rules, ",")), "records rules"},
@@ -412,7 +417,9 @@ func TestDependenciesAndDecodeFailures(t *testing.T) {
 	r, st := apply(t, m, `{"n": "lodash", "v": "4.17.0", "l": ["MIT"], "sev": "high", "c": 50}
 {"n": " ", "sev": "nope", "c": "x"}
 {"n": "a", "l": "MIT", "sev": "low", "c": 500}`, Options{})
-	if len(r.Dependencies) != 1 || len(r.Findings) != 1 || len(r.Assets) != 1 || st.Skipped != 6 {
+	// One license as a string is a one-item list: the third dependency is
+	// kept.
+	if len(r.Dependencies) != 2 || len(r.Findings) != 1 || len(r.Assets) != 1 || st.Skipped != 5 {
 		t.Fatalf("%+v %+v", r, st)
 	}
 	if s := st.Issues[0].String(); !strings.Contains(s, "record 2, rule 0") {

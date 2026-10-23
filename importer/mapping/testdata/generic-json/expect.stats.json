@@ -1,0 +1,22 @@
+{
+  "records": 3,
+  "assets": 0,
+  "findings": 2,
+  "dependencies": 0,
+  "skipped": 0,
+  "truncated": false,
+  "fields": [
+    "/asset",
+    "/asset_type",
+    "/cve",
+    "/description",
+    "/extra/scanner",
+    "/references",
+    "/rule_id",
+    "/severity",
+    "/title"
+  ],
+  "unmapped": [
+    "/extra/scanner"
+  ]
+}

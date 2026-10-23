@@ -105,6 +105,24 @@ type xmlReader struct {
 	obs      *observer
 	stack    []string
 	elements int
+	// noDoctype refuses every document type declaration, an external
+	// identifier included (SafeXMLTokenReader).
+	noDoctype bool
+}
+
+// SafeXMLTokenReader returns the hardened XML token reader this package
+// parses with, for other readers of untrusted XML (the declarative mappings
+// of importer/mapping). It is stricter than the format parsers: it refuses
+// every document type declaration, so no DTD of any kind is accepted, and
+// it knows only the five predefined entities. Depth, element count,
+// attributes per element, text size and input size are bounded by lim (zero
+// fields take DefaultLimits). Errors are *ParseError wrapping ErrTooLarge,
+// ErrUnsafe or ErrMalformed. Comments and processing instructions are
+// dropped.
+func SafeXMLTokenReader(r io.Reader, lim Limits) xml.TokenReader {
+	x := newXMLReader(r, "", lim.withDefaults(), nil, nil)
+	x.noDoctype = true
+	return x
 }
 
 func newXMLReader(r io.Reader, format Format, lim Limits, keyAttrs map[string]string, obs *observer) *xmlReader {
@@ -153,6 +171,9 @@ func (x *xmlReader) Token() (xml.Token, error) {
 		}
 		switch t := tok.(type) {
 		case xml.Directive:
+			if x.noDoctype {
+				return nil, x.fail(ErrUnsafe, "a document type declaration is not allowed")
+			}
 			if err := checkDirective(t); err != nil {
 				return nil, x.fail(ErrUnsafe, err.Error())
 			}

@@ -56,6 +56,12 @@ type Options struct {
 	MaxRecords     int   // input records read; default 200 000
 	MaxOutputs     int   // assets + findings + dependencies; default 200 000
 	MaxIssues      int   // Stats.Issues kept; default 200
+	MaxCellBytes   int   // one CSV cell; default 64 KiB
+	MaxXMLElements int   // elements of an XML document; default 4 000 000
+
+	// Observe records the input's fields in Stats.Fields and the ones no
+	// rule reads in Stats.Unmapped (a mapping editor's preview).
+	Observe bool
 }
 
 func (o Options) withDefaults() Options {
@@ -76,6 +82,12 @@ func (o Options) withDefaults() Options {
 	}
 	if o.MaxIssues <= 0 {
 		o.MaxIssues = DefaultMaxIssues
+	}
+	if o.MaxCellBytes <= 0 {
+		o.MaxCellBytes = DefaultMaxCellBytes
+	}
+	if o.MaxXMLElements <= 0 {
+		o.MaxXMLElements = DefaultMaxXMLElements
 	}
 	return o
 }
@@ -105,6 +117,14 @@ type Stats struct {
 	Skipped      int     `json:"skipped"`
 	Truncated    bool    `json:"truncated"`
 	Issues       []Issue `json:"issues,omitempty"`
+
+	// With Options.Observe: the input's fields as source paths (CSV: the
+	// header columns in order; JSON and XML: leaf paths without list
+	// indexes, sorted), at most MaxObservedFields, FieldsTruncated when
+	// there were more; and those no predicate or value reads.
+	Fields          []string `json:"fields,omitempty"`
+	FieldsTruncated bool     `json:"fields_truncated,omitempty"`
+	Unmapped        []string `json:"unmapped,omitempty"`
 }
 
 type applier struct {
@@ -113,6 +133,7 @@ type applier struct {
 	now    time.Time
 	report *ctis.Report
 	stats  Stats
+	obs    *observer // nil unless Options.Observe
 }
 
 // Apply reads the tool output from r and returns the CTIS report the
@@ -127,6 +148,9 @@ type applier struct {
 func (m *Mapping) Apply(ctx context.Context, r io.Reader, opts Options) (*ctis.Report, Stats, error) {
 	opts = opts.withDefaults()
 	a := &applier{m: m, opts: opts, now: opts.Now().UTC()}
+	if opts.Observe {
+		a.obs = newObserver()
+	}
 	a.report = &ctis.Report{
 		Version:  ctis.SchemaVersion,
 		Schema:   ctis.SchemaURL,
@@ -142,14 +166,23 @@ func (m *Mapping) Apply(ctx context.Context, r io.Reader, opts Options) (*ctis.R
 	switch m.doc.Source {
 	case SourceJSONL:
 		err = a.jsonl(ctx, lr)
+	case SourceCSV:
+		err = a.csvInput(ctx, lr)
+	case SourceXML:
+		err = a.xmlInput(ctx, lr)
 	default:
 		err = a.json(ctx, lr)
 	}
-	if err == nil && lr.n > opts.MaxInputBytes {
+	if lr.n > opts.MaxInputBytes {
 		err = ErrInputTooLarge
 	}
 	if err != nil {
 		return nil, a.stats, err
+	}
+	if a.obs != nil {
+		a.stats.Fields = a.obs.fields(m.doc.Source == SourceCSV)
+		a.stats.FieldsTruncated = a.obs.overflow
+		a.stats.Unmapped = unmapped(a.stats.Fields, m.refs)
 	}
 	return a.report, a.stats, nil
 }
@@ -291,6 +324,9 @@ func (a *applier) decoded(ctx context.Context, n int, rec any) (bool, error) {
 			return true, err
 		}
 	}
+	if a.obs != nil && a.m.doc.Source != SourceCSV {
+		a.obs.walk("", rec, 0)
+	}
 	for i, r := range a.m.rules {
 		if !r.matches(rec) {
 			continue
@@ -346,6 +382,9 @@ func (a *applier) emit(r rule, rec any) error {
 		if !ok {
 			continue
 		}
+		if str, ok := v.(string); ok && s.list {
+			v = []any{str} // one value on a list member is a one-item list
+		}
 		setPath(tree, s.target, sanitize(v, s.target[len(s.target)-1]))
 	}
 	raw, err := json.Marshal(tree)
@@ -369,6 +408,9 @@ func (a *applier) emit(r rule, rec any) error {
 		var f ctis.Finding
 		if err := strictDecode(raw, &f); err != nil {
 			return fmt.Errorf("finding: %s", cleanErr(err))
+		}
+		if len(a.m.ident) > 0 && identityEmpty(tree, a.m.ident) {
+			return errors.New("finding: every identity member is empty")
 		}
 		if f.Type == "" {
 			f.Type = ctis.FindingTypeVulnerability
@@ -394,6 +436,25 @@ func (a *applier) emit(r rule, rec any) error {
 		a.stats.Dependencies++
 	}
 	return nil
+}
+
+// identityEmpty: none of the identity members got a value.
+func identityEmpty(tree map[string]any, ident [][]string) bool {
+	for _, segs := range ident {
+		var cur any = tree
+		for _, s := range segs {
+			m, ok := cur.(map[string]any)
+			if !ok {
+				cur = nil
+				break
+			}
+			cur = m[s]
+		}
+		if cur != nil && !empty(cur) {
+			return false
+		}
+	}
+	return true
 }
 
 // cleanErr keeps a decode error short; it may quote input.

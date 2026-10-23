@@ -1,0 +1,21 @@
+{
+  "records": 5,
+  "assets": 0,
+  "findings": 3,
+  "dependencies": 0,
+  "skipped": 0,
+  "truncated": false,
+  "fields": [
+    "/@classname",
+    "/@name",
+    "/error/#text",
+    "/error/@message",
+    "/failure/#text",
+    "/failure/@message",
+    "/failure/@type",
+    "/skipped"
+  ],
+  "unmapped": [
+    "/skipped"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-07T08:00:00Z",
+    "source_type": "scanner"
+  },
+  "tool": {
+    "name": "generic-json",
+    "version": "1.0.0"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Outdated nginx",
+      "description": "HTTP/2 rapid reset",
+      "severity": "high",
+      "rule_id": "NGX-1",
+      "asset_value": "edge-01.example.com",
+      "asset_type": "host",
+      "vulnerability": {
+        "cve_id": "CVE-2023-44487"
+      },
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2023-44487"
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "Default credentials",
+      "severity": "critical",
+      "rule_id": "CRED-7",
+      "asset_value": "10.1.2.3",
+      "asset_type": "ip_address"
+    }
+  ]
+}
