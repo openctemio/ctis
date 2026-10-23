@@ -1,0 +1,8 @@
+{
+  "generated": "2026-10-01",
+  "findings": [
+    {"title": "Outdated nginx", "severity": "HIGH", "rule_id": "NGX-1", "asset": "edge-01.example.com", "cve": "CVE-2023-44487", "description": "HTTP/2 rapid reset", "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-44487"], "extra": {"scanner": "custom"}},
+    {"title": "Default credentials", "severity": "critical", "rule_id": "CRED-7", "asset": "10.1.2.3", "asset_type": "ip_address"},
+    {"severity": "low", "rule_id": "NO-TITLE"}
+  ]
+}

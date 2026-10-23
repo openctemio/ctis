@@ -1,6 +1,6 @@
-// Package mapping turns the JSON or JSON Lines output of any command-line
-// tool into a CTIS report through a declarative mapping file, so a tool
-// that writes JSON needs no parser code.
+// Package mapping turns the JSON, JSON Lines, CSV or XML output of any tool
+// into a CTIS report through a declarative mapping file, so a tool or an
+// export needs no parser code.
 //
 // A mapping is a JSON document (apiVersion "openctem.io/mapping/v1"). Each
 // rule selects input records with closed predicates and sets CTIS members
@@ -40,6 +40,8 @@ const (
 	MaxMapEntries    = 256
 	MaxInValues      = 256
 	MaxTemplateBytes = 1024
+	MaxIdentity      = 8
+	MaxSkipRows      = 100
 	maxMappingDepth  = 32
 )
 
@@ -47,6 +49,8 @@ const (
 const (
 	SourceJSON  = "json"
 	SourceJSONL = "jsonl"
+	SourceCSV   = "csv"
+	SourceXML   = "xml"
 )
 
 // Record kinds.
@@ -60,7 +64,11 @@ const (
 type Mapping struct {
 	doc    document
 	each   path
+	xmlSel xmlSelector
+	csv    csvConfig
 	rules  []rule
+	refs   []string   // referenced source paths, normalized (observe.go)
+	ident  [][]string // the identity members, split at dots
 	digest string
 }
 
@@ -69,8 +77,20 @@ type document struct {
 	APIVersion string     `json:"apiVersion"`
 	Source     string     `json:"source"`
 	Each       string     `json:"each,omitempty"`
+	CSV        *CSVSpec   `json:"csv,omitempty"`
+	Identity   []string   `json:"identity,omitempty"`
 	Records    []RuleSpec `json:"records"`
 	Notes      string     `json:"notes,omitempty"`
+}
+
+// CSVSpec reads a CSV input (source "csv").
+type CSVSpec struct {
+	// Delimiter is ",", ";", "\t", "|" or "auto" (the default): the one
+	// of these that occurs most often, outside quotes, in the header row.
+	Delimiter string `json:"delimiter,omitempty"`
+	// SkipRows are lines before the header row (a report title, an export
+	// date), 0 to MaxSkipRows.
+	SkipRows int `json:"skip_rows,omitempty"`
 }
 
 // RuleSpec is one rule as written in the file.
@@ -211,13 +231,61 @@ func Load(data []byte) (*Mapping, error) {
 // descriptor's own digest.
 func (m *Mapping) Digest() string { return m.digest }
 
-// Source is the input format, "json" or "jsonl".
+// Source is the input format: "json", "jsonl", "csv" or "xml".
 func (m *Mapping) Source() string { return m.doc.Source }
+
+// Identity is the list of finding members the mapping declares as the
+// identity of a finding (empty when it declares none). A receiver compares
+// it, and the value specs of these members (Rules), across versions of a
+// mapping: a change of identity makes earlier findings and new ones keyed
+// apart.
+func (m *Mapping) Identity() []string { return append([]string(nil), m.doc.Identity...) }
+
+// RuleSummary describes one rule for a receiver that checks a mapping
+// against its own policy (members it reserves) or compares two versions.
+type RuleSummary struct {
+	Kind string `json:"kind"`
+	// Targets are the members the rule sets, sorted.
+	Targets []string `json:"targets"`
+	// Specs is the canonical JSON of each target's value spec.
+	Specs map[string]string `json:"specs"`
+	// Const is true for a target whose value is a constant.
+	Const map[string]bool `json:"const,omitempty"`
+}
+
+// Rules summarizes the rules in order.
+func (m *Mapping) Rules() []RuleSummary {
+	out := make([]RuleSummary, 0, len(m.doc.Records))
+	for _, spec := range m.doc.Records {
+		rs := RuleSummary{Kind: spec.Kind, Targets: sortedKeys(spec.Set), Specs: map[string]string{}}
+		for _, t := range rs.Targets {
+			b, _ := json.Marshal(spec.Set[t])
+			rs.Specs[t] = string(b)
+			if spec.Set[t].isConstant() {
+				if rs.Const == nil {
+					rs.Const = map[string]bool{}
+				}
+				rs.Const[t] = true
+			}
+		}
+		out = append(out, rs)
+	}
+	return out
+}
+
+// isConstant: the value is the same for every record. A template always
+// has a variable, so only a const is.
+func (v ValueSpec) isConstant() bool {
+	return v.Const != nil && v.Path == "" && !v.bare && v.Template == ""
+}
 
 func (m *Mapping) compile() error {
 	d := m.doc
 	if d.APIVersion != APIVersion {
 		return fmt.Errorf("mapping: apiVersion %q, want %q", d.APIVersion, APIVersion)
+	}
+	if d.CSV != nil && d.Source != SourceCSV {
+		return errors.New("mapping: csv is for source csv only")
 	}
 	switch d.Source {
 	case SourceJSON:
@@ -226,12 +294,25 @@ func (m *Mapping) compile() error {
 			return fmt.Errorf("mapping: each: %w", err)
 		}
 		m.each = p
-	case SourceJSONL:
+	case SourceJSONL, SourceCSV:
 		if d.Each != "" {
-			return errors.New("mapping: each is for source json only")
+			return errors.New("mapping: each is for source json or xml only")
 		}
+		if d.Source == SourceCSV {
+			c, err := compileCSV(d.CSV)
+			if err != nil {
+				return fmt.Errorf("mapping: csv: %w", err)
+			}
+			m.csv = c
+		}
+	case SourceXML:
+		sel, err := parseXMLSelector(d.Each)
+		if err != nil {
+			return fmt.Errorf("mapping: each: %w", err)
+		}
+		m.xmlSel = sel
 	default:
-		return fmt.Errorf("mapping: source %q, want json or jsonl", d.Source)
+		return fmt.Errorf("mapping: source %q, want json, jsonl, csv or xml", d.Source)
 	}
 	if len(d.Records) == 0 {
 		return errors.New("mapping: records is empty")
@@ -245,6 +326,69 @@ func (m *Mapping) compile() error {
 			return fmt.Errorf("mapping: records[%d]: %w", i, err)
 		}
 		m.rules = append(m.rules, r)
+	}
+	if err := m.compileIdentity(); err != nil {
+		return err
+	}
+	m.refs = referencedPaths(d)
+	return nil
+}
+
+// compileIdentity checks the declared identity: 1 to MaxIdentity distinct
+// finding members, each set by every finding rule, and in no rule all set
+// from constants (a constant identity would make every finding of the rule
+// one finding). A constant fingerprint is refused for the same reason,
+// with or without an identity.
+func (m *Mapping) compileIdentity() error {
+	d := m.doc
+	findingRules := 0
+	for i, spec := range d.Records {
+		if spec.Kind != KindFinding {
+			continue
+		}
+		findingRules++
+		if fp, ok := spec.Set["fingerprint"]; ok && fp.isConstant() {
+			return fmt.Errorf("mapping: records[%d]: a constant fingerprint makes every finding of the rule one finding", i)
+		}
+	}
+	if len(d.Identity) == 0 {
+		return nil
+	}
+	if len(d.Identity) > MaxIdentity {
+		return fmt.Errorf("mapping: identity has %d members, at most %d", len(d.Identity), MaxIdentity)
+	}
+	if findingRules == 0 {
+		return errors.New("mapping: identity needs a finding rule")
+	}
+	seen := map[string]bool{}
+	for _, t := range d.Identity {
+		if seen[t] {
+			return fmt.Errorf("mapping: identity lists %q twice", t)
+		}
+		seen[t] = true
+		segs := strings.Split(t, ".")
+		if _, err := checkTarget(kindTypes[KindFinding], KindFinding, segs); err != nil {
+			return fmt.Errorf("mapping: identity %q: %w", t, err)
+		}
+		m.ident = append(m.ident, segs)
+	}
+	for i, spec := range d.Records {
+		if spec.Kind != KindFinding {
+			continue
+		}
+		constant := true
+		for _, t := range d.Identity {
+			v, ok := spec.Set[t]
+			if !ok {
+				return fmt.Errorf("mapping: records[%d]: identity member %q is not set", i, t)
+			}
+			if !v.isConstant() {
+				constant = false
+			}
+		}
+		if constant {
+			return fmt.Errorf("mapping: records[%d]: the identity is constant, so every finding of the rule would be one finding", i)
+		}
 	}
 	return nil
 }
@@ -267,6 +411,7 @@ type predicate struct {
 type setter struct {
 	target []string
 	value  value
+	list   bool // the member is a list of strings
 }
 
 var kindTypes = map[string]reflect.Type{
@@ -317,14 +462,15 @@ func compileRule(spec RuleSpec) (rule, error) {
 	targets := sortedKeys(spec.Set)
 	for _, t := range targets {
 		segs := strings.Split(t, ".")
-		if err := checkTarget(root, spec.Kind, segs); err != nil {
+		list, err := checkTarget(root, spec.Kind, segs)
+		if err != nil {
 			return r, fmt.Errorf("set %q: %w", t, err)
 		}
 		v, err := compileValue(spec.Set[t])
 		if err != nil {
 			return r, fmt.Errorf("set %q: %w", t, err)
 		}
-		r.sets = append(r.sets, setter{target: segs, value: v})
+		r.sets = append(r.sets, setter{target: segs, value: v, list: list})
 	}
 	// One member set twice through a prefix ("location" and
 	// "location.path") is ambiguous.
@@ -353,28 +499,28 @@ func compileRule(spec RuleSpec) (rule, error) {
 // checkTarget resolves a dotted target against the CTIS Go type by JSON
 // member names. It does not descend into lists; a free-form map (properties,
 // details, source_extra) takes exactly one key level below it.
-func checkTarget(t reflect.Type, kind string, segs []string) error {
+func checkTarget(t reflect.Type, kind string, segs []string) (list bool, err error) {
 	if len(segs) == 0 {
-		return errors.New("empty target")
+		return false, errors.New("empty target")
 	}
 	for _, s := range segs {
 		if !targetSegRE.MatchString(s) {
-			return fmt.Errorf("segment %q", s)
+			return false, fmt.Errorf("segment %q", s)
 		}
 	}
 	if forbiddenTargets[kind][segs[0]] {
-		return fmt.Errorf("%q is set by the report builder, not by a mapping", segs[0])
+		return false, fmt.Errorf("%q is set by the report builder, not by a mapping", segs[0])
 	}
 	for i, s := range segs {
 		for t.Kind() == reflect.Pointer {
 			t = t.Elem()
 		}
 		if t.Kind() != reflect.Struct {
-			return fmt.Errorf("%q is below a %s", s, t.Kind())
+			return false, fmt.Errorf("%q is below a %s", s, t.Kind())
 		}
 		f, ok := jsonField(t, s)
 		if !ok {
-			return fmt.Errorf("%s has no member %q", t.Name(), s)
+			return false, fmt.Errorf("%s has no member %q", t.Name(), s)
 		}
 		t = f
 		for t.Kind() == reflect.Pointer {
@@ -382,27 +528,28 @@ func checkTarget(t reflect.Type, kind string, segs []string) error {
 		}
 		if t.Kind() == reflect.Map {
 			if t.Key().Kind() != reflect.String {
-				return fmt.Errorf("%q is not settable", s)
+				return false, fmt.Errorf("%q is not settable", s)
 			}
 			if len(segs) != i+2 {
-				return fmt.Errorf("%q takes exactly one key below it", s)
+				return false, fmt.Errorf("%q takes exactly one key below it", s)
 			}
-			return nil
+			return false, nil
 		}
 	}
 	switch t.Kind() {
 	case reflect.Struct:
 		// A whole object (location, network) is set member by member.
 		if t.String() != "time.Time" {
-			return errors.New("set the members of an object, not the object")
+			return false, errors.New("set the members of an object, not the object")
 		}
 	case reflect.Slice:
 		el := t.Elem()
 		if el.Kind() != reflect.String {
-			return errors.New("only lists of strings can be set")
+			return false, errors.New("only lists of strings can be set")
 		}
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
 
 func jsonField(t reflect.Type, name string) (reflect.Type, bool) {

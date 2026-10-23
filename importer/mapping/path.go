@@ -80,10 +80,16 @@ func parseIndex(s string) (int, error) {
 	return n, nil
 }
 
-// get walks the decoded JSON value v. ok is false when a step is missing.
+// get walks the decoded value v. ok is false when a step is missing.
+//
+// XML records (xmlElem, xmlList) are walked leniently: a member step on a
+// repeated element reads its first occurrence, index 0 of a single element
+// is the element, and "#text" of a text-only element is its text. The result is returned as a plain object or list.
 func (p path) get(v any) (any, bool) {
 	cur := v
-	for _, st := range p {
+	inXML := false
+	for i := 0; i < len(p); i++ {
+		st := p[i]
 		switch x := cur.(type) {
 		case map[string]any:
 			key := st.key
@@ -107,9 +113,57 @@ func (p path) get(v any) (any, bool) {
 				return nil, false
 			}
 			cur = x[n]
+		case xmlElem:
+			inXML = true
+			if st.index == 0 || (st.index < 0 && st.key == "0") {
+				continue // a single element is its own first occurrence
+			}
+			if st.index > 0 {
+				return nil, false
+			}
+			next, ok := x[st.key]
+			if !ok {
+				return nil, false
+			}
+			cur = next
+		case xmlList:
+			inXML = true
+			n := st.index
+			if n < 0 {
+				idx, err := parseIndex(st.key)
+				if err != nil {
+					// A member step on a repeated element: its first.
+					if len(x) == 0 {
+						return nil, false
+					}
+					cur = x[0]
+					i--
+					continue
+				}
+				n = idx
+			}
+			if n >= len(x) {
+				return nil, false
+			}
+			cur = x[n]
+		case string:
+			// The text of an XML element without attributes or children
+			// is its value: "#text" of it is the same text, and index 0
+			// of it is itself.
+			text := st.index < 0 && st.key == "#text"
+			first := st.index == 0 || (st.index < 0 && st.key == "0")
+			if !inXML || (!text && !first) {
+				return nil, false
+			}
 		default:
 			return nil, false
 		}
+	}
+	switch x := cur.(type) {
+	case xmlElem:
+		return map[string]any(x), true
+	case xmlList:
+		return []any(x), true
 	}
 	return cur, true
 }

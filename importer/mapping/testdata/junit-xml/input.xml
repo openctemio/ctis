@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="cis-checks">
+  <testsuite name="ssh" tests="3">
+    <testcase classname="ssh.config" name="PermitRootLogin is no">
+      <failure message="PermitRootLogin yes" type="high">/etc/ssh/sshd_config:12 PermitRootLogin yes</failure>
+    </testcase>
+    <testcase classname="ssh.config" name="Protocol 2 only"/>
+    <testcase classname="ssh.config" name="MaxAuthTries at most 4"><skipped/></testcase>
+  </testsuite>
+  <testsuite name="fs">
+    <testcase classname="fs.perms" name="/etc/shadow is 0640">
+      <failure message="mode 0644">stat returned 0644</failure>
+      <failure message="second failure is ignored by first-occurrence paths"/>
+    </testcase>
+    <testcase classname="fs.perms" name="tmp is noexec">
+      <error message="mount not readable">permission denied</error>
+    </testcase>
+  </testsuite>
+</testsuites>

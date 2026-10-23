@@ -1,0 +1,41 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-07T08:00:00Z",
+    "source_type": "scanner"
+  },
+  "tool": {
+    "name": "generic-csv",
+    "version": "1.0.0"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "OpenSSL out of date",
+      "description": "Upgrade OpenSSL; see \"advisory\", then restart",
+      "severity": "high",
+      "asset_value": "web-01.example.com",
+      "asset_type": "host",
+      "vulnerability": {
+        "cve_id": "CVE-2024-0001"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Weak TLS ciphers",
+      "description": "Line one\nline two",
+      "severity": "medium",
+      "asset_value": "10.0.0.5",
+      "asset_type": "ip_address"
+    },
+    {
+      "type": "vulnerability",
+      "title": "Spreadsheet formula",
+      "description": "=HYPERLINK(\"http://attacker.invalid\",\"click\")",
+      "severity": "low",
+      "asset_value": "10.0.0.6",
+      "asset_type": "ip_address"
+    }
+  ]
+}

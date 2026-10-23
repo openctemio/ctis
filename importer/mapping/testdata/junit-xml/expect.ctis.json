@@ -1,0 +1,38 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "timestamp": "2026-10-07T08:00:00Z",
+    "source_type": "scanner"
+  },
+  "tool": {
+    "name": "junit-xml",
+    "version": "1.0.0"
+  },
+  "findings": [
+    {
+      "type": "misconfiguration",
+      "title": "PermitRootLogin is no",
+      "description": "/etc/ssh/sshd_config:12 PermitRootLogin yes",
+      "message": "PermitRootLogin yes",
+      "severity": "high",
+      "rule_id": "ssh.config"
+    },
+    {
+      "type": "misconfiguration",
+      "title": "/etc/shadow is 0640",
+      "description": "stat returned 0644",
+      "message": "mode 0644",
+      "severity": "medium",
+      "rule_id": "fs.perms"
+    },
+    {
+      "type": "misconfiguration",
+      "title": "tmp is noexec",
+      "description": "permission denied",
+      "message": "mount not readable",
+      "severity": "low",
+      "rule_id": "fs.perms"
+    }
+  ]
+}

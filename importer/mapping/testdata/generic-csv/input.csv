@@ -1,0 +1,7 @@
+﻿title,severity,asset,asset_type,cve,description,owner
+OpenSSL out of date,High,web-01.example.com,,cve-2024-0001,"Upgrade OpenSSL; see ""advisory"", then restart",ops
+Weak TLS ciphers,moderate,10.0.0.5,ip_address,,"Line one
+line two",
+Spreadsheet formula,Low,10.0.0.6,ip_address,,"=HYPERLINK(""http://attacker.invalid"",""click"")",
+Unknown severity,urgent,10.0.0.7,ip_address,,,
+,High,10.0.0.8,,,no title so no finding,
