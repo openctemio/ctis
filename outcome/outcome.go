@@ -238,9 +238,10 @@ func (t Target) Legacy() Target {
 	switch t.Class {
 	case NameGone, ResolverFailed, SensorNetworkFault:
 		t.State, t.Class = Failed, Unreachable
-	case RateLimited:
-		t.State, t.Class = Failed, Timeout
-	case EdgeChallenged, EdgeBlocked:
+	case RateLimited, EdgeChallenged, EdgeBlocked:
+		// Not covered, and not "unreachable": the closest class a revision 1
+		// receiver has for a target the tool could not finish is a tool
+		// error.
 		t.State, t.Class = Failed, ToolError
 	}
 	t.Cause, t.Reason, t.Vendor = "", "", ""
