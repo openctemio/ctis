@@ -4,6 +4,11 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: outcome revision 2, classes that say why a target was not covered
+
+- New `outcome` classes `name_gone`, `resolver_failed`, `sensor_network_fault`, `rate_limited`, `edge_challenged` and `edge_blocked` (edge classes valid under `failed` and `skipped`). They keep a target not covered, but tell a receiver whether the cause is the target, the sensor or the platform instead of reporting every unreached target as a scan failure.
+- New optional `Target` members `cause`, `reason` and `vendor` (bounded lower-case tokens, omitted when empty), `Target.Side`, `Target.Fault`, `Target.Legacy` and `outcome.Revision` (2). Additive: revision 1 entries are unchanged on the wire. A sensor sends revision 2 entries only to a platform that advertised them (use `Legacy` otherwise); an unknown class is dropped by `Normalize` and the target stays unfinished, never done. A receiver must be upgraded before sensors send the new classes.
+
 ### Added: CSV and XML inputs, identity and field observation in declarative mappings
 
 - `importer/mapping` reads `source: "csv"`. It reads a header row and detects the delimiter (`,` `;` tab `|`), or takes it from `csv.delimiter`. It skips preamble lines with `csv.skip_rows` and follows RFC 4180 quoting. Cells are capped (`Options.MaxCellBytes`, default 64 KiB), at most 1024 columns are read, and a UTF-16 input is refused (`ErrEncoding`). Cells are text and never evaluated.
