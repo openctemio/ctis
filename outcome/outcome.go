@@ -189,7 +189,7 @@ func token(s string, max int) bool {
 	}
 	for i := 0; i < len(s); i++ {
 		c := s[i]
-		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '.') {
+		if (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '_' && c != '-' && c != '.' {
 			return false
 		}
 	}
