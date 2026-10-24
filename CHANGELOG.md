@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-10-24
+
+Additive release on CTIS 1.6: outcome revision 2 (why a target was not covered), CSV and XML declarative mappings with identity and field observation, and the bounty report importer. Nothing existing changed meaning.
+
 ### Added: outcome revision 2, classes that say why a target was not covered
 
 - New `outcome` classes `name_gone`, `resolver_failed`, `sensor_network_fault`, `rate_limited`, `edge_challenged` and `edge_blocked` (edge classes valid under `failed` and `skipped`). They keep a target not covered, but tell a receiver whether the cause is the target, the sensor or the platform instead of reporting every unreached target as a scan failure.
