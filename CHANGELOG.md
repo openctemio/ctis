@@ -4,6 +4,14 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-10-25
+
+Additive release: the edge protection detector moves here so a platform and a sensor share one signature table without depending on each other. Nothing existing changed meaning.
+
+### Added: `edgeprotect`, recognising a CDN or WAF in front of a service
+
+- New package `edgeprotect`: `Classify(status, headers, title, body)` tells a challenge, a block, a rate limit or only fronting from the signs a vendor's own edge leaves (Cloudflare, AWS CloudFront and AWS WAF, Akamai, Fastly, Azure Front Door, Imperva, F5). A challenge or block needs a vendor marker next to the status: a bare 403 is the origin's own answer and stays `direct`. The rules are data (`Rule`, `DefaultRules`, `ClassifyWith`). Inputs are bounded (16 KiB of body, 512 bytes of title, 1 KiB per header value); it sends nothing, solves nothing and uses only the standard library.
+
 ## [1.6.2] - 2026-10-24
 
 Additive release on CTIS 1.6: outcome revision 2 (why a target was not covered), CSV and XML declarative mappings with identity and field observation, and the bounty report importer. Nothing existing changed meaning.
