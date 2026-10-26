@@ -116,7 +116,8 @@
         "har",
         "archive",
         "dast",
-        "probe"
+        "probe",
+        "import"
       ]
     },
     "EndpointAuth": {

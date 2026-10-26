@@ -59,12 +59,31 @@ type ArchiveFile struct {
 	f     *zip.File
 	lim   ArchiveLimits
 	total *int64
+
+	// open, when set, supplies the content of a file that is not in a ZIP
+	// archive (see NewArchiveFile).
+	open func() (io.ReadCloser, error)
+}
+
+// NewArchiveFile describes a file that is not read from a ZIP archive (a
+// task directory on a sensor, a test fixture) so ParseBundle can read it like
+// one. The name is checked by ParseBundle as an archive entry name is; open is
+// called at most once per read and its reader is bounded by the bundle
+// limits.
+func NewArchiveFile(name string, size int64, open func() (io.ReadCloser, error)) ArchiveFile {
+	return ArchiveFile{Name: name, DeclaredSize: size, open: open}
 }
 
 // Open returns the file's content. The reader fails with ErrTooLarge as soon
 // as the file passes MaxEntryBytes, the archive passes MaxTotalBytes, or the
 // file decompresses at more than MaxRatio.
 func (a ArchiveFile) Open() (io.ReadCloser, error) {
+	if a.open != nil {
+		return a.open()
+	}
+	if a.f == nil {
+		return nil, &ParseError{Msg: fmt.Sprintf("archive file %s has no content", safeLabel(a.Name)), Err: ErrMalformed}
+	}
 	rc, err := a.f.Open()
 	if err != nil {
 		return nil, &ParseError{Msg: fmt.Sprintf("archive file %s: %v", a.Name, err), Err: ErrMalformed}

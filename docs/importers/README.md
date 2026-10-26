@@ -23,6 +23,8 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | `osv` | [osv-scanner JSON results (OSV records)](osv.md) | 43 | 13 | 77% | 78 | 72% |
 | `qualys` | [Qualys VM host list detection XML](qualys.md) | 60 | 15 | 80% | 76 | 80% |
 | `qualys_kb` | [Qualys KnowledgeBase XML](qualys_kb.md) | 53 | 30 | 64% | 97 | 61% |
+| `reconftw` | [reconFTW results directory (v4)](reconftw.md) | 52 | 51 | 50% | 78 | 68% |
+| `reconftw_v3` | [reconFTW results directory (v3)](reconftw_v3.md) | 49 | 47 | 51% | 70 | 71% |
 | `sarif` | [SARIF 2.1.0](sarif.md) | 85 | 48 | 64% | 137 | 71% |
 | `semgrep` | [semgrep JSON output](semgrep.md) | 52 | 23 | 69% | 173 | 47% |
 | `spdx` | [SPDX JSON](spdx.md) | 28 | 34 | 45% | 79 | 35% |

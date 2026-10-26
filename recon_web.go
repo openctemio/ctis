@@ -41,8 +41,10 @@ func crawlKind(typ, p string) EndpointKind {
 // crawlSource maps a crawler's source label (katana: href, script, form,
 // jsluice, robotstxt, sitemapxml, ...) to an endpoint source.
 func crawlSource(s string) EndpointSource {
-	s = strings.ToLower(s)
+	s = strings.ToLower(strings.TrimSpace(s))
 	switch {
+	case s == "import":
+		return EndpointSourceImport
 	case strings.Contains(s, "robots"):
 		return EndpointSourceRobots
 	case strings.Contains(s, "sitemap"):
@@ -148,4 +150,15 @@ func mergeEndpoints(dst []Endpoint, index map[string]int, src []Endpoint) []Endp
 		index[key] = len(dst) - 1
 	}
 	return dst
+}
+
+// ConvertEndpoints converts discovered URLs to endpoints only, without the
+// legacy discovered_url assets ConvertReconToCTIS also emits. It is for
+// callers that read a large URL list (an import) and need the endpoints
+// alone. URLs that do not parse are left out; at most MaxEndpoints are
+// returned.
+func ConvertEndpoints(urls []DiscoveredURLInput) []Endpoint {
+	r := &Report{}
+	convertCrawlEndpoints(r, urls)
+	return r.Endpoints
 }

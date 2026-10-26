@@ -70,6 +70,15 @@ type Options struct {
 	// "import". An invalid value fails the parse.
 	BountyIntake string
 
+	// ParseBundle only. Limits of a multi-file bundle; zero fields take
+	// DefaultBundleLimits.
+	Bundle BundleLimits
+
+	// ParseBundle only. Domains the importing organization treats as its
+	// own. A host of the bundle at or below one of them is marked
+	// import_scope=in_target. Empty: the target domain the bundle names.
+	ScopeDomains []string
+
 	// The Qualys KnowledgeBase XML for a Qualys detection file. Optional:
 	// without it, detections keep their QID and results but have no title
 	// beyond the QID, CVEs or CVSS.
@@ -244,6 +253,7 @@ func (b *builder) finish() *Result {
 	r.Stats.Findings = len(r.Report.Findings)
 	r.Stats.Components = len(r.Report.Dependencies)
 	r.Stats.Statements = len(r.VEX)
+	r.Stats.Endpoints = len(r.Report.Endpoints)
 	if spec, ok := specs[b.format]; ok {
 		r.Unmapped = spec.Unmapped(b.obs.paths())
 		// A companion document has its own spec.

@@ -87,6 +87,28 @@ func (b *builder) guard() error {
 	}
 	rep.Findings = keptFindings
 
+	// Endpoints, one by one; an origin_ref to an asset that was dropped is
+	// cleared.
+	keptEndpoints := rep.Endpoints[:0]
+	droppedEndpoints := 0
+	for _, e := range rep.Endpoints {
+		if _, ok := assetOK[e.OriginRef]; !ok {
+			e.OriginRef = ""
+		}
+		p := probe()
+		p.Endpoints = []ctis.Endpoint{e}
+		if e.OriginRef != "" {
+			p.Endpoints[0].OriginRef = ""
+		}
+		if err := p.Validate(); err != nil {
+			droppedEndpoints++
+			note("endpoint", err)
+			continue
+		}
+		keptEndpoints = append(keptEndpoints, e)
+	}
+	rep.Endpoints = keptEndpoints
+
 	// Dependencies, one by one, unique ids.
 	keptDeps := rep.Dependencies[:0]
 	depIDs := map[string]bool{}
@@ -123,7 +145,7 @@ func (b *builder) guard() error {
 	for _, d := range []struct {
 		kind string
 		n    int
-	}{{"asset", droppedAssets}, {"finding", droppedFindings}, {"component", droppedDeps}, {"VEX statement", droppedStatements}} {
+	}{{"asset", droppedAssets}, {"endpoint", droppedEndpoints}, {"finding", droppedFindings}, {"component", droppedDeps}, {"VEX statement", droppedStatements}} {
 		if d.n == 0 {
 			continue
 		}

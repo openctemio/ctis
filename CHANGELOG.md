@@ -4,6 +4,14 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: reconFTW results directory importer (bundles)
+
+- `importer.ParseBundle` joins several files of one tool run into one report, with `OpenBundleZip` (an archive at the bundle limits), `NewArchiveFile` (any other source), `DetectBundle` (by layout, never by name) and `BundleLimits` (50,000 files listed, 300 read, 256 MiB per file, 2 GiB in total, 64 KiB per line, 2 M lines per file, 32 path levels, ratio 200). A path with `..`, an absolute path, a backslash, a link, an encrypted or nested archive, or two recon directories in one archive refuses the whole bundle.
+- New format `reconftw`, layouts v4 (with `report/report.json`) and v3, each with a mapping spec, a golden fixture and a generated document (`docs/importers/reconftw.md`, `reconftw_v3.md`): subdomains, addresses, CDN, open ports (naabu), httpx JSON lines, plain web lists, WAF names, URL lists as endpoints, takeover, bucket and cloud-asset candidates, and nuclei result files through the nuclei importer. Hostnames and addresses outside the target are kept as candidates (`properties.import_scope`). Everything under `osint/` is never opened. Files the importer does not read are listed in `Result.Unmapped`; files skipped on purpose in the new `Result.Skipped`.
+- New `ctis.ParseHTTPXLine`: one bounded, hostile-safe mapper from an httpx JSON line to `LiveHostInput`, shared by imports and scans. New `ctis.ConvertEndpoints` converts URLs to endpoints without the legacy `discovered_url` assets.
+- New endpoint source `import` (`EndpointSourceImport`) in the schema, the specification and the Go types. Additive; a strict receiver older than this change refuses it, so upgrade receivers first.
+- `importer.Limits.MaxEndpoints` and `Stats.Endpoints`.
+
 ## [1.6.3] - 2026-10-25
 
 Additive release: the edge protection detector moves here so a platform and a sensor share one signature table without depending on each other. Nothing existing changed meaning.
