@@ -61,12 +61,15 @@ const (
 	EndpointSourceArchive EndpointSource = "archive"
 	EndpointSourceDAST    EndpointSource = "dast"
 	EndpointSourceProbe   EndpointSource = "probe"
+	// EndpointSourceImport: read from a results file a person or another
+	// tool exported (a recon directory), not seen by a probe of ours.
+	EndpointSourceImport EndpointSource = "import"
 )
 
 // AllEndpointSources returns every endpoint source.
 func AllEndpointSources() []EndpointSource {
 	return []EndpointSource{EndpointSourceCrawl, EndpointSourceJS, EndpointSourceSitemap, EndpointSourceRobots,
-		EndpointSourceSpec, EndpointSourceHAR, EndpointSourceArchive, EndpointSourceDAST, EndpointSourceProbe}
+		EndpointSourceSpec, EndpointSourceHAR, EndpointSourceArchive, EndpointSourceDAST, EndpointSourceProbe, EndpointSourceImport}
 }
 
 // EndpointAuth is whether an endpoint asked for authentication.

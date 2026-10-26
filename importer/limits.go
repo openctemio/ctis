@@ -1,5 +1,7 @@
 package importer
 
+import "github.com/openctemio/ctis"
+
 // Limits bound what a parser accepts. A zero field takes its default
 // (DefaultLimits). The defaults are sized for a real export of a large
 // estate; a receiver that accepts uploads from people should pass smaller
@@ -28,6 +30,9 @@ type Limits struct {
 	MaxComponents int
 	MaxStatements int
 
+	// Most web endpoints in one result.
+	MaxEndpoints int
+
 	// Most distinct source field paths recorded for the coverage check.
 	MaxObservedPaths int
 
@@ -47,6 +52,7 @@ func DefaultLimits() Limits {
 		MaxAssets:        200_000,
 		MaxComponents:    500_000,
 		MaxStatements:    200_000,
+		MaxEndpoints:     ctis.MaxEndpoints,
 		MaxObservedPaths: 4096,
 		MaxIssues:        200,
 	}
@@ -81,6 +87,9 @@ func (l Limits) withDefaults() Limits {
 	}
 	if l.MaxStatements <= 0 {
 		l.MaxStatements = d.MaxStatements
+	}
+	if l.MaxEndpoints <= 0 {
+		l.MaxEndpoints = d.MaxEndpoints
 	}
 	if l.MaxObservedPaths <= 0 {
 		l.MaxObservedPaths = d.MaxObservedPaths

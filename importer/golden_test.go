@@ -217,6 +217,9 @@ func TestImporters_FieldCoverage(t *testing.T) {
 			observed[fx.format][p] = true
 		}
 	}
+	for f, paths := range bundleObserved(t) {
+		observed[f] = paths
+	}
 	for _, spec := range Specs() {
 		if problems := spec.check(); len(problems) > 0 {
 			t.Errorf("spec %s: %s", spec.Format, strings.Join(problems, "; "))
@@ -302,6 +305,9 @@ func coverageReport(t *testing.T) string {
 		for _, p := range paths {
 			observed[fx.format][p] = true
 		}
+	}
+	for f, paths := range bundleObserved(t) {
+		observed[f] = paths
 	}
 	var b strings.Builder
 	b.WriteString("# Importer mapping specs\n\n")

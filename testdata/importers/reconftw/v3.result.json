@@ -1,0 +1,45 @@
+{
+  "format": "reconftw",
+  "layout": "v3",
+  "stats": {
+    "records": 31,
+    "assets": 17,
+    "findings": 2,
+    "components": 0,
+    "statements": 0,
+    "endpoints": 5,
+    "skipped": 3,
+    "by_severity": {
+      "high": 1,
+      "info": 1
+    }
+  },
+  "issues": [
+    {
+      "path": "/js/js_endpoints.txt",
+      "message": "1 lines skipped: 0 longer than 65536 bytes, 0 with invalid UTF-8 or control characters, 1 not usable"
+    },
+    {
+      "path": "/webs/web_full_info.txt",
+      "message": "1 lines skipped: 0 longer than 65536 bytes, 0 with invalid UTF-8 or control characters, 1 not usable"
+    },
+    {
+      "path": "/webs/webs_wafs.txt",
+      "message": "1 lines skipped: 0 longer than 65536 bytes, 0 with invalid UTF-8 or control characters, 1 not usable"
+    }
+  ],
+  "skipped": [
+    {
+      "path": "/osint/emails.txt",
+      "reason": "OSINT results hold people data (emails, names, metadata) and credentials: never opened"
+    },
+    {
+      "path": "/osint/passwords.txt",
+      "reason": "OSINT results hold people data (emails, names, metadata) and credentials: never opened"
+    },
+    {
+      "path": "/screenshots/www.example.com.png",
+      "reason": "images are not imported"
+    }
+  ]
+}

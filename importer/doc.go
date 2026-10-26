@@ -17,6 +17,19 @@
 // report), counts, problems with their line numbers, and the source fields
 // the file held that the format's mapping spec does not know.
 //
+// # Bundles
+//
+// Some tools write a directory of files that only make sense together. A
+// bundle is read with ParseBundle (not Parse): the caller lists the files
+// (OpenBundleZip for an archive, NewArchiveFile for any other source) and the
+// layout, not a file name, decides the format. FormatReconFTW reads a
+// reconFTW results directory, v3 and v4 layouts: subdomains, addresses, httpx
+// results, URLs, takeover, bucket and WAF candidates, and the nuclei result
+// files (through the nuclei importer). BundleLimits bound the files listed and
+// read, bytes, line length and path depth. Files that hold people data or
+// credentials are never opened; files the spec does not know are listed in
+// Result.Unmapped and the ones skipped on purpose in Result.Skipped.
+//
 // # Mapping discipline
 //
 // Every format has a mapping spec (Specs): one row per source field, saying
