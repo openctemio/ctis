@@ -8,6 +8,11 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 - New capability `enumerate.subdomains@1`: tier floor 1, phase `discover.active`, input `root_domain`, output `hostname`. Params `method` (`bruteforce`, `permutations`), `wordlist` (`s`, `m`, `l`), `max_queries` and `recursive_depth` (0 to 2). It is separate from the passive `discover.subdomains@1` because it sends queries toward the target's name servers. Additive; the taxonomy now lists 34 capabilities.
 
+### Added: web content from crawlers and probes (forms, posture, aliases)
+
+- `DiscoveredURLInput.Forms` (`WebFormInput`): each form becomes a `form` endpoint on the form's own origin with its field names (location `form`, never values). A field whose name says password, or that the producer marks `TypeHintPassword`, carries the type hint `password`: a receiver labels the endpoint as a login form from it. A form posting to another origin is not an endpoint of this one.
+- `LiveHostInput.ResponseHeaders` and `LiveHostInput.CNAMEs`: the `http_service` asset gets a bounded `http_posture` property (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, the two CORS allow headers, and cookie names with their Secure, HttpOnly, SameSite and persistent flags) and a `cnames` property. The converter applies the allow-list itself: another header, or a cookie value, never reaches the report, and a value with a control character or over 4096 bytes is dropped.
+
 ### Added: reconFTW results directory importer (bundles)
 
 - `importer.ParseBundle` joins several files of one tool run into one report, with `OpenBundleZip` (an archive at the bundle limits), `NewArchiveFile` (any other source), `DetectBundle` (by layout, never by name) and `BundleLimits` (50,000 files listed, 300 read, 256 MiB per file, 2 GiB in total, 64 KiB per line, 2 M lines per file, 32 path levels, ratio 200). A path with `..`, an absolute path, a backslash, a link, an encrypted or nested archive, or two recon directories in one archive refuses the whole bundle.

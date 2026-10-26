@@ -128,6 +128,11 @@ type LiveHostInput struct {
 	JARM string
 	// ASN is the autonomous system of the host's address (httpx -asn).
 	ASN *ASNInput
+	// ResponseHeaders is the posture subset of the response headers. The
+	// converter applies the allow-list again (recon_posture.go).
+	ResponseHeaders *ResponseHeadersInput
+	// CNAMEs is the DNS alias chain of the host.
+	CNAMEs []string
 }
 
 // TLSLeafInput is the leaf certificate an HTTP probe saw in a TLS handshake.
@@ -173,6 +178,22 @@ type DiscoveredURLInput struct {
 
 	// Params are parameters seen besides the query: form fields, JSON
 	// members, headers. Names only.
+	Params []EndpointParam
+
+	// Forms are the HTML forms of the page. Each becomes a form endpoint
+	// with its field names; values are not carried.
+	Forms []WebFormInput
+}
+
+// WebFormInput is one HTML form of a crawled page.
+type WebFormInput struct {
+	// Method is GET or POST; anything else is GET.
+	Method string
+	// Action is the absolute form target; empty means the page itself.
+	Action string
+	// Params are the field names (location form). A producer that knows
+	// the input type sets TypeHint to TypeHintPassword; the converter also
+	// marks fields whose name says password.
 	Params []EndpointParam
 }
 
@@ -681,6 +702,12 @@ func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts 
 			for k, v := range asn {
 				asset.Properties[k] = v
 			}
+		}
+		if posture := httpPosture(h.ResponseHeaders); posture != nil {
+			asset.Properties[HTTPPostureProperty] = posture
+		}
+		if cn := boundCNAMEs(h.CNAMEs); len(cn) > 0 {
+			asset.Properties["cnames"] = cn
 		}
 
 		var leaf *Asset
