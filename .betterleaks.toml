@@ -18,4 +18,6 @@ paths = [
 # Obvious placeholders in docs and examples (matched against the secret only).
 regexes = [
     '''(?i)^(your[-_ ]|<|\$\{|\$\(|example|changeme|placeholder|x{4,})''',
+    # The word itself, as the name of a form field type hint (TypeHintPassword).
+    '''^password$''',
 ]
