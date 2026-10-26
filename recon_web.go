@@ -112,6 +112,12 @@ func convertCrawlEndpoints(report *Report, urls []DiscoveredURLInput) {
 				addEndpointParam(ep, p.Location, p.Name)
 			}
 		}
+		for n, f := range u.Forms {
+			if n >= maxFormsPerPage {
+				break
+			}
+			convertCrawlForm(report, index, pu, f)
+		}
 	}
 }
 
@@ -148,4 +154,93 @@ func mergeEndpoints(dst []Endpoint, index map[string]int, src []Endpoint) []Endp
 		index[key] = len(dst) - 1
 	}
 	return dst
+}
+
+// maxFormsPerPage bounds the forms read from one crawled URL.
+const maxFormsPerPage = 20
+
+// TypeHintPassword is the type hint of a form field that holds a password. A
+// form endpoint with such a parameter is a login form: a receiver labels the
+// endpoint auth:login from it.
+const TypeHintPassword = "password"
+
+// convertCrawlForm adds the form endpoint of a page's form: the form's
+// method and action (the page itself when the action is empty or not an
+// http(s) URL; a form posting to another origin is skipped), kind form, with the field names.
+// A field that looks like a password carries the password type hint.
+func convertCrawlForm(report *Report, index map[string]int, page *weburl.URL, f WebFormInput) {
+	if len(report.Endpoints) >= MaxEndpoints {
+		return
+	}
+	target := page
+	if f.Action != "" {
+		if a, err := weburl.Parse(f.Action); err == nil {
+			target = a
+		}
+	}
+	if target.Origin() != page.Origin() {
+		return // a form that posts to another origin is not an endpoint of this one
+	}
+	method := "GET"
+	if strings.EqualFold(strings.TrimSpace(f.Method), "POST") {
+		method = "POST"
+	}
+	origin, tmpl := target.Origin(), target.Template()
+	key := endpointKey(origin, method, tmpl)
+	i, ok := index[key]
+	if !ok {
+		ep := Endpoint{
+			Origin:   origin,
+			Method:   method,
+			Path:     target.Path,
+			Template: tmpl,
+			Kind:     EndpointKindForm,
+			Source:   EndpointSourceCrawl,
+		}
+		if p := weburl.RedactURL(page.String()); redactedURL(p) {
+			ep.Parent = p
+		}
+		report.Endpoints = append(report.Endpoints, ep)
+		i = len(report.Endpoints) - 1
+		index[key] = i
+	}
+	ep := &report.Endpoints[i]
+	if ep.Kind == EndpointKindPage || ep.Kind == EndpointKindOther {
+		ep.Kind = EndpointKindForm
+	}
+	for n, p := range f.Params {
+		if n >= MaxEndpointParams {
+			break
+		}
+		if p.Location != ParamLocationForm || !validParamName(p.Name) {
+			continue
+		}
+		addEndpointParam(ep, ParamLocationForm, p.Name)
+		if p.TypeHint == TypeHintPassword || looksLikePasswordField(p.Name) {
+			markPasswordParam(ep, p.Name)
+		}
+	}
+}
+
+func markPasswordParam(ep *Endpoint, name string) {
+	for i := range ep.Params {
+		if p := &ep.Params[i]; p.Location == ParamLocationForm && p.Name == name {
+			p.TypeHint = TypeHintPassword
+		}
+	}
+}
+
+// looksLikePasswordField reports whether a form field name says it holds a
+// password. A crawler sees names, not input types, so the name decides.
+func looksLikePasswordField(name string) bool {
+	n := strings.ToLower(strings.TrimSpace(name))
+	if n == "pass" {
+		return true
+	}
+	for _, sub := range []string{"passw", "pwd", "passcode", "passphrase"} {
+		if strings.Contains(n, sub) {
+			return true
+		}
+	}
+	return false
 }

@@ -4,6 +4,11 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: web content from crawlers and probes (forms, posture, aliases)
+
+- `DiscoveredURLInput.Forms` (`WebFormInput`): each form becomes a `form` endpoint on the form's own origin with its field names (location `form`, never values). A field whose name says password, or that the producer marks `TypeHintPassword`, carries the type hint `password`: a receiver labels the endpoint as a login form from it. A form posting to another origin is not an endpoint of this one.
+- `LiveHostInput.ResponseHeaders` and `LiveHostInput.CNAMEs`: the `http_service` asset gets a bounded `http_posture` property (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, the two CORS allow headers, and cookie names with their Secure, HttpOnly, SameSite and persistent flags) and a `cnames` property. The converter applies the allow-list itself: another header, or a cookie value, never reaches the report, and a value with a control character or over 4096 bytes is dropped.
+
 ## [1.6.3] - 2026-10-25
 
 Additive release: the edge protection detector moves here so a platform and a sensor share one signature table without depending on each other. Nothing existing changed meaning.
