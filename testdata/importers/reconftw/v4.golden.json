@@ -1,0 +1,540 @@
+{
+  "version": "1.6",
+  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "metadata": {
+    "id": "import-test",
+    "timestamp": "2026-10-04T10:00:00Z",
+    "source_type": "manual",
+    "source_ref": "reconftw:example.com",
+    "scope": {
+      "name": "example.com",
+      "type": "domain"
+    }
+  },
+  "tool": {
+    "name": "reconftw",
+    "version": "4.0",
+    "vendor": "six2dez",
+    "info_url": "https://github.com/six2dez/reconftw",
+    "capabilities": [
+      "subdomain",
+      "http_probe",
+      "crawler",
+      "easm"
+    ]
+  },
+  "assets": [
+    {
+      "id": "subdomain-example-com",
+      "type": "domain",
+      "value": "example.com",
+      "name": "example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "domain": {}
+      },
+      "properties": {
+        "discovery_method": "reconftw",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "root_domain": "example.com"
+      }
+    },
+    {
+      "id": "subdomain-www-example-com",
+      "type": "subdomain",
+      "value": "www.example.com",
+      "name": "www.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "domain": {}
+      },
+      "properties": {
+        "discovery_method": "reconftw",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "root_domain": "example.com"
+      }
+    },
+    {
+      "id": "subdomain-api-example-com",
+      "type": "subdomain",
+      "value": "api.example.com",
+      "name": "api.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "domain": {}
+      },
+      "properties": {
+        "discovery_method": "reconftw",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "root_domain": "example.com"
+      }
+    },
+    {
+      "id": "subdomain-dev-example-com",
+      "type": "subdomain",
+      "value": "dev.example.com",
+      "name": "dev.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "domain": {}
+      },
+      "properties": {
+        "discovery_method": "reconftw",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "root_domain": "example.com"
+      }
+    },
+    {
+      "id": "subdomain-old-example-com",
+      "type": "subdomain",
+      "value": "old.example.com",
+      "name": "old.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "domain": {}
+      },
+      "properties": {
+        "candidate_detail": "azure-takeover",
+        "candidate_exposure": "subdomain_takeover",
+        "candidate_unverified": true,
+        "discovery_method": "reconftw",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "root_domain": "example.com"
+      }
+    },
+    {
+      "id": "subdomain-shop-example-net",
+      "type": "domain",
+      "value": "shop.example.net",
+      "name": "shop.example.net",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "domain": {}
+      },
+      "properties": {
+        "discovery_method": "reconftw",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "outside_target"
+      }
+    },
+    {
+      "id": "ip-192-0-2-10",
+      "type": "ip_address",
+      "value": "192.0.2.10",
+      "name": "192.0.2.10",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "ip_address": {
+          "version": 4,
+          "ports": [
+            {
+              "port": 22,
+              "protocol": "tcp",
+              "state": "open"
+            }
+          ]
+        }
+      },
+      "properties": {
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "unknown",
+        "open_port_count": 1
+      }
+    },
+    {
+      "id": "host-www-example-com",
+      "type": "host",
+      "value": "www.example.com",
+      "name": "www.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "ip_address": {
+          "hostname": "www.example.com",
+          "ports": [
+            {
+              "port": 8443,
+              "protocol": "tcp",
+              "state": "open"
+            }
+          ]
+        }
+      },
+      "properties": {
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "open_port_count": 1
+      }
+    },
+    {
+      "id": "http-https-www-example-com",
+      "type": "http_service",
+      "value": "https://www.example.com",
+      "name": "www.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "service": {
+          "name": "nginx",
+          "port": 443,
+          "protocol": "https",
+          "transport": "tcp",
+          "tls": true
+        }
+      },
+      "related_assets": [
+        "cert-a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"
+      ],
+      "properties": {
+        "asn": "AS64496",
+        "asn_country": "US",
+        "asn_org": "EXAMPLE-AS",
+        "cdn": "cloudflare",
+        "cdn_type": "waf",
+        "content_length": 1234,
+        "content_type": "text/html",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "favicon_mmh3": "-1234567890",
+        "hosted_by": "cloudflare",
+        "import_scope": "in_target",
+        "ip": "192.0.2.10",
+        "jarm": "07d14d16d21d21d07c42d41d00041d24a458a375eef0c576d23a7bab9a9fb1",
+        "redirect_url": "https://www.example.com/en",
+        "response_time_ms": 123,
+        "status_code": 200,
+        "technologies": [
+          "Nginx",
+          "HSTS"
+        ],
+        "title": "Example Shop",
+        "tls_fingerprint": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+        "tls_version": "tls13",
+        "waf": "Cloudflare",
+        "web_server": "nginx"
+      }
+    },
+    {
+      "id": "cert-a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "type": "certificate",
+      "value": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "name": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "certificate": {
+          "subject_cn": "www.example.com",
+          "sans": [
+            "www.example.com",
+            "example.com"
+          ],
+          "issuer_cn": "Example CA",
+          "issuer_org": "Example Trust",
+          "not_before": "2026-01-01T00:00:00Z",
+          "not_after": "2027-01-01T00:00:00Z",
+          "fingerprint": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"
+        }
+      },
+      "properties": {
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "fingerprint": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+        "subject_cn": "www.example.com"
+      }
+    },
+    {
+      "id": "http-https-api-example-com-8443",
+      "type": "http_service",
+      "value": "https://api.example.com:8443",
+      "name": "api.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "service": {
+          "port": 8443,
+          "protocol": "https",
+          "transport": "tcp",
+          "tls": true
+        }
+      },
+      "properties": {
+        "content_length": 0,
+        "content_type": "",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "ip": "192.0.2.11",
+        "response_time_ms": 0,
+        "status_code": 401,
+        "title": "API",
+        "web_server": ""
+      }
+    },
+    {
+      "id": "http-https-dev-example-com",
+      "type": "http_service",
+      "value": "https://dev.example.com",
+      "name": "dev.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "service": {
+          "port": 443,
+          "protocol": "https",
+          "transport": "tcp",
+          "tls": true
+        }
+      },
+      "properties": {
+        "content_length": 0,
+        "content_type": "",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "response_time_ms": 0,
+        "status_code": 0,
+        "title": "",
+        "web_server": ""
+      }
+    },
+    {
+      "id": "http-http-dev-example-com-8081",
+      "type": "http_service",
+      "value": "http://dev.example.com:8081",
+      "name": "dev.example.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "service": {
+          "port": 8081,
+          "protocol": "http",
+          "transport": "tcp"
+        }
+      },
+      "properties": {
+        "content_length": 0,
+        "content_type": "",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "in_target",
+        "response_time_ms": 0,
+        "status_code": 0,
+        "title": "",
+        "web_server": ""
+      }
+    },
+    {
+      "id": "import-ip-192-0-2-11",
+      "type": "ip_address",
+      "value": "192.0.2.11",
+      "name": "192.0.2.11",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "ip_address": {
+          "version": 4
+        }
+      },
+      "properties": {
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "unknown"
+      }
+    },
+    {
+      "id": "import-ip-198-51-100-7",
+      "type": "ip_address",
+      "value": "198.51.100.7",
+      "name": "198.51.100.7",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "technical": {
+        "ip_address": {
+          "version": 4
+        }
+      },
+      "properties": {
+        "cdn": "cloudflare",
+        "cdn_type": "cdn",
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "hosted_by": "cloudflare",
+        "import_scope": "unknown"
+      }
+    },
+    {
+      "id": "import-storage-example-data-blob-core-windows-net",
+      "type": "storage",
+      "value": "example-data.blob.core.windows.net",
+      "name": "example-data.blob.core.windows.net",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "properties": {
+        "candidate_exposure": "cloud_asset",
+        "candidate_unverified": true,
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "outside_target",
+        "storage_provider": "azure_blob"
+      }
+    },
+    {
+      "id": "import-storage-example-assets-s3-amazonaws-com",
+      "type": "storage",
+      "value": "example-assets.s3.amazonaws.com",
+      "name": "example-assets.s3.amazonaws.com",
+      "confidence": 60,
+      "discovered_at": "2026-10-04T10:00:00Z",
+      "properties": {
+        "candidate_detail": "open",
+        "candidate_exposure": "storage_bucket",
+        "candidate_unverified": true,
+        "discovery_source": "import:reconftw",
+        "discovery_tool": "reconftw",
+        "import_scope": "outside_target",
+        "storage_provider": "aws_s3"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Admin panel exposed",
+      "message": "Admin panel exposed at https://www.example.com/admin",
+      "severity": "high",
+      "confidence": 90,
+      "rule_id": "exposed-panel",
+      "asset_ref": "subdomain-www-example-com",
+      "tags": [
+        "panel",
+        "nuclei",
+        "http"
+      ],
+      "fingerprint": "fd1daa6092efa6ab78c3670cf8f5d1acfa15e338f792e97198245cdc698d1cf4",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "exposed-panel",
+        "severity": "high",
+        "raw_ref": "/nuclei_output/high_json.txt line 1"
+      },
+      "source_extra": {
+        "target": "https://www.example.com"
+      },
+      "web": {
+        "url": "https://www.example.com/admin"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "Nginx detected",
+      "message": "Nginx detected at https://shop.example.net/",
+      "severity": "info",
+      "confidence": 90,
+      "rule_id": "tech-detect",
+      "asset_ref": "subdomain-shop-example-net",
+      "tags": [
+        "nuclei",
+        "http"
+      ],
+      "fingerprint": "41afd5072daf18225e803909dc4638218d88b644c55d8f22744e06a6af7b1aaf",
+      "native": {
+        "scheme": "other",
+        "vuln_id": "tech-detect",
+        "severity": "info",
+        "raw_ref": "/nuclei_output/info_json.txt line 1"
+      },
+      "source_extra": {
+        "target": "https://shop.example.net"
+      },
+      "web": {
+        "url": "https://shop.example.net/"
+      }
+    }
+  ],
+  "endpoints": [
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "http-https-www-example-com",
+      "method": "GET",
+      "path": "/search",
+      "template": "/search",
+      "kind": "page",
+      "source": "import",
+      "params": [
+        {
+          "location": "query",
+          "name": "q"
+        },
+        {
+          "location": "query",
+          "name": "page"
+        }
+      ]
+    },
+    {
+      "origin": "https://api.example.com:8443",
+      "origin_ref": "http-https-api-example-com-8443",
+      "method": "GET",
+      "path": "/v1/users",
+      "template": "/v1/users",
+      "kind": "page",
+      "source": "js"
+    },
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "http-https-www-example-com",
+      "method": "GET",
+      "path": "/static/app.js",
+      "template": "/static/app.js",
+      "kind": "script",
+      "source": "js"
+    },
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "http-https-www-example-com",
+      "method": "GET",
+      "path": "/user/12345/profile",
+      "template": "/user/{int}/profile",
+      "kind": "page",
+      "source": "import",
+      "params": [
+        {
+          "location": "query",
+          "name": "token"
+        }
+      ]
+    },
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "http-https-www-example-com",
+      "method": "GET",
+      "path": "/u/{email}/inbox",
+      "template": "/u/{email}/inbox",
+      "kind": "page",
+      "source": "import"
+    }
+  ],
+  "properties": {
+    "reconftw_mode": "recon"
+  }
+}

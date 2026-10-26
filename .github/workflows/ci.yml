@@ -140,12 +140,12 @@ jobs:
         run: |
           # A short minimization keeps a new input from running past the
           # time budget (the run then fails with "context deadline exceeded").
-          for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion FuzzHTTPExchangeFromRaw; do
+          for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion FuzzHTTPExchangeFromRaw FuzzParseHTTPXLine; do
             go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x .
           done
           # The importers read hostile files; a short minimization keeps the
           # time budget on new inputs.
-          for target in FuzzParse FuzzDetect; do
+          for target in FuzzParse FuzzDetect FuzzParseBundle; do
             go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x ./importer
           done
           # Declarative mappings: hostile tool output and hostile mapping files.

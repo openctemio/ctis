@@ -32,6 +32,22 @@ type Result struct {
 	// not list, sorted. Their values are not in the report; a receiver can
 	// show them so the spec is extended.
 	Unmapped []string `json:"unmapped,omitempty"`
+
+	// Layout of a multi-file bundle ("v3", "v4" for reconftw); empty for a
+	// single file.
+	Layout string `json:"layout,omitempty"`
+
+	// Files of a bundle that were deliberately not opened or not read, each
+	// with the reason (people and credential data, images, files over the
+	// read limit). Every other file the importer did not read is in
+	// Unmapped.
+	Skipped []SkippedPath `json:"skipped,omitempty"`
+}
+
+// SkippedPath is a file of a bundle that was not read on purpose.
+type SkippedPath struct {
+	Path   string `json:"path"`
+	Reason string `json:"reason"`
 }
 
 // Stats counts what an import read and produced.
@@ -44,6 +60,7 @@ type Stats struct {
 	Findings   int `json:"findings"`
 	Components int `json:"components"`
 	Statements int `json:"statements"`
+	Endpoints  int `json:"endpoints,omitempty"`
 
 	// Records skipped (below the minimum severity, or unusable; the reason
 	// of an unusable record is in Issues).
