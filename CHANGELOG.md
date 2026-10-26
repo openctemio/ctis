@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-10-26
+
+Additive release: active subdomain enumeration (`enumerate.subdomains@1`), web content from crawlers and probes, and the reconFTW bundle importer. Nothing existing changes.
+
 ### Added: capability `enumerate.subdomains@1` (active subdomain enumeration)
 
 - New capability `enumerate.subdomains@1`: tier floor 1, phase `discover.active`, input `root_domain`, output `hostname`. Params `method` (`bruteforce`, `permutations`), `wordlist` (`s`, `m`, `l`), `max_queries` and `recursive_depth` (0 to 2). It is separate from the passive `discover.subdomains@1` because it sends queries toward the target's name servers. Additive; the taxonomy now lists 34 capabilities.
