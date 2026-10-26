@@ -35,6 +35,7 @@ A capability is an act a scan tool performs. The capability carries the phase, t
 | Capability | Status | Phase | Tier floor | In | Out | ATT&CK | D3FEND |
 |---|---|---|---|---|---|---|---|
 | [`discover.subdomains@1`](#discoversubdomains1) | routed | discover.passive | T0 | `root_domain` | `hostname` | T1596.001, T1590.002, T1593.002 | D3-AI |
+| [`enumerate.subdomains@1`](#enumeratesubdomains1) | routed | discover.active | T1 | `root_domain` | `hostname` | T1590.002, T1595.003 | D3-NM |
 | [`intel.passive@1`](#intelpassive1) | planned | discover.passive | T0 | `root_domain`, `ip`, `cidr` | `hostname`, `cidr`, `ip` | T1596.002, T1596.003, T1596.005 | D3-AI, D3-NM |
 | [`resolve.dns@1`](#resolvedns1) | routed | discover.passive | T0 | `hostname` | `hostname`, `ip` | T1590.002 | D3-NM |
 | [`lookup.rdap@1`](#lookuprdap1) | routed | discover.passive | T0 | `root_domain` | `root_domain` | T1596.002, T1590.001 | D3-AI |
@@ -85,6 +86,25 @@ Subdomain discovery: Find subdomains of a root domain from passive sources.
 Required output (every selected record):
 
 - `assets[type=domain|subdomain]` carries `value`, `properties.root_domain`.
+
+### enumerate.subdomains@1
+
+Subdomain enumeration: Find subdomains of a root domain by actively querying DNS for candidate names (a wordlist of labels), keeping only the names that resolve.
+
+- Status: routed; phase `discover.active` (CTEM discovery); tier floor T1.
+- Ports: in `root_domain`, out `hostname`.
+- References: ATT&CK T1590.002, T1595.003; D3FEND D3-NM; CAPEC-309.
+
+| Param | Type | Values | Description |
+|---|---|---|---|
+| `method` | string | `bruteforce`, `permutations` | How candidate names are made. |
+| `wordlist` | string | `s`, `m`, `l` | Size class of the label list the platform supplies. |
+| `max_queries` | integer | 1..10000000 | Send at most this many DNS queries per root domain. |
+| `recursive_depth` | integer | 0..2 | Also enumerate under the names found, this many levels deep. |
+
+Required output (every selected record):
+
+- `assets[type=domain|subdomain]` carries `value`.
 
 ### intel.passive@1
 

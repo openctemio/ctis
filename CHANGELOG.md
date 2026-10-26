@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: capability `enumerate.subdomains@1` (active subdomain enumeration)
+
+- New capability `enumerate.subdomains@1`: tier floor 1, phase `discover.active`, input `root_domain`, output `hostname`. Params `method` (`bruteforce`, `permutations`), `wordlist` (`s`, `m`, `l`), `max_queries` and `recursive_depth` (0 to 2). It is separate from the passive `discover.subdomains@1` because it sends queries toward the target's name servers. Additive; the taxonomy now lists 34 capabilities.
+
 ### Added: web content from crawlers and probes (forms, posture, aliases)
 
 - `DiscoveredURLInput.Forms` (`WebFormInput`): each form becomes a `form` endpoint on the form's own origin with its field names (location `form`, never values). A field whose name says password, or that the producer marks `TypeHintPassword`, carries the type hint `password`: a receiver labels the endpoint as a login form from it. A form posting to another origin is not an endpoint of this one.
