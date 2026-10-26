@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: capability `enumerate.subdomains@1` (active subdomain enumeration)
+
+- New capability `enumerate.subdomains@1`: tier floor 1, phase `discover.active`, input `root_domain`, output `hostname`. Params `method` (`bruteforce`, `permutations`), `wordlist` (`s`, `m`, `l`), `max_queries` and `recursive_depth` (0 to 2). It is separate from the passive `discover.subdomains@1` because it sends queries toward the target's name servers. Additive; the taxonomy now lists 34 capabilities.
+
 ### Added: reconFTW results directory importer (bundles)
 
 - `importer.ParseBundle` joins several files of one tool run into one report, with `OpenBundleZip` (an archive at the bundle limits), `NewArchiveFile` (any other source), `DetectBundle` (by layout, never by name) and `BundleLimits` (50,000 files listed, 300 read, 256 MiB per file, 2 GiB in total, 64 KiB per line, 2 M lines per file, 32 path levels, ratio 200). A path with `..`, an absolute path, a backslash, a link, an encrypted or nested archive, or two recon directories in one archive refuses the whole bundle.
