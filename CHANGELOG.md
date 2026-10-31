@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [1.6.5] - 2026-10-31
+
+Additive release: web content capture (`monitor.web_content@1`).
+
 ### Added: web content capture (`monitor.web_content@1`)
 
 - New capability `monitor.web_content@1` (routed, tier floor 1, phase `discover.active`, input `url`): fetch listed URLs and report the response so a receiver can detect page and script changes. Nothing is executed. Additive; the taxonomy now lists 35 capabilities.
