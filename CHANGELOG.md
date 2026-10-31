@@ -4,6 +4,11 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: web content capture (`monitor.web_content@1`)
+
+- New capability `monitor.web_content@1` (routed, tier floor 1, phase `discover.active`, input `url`): fetch listed URLs and report the response so a receiver can detect page and script changes. Nothing is executed. Additive; the taxonomy now lists 35 capabilities.
+- `LiveHostInput.WebContent` (`WebCaptureInput`): the `http_service` asset gets the reserved property `web_content`, a list of captures with `url`, `final_url`, `status_code`, `content_type`, `size`, `sha256`, `truncated`, `body`, `body_truncated` and `fetched_at` (RFC 3339). The converter bounds it again: a body is cut at 512 KiB on a character boundary (`body_truncated`), invalid UTF-8 is replaced, at most 200 captures per host, a capture whose `url` is not a plain http(s) URL or whose `sha256` is not 64 lowercase hex characters is dropped, and a `final_url` that is not plain http(s) is blanked. `ParseHTTPXLine` still never keeps a body: capture is a separate input.
+
 ## [1.6.4] - 2026-10-26
 
 Additive release: active subdomain enumeration (`enumerate.subdomains@1`), web content from crawlers and probes, and the reconFTW bundle importer. Nothing existing changes.

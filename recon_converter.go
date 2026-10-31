@@ -133,6 +133,10 @@ type LiveHostInput struct {
 	ResponseHeaders *ResponseHeadersInput
 	// CNAMEs is the DNS alias chain of the host.
 	CNAMEs []string
+	// WebContent is the result of a web content fetch of this host's URLs
+	// (see WebContentProperty). It is an explicit input: ParseHTTPXLine
+	// never fills it.
+	WebContent []WebCaptureInput
 }
 
 // TLSLeafInput is the leaf certificate an HTTP probe saw in a TLS handshake.
@@ -708,6 +712,9 @@ func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts 
 		}
 		if cn := boundCNAMEs(h.CNAMEs); len(cn) > 0 {
 			asset.Properties["cnames"] = cn
+		}
+		if wc := webContent(h.WebContent, now); len(wc) > 0 {
+			asset.Properties[WebContentProperty] = wc
 		}
 
 		var leaf *Asset
