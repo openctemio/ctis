@@ -4,6 +4,11 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: edge protection signatures for DataDome, HUMAN (PerimeterX) and Sucuri
+
+- `edgeprotect` knows three more edges. A scan stopped by a bot-management challenge is a coverage gap, never "no findings": a challenge is recognised on any status, so a challenge answered with 200 (a silent block) reads as Challenged, not as content.
+- Blocks that rest on a weak sign (a 403 with the vendor cookie, a denial title) only count on a small page (`MaxBodyLen`), so a large normal page that happens to contain the words stays Fronted. Akamai needed no new rule: `akamai.sec-cpt-challenge` already covers status 200.
+
 ## [1.6.5] - 2026-10-31
 
 Additive release: web content capture (`monitor.web_content@1`).
