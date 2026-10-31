@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [1.6.6] - 2026-10-31
+
+Patch release: more edge protection signatures. The format does not change.
+
 ### Added: edge protection signatures for DataDome, HUMAN (PerimeterX) and Sucuri
 
 - `edgeprotect` knows three more edges. A scan stopped by a bot-management challenge is a coverage gap, never "no findings": a challenge is recognised on any status, so a challenge answered with 200 (a silent block) reads as Challenged, not as content.
