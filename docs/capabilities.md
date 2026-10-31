@@ -36,6 +36,7 @@ A capability is an act a scan tool performs. The capability carries the phase, t
 |---|---|---|---|---|---|---|---|
 | [`discover.subdomains@1`](#discoversubdomains1) | routed | discover.passive | T0 | `root_domain` | `hostname` | T1596.001, T1590.002, T1593.002 | D3-AI |
 | [`enumerate.subdomains@1`](#enumeratesubdomains1) | routed | discover.active | T1 | `root_domain` | `hostname` | T1590.002, T1595.003 | D3-NM |
+| [`monitor.web_content@1`](#monitorweb_content1) | routed | discover.active | T1 | `url` | none | T1594 | - |
 | [`intel.passive@1`](#intelpassive1) | planned | discover.passive | T0 | `root_domain`, `ip`, `cidr` | `hostname`, `cidr`, `ip` | T1596.002, T1596.003, T1596.005 | D3-AI, D3-NM |
 | [`resolve.dns@1`](#resolvedns1) | routed | discover.passive | T0 | `hostname` | `hostname`, `ip` | T1590.002 | D3-NM |
 | [`lookup.rdap@1`](#lookuprdap1) | routed | discover.passive | T0 | `root_domain` | `root_domain` | T1596.002, T1590.001 | D3-AI |
@@ -105,6 +106,19 @@ Subdomain enumeration: Find subdomains of a root domain by actively querying DNS
 Required output (every selected record):
 
 - `assets[type=domain|subdomain]` carries `value`.
+
+### monitor.web_content@1
+
+Web content monitoring: Fetch listed URLs and report the response (status, type, size, SHA-256 and a capped body) so the platform can detect page and script changes. Nothing is executed.
+
+- Status: routed; phase `discover.active` (CTEM discovery); tier floor T1.
+- Ports: in `url`, out none.
+- Also emits: `asset:http_service`, `asset:discovered_url`, `asset:website`.
+- References: ATT&CK T1594.
+
+Required output (every selected record):
+
+- `assets[type=http_service|discovered_url|website]` carries `value`, `properties.web_content`.
 
 ### intel.passive@1
 
