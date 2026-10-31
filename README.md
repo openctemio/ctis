@@ -11,7 +11,7 @@ CTIS is the JSON format security tools use to send assets, findings and dependen
 - **Severity** (`severity/`) and **fingerprint** (`fingerprint/`) helpers.
 - **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
 - **Examples** (`examples/`): one report per finding type, validated in CI.
-- **Edge protection** (`edgeprotect/`): recognise a CDN or WAF challenge, block or rate limit from vendor-specific signs.
+- **Edge protection** (`edgeprotect/`): recognise a CDN or WAF challenge, block or rate limit from vendor-specific signs (Cloudflare, CloudFront, Akamai, Fastly, Azure Front Door, Imperva, F5, DataDome, HUMAN/PerimeterX, Sucuri).
 - **Web URLs** (`weburl/`): parse, normalise, template and redact web URLs.
 - **Politeness keys** (`politeness/`): which hosts a scan job touches and when two jobs touch the same host.
 - **Repository source** (`source/`): the repository, branch and exact commit a platform code scan fetches.
