@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.22', '1.23', '1.26']
+        go-version: ['1.22', '1.23', '1.26', '1.27']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -49,7 +49,7 @@ jobs:
         run: go test -race -coverprofile=coverage.out ./...
 
       - name: Check coverage
-        if: matrix.go-version == '1.26'
+        if: matrix.go-version == '1.27'
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
           echo "Total coverage: ${COVERAGE}% (minimum ${COVERAGE_MIN}%)"
@@ -59,7 +59,7 @@ jobs:
           }
 
       - name: Upload coverage
-        if: matrix.go-version == '1.26'
+        if: matrix.go-version == '1.27'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: ./coverage.out
@@ -88,7 +88,7 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: '1.26'
+          go-version: '1.27'
           cache: true
 
       - name: Run go vet
@@ -133,7 +133,7 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: '1.26'
+          go-version: '1.27'
           cache: true
 
       - name: Fuzz each target briefly
@@ -169,7 +169,7 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: '1.26'
+          go-version: '1.27'
           cache: true
 
       - name: Build
@@ -190,7 +190,7 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 1.26
+          go-version: 1.27
           cache: true
           cache-dependency-path: transfer/go.sum
 
