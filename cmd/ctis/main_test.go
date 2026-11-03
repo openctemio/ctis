@@ -119,7 +119,7 @@ func TestVersionAndCanon(t *testing.T) {
 }
 
 func TestConformanceCommand(t *testing.T) {
-	code, out, _ := exec(t, "", "conformance", "../../conformance")
+	code, out, _ := exec(t, "", "conformance", "../../conformance/v1")
 	if code != 0 || !strings.Contains(out, "0 failed") {
 		t.Errorf("conformance: %d %q", code, out)
 	}

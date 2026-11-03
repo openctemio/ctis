@@ -4,7 +4,7 @@
 //
 //	ctis validate [--json] [--max-size BYTES] <file|->...
 //	ctis canon <asset-type> <value>
-//	ctis conformance [dir]
+//	ctis conformance [dir]   (default conformance/v1)
 //	ctis version
 //
 // Exit status: 0 everything valid, 1 a document is invalid or a vector
@@ -61,7 +61,7 @@ func usage(w io.Writer) {
 	fmt.Fprint(w, `usage:
   ctis validate [--json] [--max-size BYTES] <file|->...
   ctis canon <asset-type> <value>
-  ctis conformance [dir]
+  ctis conformance [dir]   (default conformance/v1)
   ctis version
 `)
 }
@@ -146,7 +146,7 @@ func cmdCanon(args []string, stdout, stderr io.Writer) int {
 }
 
 func cmdConformance(args []string, stdout, stderr io.Writer) int {
-	dir := "conformance"
+	dir := "conformance/v1"
 	switch len(args) {
 	case 0:
 	case 1:

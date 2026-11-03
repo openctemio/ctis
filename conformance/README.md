@@ -1,6 +1,8 @@
 # CTIS conformance vectors
 
-Plain JSON files that pin the behaviour every CTIS implementation must share: canonical forms, the correlation key and the fingerprint recipe, and which documents are valid. They are language neutral. Run them from your own test suite; this repository's Go implementation runs them with `go test ./...` and with `ctis conformance conformance`.
+Vectors are grouped by recipe generation: `v1/` holds those of CTIS 1.x; a `v2/` directory sits next to it for the next major version. Everything below describes `v1/`; paths are relative to it.
+
+Plain JSON files that pin the behaviour every CTIS implementation must share: canonical forms, the correlation key and the fingerprint recipe, and which documents are valid. They are language neutral. Run them from your own test suite; this repository's Go implementation runs them with `go test ./...` and with `ctis conformance conformance/v1`.
 
 A vector says what the output must be for an input. Nothing here is a guess about a producer: receivers recompute these values and never trust a producer's.
 

@@ -12,7 +12,7 @@ import (
 // TestConformanceVectors runs every vector under conformance/ against this
 // implementation. Other implementations run the same files.
 func TestConformanceVectors(t *testing.T) {
-	results, err := conformance.Run("conformance")
+	results, err := conformance.Run("conformance/v1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestConformanceVectors(t *testing.T) {
 // Every example, valid or not, must be listed in the manifest, so a new
 // example cannot slip in without its expected result.
 func TestConformanceManifestListsEveryExample(t *testing.T) {
-	raw, err := os.ReadFile("conformance/documents/manifest.json")
+	raw, err := os.ReadFile("conformance/v1/documents/manifest.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,11 +51,11 @@ func TestConformanceManifestListsEveryExample(t *testing.T) {
 	}
 	listed := map[string]bool{}
 	for _, d := range m.Documents {
-		listed[filepath.Clean(filepath.Join("conformance", "documents", d.File))] = true
+		listed[filepath.Clean(filepath.Join("conformance", "v1", "documents", d.File))] = true
 	}
 	for _, pat := range []string{
 		"examples/*.json", "examples/invalid/*.json",
-		"conformance/documents/valid/*.json", "conformance/documents/invalid/*.json",
+		"conformance/v1/documents/valid/*.json", "conformance/v1/documents/invalid/*.json",
 	} {
 		files, _ := filepath.Glob(pat)
 		if len(files) == 0 {
@@ -63,7 +63,7 @@ func TestConformanceManifestListsEveryExample(t *testing.T) {
 		}
 		for _, f := range files {
 			if !listed[filepath.Clean(f)] {
-				t.Errorf("%s is not in conformance/documents/manifest.json", f)
+				t.Errorf("%s is not in conformance/v1/documents/manifest.json", f)
 			}
 		}
 	}

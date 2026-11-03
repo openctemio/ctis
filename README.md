@@ -103,7 +103,7 @@ go install github.com/openctemio/ctis/cmd/ctis@latest   # or download a binary f
 ctis validate report.json                  # exit 0 valid, 1 invalid, 2 usage or I/O error
 ctis validate --json a.json b.json         # one JSON object per file
 ctis validate --max-size 1048576 -         # read standard input, at most 1 MiB (default 64 MiB)
-ctis conformance conformance               # run the conformance vectors
+ctis conformance conformance/v1               # run the conformance vectors
 ```
 
 Release binaries come with `SHA256SUMS`. The conformance vectors in [`conformance/`](conformance/README.md) let any other implementation check its canonical forms, correlation keys and fingerprints against this one.

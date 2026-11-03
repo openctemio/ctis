@@ -6,7 +6,7 @@
   3. examples/*.json and the converter golden files validate against
      report.json;
   4. examples/invalid/*.json do not;
-  5. conformance/documents/manifest.json: every document it lists as valid
+  5. conformance/v1/documents/manifest.json: every document it lists as valid
      validates, and every one it lists as invalid is rejected, except those
      marked "schema_level": false (only semantic validation refuses them; the
      Go conformance test covers those).
@@ -118,7 +118,7 @@ def main():
 
 
 def check_manifest(validator):
-    base = os.path.join(ROOT, "conformance", "documents")
+    base = os.path.join(ROOT, "conformance", "v1", "documents")
     manifest = load(os.path.join(base, "manifest.json"))
     failures = 0
     for entry in manifest["documents"]:

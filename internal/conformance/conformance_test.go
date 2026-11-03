@@ -7,7 +7,7 @@ import (
 )
 
 func TestRunVectors(t *testing.T) {
-	rs, err := Run("../../conformance")
+	rs, err := Run("../../conformance/v1")
 	if err != nil {
 		t.Fatal(err)
 	}
