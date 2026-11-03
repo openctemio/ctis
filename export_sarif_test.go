@@ -157,6 +157,12 @@ func TestExportSARIFSecuritySeverityBands(t *testing.T) {
 	for _, s := range AllSeverities() {
 		f := &Finding{Severity: s}
 		v, ok := sarifSecuritySeverity(f)
+		if s == SeverityUnknown {
+			if ok {
+				t.Errorf("unknown severity got a score %s", v)
+			}
+			continue
+		}
 		if !ok {
 			t.Fatalf("%s: no score", s)
 		}

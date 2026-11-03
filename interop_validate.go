@@ -10,8 +10,9 @@ func tooLong(s string, n int) bool { return utf8.RuneCountInString(s) > n }
 // validateInteropFinding checks the interoperability members of one finding.
 func validateInteropFinding(i int, f *Finding, add func(string, ...any)) {
 	if n := f.Native; n != nil {
-		if n.Scheme != "" && !n.Scheme.IsValid() {
-			add("findings[%d]: native.scheme %q is invalid", i, n.Scheme)
+		// Open vocabulary since 2.0: any token, known values in AllNativeSchemes.
+		if n.Scheme != "" && !IsOpenToken(string(n.Scheme)) {
+			add("findings[%d]: native.scheme %q is invalid", i, truncateForError(string(n.Scheme)))
 		}
 		if n.DetectionType != "" && !n.DetectionType.IsValid() {
 			add("findings[%d]: native.detection_type %q is invalid", i, n.DetectionType)

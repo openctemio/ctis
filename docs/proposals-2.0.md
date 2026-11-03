@@ -17,6 +17,8 @@ The normative text names one receiver in several places (sections 4.7, 4.9, 4.11
 
 ## P2. Forward compatibility across many receivers (1.7)
 
+**Status: done** (additive half of 2.0): spec section 2.2, `ctis.Decode`, `ctis.Unknown`, `ctis.EnumFallback`. There is no conversion between majors.
+
 Today a producer must not send a member newer than the receiver's minor (section 2.2). That works with one receiver, but not when many producers talk to many receivers. Proposal: **version-gated must-ignore**.
 
 - A document that declares the receiver's own minor or an older one is decoded strictly, as today. A typo is still an error.
@@ -27,6 +29,8 @@ The Go module adds `ctis.Decode`, which returns the report and the list of ignor
 
 ## P3. Extensions instead of reserved properties (1.7, then 2.0)
 
+**Status: the additive part is done**: `extensions` on report, metadata, asset, finding, dependency, endpoint and relationship (spec section 4.14), `schemas/extensions/io.openctem/1.json`. Moving the converters and importers off `properties` onto typed members and namespaces is open.
+
 Several receivers and converters give meaning to keys inside `properties`. Producers in other projects cannot discover them. Proposal:
 
 - an `extensions` object on the report, metadata, asset, finding, dependency, endpoint and relationship, keyed by reverse-DNS namespace (`io.openctem`, `com.example.scanner`); each namespace may publish a JSON Schema, which a receiver validates when it knows the namespace and otherwise ignores;
@@ -34,6 +38,8 @@ Several receivers and converters give meaning to keys inside `properties`. Produ
 - from 2.0, receivers give no meaning to `properties`.
 
 ## P4. CTEM coverage (1.7)
+
+**Status: done except `rules[]`/`finding.rule_ref`** (spec sections 4.15 and 4.16). The rule catalog is open.
 
 - Finding types `exposure` (something reachable that should not be), `weakness` (a code or design weakness without an advisory id), `malware` (malicious code or package) and `license`; severity value `unknown`.
 - `finding.validation`:
@@ -50,6 +56,8 @@ Several receivers and converters give meaning to keys inside `properties`. Produ
 - A top-level `rules[]` catalog (id, name, descriptions, help URL, CWE ids, tags) with `finding.rule_ref`. Findings stop repeating rule text, and a round trip through SARIF keeps rule metadata.
 
 ## P5. Completeness and absence (1.7)
+
+**Status: done** (spec section 4.17), with asset `state`/`state_reason` for the authoritative gone signal.
 
 `metadata.coverage_type` is report-wide. What happened to each target lives outside the report. Proposal:
 

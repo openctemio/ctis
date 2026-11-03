@@ -183,6 +183,8 @@ func sarifLevel(s Severity) string {
 		return "error"
 	case SeverityLow, SeverityInfo:
 		return "note"
+	case SeverityUnknown:
+		return "none"
 	default:
 		return "warning"
 	}
@@ -192,7 +194,7 @@ func sarifLevel(s Severity) string {
 // CVSS score when that bands to its severity, else the middle of the band.
 // An unknown severity has none.
 func sarifSecuritySeverity(f *Finding) (string, bool) {
-	if !f.Severity.IsValid() {
+	if !f.Severity.IsValid() || f.Severity == SeverityUnknown {
 		return "", false
 	}
 	if v := f.Vulnerability; v != nil && v.CVSSScore > 0 && v.CVSSScore <= 10 &&

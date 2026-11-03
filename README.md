@@ -55,12 +55,15 @@ if err := report.Validate(); err != nil {
     log.Fatal(err)
 }
 
-// Consume: decode strictly, as OpenCTEM does, then validate.
-dec := json.NewDecoder(r)
-dec.DisallowUnknownFields()
-var in ctis.Report
-if err := dec.Decode(&in); err != nil { /* reject */ }
+// Consume: decode under the compatibility rule, then validate. A document of
+// this module's minor or an older one decodes strictly (a typo is an error);
+// a newer minor has unknown members ignored and unknown enum values mapped
+// to their fallback, each listed in unknown; another major is refused.
+in, unknown, err := ctis.Decode(io.LimitReader(r, 64<<20))
+if err != nil { /* reject */ }
 if err := in.Validate(); err != nil { /* reject */ }
+_ = unknown.Entries // log what was ignored
+
 
 // Convert SARIF (Semgrep, CodeQL, Trivy, ...)
 report, err := ctis.FromSARIF(sarifBytes, nil)

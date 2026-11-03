@@ -14,6 +14,10 @@
    "result": "valid"
   },
   {
+   "file": "../../../examples/ctem-coverage.json",
+   "result": "valid"
+  },
+  {
    "file": "../../../examples/misconfiguration.json",
    "result": "valid"
   },
@@ -44,6 +48,27 @@
   {
    "file": "../../../examples/web3.json",
    "result": "valid"
+  },
+  {
+   "file": "invalid/dangling-asset-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "asset_ref \"missing\" names no asset in this report",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/duplicate-asset-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "duplicate id \"a\"",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/version-minor-future.json",
+   "result": "invalid",
+   "category": "version",
+   "error": "unsupported version \"1.99\": this tool implements [1.0 1.1 1.2 1.3 1.4 ",
+   "schema_level": false
   },
   {
    "file": "valid/minimal.json",
@@ -98,6 +123,12 @@
    "error": "evidence_items[0]: invalid kind"
   },
   {
+   "file": "../../../examples/invalid/extension-namespace-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "is not a reverse-DNS namespace"
+  },
+  {
    "file": "../../../examples/invalid/finding-web-param-location.json",
    "result": "invalid",
    "category": "validate",
@@ -128,6 +159,18 @@
    "error": "json: unknown field \"state\""
   },
   {
+   "file": "../../../examples/invalid/target-class-does-not-fit.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "takes no class or cause"
+  },
+  {
+   "file": "../../../examples/invalid/threat-signal-due-on-datetime.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "is not a YYYY-MM-DD date"
+  },
+  {
    "file": "../../../examples/invalid/unknown-field.json",
    "result": "invalid",
    "category": "decode",
@@ -150,27 +193,6 @@
    "result": "invalid",
    "category": "validate",
    "error": "vulnerability.ids[0] (\"cve\", \"CVE 2024 1\") is not a valid id of its ty"
-  },
-  {
-   "file": "invalid/dangling-asset-ref.json",
-   "result": "invalid",
-   "category": "validate",
-   "error": "asset_ref \"missing\" names no asset in this report",
-   "schema_level": false
-  },
-  {
-   "file": "invalid/duplicate-asset-id.json",
-   "result": "invalid",
-   "category": "validate",
-   "error": "duplicate id \"a\"",
-   "schema_level": false
-  },
-  {
-   "file": "invalid/version-minor-future.json",
-   "result": "invalid",
-   "category": "version",
-   "error": "unsupported version \"1.99\": this tool implements [1.0 1.1 1.2 1.3 1.4 ",
-   "schema_level": false
   }
  ]
 }

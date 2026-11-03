@@ -69,10 +69,19 @@
       },
       "description": "All locations where this dependency is defined"
     },
+    "asset_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Id of the asset of this report the component was found in: a repository, an image, a host (2.0)"
+    },
     "properties": {
       "type": "object",
       "additionalProperties": true,
       "description": "Custom properties"
+    },
+    "extensions": {
+      "$ref": "report.json#/$defs/Extensions"
     }
   },
   "$defs": {

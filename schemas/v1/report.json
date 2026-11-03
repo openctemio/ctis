@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
   "title": "CTIS Report",
-  "description": "CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into OpenCTEM. Normative field semantics: docs/spec.md in https://github.com/openctemio/ctis",
+  "description": "CTEM Interchange Schema (CTIS) - Standard format for exchanging assets, findings and dependencies between security tools and platforms. Normative field semantics: docs/spec.md in https://github.com/openctemio/ctis",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,7 +12,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "description": "CTIS specification version as MAJOR.MINOR. Receivers accept any minor of their own major; a producer must not send fields newer than the receiver's minor (docs/spec.md, Versioning). The default is the version this schema describes.",
+      "description": "CTIS specification version as MAJOR.MINOR. Receivers decode a document of their own or an older minor strictly, ignore unknown members and map unknown enum values to their fallback in a document of a newer minor, and refuse another major (docs/spec.md section 2.2). The default is the version this schema describes.",
       "pattern": "^1\\.(0|[1-9][0-9]{0,3})$",
       "default": "1.6"
     },
@@ -66,9 +66,42 @@
     },
     "properties": {
       "$ref": "#/$defs/Properties"
+    },
+    "extensions": {
+      "$ref": "#/$defs/Extensions"
     }
   },
   "$defs": {
+    "Extensions": {
+      "type": "object",
+      "description": "Namespaced producer data (2.0): keys are reverse-DNS namespaces (io.openctem, com.example.scanner), values objects that namespace defines. A receiver validates a namespace it knows and ignores one it does not. At most 32 namespaces and 64 KiB serialized (the size is checked by Validate).",
+      "maxProperties": 32,
+      "propertyNames": {"maxLength": 128, "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$"},
+      "additionalProperties": {"type": "object", "additionalProperties": true}
+    },
+    "TargetOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How one target of the work ended (2.0), in the vocabulary of the outcome package: done and unfinished take no class or cause; failed and skipped need a class of their own",
+      "required": ["target", "state"],
+      "properties": {
+        "target": {"type": "string", "minLength": 1, "maxLength": 2048, "description": "The target as the work was given it (a name, an address, a range, a URL)"},
+        "kind": {"$ref": "asset.json#/$defs/AssetType"},
+        "state": {"type": "string", "enum": ["done", "failed", "skipped", "unfinished"]},
+        "class": {"type": "string", "enum": ["unreachable", "timeout", "tool_error", "egress_refused", "name_gone", "resolver_failed", "sensor_network_fault", "rate_limited", "edge_challenged", "edge_blocked", "refused", "excluded"]},
+        "cause": {"type": "string", "enum": ["target", "sensor", "platform"]}
+      }
+    },
+    "Segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "This document's place in a result split over count documents that share one metadata.id (2.0). index is zero-based.",
+      "required": ["index", "count"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0, "maximum": 9999},
+        "count": {"type": "integer", "minimum": 1, "maximum": 10000}
+      }
+    },
     "Relationship": {
       "type": "object",
       "additionalProperties": false,
@@ -77,12 +110,17 @@
       "properties": {
         "type": {"$ref": "#/$defs/RelationshipType"},
         "from_ref": {"type": "string", "minLength": 1, "maxLength": 255, "description": "Id of the source asset in this report"},
-        "to_ref": {"type": "string", "minLength": 1, "maxLength": 255, "description": "Id of the target asset in this report"}
+        "to_ref": {"type": "string", "minLength": 1, "maxLength": 255, "description": "Id of the target asset in this report"},
+        "first_seen_at": {"type": "string", "format": "date-time", "description": "When the producer first observed the edge (2.0)"},
+        "last_seen_at": {"type": "string", "format": "date-time", "description": "When the producer last observed the edge (2.0)"},
+        "confidence": {"type": "integer", "minimum": 0, "maximum": 100, "description": "How sure the producer is of the edge, 0-100 (2.0)"},
+        "extensions": {"$ref": "#/$defs/Extensions"}
       }
     },
     "RelationshipType": {
       "type": "string",
-      "enum": ["subdomain_of", "resolves_to", "cname_of", "exposes", "serves_certificate", "hosted_by"]
+      "enum": ["subdomain_of", "resolves_to", "cname_of", "exposes", "serves_certificate", "hosted_by", "contains", "runs_on", "depends_on", "deployed_from", "member_of", "routes_to", "has_access_to"],
+      "description": "One direction per type, read as from <type> to; no inverse duplicates"
     },
     "ReportMetadata": {
       "type": "object",
@@ -137,8 +175,30 @@
           "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+@[1-9][0-9]{0,2}$",
           "description": "The capability this report answers, as id@major (scan.ports@1). A producer claim; receivers that bound the report to a command use the command's capability (1.5)"
         },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the work that produced the report started (2.0)"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the work that produced the report ended (2.0)"
+        },
+        "targets": {
+          "type": "array",
+          "maxItems": 100000,
+          "description": "How each target of the work ended (2.0). An item seen earlier on target T is gone only when a coverage_type full report lists T with state done and omits it",
+          "items": {"$ref": "#/$defs/TargetOutcome"}
+        },
+        "segment": {
+          "$ref": "#/$defs/Segment"
+        },
         "properties": {
           "$ref": "#/$defs/Properties"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
         }
       }
     },
@@ -289,7 +349,7 @@
     },
     "Properties": {
       "type": "object",
-      "description": "Custom properties",
+      "description": "Custom properties: an opaque bag. Receivers SHOULD NOT give meaning to its keys; namespaced data goes in extensions (2.0)",
       "additionalProperties": true
     }
   }
