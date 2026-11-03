@@ -51,7 +51,7 @@
         "/runs/0/results/0/occurrenceCount"
       ],
       "never": [
-        "AKIAQ3EGRZ7X2VECTOR9"
+        "Zq8r3TfX0vWk2LmN9pQsVb4y"
       ],
       "losses": [
         {
@@ -64,19 +64,19 @@
         },
         {
           "member": "findings[].location.snippet",
-          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+          "reason": "a masked secret read back is masked again: Zq8r******** is no full redaction, so the second import writes REDACTED"
         },
         {
           "member": "findings[].description",
-          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+          "reason": "a masked secret read back is masked again: Zq8r******** is no full redaction, so the second import writes REDACTED"
         },
         {
           "member": "findings[].extensions",
-          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+          "reason": "a masked secret read back is masked again: Zq8r******** is no full redaction, so the second import writes REDACTED"
         },
         {
           "member": "rules[].short_description",
-          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+          "reason": "a masked secret read back is masked again: Zq8r******** is no full redaction, so the second import writes REDACTED"
         }
       ]
     }
