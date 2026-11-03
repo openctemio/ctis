@@ -3,7 +3,7 @@ package importer
 import (
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // The asset of a code report (SARIF, semgrep, betterleaks, a trivy

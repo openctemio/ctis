@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Qualys VM host list detection XML (HOST_LIST_VM_DETECTION_OUTPUT), joined

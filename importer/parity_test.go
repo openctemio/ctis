@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Parity with the converters these formats replace (the SDK's tool

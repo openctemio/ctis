@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // Web members (CTIS 1.6, spec section 4.12): the endpoints a crawler, a

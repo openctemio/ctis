@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 func TestVEXOf(t *testing.T) {

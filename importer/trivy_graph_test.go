@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 func pkg(id, rel string, on ...string) trivyPackage {

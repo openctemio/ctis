@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // The report guard. Every parser builds CTIS entities from optional source

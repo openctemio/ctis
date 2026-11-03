@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // A secret that a scanner repeats in its message, description, commit

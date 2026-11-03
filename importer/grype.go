@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // grype JSON output: the vulnerability matches of the packages found in an

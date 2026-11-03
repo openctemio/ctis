@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Hostile and edge-case input for the CycloneDX, SPDX and OSV importers.

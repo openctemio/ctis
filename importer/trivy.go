@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // trivy JSON (trivy image|fs|repo|config --format json). The mapping is

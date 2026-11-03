@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files")

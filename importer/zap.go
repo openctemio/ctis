@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // ZAP traditional report, JSON (`{"@programName": "ZAP", "site": [...]}`) or

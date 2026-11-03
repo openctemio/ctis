@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/openctemio/ctis/severity"
+	"github.com/openctemio/ctis/v2/severity"
 )
 
 // CTIS to SARIF 2.1.0.

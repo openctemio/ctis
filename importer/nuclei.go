@@ -14,9 +14,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // nuclei results: JSON lines (nuclei -jsonl), or a JSON array (nuclei

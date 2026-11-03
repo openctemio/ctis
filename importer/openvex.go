@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // OpenVEX JSON (v0.2.0; the v0.0.1 forms of vulnerability, products and

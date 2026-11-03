@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // doc builds a mapping with one rule.

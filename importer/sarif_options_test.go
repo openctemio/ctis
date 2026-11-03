@@ -8,7 +8,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // ToolType decides the finding type and the tool capabilities of a SARIF

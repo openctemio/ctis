@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis/severity"
+	"github.com/openctemio/ctis/v2/severity"
 )
 
 // =============================================================================

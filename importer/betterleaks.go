@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // betterleaks JSON report: a JSON array of leak records (the report format

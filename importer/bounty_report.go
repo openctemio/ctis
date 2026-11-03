@@ -19,7 +19,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Generic bug-bounty / disclosure report: {"bounty_reports": [...]} as JSON,

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // semgrep JSON output (semgrep --json). The mapping is spec_semgrep.go.

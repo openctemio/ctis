@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // APIVersion is the only mapping format version this package reads.

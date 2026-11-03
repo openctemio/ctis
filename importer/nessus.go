@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Nessus v2 XML (.nessus): NessusClientData_v2 > Report > ReportHost >

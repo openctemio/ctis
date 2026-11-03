@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // CSAF 2.0 JSON (the csaf_vex and csaf_security_advisory profiles). A CSAF

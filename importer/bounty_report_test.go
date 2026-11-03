@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 func brParse(t *testing.T, in string, opts Options) *Result {

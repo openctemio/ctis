@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // CycloneDX 1.4-1.6 JSON: an SBOM (components, dependencies), a VDR

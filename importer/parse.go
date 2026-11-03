@@ -11,7 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Options configure Parse. The zero value detects the format and uses the

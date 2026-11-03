@@ -17,8 +17,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // A bundle is several files that together describe one run of one tool: a

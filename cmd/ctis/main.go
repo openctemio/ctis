@@ -18,9 +18,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/internal/conformance"
-	"github.com/openctemio/ctis/internal/validatedoc"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/internal/conformance"
+	"github.com/openctemio/ctis/v2/internal/validatedoc"
 )
 
 // version is set at build time: -ldflags "-X main.version=v1.2.3".

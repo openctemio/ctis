@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // SPDX 2.2 / 2.3 JSON: packages and their relationships. SPDX carries no

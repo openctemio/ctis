@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // osv-scanner JSON results: the packages found in each scanned source

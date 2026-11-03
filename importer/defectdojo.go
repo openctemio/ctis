@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // DefectDojo Generic Findings Import JSON: {"name", "type", "version",

@@ -3,7 +3,7 @@ package importer
 import (
 	"io"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // opengrep JSON output (opengrep scan --json): the semgrep JSON shape, read

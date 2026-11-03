@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // SARIF 2.1.0. The conversion is the module's FromSARIF; this file adds the

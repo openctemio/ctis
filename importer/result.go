@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Result is what Parse returns for one file.

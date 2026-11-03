@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/importer"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 var cdxNow = time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)

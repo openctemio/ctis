@@ -3,7 +3,7 @@ package importer
 import (
 	"io"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // gitleaks JSON report: an array of leak records. gitleaks and every

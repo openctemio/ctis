@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // ReconConverterOptions configures the conversion from ReconResult to CTIS Report.

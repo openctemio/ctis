@@ -3,8 +3,8 @@ package importer
 import (
 	"strings"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // The secret record of betterleaks (and of the gitleaks-compatible report

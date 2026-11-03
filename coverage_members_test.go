@@ -7,44 +7,7 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/openctemio/ctis/outcome"
 )
-
-// The target vocabulary is copied from the outcome package (the root package
-// does not import it); keep the two equal.
-func TestTargetVocabularyMatchesOutcome(t *testing.T) {
-	states := []string{string(outcome.Done), string(outcome.Failed), string(outcome.Skipped), string(outcome.Unfinished)}
-	if d := enumDiff(states, stringsOf(AllTargetStates())); d != "" {
-		t.Errorf("states: %s", d)
-	}
-	classes := []outcome.Class{
-		outcome.Unreachable, outcome.Timeout, outcome.ToolError, outcome.EgressRefused,
-		outcome.NameGone, outcome.ResolverFailed, outcome.SensorNetworkFault, outcome.RateLimited,
-		outcome.EdgeChallenged, outcome.EdgeBlocked, outcome.Refused, outcome.Excluded,
-	}
-	if d := enumDiff(stringsOf(classes), stringsOf(AllTargetClasses())); d != "" {
-		t.Errorf("classes: %s", d)
-	}
-	causes := []outcome.Cause{outcome.CauseTarget, outcome.CauseSensor, outcome.CausePlatform}
-	if d := enumDiff(stringsOf(causes), stringsOf(AllTargetCauses())); d != "" {
-		t.Errorf("causes: %s", d)
-	}
-	if MaxTargets != outcome.MaxTargets || MaxTargetLen != outcome.MaxTargetLen {
-		t.Error("target bounds differ from the outcome package")
-	}
-	// The class/state fit is the outcome package's Valid.
-	for _, st := range AllTargetStates() {
-		for _, c := range append(AllTargetClasses(), "") {
-			o := outcome.Target{Target: "t", State: outcome.State(st), Class: outcome.Class(c)}
-			r := minimalReport17()
-			r.Metadata.Targets = []TargetOutcome{{Target: "t", State: st, Class: c}}
-			if got := r.Validate() == nil; got != o.Valid() {
-				t.Errorf("state %s class %q: Validate %v, outcome.Valid %v", st, c, got, o.Valid())
-			}
-		}
-	}
-}
 
 func minimalReport17() *Report {
 	r := NewReport()

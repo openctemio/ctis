@@ -5,7 +5,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // WebContentProperty is the reserved asset property that carries the

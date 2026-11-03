@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/openctemio/ctis/internal/conformance"
+	"github.com/openctemio/ctis/v2/internal/conformance"
 )
 
 // TestConformanceVectors runs every vector under conformance/ against this

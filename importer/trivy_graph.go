@@ -3,7 +3,7 @@ package importer
 import (
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // The package graph of one trivy result (--list-all-pkgs): it tells each

@@ -4,7 +4,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // Endpoints from crawl results (CTIS 1.6). A crawl reports one URL per

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Helpers of the SBOM and package-vulnerability importers (CycloneDX, SPDX,

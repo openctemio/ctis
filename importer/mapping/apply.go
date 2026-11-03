@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Default bounds of Apply.

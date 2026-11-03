@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis/importer"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 // csvDoc is a CSV mapping with one finding rule over the columns title,
