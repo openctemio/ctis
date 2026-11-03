@@ -1,6 +1,6 @@
 {
-  "version": "2.0",
-  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "version": "2.1",
+  "$schema": "https://schemas.openctem.io/ctis/2.1/report.json",
   "metadata": {
     "id": "0192f0a0-0000-7000-8000-000000000001",
     "generated_at": "2026-10-05T12:00:00Z",

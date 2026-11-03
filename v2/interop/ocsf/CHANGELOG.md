@@ -4,6 +4,12 @@ Module `github.com/openctemio/ctis/v2/interop/ocsf`, released with tags `v2/inte
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-03
+
+### Changed: CTIS 2.1
+
+- Requires core `github.com/openctemio/ctis/v2` v2.1.0; imported documents declare CTIS 2.1. No mapping change.
+
 ## [0.1.0] - 2026-11-03
 
 First release: the OCSF code moved out of the CTIS core module (CTIS 2.0).

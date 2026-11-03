@@ -30,7 +30,7 @@
    "file": "invalid/version-minor-future.json",
    "result": "invalid",
    "category": "version",
-   "error": "unsupported version \"2.99\": this tool implements [2.0]",
+   "error": "unsupported version \"2.99\"",
    "schema_level": false
   },
   {
@@ -230,7 +230,7 @@
    "file": "../../../examples/invalid/version-major-1.json",
    "result": "invalid",
    "category": "version",
-   "error": "unsupported version \"1.6\": this tool implements [2.0]; upgrade the pro"
+   "error": "unsupported version \"1.6\": "
   },
   {
    "file": "../../../examples/invalid/vex-justification-unknown.json",
@@ -268,6 +268,17 @@
   {
    "file": "valid/rule-catalog.json",
    "result": "valid"
+  },
+  {
+   "file": "valid/has-address.json",
+   "result": "valid"
+  },
+  {
+   "file": "invalid/has-address-to-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: has_address must point to an ip_address asset",
+   "schema_level": false
   }
  ]
 }

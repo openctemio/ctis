@@ -505,7 +505,7 @@ func TestInteropRoundTrip(t *testing.T) {
 
 func TestSupportedSchemaVersions(t *testing.T) {
 	got := SupportedSchemaVersions()
-	want := []string{"2.0"}
+	want := []string{"2.0", "2.1"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("SupportedSchemaVersions = %v, want %v", got, want)
 	}
@@ -526,7 +526,7 @@ func TestSupportedSchemaVersions(t *testing.T) {
 			t.Errorf("%s: %v", v, err)
 		}
 	}
-	for _, v := range []string{"1.6", "2.1", "0.9", "", "2.03", "3.0"} {
+	for _, v := range []string{"1.6", "2.2", "0.9", "", "2.03", "3.0"} {
 		if IsSupportedVersion(v) {
 			t.Errorf("%q reported supported", v)
 		}

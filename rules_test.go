@@ -149,3 +149,33 @@ func TestNetworkDeviceKind(t *testing.T) {
 		})
 	}
 }
+
+func TestHasAddress(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		fromType AssetType
+		fromVal  string
+		toType   AssetType
+		toVal    string
+		want     string
+	}{
+		{"device to address", AssetTypeNetworkDevice, "core-sw-01.example.com", AssetTypeIPAddress, "192.0.2.1", ""},
+		{"host to address", AssetTypeHost, "web01.example.com", AssetTypeIPAddress, "2001:db8::1", ""},
+		{"to a name", AssetTypeHost, "web01.example.com", AssetTypeDomainName, "www.example.com", "has_address must point to an ip_address asset"},
+		{"from an address", AssetTypeIPAddress, "192.0.2.2", AssetTypeIPAddress, "192.0.2.1", "cannot start from an ip_address asset"},
+		{"from a range", AssetTypeIPRange, "192.0.2.0/24", AssetTypeIPAddress, "192.0.2.1", "cannot start from an ip_range asset"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := ruleReport(nil, Finding{})
+			r.Assets = []Asset{{ID: "a", Type: tc.fromType, Value: tc.fromVal}, {ID: "b", Type: tc.toType, Value: tc.toVal}}
+			r.Relationships = []Relationship{{Type: RelHasAddress, FromRef: "a", ToRef: "b"}}
+			err := r.Validate()
+			switch {
+			case tc.want == "" && err != nil:
+				t.Fatalf("want valid, got %v", err)
+			case tc.want != "" && (err == nil || !strings.Contains(err.Error(), tc.want)):
+				t.Fatalf("want error containing %q, got %v", tc.want, err)
+			}
+		})
+	}
+}

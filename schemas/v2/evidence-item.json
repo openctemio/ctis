@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.0/evidence-item.json",
+  "$id": "https://schemas.openctem.io/ctis/2.1/evidence-item.json",
   "title": "CTIS Evidence Item",
   "description": "One piece of typed evidence of a finding. Known kinds are validated whole; another kind is validated by its envelope and carries its own fields in data. Sensitive values may appear only inside the spans listed in sensitive, which receivers mask before display or forwarding.",
   "type": "object",

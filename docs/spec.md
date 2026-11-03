@@ -248,6 +248,9 @@ Web3 is a profile, not a type: a smart-contract issue is a `vulnerability` or `w
 | `member_of` | an identity or host → a group, network or account |
 | `routes_to` | a load balancer, gateway or origin → a target |
 | `has_access_to` | an identity → a resource |
+| `has_address` (2.1) | a host, network device, endpoint device or other machine → an `ip_address` asset assigned to it (an interface or management address; not DNS) |
+
+`resolves_to` is DNS only: a name and the addresses its A/AAAA answers give. An address a machine carries is `has_address`; a receiver MAY match machines across producers by these addresses.
 
 An edge MAY carry `first_seen_at`, `last_seen_at` and `confidence` (0-100).
 
@@ -361,7 +364,7 @@ CTEM Interchange Schema (CTIS) 2.0: one producer's observations of assets, findi
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
-| `$schema` | string |  | pattern `^[Hh][Tt][Tt][Pp][Ss]?://[^\s/?#]+[^\s]*$`; maxLength 2048 | Schema URL, normally https://schemas.openctem.io/ctis/2.0/report.json. An identifier: receivers never fetch it. |
+| `$schema` | string |  | pattern `^[Hh][Tt][Tt][Pp][Ss]?://[^\s/?#]+[^\s]*$`; maxLength 2048 | Schema URL, normally https://schemas.openctem.io/ctis/2.1/report.json. An identifier: receivers never fetch it. |
 | `assets` | array of `asset.json` |  |  | Discovered assets |
 | `dependencies` | array of `dependency.json` |  |  | Software dependencies (SBOM) |
 | `endpoints` | array of `endpoint.json` |  |  | Methods and paths web origins serve, as a tool saw them; parameters are named, never valued |
@@ -424,7 +427,7 @@ A typed edge between two different assets of the report
 
 One direction per type, read as from <type> to; no inverse duplicates
 
-Type: string. one of: subdomain_of, resolves_to, cname_of, exposes, serves_certificate, hosted_by, contains, runs_on, depends_on, deployed_from, member_of, routes_to, has_access_to
+Type: string. one of: subdomain_of, resolves_to, cname_of, exposes, serves_certificate, hosted_by, contains, runs_on, depends_on, deployed_from, member_of, routes_to, has_access_to, has_address
 
 #### ReportMetadata
 

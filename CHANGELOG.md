@@ -4,6 +4,15 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-03
+
+CTIS 2.1, an additive minor: every 2.0 document is a valid 2.1 document, and a 2.0 receiver reading a 2.1 document drops what it does not know (version-gated must-ignore).
+
+### Added: `has_address` relationships
+
+- Relationship type `has_address`: from a host, network device, endpoint device or other machine to an `ip_address` asset assigned to it (an interface or management address). `resolves_to` stays DNS only (a name and its A/AAAA answers). `Validate` refuses a `has_address` edge to anything but an `ip_address` asset, or from an `ip_address` or `ip_range` asset. Receivers may match machines across producers by these addresses.
+- `ctis.SchemaVersion` is `2.1`; schema `$id`s move to `https://schemas.openctem.io/ctis/2.1/`.
+
 ### Fixed: adapter and command modules resolvable by the Go toolchain
 
 - The adapter modules (`github.com/openctemio/ctis/v2/interop/<format>`) and the command module (`github.com/openctemio/ctis/v2/cmd/ctis`) live under `v2/` (`v2/interop/<format>`, `v2/cmd/ctis`), where the Go toolchain looks for a module whose path continues after the `/v2` of the repository's major version; their tags are `v2/interop/<format>/vX.Y.Z` and `v2/cmd/ctis/vX.Y.Z`. The `interop/<format>/v0.1.0` tags pushed with 2.0.0 could not be resolved and were withdrawn. Module paths and import paths are unchanged.

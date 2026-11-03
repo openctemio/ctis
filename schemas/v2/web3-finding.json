@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.0/web3-finding.json",
+  "$id": "https://schemas.openctem.io/ctis/2.1/web3-finding.json",
   "title": "Web3 Vulnerability Details",
   "description": "Web3 profile: details of a smart-contract finding (a vulnerability or weakness finding with a web3 block). Vendor and product vocabularies are open tokens.",
   "type": "object",

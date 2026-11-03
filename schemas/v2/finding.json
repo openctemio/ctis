@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.0/finding.json",
+  "$id": "https://schemas.openctem.io/ctis/2.1/finding.json",
   "title": "CTIS Finding",
   "description": "A security finding on one asset of the report",
   "type": "object",
