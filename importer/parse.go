@@ -88,6 +88,11 @@ type Options struct {
 	// import_scope=in_target. Empty: the target domain the bundle names.
 	ScopeDomains []string
 
+	// NoPassthrough: the standard-format adapters leave out the members
+	// their mapping does not list. By default they keep them under
+	// extensions["org.ctis.interop.<format>"] (docs/interop.md).
+	NoPassthrough bool
+
 	// Observe lists the source field paths the input held in
 	// Result.Fields (a mapping editor shows them next to Result.Unmapped).
 	Observe bool

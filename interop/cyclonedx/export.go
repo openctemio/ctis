@@ -1,6 +1,11 @@
-package ctis
+package cyclonedx
 
 import (
+	"github.com/openctemio/ctis/v2/internal/exportkit"
+	"github.com/openctemio/ctis/v2/interop/engine"
+
+	"github.com/openctemio/ctis/v2"
+
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -19,7 +24,7 @@ import (
 //     dependsOn); dependency properties written by the importer (group,
 //     hash_*, cpe, scope, publisher, supplier, description, property:*)
 //     -> their CycloneDX members.
-//   - the subject asset (CycloneDXOptions.SubjectAssetID, else the first
+//   - the subject asset (ExportOptions.SubjectAssetID, else the first
 //     asset) -> metadata.component.
 //   - vulnerability findings -> vulnerabilities[], one per vulnerability id,
 //     with every affected component in affects[]; scores -> ratings;
@@ -38,8 +43,8 @@ const (
 	cdxBOMFormat   = "CycloneDX"
 )
 
-// CycloneDXOptions configure ToCycloneDX. The zero value is valid.
-type CycloneDXOptions struct {
+// ExportOptions configure Export. The zero value is valid.
+type ExportOptions struct {
 	// serialNumber of the BOM (urn:uuid:...). Empty: the report's
 	// metadata.properties bom_serial_number, else a UUID derived from the
 	// report's content (stable for the same report).
@@ -52,7 +57,18 @@ type CycloneDXOptions struct {
 	// Id of the asset the BOM describes (metadata.component). Empty: the
 	// first asset of the report.
 	SubjectAssetID string
+
+	// NoPassthrough leaves out the CycloneDX members an import kept under
+	// extensions["org.ctis.interop.cyclonedx"]; by default they are written
+	// back where the exporter writes nothing.
+	NoPassthrough bool
 }
+
+// ErrTooLarge is returned when the encoded output would exceed MaxBytes.
+var ErrTooLarge = exportkit.ErrTooLarge
+
+// MaxBytes is the largest output Export returns.
+const MaxBytes = exportkit.MaxBytes
 
 type cdxOutBOM struct {
 	BOMFormat       string            `json:"bomFormat"`
@@ -184,77 +200,32 @@ type cdxOutVuln struct {
 	Properties     []cdxOutProperty `json:"properties,omitempty"`
 }
 
-// cdxHashAlgs maps a lower-cased hash algorithm to its CycloneDX spelling.
-var cdxHashAlgs = map[string]string{
-	"md5": "MD5", "sha-1": "SHA-1", "sha-256": "SHA-256", "sha-384": "SHA-384", "sha-512": "SHA-512",
-	"sha3-256": "SHA3-256", "sha3-384": "SHA3-384", "sha3-512": "SHA3-512",
-	"blake2b-256": "BLAKE2b-256", "blake2b-384": "BLAKE2b-384", "blake2b-512": "BLAKE2b-512", "blake3": "BLAKE3",
-}
-
-// cdxJustifications are the CycloneDX analysis justifications.
-var cdxJustifications = map[string]bool{
-	"code_not_present": true, "code_not_reachable": true, "requires_configuration": true,
-	"requires_dependency": true, "requires_environment": true, "protected_by_compiler": true,
-	"protected_at_runtime": true, "protected_at_perimeter": true, "protected_by_mitigating_control": true,
-}
-
 // cdxJustificationOf is the inverse of NormalizeVEXJustification for the
 // CycloneDX values: the source's own word when it is a CycloneDX value,
 // else the nearest CycloneDX value of the CTIS justification.
-func cdxJustificationOf(v *VEX) string {
-	if n := strings.ToLower(strings.TrimSpace(v.NativeJustification)); cdxJustifications[n] {
+func cdxJustificationOf(v *ctis.VEX) string {
+	if n, ok := exp.Lookup("justification", v.NativeJustification); ok {
 		return n
 	}
-	switch v.Justification {
-	case VEXJustificationComponentNotPresent, VEXJustificationVulnerableCodeNotPresent:
-		return "code_not_present"
-	case VEXJustificationVulnerableCodeNotInExecutePath:
-		return "code_not_reachable"
-	case VEXJustificationVulnerableCodeCannotBeControlledByAdversary:
-		return "requires_environment"
-	case VEXJustificationInlineMitigationsAlreadyExist:
-		return "protected_by_mitigating_control"
-	}
-	return ""
+	j, _ := exp.Lookup("justification_of_ctis", string(v.Justification))
+	return j
 }
 
 // cdxStateOf maps a VEX status to a CycloneDX analysis state.
-func cdxStateOf(s VEXStatus) string {
-	switch s {
-	case VEXStatusNotAffected:
-		return "not_affected"
-	case VEXStatusAffected:
-		return "exploitable"
-	case VEXStatusFixed:
-		return "resolved"
-	case VEXStatusUnderInvestigation:
-		return "in_triage"
-	}
-	return ""
+func cdxStateOf(s ctis.VEXStatus) string {
+	st, _ := exp.Lookup("vex_state", string(s))
+	return st
 }
-
-// cdxRatingSeverities are the CycloneDX rating severities.
-var cdxRatingSeverities = map[string]bool{"critical": true, "high": true, "medium": true, "low": true, "info": true, "none": true, "unknown": true}
 
 // cdxMethodOf maps a score to a CycloneDX rating method; ok is false for a
 // system CycloneDX has no rating for (EPSS, VPR).
-func cdxMethodOf(s *Score) (string, bool) {
+func cdxMethodOf(s *ctis.Score) (string, bool) {
 	switch s.System {
-	case ScoreSystemCVSS:
-		switch s.Version {
-		case "2.0":
-			return "CVSSv2", true
-		case "3.0":
-			return "CVSSv3", true
-		case "3.1":
-			return "CVSSv31", true
-		case "4.0":
-			return "CVSSv4", true
-		}
-		return "other", true
-	case ScoreSystemSSVC:
+	case ctis.ScoreSystemCVSS:
+		return exp.Lookup("cvss_method", s.Version)
+	case ctis.ScoreSystemSSVC:
 		return "SSVC", true
-	case ScoreSystemVendor:
+	case ctis.ScoreSystemVendor:
 		return "other", true
 	}
 	return "", false
@@ -273,23 +244,23 @@ func cdxLicenseOf(l string) cdxOutLicense {
 // cdxDepKeys are the dependency properties mapped to CycloneDX members.
 var cdxDepKeys = map[string]bool{"group": true, "cpe": true, "scope": true, "publisher": true, "supplier": true, "description": true}
 
-func cdxComponentOf(d *Dependency, ref string) cdxOutComponent {
+func cdxComponentOf(d *ctis.Dependency, ref string) cdxOutComponent {
 	c := cdxOutComponent{
 		Type:        string(d.Type),
 		BOMRef:      ref,
 		Name:        d.Name,
 		Version:     d.Version,
 		PURL:        d.PURL,
-		Group:       propString(d.Properties, "group"),
-		CPE:         propString(d.Properties, "cpe"),
-		Scope:       propString(d.Properties, "scope"),
-		Publisher:   propString(d.Properties, "publisher"),
-		Description: propString(d.Properties, "description"),
+		Group:       exportkit.PropString(d.Properties, "group"),
+		CPE:         exportkit.PropString(d.Properties, "cpe"),
+		Scope:       exportkit.PropString(d.Properties, "scope"),
+		Publisher:   exportkit.PropString(d.Properties, "publisher"),
+		Description: exportkit.PropString(d.Properties, "description"),
 	}
 	if c.Type == "" {
 		c.Type = "library"
 	}
-	if s := propString(d.Properties, "supplier"); s != "" {
+	if s := exportkit.PropString(d.Properties, "supplier"); s != "" {
 		c.Supplier = &cdxOutEntity{Name: s}
 	}
 	for _, l := range d.Licenses {
@@ -303,11 +274,11 @@ func cdxComponentOf(d *Dependency, ref string) cdxOutComponent {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		v := propString(d.Properties, k)
+		v := exportkit.PropString(d.Properties, k)
 		switch {
 		case v == "" || cdxDepKeys[k]:
 		case strings.HasPrefix(k, "hash_"):
-			if alg, ok := cdxHashAlgs[strings.TrimPrefix(k, "hash_")]; ok {
+			if alg, ok := exp.Lookup("hash_alg", strings.TrimPrefix(k, "hash_")); ok {
 				c.Hashes = append(c.Hashes, cdxOutHash{Alg: alg, Content: v})
 			}
 		case strings.HasPrefix(k, "property:"):
@@ -320,13 +291,13 @@ func cdxComponentOf(d *Dependency, ref string) cdxOutComponent {
 }
 
 // cdxSubjectOf writes the asset a BOM describes.
-func cdxSubjectOf(a *Asset) *cdxOutComponent {
+func cdxSubjectOf(a *ctis.Asset) *cdxOutComponent {
 	c := &cdxOutComponent{
-		Type:    propString(a.Properties, "component_type"),
+		Type:    exportkit.PropString(a.Properties, "component_type"),
 		BOMRef:  a.ID,
 		Name:    a.Name,
-		Version: propString(a.Properties, "version"),
-		CPE:     propString(a.Properties, "cpe"),
+		Version: exportkit.PropString(a.Properties, "version"),
+		CPE:     exportkit.PropString(a.Properties, "cpe"),
 	}
 	if c.Name == "" {
 		c.Name = a.Value
@@ -336,9 +307,9 @@ func cdxSubjectOf(a *Asset) *cdxOutComponent {
 	}
 	if c.Type == "" {
 		switch a.Type {
-		case AssetTypeContainer:
+		case ctis.AssetTypeContainer:
 			c.Type = "container"
-		case AssetTypeHost:
+		case ctis.AssetTypeHost:
 			c.Type = "operating-system"
 		default:
 			c.Type = "application"
@@ -352,7 +323,7 @@ func cdxSubjectOf(a *Asset) *cdxOutComponent {
 
 // cdxSerial derives a stable urn:uuid from the report's content (a UUID of
 // version 8, the RFC 9562 form for name-based UUIDs of other hashes).
-func cdxSerial(r *Report) string {
+func cdxSerial(r *ctis.Report) string {
 	b, _ := json.Marshal(r)
 	sum := sha256.Sum256(b)
 	u := sum[:16]
@@ -363,8 +334,8 @@ func cdxSerial(r *Report) string {
 }
 
 // cdxVulnID is the vulnerability id a finding is grouped under.
-func cdxVulnID(f *Finding) string {
-	if id, ok := NormalizeVulnerabilityID(f.RuleID); ok && id.Type != VulnerabilityIDVendor {
+func cdxVulnID(f *ctis.Finding) string {
+	if id, ok := ctis.NormalizeVulnerabilityID(f.RuleID); ok && id.Type != ctis.VulnerabilityIDVendor {
 		return f.RuleID
 	}
 	if v := f.Vulnerability; v != nil {
@@ -410,7 +381,7 @@ func nameAtVersion(name, version string) string {
 
 // componentFor returns the bom-ref of the component a finding affects,
 // adding one from the finding's package when the report lists none.
-func (b *cdxBuilder) componentFor(v *VulnerabilityDetails) string {
+func (b *cdxBuilder) componentFor(v *ctis.VulnerabilityDetails) string {
 	if v == nil {
 		return ""
 	}
@@ -434,14 +405,14 @@ func (b *cdxBuilder) componentFor(v *VulnerabilityDetails) string {
 	return ref
 }
 
-// ToCycloneDX converts a report to a CycloneDX 1.6 JSON BOM with its
+// Export converts a report to a CycloneDX 1.6 JSON BOM with its
 // vulnerabilities. See the mapping above and docs/exporters.md.
-func ToCycloneDX(r *Report, opts *CycloneDXOptions) ([]byte, error) {
+func Export(r *ctis.Report, opts *ExportOptions) ([]byte, error) {
 	if r == nil {
-		return nil, errNilReport
+		return nil, exportkit.ErrNilReport
 	}
 	if opts == nil {
-		opts = &CycloneDXOptions{}
+		opts = &ExportOptions{}
 	}
 	b := &cdxBuilder{
 		bom:    cdxOutBOM{BOMFormat: cdxBOMFormat, SpecVersion: cdxSpecVersion, Version: 1},
@@ -452,7 +423,7 @@ func ToCycloneDX(r *Report, opts *CycloneDXOptions) ([]byte, error) {
 	meta := r.Metadata.Properties
 	b.bom.SerialNumber = opts.SerialNumber
 	if b.bom.SerialNumber == "" {
-		b.bom.SerialNumber = propString(meta, "bom_serial_number")
+		b.bom.SerialNumber = exportkit.PropString(meta, "bom_serial_number")
 	}
 	if b.bom.SerialNumber == "" {
 		b.bom.SerialNumber = cdxSerial(r)
@@ -467,15 +438,15 @@ func ToCycloneDX(r *Report, opts *CycloneDXOptions) ([]byte, error) {
 	switch {
 	case !opts.Timestamp.IsZero():
 		md.Timestamp = opts.Timestamp.UTC().Format(time.RFC3339)
-	case propString(meta, "bom_timestamp") != "":
-		md.Timestamp = propString(meta, "bom_timestamp")
+	case exportkit.PropString(meta, "bom_timestamp") != "":
+		md.Timestamp = exportkit.PropString(meta, "bom_timestamp")
 	case !r.Metadata.GeneratedAt.IsZero():
 		md.Timestamp = r.Metadata.GeneratedAt.UTC().Format(time.RFC3339)
 	}
 	if t := r.Tool; t != nil && t.Name != "" {
 		md.Tools = &cdxOutTools{Components: []cdxOutComponent{{Type: "application", Name: t.Name, Version: t.Version}}}
 	}
-	subject := findAsset(r, opts.SubjectAssetID)
+	subject := exportkit.FindAsset(r, opts.SubjectAssetID)
 	if subject == nil && opts.SubjectAssetID == "" && len(r.Assets) > 0 {
 		subject = &r.Assets[0]
 	}
@@ -555,13 +526,13 @@ func ToCycloneDX(r *Report, opts *CycloneDXOptions) ([]byte, error) {
 	index := map[string]int{}
 	for i := range r.Findings {
 		src := &r.Findings[i]
-		if src.Type != FindingTypeVulnerability && src.Vulnerability == nil {
+		if src.Type != ctis.FindingTypeVulnerability && src.Vulnerability == nil {
 			continue
 		}
-		if src.Type != FindingTypeVulnerability && src.Type != "" {
+		if src.Type != ctis.FindingTypeVulnerability && src.Type != "" {
 			continue
 		}
-		f, err := exportFinding(src)
+		f, err := exportkit.Finding(src)
 		if err != nil {
 			return nil, err
 		}
@@ -582,7 +553,25 @@ func ToCycloneDX(r *Report, opts *CycloneDXOptions) ([]byte, error) {
 			}
 		}
 	}
-	return marshalExport(b.bom)
+	out, err := exportkit.Marshal(b.bom)
+	if err != nil || opts.NoPassthrough {
+		return out, err
+	}
+	// Document members an import kept, where their place is free. Members
+	// under a component or a vulnerability are not written back: the
+	// exporter orders those its own way.
+	_, kept, ok := exp.Kept(r.Extensions)
+	if !ok {
+		return out, nil
+	}
+	out, _, err = exp.Reemit(out, engine.Unindexed(kept), "  ")
+	if err != nil {
+		return nil, err
+	}
+	if len(out) > exportkit.MaxBytes {
+		return nil, exportkit.ErrTooLarge
+	}
+	return out, nil
 }
 
 func contains(list []string, s string) bool {
@@ -606,7 +595,7 @@ func cdxHasAffect(list []cdxOutAffect, ref string) bool {
 // cdxVersionsOf reads back the affects versions the importer kept
 // ("<range or version> (<status>)" per line), else the finding's affected
 // version range.
-func cdxVersionsOf(f *Finding) []cdxOutVersion {
+func cdxVersionsOf(f *ctis.Finding) []cdxOutVersion {
 	var out []cdxOutVersion
 	if s := f.SourceExtra["affects_versions"]; s != "" {
 		for _, l := range strings.Split(s, "\n") {
@@ -634,21 +623,21 @@ func cdxVersionsOf(f *Finding) []cdxOutVersion {
 	return out
 }
 
-func cdxVulnOf(f *Finding, vid string) cdxOutVuln {
+func cdxVulnOf(f *ctis.Finding, vid string) cdxOutVuln {
 	out := cdxOutVuln{ID: vid}
 	if f.Native != nil {
 		out.BOMRef = f.Native.InstanceID
 	}
 	v := f.Vulnerability
 	if v == nil {
-		v = &VulnerabilityDetails{}
+		v = &ctis.VulnerabilityDetails{}
 	}
 	if ds := v.DataSource; ds != nil && (ds.Name != "" || ds.URL != "") {
 		out.Source = &cdxOutSource{Name: ds.Name, URL: ds.URL}
 	}
 	seen := map[string]bool{strings.ToUpper(vid): true}
 	for _, id := range v.IDs {
-		if seen[strings.ToUpper(id.ID)] || len(out.References) >= MaxVulnerabilityIDs {
+		if seen[strings.ToUpper(id.ID)] || len(out.References) >= ctis.MaxVulnerabilityIDs {
 			continue
 		}
 		seen[strings.ToUpper(id.ID)] = true
@@ -663,14 +652,14 @@ func cdxVulnOf(f *Finding, vid string) cdxOutVuln {
 	// as properties.
 	var props []cdxOutProperty
 	for i := range f.Scores {
-		if i >= MaxScores {
+		if i >= ctis.MaxScores {
 			break
 		}
 		s := &f.Scores[i]
 		method, ok := cdxMethodOf(s)
 		if !ok {
 			if s.Value != nil {
-				props = append(props, cdxOutProperty{Name: "ctis:score:" + string(s.System), Value: formatScore(*s.Value)})
+				props = append(props, cdxOutProperty{Name: "ctis:score:" + string(s.System), Value: exportkit.FormatScore(*s.Value)})
 			}
 			continue
 		}
@@ -678,11 +667,11 @@ func cdxVulnOf(f *Finding, vid string) cdxOutVuln {
 		if s.Source != "" {
 			rt.Source = &cdxOutSource{Name: s.Source}
 		}
-		if s.Value != nil && s.System != ScoreSystemSSVC {
+		if s.Value != nil && s.System != ctis.ScoreSystemSSVC {
 			val := *s.Value
 			rt.Score = &val
 		}
-		if l := strings.ToLower(s.Label); cdxRatingSeverities[l] {
+		if l, ok := exp.Lookup("rating_severity", strings.ToLower(s.Label)); ok {
 			rt.Severity = l
 		}
 		rt.Justification = f.SourceExtra["rating_justification:"+cdxExtraKey(s.Source+":"+method)]
@@ -720,23 +709,23 @@ func cdxVulnOf(f *Finding, vid string) cdxOutVuln {
 			}
 		}
 		for _, a := range rem.Advisories {
-			if a.URL != "" && len(out.Advisories) < MaxAdvisories {
+			if a.URL != "" && len(out.Advisories) < ctis.MaxAdvisories {
 				out.Advisories = append(out.Advisories, cdxOutAdvisory{Title: a.ID, URL: a.URL})
 			}
 		}
 	}
-	out.Published = formatTime(v.PublishedAt)
-	out.Updated = formatTime(v.ModifiedAt)
+	out.Published = exportkit.FormatTime(v.PublishedAt)
+	out.Updated = exportkit.FormatTime(v.ModifiedAt)
 	out.Created = f.SourceExtra["created"]
 	out.Rejected = f.SourceExtra["rejected"]
 
 	if x := f.VEX; x != nil {
-		a := &cdxOutAnalysis{State: cdxStateOf(x.Status), Justification: cdxJustificationOf(x), Detail: x.Statement, LastUpdated: formatTime(x.AsOf)}
-		if x.Status != VEXStatusNotAffected && x.NativeJustification == "" {
+		a := &cdxOutAnalysis{State: cdxStateOf(x.Status), Justification: cdxJustificationOf(x), Detail: x.Statement, LastUpdated: exportkit.FormatTime(x.AsOf)}
+		if x.Status != ctis.VEXStatusNotAffected && x.NativeJustification == "" {
 			a.Justification = ""
 		}
 		out.Analysis = a
-	} else if f.Status == FindingStatusFalsePositive {
+	} else if f.Status == ctis.FindingStatusFalsePositive {
 		out.Analysis = &cdxOutAnalysis{State: "false_positive"}
 	}
 	if out.Analysis != nil {
@@ -791,9 +780,7 @@ func cdxExtraKey(s string) string {
 	return s
 }
 
-func cdxSeverityOf(s Severity) string {
-	if cdxRatingSeverities[string(s)] {
-		return string(s)
-	}
-	return ""
+func cdxSeverityOf(s ctis.Severity) string {
+	sev, _ := exp.Lookup("rating_severity", string(s))
+	return sev
 }

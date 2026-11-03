@@ -1,4 +1,4 @@
-package importer
+package spdx
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 // SPDX 2.2 / 2.3 JSON: packages and their relationships. SPDX carries no
@@ -13,8 +14,11 @@ import (
 // every other package as a dependency. The mapping is spec_spdx.go.
 
 func init() {
-	parsers[FormatSPDX] = parseSPDX
-	tools[FormatSPDX] = ctis.Tool{Name: "spdx", Techniques: []ctis.Technique{ctis.TechniqueSCA}}
+	importer.Register(importer.FormatSPDX, importer.Adapter{
+		Parse: parseSPDX,
+		Tool:  ctis.Tool{Name: "spdx", Techniques: []ctis.Technique{ctis.TechniqueSCA}},
+		Spec:  importSpec(),
+	})
 }
 
 type spdxDoc struct {
@@ -84,24 +88,27 @@ func spdxOrganization(s string) string {
 	return line(rest, capShort)
 }
 
-func parseSPDX(b *Builder, r io.Reader) error {
-	data, err := readAll(r, FormatSPDX, b.lim)
+func parseSPDX(b *importer.Builder, r io.Reader) error {
+	data, err := b.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	doc, err := scanJSON(data, FormatSPDX, b.lim, b.obs, "/packages[]", "/relationships[]")
+	doc, err := b.ScanJSON(data, "/packages[]", "/relationships[]")
 	if err != nil {
 		return err
 	}
 	var d spdxDoc
-	if err := doc.decode(&d); err != nil {
+	if err := doc.Decode(&d); err != nil {
 		return err
 	}
 	if !strings.HasPrefix(strings.TrimSpace(d.SPDXVersion), "SPDX-2.") {
-		return &ParseError{Format: FormatSPDX, Msg: fmt.Sprintf("spdxVersion %q is not SPDX 2.x", line(d.SPDXVersion, 32)), Err: ErrMalformed}
+		return &importer.ParseError{Format: importer.FormatSPDX, Msg: fmt.Sprintf("spdxVersion %q is not SPDX 2.x", line(d.SPDXVersion, 32)), Err: importer.ErrMalformed}
+	}
+	if err := collect(b, data); err != nil {
+		return err
 	}
 
-	rep := b.res.Report
+	rep := b.Result().Report
 	props := ctis.Properties{"spdx_version": line(d.SPDXVersion, 16)}
 	if s := line(d.Name, capShort); s != "" {
 		props["sbom_name"] = s
@@ -150,7 +157,7 @@ func parseSPDX(b *Builder, r io.Reader) error {
 	deps := map[string]*ctis.Dependency{}
 	var order []string
 	for i := range d.Packages {
-		if err := b.tick(); err != nil {
+		if err := b.Tick(); err != nil {
 			return err
 		}
 		p := &d.Packages[i]
@@ -158,13 +165,13 @@ func parseSPDX(b *Builder, r io.Reader) error {
 		ptr := fmt.Sprintf("/packages/%d", i)
 		switch {
 		case id == "" || line(p.Name, capShort) == "":
-			b.issue(doc.issueAt("/packages[]", i, ptr, "package without SPDXID or name: skipped"))
+			b.Issue(doc.IssueAt("/packages[]", i, ptr, "package without SPDXID or name: skipped"))
 			continue
 		case id == subjectID && subject == nil:
 			subject = p
 			continue
 		case deps[id] != nil:
-			b.issue(doc.issueAt("/packages[]", i, ptr, fmt.Sprintf("SPDXID %q is used twice: the second package is skipped", id)))
+			b.Issue(doc.IssueAt("/packages[]", i, ptr, fmt.Sprintf("SPDXID %q is used twice: the second package is skipped", id)))
 			continue
 		}
 		dep := spdxDependency(p, id)
@@ -172,7 +179,7 @@ func parseSPDX(b *Builder, r io.Reader) error {
 		order = append(order, id)
 	}
 	if subjectID != "" && subject == nil {
-		b.issue(Issue{Path: "/documentDescribes", Message: fmt.Sprintf("the described element %q is not a package of this document", line(subjectID, 128))})
+		b.Issue(importer.Issue{Path: "/documentDescribes", Message: fmt.Sprintf("the described element %q is not a package of this document", line(subjectID, 128))})
 	}
 
 	// Relationships: A DEPENDS_ON B and B DEPENDENCY_OF A, A CONTAINS B and
@@ -192,7 +199,7 @@ func parseSPDX(b *Builder, r io.Reader) error {
 		fd.DependsOn = appendUnique(fd.DependsOn, deps[to].ID)
 	}
 	for _, rel := range d.Relationships {
-		if err := b.tick(); err != nil {
+		if err := b.Tick(); err != nil {
 			return err
 		}
 		a, z := strings.TrimSpace(rel.Element), strings.TrimSpace(rel.Related)
@@ -207,12 +214,12 @@ func parseSPDX(b *Builder, r io.Reader) error {
 	if len(order) == 0 {
 		return nil
 	}
-	assetID, err := b.asset(spdxSubjectAsset(subject, d.Name))
+	assetID, err := b.Asset(spdxSubjectAsset(subject, d.Name))
 	if err != nil {
 		return err
 	}
 	if subject == nil {
-		b.issue(Issue{Path: "/documentDescribes", Message: "the document describes no package; its packages are put on a repository asset named after the document"})
+		b.Issue(importer.Issue{Path: "/documentDescribes", Message: "the document describes no package; its packages are put on a repository asset named after the document"})
 	}
 	for _, id := range order {
 		dep := deps[id]
@@ -223,8 +230,8 @@ func parseSPDX(b *Builder, r io.Reader) error {
 			dep.Relationship = ctis.DependencyTransitive
 		}
 		dep.AssetRef = assetID
-		b.res.Stats.Records++
-		if err := b.dependency(*dep); err != nil {
+		b.Result().Stats.Records++
+		if err := b.Dependency(*dep); err != nil {
 			return err
 		}
 	}

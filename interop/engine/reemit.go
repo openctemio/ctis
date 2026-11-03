@@ -277,3 +277,26 @@ func (n *node) write(b *bytes.Buffer) {
 		b.Write(n.raw)
 	}
 }
+
+// Unindexed returns the entries whose pointer crosses no array index: the
+// members an exporter can place without knowing how it orders a list.
+func Unindexed(entries []Entry) []Entry {
+	var out []Entry
+	for _, e := range entries {
+		toks, ok := parsePointer(e.Pointer)
+		if !ok {
+			continue
+		}
+		indexed := false
+		for _, t := range toks {
+			if _, idx := isIndex(t); idx {
+				indexed = true
+				break
+			}
+		}
+		if !indexed {
+			out = append(out, e)
+		}
+	}
+	return out
+}

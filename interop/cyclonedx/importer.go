@@ -1,13 +1,15 @@
-package importer
+package cyclonedx
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"io"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 // CycloneDX 1.4-1.6 JSON: an SBOM (components, dependencies), a VDR
@@ -15,8 +17,11 @@ import (
 // spec_cyclonedx.go.
 
 func init() {
-	parsers[FormatCycloneDX] = parseCycloneDX
-	tools[FormatCycloneDX] = ctis.Tool{Name: "cyclonedx", Techniques: []ctis.Technique{ctis.TechniqueSCA}}
+	importer.Register(importer.FormatCycloneDX, importer.Adapter{
+		Parse: parseCycloneDX,
+		Tool:  ctis.Tool{Name: "cyclonedx", Techniques: []ctis.Technique{ctis.TechniqueSCA}},
+		Spec:  importSpec(),
+	})
 }
 
 type cdxDoc struct {
@@ -133,39 +138,42 @@ type cdxVuln struct {
 	Properties []cdxProperty `json:"properties"`
 }
 
-// cdxNested folds nested component paths: /components[]/components[]/x and
-// /metadata/component/components[]/x are both /components[]/x.
-var cdxNested = regexp.MustCompile(`^(?:/metadata/component)?(?:/components\[\])+`)
-
-func cdxRewrite(p string) string {
-	return cdxNested.ReplaceAllString(p, "/components[]")
-}
-
 // cdxComp is a component of the document, flattened.
 type cdxComp struct {
 	c   *cdxComponent
 	dep *ctis.Dependency // nil for the subject
 }
 
-func parseCycloneDX(b *Builder, r io.Reader) error {
-	data, err := readAll(r, FormatCycloneDX, b.lim)
+func parseCycloneDX(b *importer.Builder, r io.Reader) error {
+	data, err := b.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	b.obs.rewrite = cdxRewrite
-	doc, err := scanJSON(data, FormatCycloneDX, b.lim, b.obs, "/vulnerabilities[]", "/components[]")
+	m, err := importSet.Select(data)
+	if err != nil {
+		return &importer.ParseError{Format: importer.FormatCycloneDX, Msg: "specVersion: " + err.Error(), Err: importer.ErrUnknownFormat}
+	}
+	b.FoldPaths(m.FoldPath)
+	doc, err := b.ScanJSON(data, "/vulnerabilities[]", "/components[]")
 	if err != nil {
 		return err
 	}
 	var d cdxDoc
-	if err := doc.decode(&d); err != nil {
+	if err := doc.Decode(&d); err != nil {
 		return err
 	}
 	if !strings.EqualFold(d.BOMFormat, "CycloneDX") {
-		return &ParseError{Format: FormatCycloneDX, Msg: "bomFormat is not CycloneDX", Err: ErrMalformed}
+		return &importer.ParseError{Format: importer.FormatCycloneDX, Msg: "bomFormat is not CycloneDX", Err: importer.ErrMalformed}
 	}
 
-	rep := b.res.Report
+	rep := b.Result().Report
+	if !b.Options().NoPassthrough {
+		pt, err := m.Collect(data)
+		if err != nil {
+			return &importer.ParseError{Format: importer.FormatCycloneDX, Msg: err.Error(), Err: importer.ErrMalformed}
+		}
+		m.Store(&rep.Extensions, pt.DocExtension())
+	}
 	props := ctis.Properties{}
 	if s := line(d.SerialNumber, capShort); s != "" {
 		props["bom_serial_number"] = s
@@ -203,7 +211,7 @@ func parseCycloneDX(b *Builder, r io.Reader) error {
 	var walk func(list []cdxComponent, path string) error
 	walk = func(list []cdxComponent, path string) error {
 		for i := range list {
-			if err := b.tick(); err != nil {
+			if err := b.Tick(); err != nil {
 				return err
 			}
 			c := &list[i]
@@ -213,10 +221,10 @@ func parseCycloneDX(b *Builder, r io.Reader) error {
 				at = i
 			}
 			if !ok {
-				b.issue(doc.issueAt("/components[]", at, fmt.Sprintf("%s/%d", path, i), "component without a name: skipped"))
+				b.Issue(doc.IssueAt("/components[]", at, fmt.Sprintf("%s/%d", path, i), "component without a name: skipped"))
 			} else {
 				if ids[dep.ID] {
-					b.issue(doc.issueAt("/components[]", at, fmt.Sprintf("%s/%d", path, i), fmt.Sprintf("bom-ref %q is used twice: the second component is skipped", dep.ID)))
+					b.Issue(doc.IssueAt("/components[]", at, fmt.Sprintf("%s/%d", path, i), fmt.Sprintf("bom-ref %q is used twice: the second component is skipped", dep.ID)))
 				} else {
 					ids[dep.ID] = true
 					cc := &cdxComp{c: c, dep: &dep}
@@ -282,9 +290,9 @@ func parseCycloneDX(b *Builder, r io.Reader) error {
 		}
 		a := cdxSubjectAsset(subject, d.SerialNumber)
 		if subject == nil {
-			b.issue(Issue{Path: "/metadata/component", Message: "the BOM names no subject component; its components and findings are put on an unclassified asset named after the BOM"})
+			b.Issue(importer.Issue{Path: "/metadata/component", Message: "the BOM names no subject component; its components and findings are put on an unclassified asset named after the BOM"})
 		}
-		id, err := b.asset(a)
+		id, err := b.Asset(a)
 		assetID = id
 		return id, err
 	}
@@ -302,17 +310,17 @@ func parseCycloneDX(b *Builder, r io.Reader) error {
 			cc.dep.Relationship = ctis.DependencyTransitive
 		}
 		cc.dep.AssetRef = assetID
-		if err := b.dependency(*cc.dep); err != nil {
+		if err := b.Dependency(*cc.dep); err != nil {
 			return err
 		}
 	}
 
 	// Vulnerabilities.
 	for i := range d.Vulnerabilities {
-		if err := b.tick(); err != nil {
+		if err := b.Tick(); err != nil {
 			return err
 		}
-		if err := b.cdxVuln(doc, &d.Vulnerabilities[i], i, byRef, docSource, ensureAsset); err != nil {
+		if err := convertVuln(b, doc, &d.Vulnerabilities[i], i, byRef, docSource, ensureAsset); err != nil {
 			return err
 		}
 	}
@@ -423,16 +431,16 @@ func cdxSubjectAsset(c *cdxComponent, serial string) ctis.Asset {
 }
 
 // cdxProduct describes the component a vulnerability affects.
-func cdxProduct(ref string, byRef map[string]*cdxComp) (Product, *cdxComponent, bool) {
+func cdxProduct(ref string, byRef map[string]*cdxComp) (importer.Product, *cdxComponent, bool) {
 	ref = strings.TrimSpace(ref)
 	if cc, ok := byRef[ref]; ok {
 		c := cc.c
-		return Product{PURL: cleanPURL(c.PURL), CPE: line(c.CPE, capShort), Name: line(c.Name, capShort), Version: line(c.Version, capShort)}, c, true
+		return importer.Product{PURL: cleanPURL(c.PURL), CPE: line(c.CPE, capShort), Name: line(c.Name, capShort), Version: line(c.Version, capShort)}, c, true
 	}
 	if p := cleanPURL(ref); p != "" {
-		return Product{PURL: p}, nil, true
+		return importer.Product{PURL: p}, nil, true
 	}
-	return Product{}, nil, false
+	return importer.Product{}, nil, false
 }
 
 // cdxRatingSystem maps a rating method to a score system and version.
@@ -458,12 +466,12 @@ func cdxRatingSystem(method, vector string) (ctis.ScoreSystem, string) {
 	return ctis.ScoreSystemVendor, ""
 }
 
-func (b *Builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*cdxComp, docSource string, ensureAsset func() (string, error)) error {
+func convertVuln(b *importer.Builder, doc *importer.JSONDoc, v *cdxVuln, idx int, byRef map[string]*cdxComp, docSource string, ensureAsset func() (string, error)) error {
 	ptr := fmt.Sprintf("/vulnerabilities/%d", idx)
 	vid := line(v.ID, ctis.MaxNativeIDLen)
 	if vid == "" {
-		b.issue(doc.issueAt("/vulnerabilities[]", idx, ptr, "vulnerability without an id: skipped"))
-		b.res.Stats.Skipped++
+		b.Issue(doc.IssueAt("/vulnerabilities[]", idx, ptr, "vulnerability without an id: skipped"))
+		b.Result().Stats.Skipped++
 		return nil
 	}
 
@@ -480,7 +488,7 @@ func (b *Builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*c
 
 	// The affected products.
 	type affected struct {
-		p        Product
+		p        importer.Product
 		c        *cdxComponent
 		versions []string
 	}
@@ -501,7 +509,7 @@ func (b *Builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*c
 		affects = append(affects, affected{p, c, versions})
 	}
 	if len(unresolved) > 0 {
-		b.issue(doc.issueAt("/vulnerabilities[]", idx, ptr+"/affects", fmt.Sprintf("%s: %d affected refs name no component of this BOM and are not package URLs: %s", vid, len(unresolved), strings.Join(unresolved, ", "))))
+		b.Issue(doc.IssueAt("/vulnerabilities[]", idx, ptr+"/affects", fmt.Sprintf("%s: %d affected refs name no component of this BOM and are not package URLs: %s", vid, len(unresolved), strings.Join(unresolved, ", "))))
 	}
 
 	// The VEX analysis.
@@ -518,7 +526,7 @@ func (b *Builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*c
 				// The producer's own disposition of its finding.
 				suppress = true
 			} else {
-				b.issue(doc.issueAt("/vulnerabilities[]", idx, ptr+"/analysis", vid+": "+err.Error()))
+				b.Issue(doc.IssueAt("/vulnerabilities[]", idx, ptr+"/analysis", vid+": "+err.Error()))
 			}
 		} else {
 			vex = &x
@@ -528,46 +536,46 @@ func (b *Builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*c
 			case "not_affected", "resolved", "resolved_with_pedigree":
 				suppress = true
 			}
-			var products []Product
+			var products []importer.Product
 			for _, af := range affects {
 				products = append(products, af.p)
 			}
 			if len(products) > 0 {
-				if err := b.statement(VEXStatement{VulnerabilityIDs: ids.IDs, Products: products, VEX: x}); err != nil {
+				if err := b.Statement(importer.VEXStatement{VulnerabilityIDs: ids.IDs, Products: products, VEX: x}); err != nil {
 					return err
 				}
 			} else {
-				b.issue(doc.issueAt("/vulnerabilities[]", idx, ptr+"/analysis", vid+": the statement names no product it can be matched on"))
+				b.Issue(doc.IssueAt("/vulnerabilities[]", idx, ptr+"/analysis", vid+": the statement names no product it can be matched on"))
 			}
 		}
 	}
 
 	for j, af := range affects {
-		b.res.Stats.Records++
+		b.Result().Stats.Records++
 		if suppress {
-			b.res.Stats.Skipped++
+			b.Result().Stats.Skipped++
 			continue
 		}
 		if af.c == nil {
 			// A package URL outside the BOM: nothing in this report is
 			// affected.
-			b.res.Stats.Skipped++
+			b.Result().Stats.Skipped++
 			continue
 		}
 		assetID, err := ensureAsset()
 		if err != nil {
 			return err
 		}
-		f := b.cdxFinding(v, vid, ids, af.c, af.versions, assetID, fmt.Sprintf("%s/affects/%d", ptr, j))
+		f := cdxFinding(b, v, vid, ids, af.c, af.versions, assetID, fmt.Sprintf("%s/affects/%d", ptr, j))
 		f.VEX = vex
-		if err := b.finding(f); err != nil {
+		if err := b.Finding(f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *Builder) cdxFinding(v *cdxVuln, vid string, ids *ctis.VulnerabilityDetails, c *cdxComponent, ranges []string, assetID, rawRef string) ctis.Finding {
+func cdxFinding(b *importer.Builder, v *cdxVuln, vid string, ids *ctis.VulnerabilityDetails, c *cdxComponent, ranges []string, assetID, rawRef string) ctis.Finding {
 	name := line(c.Name, capShort)
 	if g := line(c.Group, capShort); g != "" {
 		name = g + "/" + name
@@ -708,4 +716,17 @@ func (b *Builder) cdxFinding(v *cdxVuln, vid string, ids *ctis.VulnerabilityDeta
 		}
 	}
 	return f
+}
+
+// Import reads a CycloneDX JSON document through importer.Parse (the
+// limits, the minimum severity and the secret masking apply): the report,
+// the VEX statements of its analyses, the counts and the issues. A nil opts
+// uses the defaults.
+func Import(data []byte, opts *importer.Options) (*importer.Result, error) {
+	o := importer.Options{}
+	if opts != nil {
+		o = *opts
+	}
+	o.Format = importer.FormatCycloneDX
+	return importer.Parse(context.Background(), bytes.NewReader(data), o)
 }

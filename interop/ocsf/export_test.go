@@ -1,19 +1,25 @@
-package ctis
+package ocsf
 
 import (
+	"os"
+
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/internal/exportkit"
+	"github.com/openctemio/ctis/v2/internal/interoptest"
+
 	"encoding/json"
 	"strings"
 	"testing"
 	"time"
 )
 
-// ocsfToCTIS is the test-only reverse of ToOCSF: it reads back every member
+// ocsfToCTIS is the test-only reverse of Events: it reads back every member
 // the mapping in export_ocsf.go writes, so CTIS -> OCSF -> CTIS can be
 // compared on the mapped members. No importer of OCSF exists; this is not
 // one.
-func ocsfToCTIS(ev *OCSFEvent) Finding {
-	f := Finding{
-		Type:        FindingType(ev.Unmapped["ctis_type"]),
+func ocsfToCTIS(ev *Event) ctis.Finding {
+	f := ctis.Finding{
+		Type:        ctis.FindingType(ev.Unmapped["ctis_type"]),
 		Title:       ev.FindingInfo.Title,
 		Description: ev.FindingInfo.Desc,
 		Message:     ev.Message,
@@ -35,7 +41,7 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 		f.AssetRef = r.UID
 	}
 	if ev.Unmapped["secret_type"] != "" || ev.Unmapped["secret_service"] != "" || ev.Unmapped["secret_masked_value"] != "" {
-		f.Secret = &SecretDetails{Type: ev.Unmapped["secret_type"], Service: ev.Unmapped["secret_service"], MaskedValue: ev.Unmapped["secret_masked_value"]}
+		f.Secret = &ctis.SecretDetails{Type: ev.Unmapped["secret_type"], Service: ev.Unmapped["secret_service"], MaskedValue: ev.Unmapped["secret_masked_value"]}
 	}
 	rem := ev.Remediation
 	if c := ev.Compliance; c != nil {
@@ -43,11 +49,11 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 		if len(c.Standards) > 0 {
 			std = c.Standards[0]
 		}
-		if f.Type == FindingTypeMisconfiguration {
-			f.Misconfiguration = &MisconfigurationDetails{PolicyID: c.Control, Provider: std}
+		if f.Type == ctis.FindingTypeMisconfiguration {
+			f.Misconfiguration = &ctis.MisconfigurationDetails{PolicyID: c.Control, Provider: std}
 		} else {
 			f.Kind = strings.ToLower(c.Status)
-			f.Compliance = &ComplianceDetails{Framework: ComplianceFramework(std), FrameworkVersion: ev.Unmapped["compliance_framework_version"], ControlID: c.Control}
+			f.Compliance = &ctis.ComplianceDetails{Framework: ctis.ComplianceFramework(std), FrameworkVersion: ev.Unmapped["compliance_framework_version"], ControlID: c.Control}
 		}
 	}
 	for i, v := range ev.Vulnerabilities {
@@ -58,7 +64,7 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 			}
 			if len(v.AffectedCode) > 0 {
 				c := v.AffectedCode[0]
-				f.Location = &FindingLocation{Path: c.File.Path, StartLine: c.StartLine, EndLine: c.EndLine}
+				f.Location = &ctis.FindingLocation{Path: c.File.Path, StartLine: c.StartLine, EndLine: c.EndLine}
 			}
 		}
 		hasVuln := v.CVE != nil || v.CWE != nil || len(v.AffectedPackages) > 0 || v.IsExploitAvailable
@@ -66,12 +72,12 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 			continue
 		}
 		if f.Vulnerability == nil {
-			f.Vulnerability = &VulnerabilityDetails{}
+			f.Vulnerability = &ctis.VulnerabilityDetails{}
 		}
 		vd := f.Vulnerability
 		if i == 0 {
 			if v.IsExploitAvailable {
-				vd.ThreatSignals = []ThreatSignal{{Type: ThreatSignalPublicExploit, Source: "ocsf"}}
+				vd.ThreatSignals = []ctis.ThreatSignal{{Type: ctis.ThreatSignalPublicExploit, Source: "ocsf"}}
 			}
 			if len(v.AffectedPackages) > 0 {
 				p := v.AffectedPackages[0]
@@ -82,9 +88,9 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 			}
 		}
 		if v.CVE != nil {
-			vd.IDs = append(vd.IDs, VulnerabilityID{Type: VulnerabilityIDCVE, ID: v.CVE.UID})
+			vd.IDs = append(vd.IDs, ctis.VulnerabilityID{Type: ctis.VulnerabilityIDCVE, ID: v.CVE.UID})
 			for _, c := range v.CVE.CVSS {
-				s := Score{System: ScoreSystemCVSS, Version: c.Version, Vector: c.VectorString}
+				s := ctis.Score{System: ctis.ScoreSystemCVSS, Version: c.Version, Vector: c.VectorString}
 				if c.BaseScore != nil {
 					val := *c.BaseScore
 					s.Value = &val
@@ -95,11 +101,11 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 				if e.Score != "" {
 					var val float64
 					_ = json.Unmarshal([]byte(e.Score), &val)
-					f.Scores = append(f.Scores, Score{System: ScoreSystemEPSS, Value: &val})
+					f.Scores = append(f.Scores, ctis.Score{System: ctis.ScoreSystemEPSS, Value: &val})
 				}
 				if e.Percentile != nil {
 					val := *e.Percentile
-					f.Scores = append(f.Scores, Score{System: ScoreSystemEPSSPercentile, Value: &val})
+					f.Scores = append(f.Scores, ctis.Score{System: ctis.ScoreSystemEPSSPercentile, Value: &val})
 				}
 			}
 		}
@@ -108,7 +114,7 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 		}
 	}
 	if rem != nil {
-		f.Remediation = &Remediation{Recommendation: rem.Desc}
+		f.Remediation = &ctis.Remediation{Recommendation: rem.Desc}
 		if len(f.References) == 0 {
 			f.References = rem.References
 		}
@@ -125,40 +131,40 @@ func millisTime(ms int64) *time.Time {
 }
 
 // ocsfStatusOf is the inverse of ocsfStatus.
-func ocsfStatusOf(id int, caption string) FindingStatus {
+func ocsfStatusOf(id int, caption string) ctis.FindingStatus {
 	switch id {
 	case 1:
-		return FindingStatusOpen
+		return ctis.FindingStatusOpen
 	case 2:
-		return FindingStatusInProgress
+		return ctis.FindingStatusInProgress
 	case 3:
-		return FindingStatusSuppressed
+		return ctis.FindingStatusSuppressed
 	case 4:
-		return FindingStatusResolved
+		return ctis.FindingStatusResolved
 	case 99:
 		switch caption {
 		case "False Positive":
-			return FindingStatusFalsePositive
+			return ctis.FindingStatusFalsePositive
 		case "Accepted Risk":
-			return FindingStatusAcceptedRisk
+			return ctis.FindingStatusAcceptedRisk
 		}
 	}
 	return ""
 }
 
 // ocsfSeverityOf is the inverse of ocsfSeverity.
-func ocsfSeverityOf(id int) Severity {
+func ocsfSeverityOf(id int) ctis.Severity {
 	switch id {
 	case 5:
-		return SeverityCritical
+		return ctis.SeverityCritical
 	case 4:
-		return SeverityHigh
+		return ctis.SeverityHigh
 	case 3:
-		return SeverityMedium
+		return ctis.SeverityMedium
 	case 2:
-		return SeverityLow
+		return ctis.SeverityLow
 	case 1:
-		return SeverityInfo
+		return ctis.SeverityInfo
 	}
 	return ""
 }
@@ -167,9 +173,9 @@ func ocsfSeverityOf(id int) Severity {
 // redacted copy, with the asset resolved from the report, the fingerprint
 // falling back to the id, the CVE ids in one list and the legacy CVSS
 // members standing for a score when there is none.
-func ocsfExpected(t *testing.T, r *Report, src *Finding) Finding {
+func ocsfExpected(t *testing.T, r *ctis.Report, src *ctis.Finding) ctis.Finding {
 	t.Helper()
-	f, err := exportFinding(src)
+	f, err := exportkit.Finding(src)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +183,7 @@ func ocsfExpected(t *testing.T, r *Report, src *Finding) Finding {
 		f.Fingerprint = f.ID
 	}
 	if f.Remediation != nil {
-		f.Remediation = &Remediation{Recommendation: f.Remediation.Recommendation}
+		f.Remediation = &ctis.Remediation{Recommendation: f.Remediation.Recommendation}
 		if f.Remediation.Recommendation == "" {
 			f.Remediation = nil
 		}
@@ -186,10 +192,10 @@ func ocsfExpected(t *testing.T, r *Report, src *Finding) Finding {
 		cves := ocsfCVEs(v)
 		v.IDs = nil
 		for _, id := range cves {
-			v.IDs = append(v.IDs, VulnerabilityID{Type: VulnerabilityIDCVE, ID: id})
+			v.IDs = append(v.IDs, ctis.VulnerabilityID{Type: ctis.VulnerabilityIDCVE, ID: id})
 		}
-		if HasThreatSignal(v, ThreatSignalPublicExploit, ThreatSignalWeaponized, ThreatSignalExploitedInWild, ThreatSignalKEV) {
-			v.ThreatSignals = []ThreatSignal{{Type: ThreatSignalPublicExploit, Source: "ocsf"}}
+		if ctis.HasThreatSignal(v, ctis.ThreatSignalPublicExploit, ctis.ThreatSignalWeaponized, ctis.ThreatSignalExploitedInWild, ctis.ThreatSignalKEV) {
+			v.ThreatSignals = []ctis.ThreatSignal{{Type: ctis.ThreatSignalPublicExploit, Source: "ocsf"}}
 		} else {
 			v.ThreatSignals = nil
 		}
@@ -202,16 +208,16 @@ func ocsfExpected(t *testing.T, r *Report, src *Finding) Finding {
 		cvss, epss := ocsfScoresOf(&f)
 		f.Scores = nil
 		for _, c := range cvss {
-			f.Scores = append(f.Scores, Score{System: ScoreSystemCVSS, Version: c.Version, Vector: c.VectorString, Value: c.BaseScore})
+			f.Scores = append(f.Scores, ctis.Score{System: ctis.ScoreSystemCVSS, Version: c.Version, Vector: c.VectorString, Value: c.BaseScore})
 		}
 		if epss != nil {
 			if epss.Score != "" {
 				var val float64
 				_ = json.Unmarshal([]byte(epss.Score), &val)
-				f.Scores = append(f.Scores, Score{System: ScoreSystemEPSS, Value: &val})
+				f.Scores = append(f.Scores, ctis.Score{System: ctis.ScoreSystemEPSS, Value: &val})
 			}
 			if epss.Percentile != nil {
-				f.Scores = append(f.Scores, Score{System: ScoreSystemEPSSPercentile, Value: epss.Percentile})
+				f.Scores = append(f.Scores, ctis.Score{System: ctis.ScoreSystemEPSSPercentile, Value: epss.Percentile})
 			}
 		}
 		if len(v.IDs) == 0 {
@@ -224,11 +230,11 @@ func ocsfExpected(t *testing.T, r *Report, src *Finding) Finding {
 func TestExportOCSFRoundTrip(t *testing.T) {
 	for _, name := range []string{"vulnerability-sca", "network-vulnerability-interop", "sast", "secret", "compliance", "misconfiguration"} {
 		t.Run(name, func(t *testing.T) {
-			var r Report
-			if err := json.Unmarshal(readTestdataRoot(t, "examples/"+name+".json"), &r); err != nil {
+			var r ctis.Report
+			if err := json.Unmarshal(readFile(t, "../../examples/"+name+".json"), &r); err != nil {
 				t.Fatal(err)
 			}
-			events, err := ToOCSF(&r, nil)
+			events, err := Events(&r, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -239,19 +245,28 @@ func TestExportOCSFRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			ExportCheckGolden(t, "export/ocsf/"+name+".golden.ocsf.json", out)
-			want := make([]Finding, len(r.Findings))
-			got := make([]Finding, len(events))
+			interoptest.CheckGolden(t, "export/"+name+".golden.ocsf.json", out)
+			want := make([]ctis.Finding, len(r.Findings))
+			got := make([]ctis.Finding, len(events))
 			for i := range events {
 				want[i] = ocsfExpected(t, &r, &r.Findings[i])
 				got[i] = ocsfToCTIS(&events[i])
-				if ev := events[i]; ev.TypeUID != ev.ClassUID*100+ev.ActivityID || ev.CategoryUID != OCSFCategoryFindings || ev.Metadata.Version != OCSFVersion {
+				if ev := events[i]; ev.TypeUID != ev.ClassUID*100+ev.ActivityID || ev.CategoryUID != CategoryFindings || ev.Metadata.Version != Version {
 					t.Errorf("event %d: bad class/type/version %+v", i, ev)
 				}
 			}
-			for _, d := range ExportRoundTripDiff(t, map[string]any{"findings": want}, map[string]any{"findings": got}, "ocsf/"+name+".losses.json") {
+			for _, d := range interoptest.RoundTripDiff(t, map[string]any{"findings": want}, map[string]any{"findings": got}, ""+name+".losses.json") {
 				t.Error(d)
 			}
 		})
 	}
+}
+
+func readFile(t *testing.T, name string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
 }

@@ -1,6 +1,6 @@
 # OpenVEX mapping
 
-Generated from `importer/spec_openvex.go`; do not edit. Regenerate with `go test ./importer -run TestMappingDocs -update`.
+Generated from `interop/openvex/0.2.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/openvex`; do not edit.
 
 - Format: `openvex`
 - Source versions: OpenVEX v0.2.0 (the v0.0.1 string forms of vulnerability, products and subcomponents are read too)
@@ -8,6 +8,7 @@ Generated from `importer/spec_openvex.go`; do not edit. Regenerate with `go test
 
 ## Rules
 
+- This mapping reads OpenVEX 0.2.0 and the earlier contexts (https://openvex.dev/ns, v0.0.1), whose members are a subset.
 - An OpenVEX document describes products, not findings: the report has no assets or findings, and Result.VEX holds one statement per OpenVEX statement.
 - Statuses and justifications are the CTIS VEX vocabulary already. A not_affected statement needs a justification or an impact statement; without either it is skipped with an issue.
 - Statement text: impact_statement (not_affected) or action_statement (affected), followed by status_notes.

@@ -186,3 +186,8 @@ func SpecFromMapping(m *engine.Mapping) Spec {
 	}
 	return s
 }
+
+// FoldPaths sets a function that folds each source path before it is
+// recorded (a recursive structure listed once in the spec). Call it before
+// ScanJSON.
+func (b *Builder) FoldPaths(fold func(string) string) { b.obs.rewrite = fold }

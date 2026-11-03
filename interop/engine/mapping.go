@@ -97,6 +97,11 @@ type Mapping struct {
 	// Notes are normalization rules that are not per field.
 	Notes []string `json:"notes,omitempty"`
 
+	// Fold names path prefixes that are read as another prefix: a
+	// recursive structure (CycloneDX nested components) is listed once.
+	// Each rule is applied, longest match first, until none applies.
+	Fold []FoldRule `json:"fold,omitempty"`
+
 	// Records name the source objects that become one CTIS record each.
 	// The passthrough members below a record are kept on that record, and
 	// the "set" rules apply to it.
@@ -138,6 +143,33 @@ type Predicate struct {
 	OrAbsent bool `json:"or_absent,omitempty"`
 
 	re *regexp.Regexp
+}
+
+// FoldRule reads paths that start with From as if they started with To.
+type FoldRule struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+// MaxFold bounds the fold rules of a mapping.
+const MaxFold = 16
+
+// FoldPath applies the fold rules to a path.
+func (m *Mapping) FoldPath(p string) string {
+	for i := 0; i < 64; i++ {
+		changed := false
+		for _, f := range m.Fold {
+			if p == f.From || strings.HasPrefix(p, f.From+"/") || strings.HasPrefix(p, f.From+"[") {
+				p = f.To + p[len(f.From):]
+				changed = true
+				break
+			}
+		}
+		if !changed {
+			break
+		}
+	}
+	return p
 }
 
 // Record is a source object that becomes one CTIS record.
@@ -342,6 +374,15 @@ func (m *Mapping) check(opts LoadOptions) error {
 			return mappingErr("hook %q is not registered by the adapter", short(h))
 		}
 		m.hooks[h] = true
+	}
+	if len(m.Fold) > MaxFold {
+		return mappingErr("more than %d fold rules", MaxFold)
+	}
+	for _, f := range m.Fold {
+		if !strings.HasPrefix(f.From, "/") || !strings.HasPrefix(f.To, "/") || len(f.From) <= len(f.To) ||
+			len(f.From) > MaxPathBytes || strings.Contains(f.From+f.To, "*") {
+			return mappingErr("fold %q -> %q: a longer prefix folds to a shorter one, no wildcards", short(f.From), short(f.To))
+		}
 	}
 	if len(m.Records) > MaxRecords {
 		return mappingErr("more than %d records", MaxRecords)

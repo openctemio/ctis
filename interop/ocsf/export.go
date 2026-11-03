@@ -1,6 +1,12 @@
-package ctis
+package ocsf
 
 import (
+	"strconv"
+
+	"github.com/openctemio/ctis/v2/internal/exportkit"
+
+	"github.com/openctemio/ctis/v2"
+
 	"path"
 	"strings"
 	"time"
@@ -34,182 +40,200 @@ import (
 //   - compliance: framework -> compliance.standards, control_id -> control,
 //     result -> status_id (pass 1, fail 3, else 99 with the result);
 //     misconfiguration: policy_id -> control, provider -> standards.
-//   - time: last_seen_at, else first_seen_at, else OCSFOptions.Time, else
+//   - time: last_seen_at, else first_seen_at, else Options.Time, else
 //     report.metadata.timestamp.
 //   - the CTIS finding type -> unmapped["ctis_type"]; the compliance
 //     framework version -> unmapped["compliance_framework_version"]; a
 //     secret's type, service and masked value -> unmapped (masked, never
 //     the raw match).
 
-// OCSFVersion is the OCSF schema version ToOCSF writes.
-const OCSFVersion = "1.3.0"
+// Version is the OCSF schema version Events writes.
+const Version = "1.3.0"
 
-// OCSF class, category and activity ids used by ToOCSF.
+// OCSF class, category and activity ids used by Events.
 const (
-	OCSFCategoryFindings          = 2
-	OCSFClassVulnerabilityFinding = 2002
-	OCSFClassComplianceFinding    = 2003
-	OCSFActivityCreate            = 1
-	OCSFActivityClose             = 3
+	CategoryFindings          = 2
+	ClassVulnerabilityFinding = 2002
+	ClassComplianceFinding    = 2003
+	ActivityCreate            = 1
+	ActivityClose             = 3
 )
 
-// OCSFOptions configure ToOCSF. The zero value is valid.
-type OCSFOptions struct {
+// defaultProduct names the product of a report without a tool.
+const defaultProduct = "ctis"
+
+// ErrTooLarge is returned when the encoded output would exceed MaxBytes.
+var ErrTooLarge = exportkit.ErrTooLarge
+
+// MaxBytes is the largest output Export returns.
+const MaxBytes = exportkit.MaxBytes
+
+// Export is Events encoded as a JSON array of events.
+func Export(r *ctis.Report, opts *Options) ([]byte, error) {
+	events, err := Events(r, opts)
+	if err != nil {
+		return nil, err
+	}
+	return exportkit.Marshal(events)
+}
+
+// Options configure Events. The zero value is valid.
+type Options struct {
 	// Time of an event whose finding has no seen time. Zero:
 	// report.metadata.timestamp.
 	Time time.Time
 }
 
-// OCSFEvent is one OCSF Vulnerability Finding or Compliance Finding event.
-type OCSFEvent struct {
-	ActivityID      int                 `json:"activity_id"`
-	ActivityName    string              `json:"activity_name"`
-	CategoryUID     int                 `json:"category_uid"`
-	CategoryName    string              `json:"category_name"`
-	ClassUID        int                 `json:"class_uid"`
-	ClassName       string              `json:"class_name"`
-	TypeUID         int                 `json:"type_uid"`
-	TypeName        string              `json:"type_name"`
-	SeverityID      int                 `json:"severity_id"`
-	Severity        string              `json:"severity"`
-	StatusID        int                 `json:"status_id,omitempty"`
-	Status          string              `json:"status,omitempty"`
-	Time            int64               `json:"time"`
-	ConfidenceScore int                 `json:"confidence_score,omitempty"`
-	Message         string              `json:"message,omitempty"`
-	Metadata        OCSFMetadata        `json:"metadata"`
-	FindingInfo     OCSFFindingInfo     `json:"finding_info"`
-	Vulnerabilities []OCSFVulnerability `json:"vulnerabilities,omitempty"`
-	Compliance      *OCSFCompliance     `json:"compliance,omitempty"`
-	Remediation     *OCSFRemediation    `json:"remediation,omitempty"`
-	Resources       []OCSFResource      `json:"resources,omitempty"`
-	Unmapped        map[string]string   `json:"unmapped,omitempty"`
+// Event is one OCSF Vulnerability Finding or Compliance Finding event.
+type Event struct {
+	ActivityID      int               `json:"activity_id"`
+	ActivityName    string            `json:"activity_name"`
+	CategoryUID     int               `json:"category_uid"`
+	CategoryName    string            `json:"category_name"`
+	ClassUID        int               `json:"class_uid"`
+	ClassName       string            `json:"class_name"`
+	TypeUID         int               `json:"type_uid"`
+	TypeName        string            `json:"type_name"`
+	SeverityID      int               `json:"severity_id"`
+	Severity        string            `json:"severity"`
+	StatusID        int               `json:"status_id,omitempty"`
+	Status          string            `json:"status,omitempty"`
+	Time            int64             `json:"time"`
+	ConfidenceScore int               `json:"confidence_score,omitempty"`
+	Message         string            `json:"message,omitempty"`
+	Metadata        Metadata          `json:"metadata"`
+	FindingInfo     FindingInfo       `json:"finding_info"`
+	Vulnerabilities []Vulnerability   `json:"vulnerabilities,omitempty"`
+	Compliance      *Compliance       `json:"compliance,omitempty"`
+	Remediation     *Remediation      `json:"remediation,omitempty"`
+	Resources       []Resource        `json:"resources,omitempty"`
+	Unmapped        map[string]string `json:"unmapped,omitempty"`
 }
 
-// OCSFMetadata is the event's metadata object.
-type OCSFMetadata struct {
-	Version string      `json:"version"`
-	Product OCSFProduct `json:"product"`
+// Metadata is the event's metadata object.
+type Metadata struct {
+	Version string  `json:"version"`
+	Product Product `json:"product"`
 }
 
-// OCSFProduct is the product that reported the finding.
-type OCSFProduct struct {
+// Product is the product that reported the finding.
+type Product struct {
 	Name       string `json:"name"`
 	VendorName string `json:"vendor_name,omitempty"`
 	Version    string `json:"version,omitempty"`
 	URL        string `json:"url_string,omitempty"`
 }
 
-// OCSFFindingInfo is the finding_info object.
-type OCSFFindingInfo struct {
-	UID           string        `json:"uid"`
-	Title         string        `json:"title"`
-	Desc          string        `json:"desc,omitempty"`
-	Types         []string      `json:"types,omitempty"`
-	FirstSeenTime int64         `json:"first_seen_time,omitempty"`
-	LastSeenTime  int64         `json:"last_seen_time,omitempty"`
-	Analytic      *OCSFAnalytic `json:"analytic,omitempty"`
+// FindingInfo is the finding_info object.
+type FindingInfo struct {
+	UID           string    `json:"uid"`
+	Title         string    `json:"title"`
+	Desc          string    `json:"desc,omitempty"`
+	Types         []string  `json:"types,omitempty"`
+	FirstSeenTime int64     `json:"first_seen_time,omitempty"`
+	LastSeenTime  int64     `json:"last_seen_time,omitempty"`
+	Analytic      *Analytic `json:"analytic,omitempty"`
 }
 
-// OCSFAnalytic is the rule that produced the finding.
-type OCSFAnalytic struct {
+// Analytic is the rule that produced the finding.
+type Analytic struct {
 	UID    string `json:"uid,omitempty"`
 	Name   string `json:"name,omitempty"`
 	TypeID int    `json:"type_id"`
 	Type   string `json:"type"`
 }
 
-// OCSFVulnerability is one entry of vulnerabilities[].
-type OCSFVulnerability struct {
-	Title              string             `json:"title,omitempty"`
-	Desc               string             `json:"desc,omitempty"`
-	Severity           string             `json:"severity,omitempty"`
-	CVE                *OCSFCVE           `json:"cve,omitempty"`
-	CWE                *OCSFCWE           `json:"cwe,omitempty"`
-	AffectedPackages   []OCSFPackage      `json:"affected_packages,omitempty"`
-	AffectedCode       []OCSFAffectedCode `json:"affected_code,omitempty"`
-	References         []string           `json:"references,omitempty"`
-	IsExploitAvailable bool               `json:"is_exploit_available,omitempty"`
-	Remediation        *OCSFRemediation   `json:"remediation,omitempty"`
+// Vulnerability is one entry of vulnerabilities[].
+type Vulnerability struct {
+	Title              string         `json:"title,omitempty"`
+	Desc               string         `json:"desc,omitempty"`
+	Severity           string         `json:"severity,omitempty"`
+	CVE                *CVE           `json:"cve,omitempty"`
+	CWE                *CWE           `json:"cwe,omitempty"`
+	AffectedPackages   []Package      `json:"affected_packages,omitempty"`
+	AffectedCode       []AffectedCode `json:"affected_code,omitempty"`
+	References         []string       `json:"references,omitempty"`
+	IsExploitAvailable bool           `json:"is_exploit_available,omitempty"`
+	Remediation        *Remediation   `json:"remediation,omitempty"`
 }
 
-// OCSFCVE is a CVE with its scores.
-type OCSFCVE struct {
-	UID  string     `json:"uid"`
-	CVSS []OCSFCVSS `json:"cvss,omitempty"`
-	EPSS *OCSFEPSS  `json:"epss,omitempty"`
+// CVE is a CVE with its scores.
+type CVE struct {
+	UID  string `json:"uid"`
+	CVSS []CVSS `json:"cvss,omitempty"`
+	EPSS *EPSS  `json:"epss,omitempty"`
 }
 
-// OCSFCVSS is one CVSS score.
-type OCSFCVSS struct {
+// CVSS is one CVSS score.
+type CVSS struct {
 	Version      string   `json:"version"`
 	BaseScore    *float64 `json:"base_score,omitempty"`
 	VectorString string   `json:"vector_string,omitempty"`
 }
 
-// OCSFEPSS is an EPSS score.
-type OCSFEPSS struct {
+// EPSS is an EPSS score.
+type EPSS struct {
 	Score      string   `json:"score"`
 	Percentile *float64 `json:"percentile,omitempty"`
 }
 
-// OCSFCWE is a CWE.
-type OCSFCWE struct {
+// CWE is a CWE.
+type CWE struct {
 	UID string `json:"uid"`
 }
 
-// OCSFPackage is an affected package.
-type OCSFPackage struct {
+// Package is an affected package.
+type Package struct {
 	Name           string `json:"name"`
 	Version        string `json:"version,omitempty"`
 	PURL           string `json:"purl,omitempty"`
 	FixedInVersion string `json:"fixed_in_version,omitempty"`
 }
 
-// OCSFAffectedCode is a code location of the finding.
-type OCSFAffectedCode struct {
-	File      OCSFFile `json:"file"`
-	StartLine int      `json:"start_line,omitempty"`
-	EndLine   int      `json:"end_line,omitempty"`
+// AffectedCode is a code location of the finding.
+type AffectedCode struct {
+	File      File `json:"file"`
+	StartLine int  `json:"start_line,omitempty"`
+	EndLine   int  `json:"end_line,omitempty"`
 }
 
-// OCSFFile is a file.
-type OCSFFile struct {
+// File is a file.
+type File struct {
 	Name string `json:"name"`
 	Path string `json:"path,omitempty"`
 }
 
-// OCSFRemediation is how to fix the finding.
-type OCSFRemediation struct {
+// Remediation is how to fix the finding.
+type Remediation struct {
 	Desc       string   `json:"desc"`
 	References []string `json:"references,omitempty"`
 }
 
-// OCSFCompliance is the compliance object of a Compliance Finding.
-type OCSFCompliance struct {
+// Compliance is the compliance object of a Compliance Finding.
+type Compliance struct {
 	Standards []string `json:"standards"`
 	Control   string   `json:"control,omitempty"`
 	StatusID  int      `json:"status_id,omitempty"`
 	Status    string   `json:"status,omitempty"`
 }
 
-// OCSFResource is an affected resource.
-type OCSFResource struct {
+// Resource is an affected resource.
+type Resource struct {
 	UID  string `json:"uid,omitempty"`
 	Name string `json:"name,omitempty"`
 	Type string `json:"type,omitempty"`
 }
 
-// ToOCSF converts the findings of a report to OCSF 1.3.0 events, one per
+// Events converts the findings of a report to OCSF 1.3.0 events, one per
 // finding, in report order. See the mapping above and docs/exporters.md.
-func ToOCSF(r *Report, opts *OCSFOptions) ([]OCSFEvent, error) {
+func Events(r *ctis.Report, opts *Options) ([]Event, error) {
 	if r == nil {
-		return nil, errNilReport
+		return nil, exportkit.ErrNilReport
 	}
 	if opts == nil {
-		opts = &OCSFOptions{}
+		opts = &Options{}
 	}
-	product := OCSFProduct{Name: sarifDefaultDriver}
+	product := Product{Name: defaultProduct}
 	if t := r.Tool; t != nil {
 		if t.Name != "" {
 			product.Name = t.Name
@@ -220,17 +244,17 @@ func ToOCSF(r *Report, opts *OCSFOptions) ([]OCSFEvent, error) {
 	if fallback.IsZero() {
 		fallback = r.Metadata.GeneratedAt
 	}
-	events := make([]OCSFEvent, 0, len(r.Findings))
+	events := make([]Event, 0, len(r.Findings))
 	size := 0
 	for i := range r.Findings {
-		f, err := exportFinding(&r.Findings[i])
+		f, err := exportkit.Finding(&r.Findings[i])
 		if err != nil {
 			return nil, err
 		}
 		ev := ocsfEventOf(r, &f, product, fallback)
 		size += ocsfSizeHint(&ev)
-		if size > MaxExportBytes {
-			return nil, ErrExportTooLarge
+		if size > exportkit.MaxBytes {
+			return nil, exportkit.ErrTooLarge
 		}
 		events = append(events, ev)
 	}
@@ -238,7 +262,7 @@ func ToOCSF(r *Report, opts *OCSFOptions) ([]OCSFEvent, error) {
 }
 
 // ocsfSizeHint approximates an event's encoded size from its free text.
-func ocsfSizeHint(ev *OCSFEvent) int {
+func ocsfSizeHint(ev *Event) int {
 	n := 512 + len(ev.FindingInfo.Title) + len(ev.FindingInfo.Desc) + len(ev.Message)
 	for _, v := range ev.Vulnerabilities {
 		n += 128 + len(v.Title) + len(v.Desc)
@@ -253,39 +277,21 @@ func ocsfSizeHint(ev *OCSFEvent) int {
 }
 
 // ocsfSeverity maps a severity to severity_id and its caption.
-func ocsfSeverity(s Severity) (int, string) {
-	switch s {
-	case SeverityCritical:
-		return 5, "Critical"
-	case SeverityHigh:
-		return 4, "High"
-	case SeverityMedium:
-		return 3, "Medium"
-	case SeverityLow:
-		return 2, "Low"
-	case SeverityInfo:
-		return 1, "Informational"
-	}
-	return 0, "Unknown"
+func ocsfSeverity(s ctis.Severity) (int, string) {
+	return idCaption("severity", string(s))
 }
 
 // ocsfStatus maps a status to status_id and its caption.
-func ocsfStatus(s FindingStatus) (int, string) {
-	switch s {
-	case FindingStatusOpen:
-		return 1, "New"
-	case FindingStatusInProgress:
-		return 2, "In Progress"
-	case FindingStatusSuppressed:
-		return 3, "Suppressed"
-	case FindingStatusResolved:
-		return 4, "Resolved"
-	case FindingStatusFalsePositive:
-		return 99, "False Positive"
-	case FindingStatusAcceptedRisk:
-		return 99, "Accepted Risk"
-	}
-	return 0, ""
+func ocsfStatus(s ctis.FindingStatus) (int, string) {
+	return idCaption("status", string(s))
+}
+
+// idCaption looks up "<id>|<caption>" in a table of the export mapping.
+func idCaption(table, v string) (int, string) {
+	e, _ := exp.Lookup(table, v)
+	id, caption, _ := strings.Cut(e, "|")
+	n, _ := strconv.Atoi(id)
+	return n, caption
 }
 
 func epochMillis(t *time.Time) int64 {
@@ -295,19 +301,19 @@ func epochMillis(t *time.Time) int64 {
 	return t.UnixMilli()
 }
 
-func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time) OCSFEvent {
-	class, className := OCSFClassVulnerabilityFinding, "Vulnerability Finding"
-	if f.Type == FindingTypeCompliance || f.Type == FindingTypeMisconfiguration {
-		class, className = OCSFClassComplianceFinding, "Compliance Finding"
+func ocsfEventOf(r *ctis.Report, f *ctis.Finding, product Product, fallback time.Time) Event {
+	class, className := ClassVulnerabilityFinding, "Vulnerability Finding"
+	if f.Type == ctis.FindingTypeCompliance || f.Type == ctis.FindingTypeMisconfiguration {
+		class, className = ClassComplianceFinding, "Compliance Finding"
 	}
-	activity, activityName := OCSFActivityCreate, "Create"
-	if f.Status == FindingStatusResolved {
-		activity, activityName = OCSFActivityClose, "Close"
+	activity, activityName := ActivityCreate, "Create"
+	if f.Status == ctis.FindingStatusResolved {
+		activity, activityName = ActivityClose, "Close"
 	}
-	ev := OCSFEvent{
+	ev := Event{
 		ActivityID:      activity,
 		ActivityName:    activityName,
-		CategoryUID:     OCSFCategoryFindings,
+		CategoryUID:     CategoryFindings,
 		CategoryName:    "Findings",
 		ClassUID:        class,
 		ClassName:       className,
@@ -315,7 +321,7 @@ func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time)
 		TypeName:        className + ": " + activityName,
 		ConfidenceScore: f.Confidence,
 		Message:         f.Message,
-		Metadata:        OCSFMetadata{Version: OCSFVersion, Product: product},
+		Metadata:        Metadata{Version: Version, Product: product},
 	}
 	ev.SeverityID, ev.Severity = ocsfSeverity(f.Severity)
 	ev.StatusID, ev.Status = ocsfStatus(f.Status)
@@ -336,7 +342,7 @@ func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time)
 	if title == "" {
 		title = f.RuleID
 	}
-	ev.FindingInfo = OCSFFindingInfo{
+	ev.FindingInfo = FindingInfo{
 		UID:           uid,
 		Title:         title,
 		Desc:          f.Description,
@@ -347,11 +353,11 @@ func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time)
 		ev.FindingInfo.Types = []string{f.Category}
 	}
 	if f.RuleID != "" || f.RuleName != "" {
-		ev.FindingInfo.Analytic = &OCSFAnalytic{UID: f.RuleID, Name: f.RuleName, TypeID: 1, Type: "Rule"}
+		ev.FindingInfo.Analytic = &Analytic{UID: f.RuleID, Name: f.RuleName, TypeID: 1, Type: "Rule"}
 	}
 
 	if res, ok := ocsfResourceOf(r, f); ok {
-		ev.Resources = []OCSFResource{res}
+		ev.Resources = []Resource{res}
 	}
 	ev.Unmapped = map[string]string{"ctis_type": string(f.Type)}
 	if cd := f.Compliance; cd != nil && cd.FrameworkVersion != "" {
@@ -365,11 +371,11 @@ func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time)
 		}
 	}
 
-	var rem *OCSFRemediation
+	var rem *Remediation
 	if f.Remediation != nil && f.Remediation.Recommendation != "" {
-		rem = &OCSFRemediation{Desc: f.Remediation.Recommendation, References: f.References}
+		rem = &Remediation{Desc: f.Remediation.Recommendation, References: f.References}
 	}
-	if class == OCSFClassComplianceFinding {
+	if class == ClassComplianceFinding {
 		ev.Compliance = ocsfComplianceOf(f)
 		ev.Remediation = rem
 		return ev
@@ -378,18 +384,18 @@ func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time)
 	return ev
 }
 
-func ocsfResourceOf(r *Report, f *Finding) (OCSFResource, bool) {
-	if a := findAsset(r, f.AssetRef); a != nil {
-		return OCSFResource{UID: a.ID, Name: a.Value, Type: string(a.Type)}, true
+func ocsfResourceOf(r *ctis.Report, f *ctis.Finding) (Resource, bool) {
+	if a := exportkit.FindAsset(r, f.AssetRef); a != nil {
+		return Resource{UID: a.ID, Name: a.Value, Type: string(a.Type)}, true
 	}
 	if f.AssetRef != "" {
-		return OCSFResource{UID: f.AssetRef}, true
+		return Resource{UID: f.AssetRef}, true
 	}
-	return OCSFResource{}, false
+	return Resource{}, false
 }
 
-func ocsfComplianceOf(f *Finding) *OCSFCompliance {
-	c := &OCSFCompliance{Standards: []string{}}
+func ocsfComplianceOf(f *ctis.Finding) *Compliance {
+	c := &Compliance{Standards: []string{}}
 	if cd := f.Compliance; cd != nil {
 		if cd.Framework != "" {
 			c.Standards = []string{string(cd.Framework)}
@@ -419,9 +425,9 @@ func ocsfComplianceOf(f *Finding) *OCSFCompliance {
 	return c
 }
 
-func ocsfVulnerabilitiesOf(f *Finding, rem *OCSFRemediation) []OCSFVulnerability {
+func ocsfVulnerabilitiesOf(f *ctis.Finding, rem *Remediation) []Vulnerability {
 	_, sev := ocsfSeverity(f.Severity)
-	first := OCSFVulnerability{
+	first := Vulnerability{
 		Title:       f.Title,
 		Desc:        f.Description,
 		Severity:    sev,
@@ -431,33 +437,33 @@ func ocsfVulnerabilitiesOf(f *Finding, rem *OCSFRemediation) []OCSFVulnerability
 	v := f.Vulnerability
 	if v == nil {
 		if loc := ocsfCodeOf(f.Location); loc != nil {
-			first.AffectedCode = []OCSFAffectedCode{*loc}
+			first.AffectedCode = []AffectedCode{*loc}
 		}
-		return []OCSFVulnerability{first}
+		return []Vulnerability{first}
 	}
-	first.IsExploitAvailable = HasThreatSignal(v, ThreatSignalPublicExploit, ThreatSignalWeaponized, ThreatSignalExploitedInWild, ThreatSignalKEV)
+	first.IsExploitAvailable = ctis.HasThreatSignal(v, ctis.ThreatSignalPublicExploit, ctis.ThreatSignalWeaponized, ctis.ThreatSignalExploitedInWild, ctis.ThreatSignalKEV)
 	if v.PackageName != "" {
-		pkg := OCSFPackage{Name: v.PackageName, Version: v.InstalledVersion, PURL: v.PURL}
+		pkg := Package{Name: v.PackageName, Version: v.InstalledVersion, PURL: v.PURL}
 		if len(v.FixedVersions) > 0 {
 			pkg.FixedInVersion = v.FixedVersions[0]
 		}
-		first.AffectedPackages = []OCSFPackage{pkg}
+		first.AffectedPackages = []Package{pkg}
 	}
 	if loc := ocsfCodeOf(f.Location); loc != nil {
-		first.AffectedCode = []OCSFAffectedCode{*loc}
+		first.AffectedCode = []AffectedCode{*loc}
 	}
 
 	cves := ocsfCVEs(v)
 	cwes := v.CWEIDs
 	n := max(len(cves), len(cwes), 1)
-	out := make([]OCSFVulnerability, n)
+	out := make([]Vulnerability, n)
 	out[0] = first
 	for i := range n {
 		if i < len(cves) {
-			out[i].CVE = &OCSFCVE{UID: cves[i]}
+			out[i].CVE = &CVE{UID: cves[i]}
 		}
 		if i < len(cwes) {
-			out[i].CWE = &OCSFCWE{UID: cwes[i]}
+			out[i].CWE = &CWE{UID: cwes[i]}
 		}
 	}
 	// Scores go with the first CVE (a finding's scores are of its primary
@@ -469,7 +475,7 @@ func ocsfVulnerabilitiesOf(f *Finding, rem *OCSFRemediation) []OCSFVulnerability
 }
 
 // ocsfCVEs lists a finding's CVE ids once, primary first.
-func ocsfCVEs(v *VulnerabilityDetails) []string {
+func ocsfCVEs(v *ctis.VulnerabilityDetails) []string {
 	var out []string
 	seen := map[string]bool{}
 	add := func(id string) {
@@ -480,37 +486,37 @@ func ocsfCVEs(v *VulnerabilityDetails) []string {
 		}
 	}
 	for _, id := range v.IDs {
-		if id.Type == VulnerabilityIDCVE {
+		if id.Type == ctis.VulnerabilityIDCVE {
 			add(id.ID)
 		}
 	}
 	return out
 }
 
-func ocsfScoresOf(f *Finding) ([]OCSFCVSS, *OCSFEPSS) {
-	var cvss []OCSFCVSS
-	var epss *OCSFEPSS
+func ocsfScoresOf(f *ctis.Finding) ([]CVSS, *EPSS) {
+	var cvss []CVSS
+	var epss *EPSS
 	for i := range f.Scores {
 		s := &f.Scores[i]
 		switch s.System {
-		case ScoreSystemCVSS:
-			c := OCSFCVSS{Version: s.Version, VectorString: s.Vector}
+		case ctis.ScoreSystemCVSS:
+			c := CVSS{Version: s.Version, VectorString: s.Vector}
 			if s.Value != nil {
 				val := *s.Value
 				c.BaseScore = &val
 			}
 			cvss = append(cvss, c)
-		case ScoreSystemEPSS:
+		case ctis.ScoreSystemEPSS:
 			if s.Value != nil {
 				if epss == nil {
-					epss = &OCSFEPSS{}
+					epss = &EPSS{}
 				}
-				epss.Score = formatScore(*s.Value)
+				epss.Score = exportkit.FormatScore(*s.Value)
 			}
-		case ScoreSystemEPSSPercentile:
+		case ctis.ScoreSystemEPSSPercentile:
 			if s.Value != nil {
 				if epss == nil {
-					epss = &OCSFEPSS{}
+					epss = &EPSS{}
 				}
 				val := *s.Value
 				epss.Percentile = &val
@@ -520,9 +526,9 @@ func ocsfScoresOf(f *Finding) ([]OCSFCVSS, *OCSFEPSS) {
 	return cvss, epss
 }
 
-func ocsfCodeOf(l *FindingLocation) *OCSFAffectedCode {
+func ocsfCodeOf(l *ctis.FindingLocation) *AffectedCode {
 	if l == nil || l.Path == "" {
 		return nil
 	}
-	return &OCSFAffectedCode{File: OCSFFile{Name: path.Base(l.Path), Path: l.Path}, StartLine: l.StartLine, EndLine: l.EndLine}
+	return &AffectedCode{File: File{Name: path.Base(l.Path), Path: l.Path}, StartLine: l.StartLine, EndLine: l.EndLine}
 }

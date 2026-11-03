@@ -35,7 +35,7 @@ const (
 
 const TruncMarker = "…[truncated]"
 
-// Text cleans a source Text: control characters other than tab, newline and
+// Text cleans a source text: control characters other than tab, newline and
 // carriage return are removed, the ends are trimmed, and a value longer than
 // limit characters is cut with a marker.
 func Text(s string, limit int) string {
@@ -55,7 +55,7 @@ func Text(s string, limit int) string {
 	return string(runes[:limit-utf8.RuneCountInString(TruncMarker)]) + TruncMarker
 }
 
-// Line cleans a one-Line value: like Text, and newlines and tabs become
+// Line cleans a one-line value: like text, and newlines and tabs become
 // spaces.
 func Line(s string, limit int) string {
 	return Text(strings.Join(strings.Fields(s), " "), limit)
@@ -91,7 +91,7 @@ func Extra(f *ctis.Finding, key, value string) {
 	ctis.SetSourceExtra(f, key, value)
 }
 
-// Extras stores key/value pairs in order (see Extra).
+// Extras stores key/value pairs in order (see extra).
 func Extras(f *ctis.Finding, kv ...string) {
 	for i := 0; i+1 < len(kv); i += 2 {
 		Extra(f, kv[i], kv[i+1])
@@ -99,7 +99,7 @@ func Extras(f *ctis.Finding, kv ...string) {
 }
 
 // AddVulnID adds a CVE, GHSA or OSV id to v once (canonical form); an id of
-// another shape is dropped. Use AddVendorID for a vendor's own id.
+// another shape is dropped. Use addVendorID for a vendor's own id.
 func AddVulnID(v *ctis.VulnerabilityDetails, raw string) {
 	if _, ok := ctis.NormalizeVulnerabilityID(strings.TrimSpace(raw)); !ok {
 		return
@@ -136,8 +136,8 @@ func AddScore(f *ctis.Finding, s ctis.Score) {
 		return
 	}
 	p := Probe()
-	p.Assets = []ctis.Asset{{ID: "Probe", Type: ctis.AssetTypeHost, Value: "Probe.invalid"}}
-	p.Findings = []ctis.Finding{{Type: ctis.FindingTypeVulnerability, Title: "t", Severity: ctis.SeverityInfo, AssetRef: "Probe", Scores: []ctis.Score{s}}}
+	p.Assets = []ctis.Asset{{ID: "probe", Type: ctis.AssetTypeHost, Value: "probe.invalid"}}
+	p.Findings = []ctis.Finding{{Type: ctis.FindingTypeVulnerability, Title: "t", Severity: ctis.SeverityInfo, AssetRef: "probe", Scores: []ctis.Score{s}}}
 	if p.Validate() != nil {
 		return
 	}
@@ -225,7 +225,7 @@ func DocRef(prefix, s string) string {
 }
 
 // RefOr returns s when it already is a document reference, else a reference
-// derived from it (DocRef with the prefix).
+// derived from it (docRef with the prefix).
 func RefOr(prefix, s string) string {
 	if ctis.IsDocumentRef(s) {
 		return s
@@ -270,8 +270,8 @@ func TokenOf(s string) string {
 	return strings.Trim(b.String(), "-")
 }
 
-// RawTextEvidence adds source Text as a raw_text evidence item. The Text is
-// bounded; an empty Text adds nothing. Callers pass Text that holds no
+// RawTextEvidence adds source text as a raw_text evidence item. The text is
+// bounded; an empty text adds nothing. Callers pass text that holds no
 // credential (ctis.RedactSecretFinding masks what the builder sees).
 func RawTextEvidence(f *ctis.Finding, label, body, protocol string) {
 	body = Text(body, CapEvidence)
@@ -563,6 +563,7 @@ var ProbeTime = time.Unix(1, 0).UTC()
 // ProbeID is a UUIDv7: Validate requires metadata.id.
 const ProbeID = "0192f0a0-0000-7000-8000-000000000001"
 
+// Probe is the smallest valid report, for checking one value with Validate.
 func Probe() ctis.Report {
 	return ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{ID: ProbeID, GeneratedAt: ProbeTime}}
 }

@@ -1,4 +1,4 @@
-package importer
+package openvex
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 // OpenVEX JSON (v0.2.0; the v0.0.1 forms of vulnerability, products and
@@ -14,8 +15,11 @@ import (
 // OpenVEX statement. The mapping is spec_openvex.go.
 
 func init() {
-	parsers[FormatOpenVEX] = parseOpenVEX
-	tools[FormatOpenVEX] = ctis.Tool{Name: "openvex"}
+	importer.Register(importer.FormatOpenVEX, importer.Adapter{
+		Parse: parseOpenVEX,
+		Tool:  ctis.Tool{Name: "openvex"},
+		Spec:  importSpec(),
+	})
 }
 
 type openvexComponent struct {
@@ -58,24 +62,27 @@ type openvexDoc struct {
 	Statements  []openvexStatement `json:"statements"`
 }
 
-func parseOpenVEX(b *Builder, r io.Reader) error {
-	data, err := readAll(r, FormatOpenVEX, b.lim)
+func parseOpenVEX(b *importer.Builder, r io.Reader) error {
+	data, err := b.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	doc, err := scanJSON(data, FormatOpenVEX, b.lim, b.obs, "/statements[]")
+	doc, err := b.ScanJSON(data, "/statements[]")
 	if err != nil {
 		return err
 	}
 	var d openvexDoc
-	if err := doc.decode(&d); err != nil {
+	if err := doc.Decode(&d); err != nil {
 		return err
 	}
 	if !strings.Contains(d.Context, "openvex.dev/ns") {
-		return &ParseError{Format: FormatOpenVEX, Msg: "@context is not an OpenVEX context", Err: ErrMalformed}
+		return &importer.ParseError{Format: importer.FormatOpenVEX, Msg: "@context is not an OpenVEX context", Err: importer.ErrMalformed}
+	}
+	if err := collect(b, data); err != nil {
+		return err
 	}
 
-	meta := &b.res.Report.Metadata
+	meta := &b.Result().Report.Metadata
 	if id := line(d.ID, capShort); id != "" {
 		meta.SourceRefs = []ctis.SourceRef{{System: "openvex", ID: id}}
 	}
@@ -99,16 +106,16 @@ func parseOpenVEX(b *Builder, r io.Reader) error {
 	docTime := parseTime(firstNonEmpty(d.LastUpdated, d.TS))
 
 	for si := range d.Statements {
-		if err := b.tick(); err != nil {
+		if err := b.Tick(); err != nil {
 			return err
 		}
-		b.res.Stats.Records++
+		b.Result().Stats.Records++
 		s := &d.Statements[si]
 		ptr := fmt.Sprintf("/statements/%d", si)
-		issue := func(msg string) { b.issue(doc.issueAt("/statements[]", si, ptr, msg)) }
+		issue := func(msg string) { b.Issue(doc.IssueAt("/statements[]", si, ptr, msg)) }
 		skip := func(msg string) {
 			issue(msg)
-			b.res.Stats.Skipped++
+			b.Result().Stats.Skipped++
 		}
 
 		ids, ok := openvexIDs(s.Vulnerability)
@@ -117,7 +124,7 @@ func parseOpenVEX(b *Builder, r io.Reader) error {
 			continue
 		}
 
-		var products []Product
+		var products []importer.Product
 		for _, raw := range s.Products {
 			p, ok := openvexProduct(raw, true)
 			if !ok {
@@ -127,7 +134,7 @@ func parseOpenVEX(b *Builder, r io.Reader) error {
 			products = append(products, p)
 		}
 		// v0.0.1: statement-level subcomponents narrow every product.
-		var subs []Product
+		var subs []importer.Product
 		for _, raw := range s.Subcomponents {
 			if p, ok := openvexProduct(raw, false); ok {
 				subs = append(subs, p)
@@ -142,8 +149,8 @@ func parseOpenVEX(b *Builder, r io.Reader) error {
 			skip("statement without products: skipped")
 			continue
 		}
-		if len(products) > b.lim.MaxComponents {
-			return b.tooMany("products in one statement", b.lim.MaxComponents)
+		if len(products) > b.Limits().MaxComponents {
+			return b.TooMany("products in one statement", b.Limits().MaxComponents)
 		}
 
 		var text string
@@ -172,7 +179,7 @@ func parseOpenVEX(b *Builder, r io.Reader) error {
 		if vex.Justification == "" && strings.TrimSpace(s.Justification) != "" && vex.Status == ctis.VEXStatusNotAffected {
 			issue(fmt.Sprintf("justification %q is not an OpenVEX justification; the statement text is kept", line(s.Justification, 64)))
 		}
-		if err := b.statement(VEXStatement{VulnerabilityIDs: ids, Products: products, VEX: vex}); err != nil {
+		if err := b.Statement(importer.VEXStatement{VulnerabilityIDs: ids, Products: products, VEX: vex}); err != nil {
 			return err
 		}
 	}
@@ -203,15 +210,15 @@ func openvexIDs(raw json.RawMessage) ([]ctis.VulnerabilityID, bool) {
 // v0.0.1) a string identifier. The identifiers win over @id; an @id that is
 // a PURL or CPE fills the empty one, any other @id becomes the name.
 // Subcomponents of a product are read one level deep.
-func openvexProduct(raw json.RawMessage, withSubs bool) (Product, bool) {
+func openvexProduct(raw json.RawMessage, withSubs bool) (importer.Product, bool) {
 	var c openvexComponent
 	var s string
 	if err := json.Unmarshal(raw, &s); err == nil {
 		c.ID = s
 	} else if err := json.Unmarshal(raw, &c); err != nil {
-		return Product{}, false
+		return importer.Product{}, false
 	}
-	p := Product{
+	p := importer.Product{
 		PURL: line(c.Identifiers.PURL, capReference),
 		CPE:  line(firstNonEmpty(c.Identifiers.CPE23, c.Identifiers.CPE22), capShort),
 	}

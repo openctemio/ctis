@@ -185,6 +185,7 @@ func (m *Mapping) Collect(data []byte) (*Passthrough, error) {
 	}
 	cache := map[string]class{}
 	classify := func(path string) class {
+		path = m.FoldPath(path)
 		if c, ok := cache[path]; ok {
 			return c
 		}

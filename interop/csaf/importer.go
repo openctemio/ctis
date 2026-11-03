@@ -1,4 +1,4 @@
-package importer
+package csaf
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 // CSAF 2.0 JSON (the csaf_vex and csaf_security_advisory profiles). A CSAF
@@ -14,8 +15,11 @@ import (
 // products by PURL, CPE or name. The mapping is spec_csaf.go.
 
 func init() {
-	parsers[FormatCSAF] = parseCSAF
-	tools[FormatCSAF] = ctis.Tool{Name: "csaf"}
+	importer.Register(importer.FormatCSAF, importer.Adapter{
+		Parse: parseCSAF,
+		Tool:  ctis.Tool{Name: "csaf"},
+		Spec:  importSpec(),
+	})
 }
 
 type csafHelper struct {
@@ -148,24 +152,27 @@ func csafMergedStatus(ps map[string][]string) []csafStatus {
 	return out
 }
 
-func parseCSAF(b *Builder, r io.Reader) error {
-	data, err := readAll(r, FormatCSAF, b.lim)
+func parseCSAF(b *importer.Builder, r io.Reader) error {
+	data, err := b.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	doc, err := scanJSON(data, FormatCSAF, b.lim, b.obs, "/vulnerabilities[]")
+	doc, err := b.ScanJSON(data, "/vulnerabilities[]")
 	if err != nil {
 		return err
 	}
 	var d csafDoc
-	if err := doc.decode(&d); err != nil {
+	if err := doc.Decode(&d); err != nil {
 		return err
 	}
 	if strings.TrimSpace(d.Document.CSAFVersion) == "" {
-		return &ParseError{Format: FormatCSAF, Msg: "document.csaf_version is missing: not a CSAF document", Err: ErrMalformed}
+		return &importer.ParseError{Format: importer.FormatCSAF, Msg: "document.csaf_version is missing: not a CSAF document", Err: importer.ErrMalformed}
+	}
+	if err := collect(b, data); err != nil {
+		return err
 	}
 
-	meta := &b.res.Report.Metadata
+	meta := &b.Result().Report.Metadata
 	if id := line(d.Document.Tracking.ID, capShort); id != "" {
 		meta.SourceRefs = []ctis.SourceRef{{System: "csaf", ID: id}}
 	}
@@ -200,24 +207,24 @@ func parseCSAF(b *Builder, r io.Reader) error {
 	}
 	asOf := parseTime(d.Document.Tracking.CurrentReleaseDate)
 
-	tree, err := b.csafTree(d.ProductTree)
+	tree, err := csafTree(b, d.ProductTree)
 	if err != nil {
 		return err
 	}
 
 	for vi := range d.Vulnerabilities {
-		if err := b.tick(); err != nil {
+		if err := b.Tick(); err != nil {
 			return err
 		}
-		b.res.Stats.Records++
+		b.Result().Stats.Records++
 		v := &d.Vulnerabilities[vi]
 		ptr := fmt.Sprintf("/vulnerabilities/%d", vi)
-		issue := func(msg string) { b.issue(doc.issueAt("/vulnerabilities[]", vi, ptr, msg)) }
+		issue := func(msg string) { b.Issue(doc.IssueAt("/vulnerabilities[]", vi, ptr, msg)) }
 
 		ids := csafVulnIDs(v)
 		if len(ids) == 0 {
 			issue("vulnerability without cve or ids: skipped")
-			b.res.Stats.Skipped++
+			b.Result().Stats.Skipped++
 			continue
 		}
 
@@ -246,7 +253,7 @@ func parseCSAF(b *Builder, r io.Reader) error {
 			pids := g.pids
 			// Group the products by the statement they get.
 			type key struct{ just, text string }
-			byKey := map[key][]Product{}
+			byKey := map[key][]importer.Product{}
 			var order []key
 			for _, pid := range uniqueStrings(pids) {
 				p, ok := tree.products[pid]
@@ -276,14 +283,14 @@ func parseCSAF(b *Builder, r io.Reader) error {
 				if vex.Justification == "" && k.just != "" {
 					issue(fmt.Sprintf("flag label %q is not a CSAF justification", line(k.just, 64)))
 				}
-				if err := b.statement(VEXStatement{VulnerabilityIDs: ids, Products: byKey[k], VEX: vex}); err != nil {
+				if err := b.Statement(importer.VEXStatement{VulnerabilityIDs: ids, Products: byKey[k], VEX: vex}); err != nil {
 					return err
 				}
 				kept++
 			}
 		}
 		if kept == 0 {
-			b.res.Stats.Skipped++
+			b.Result().Stats.Skipped++
 		}
 	}
 	return nil
@@ -313,7 +320,7 @@ func uniqueStrings(in []string) []string {
 
 // csafProducts is a resolved product tree.
 type csafProducts struct {
-	products map[string]Product
+	products map[string]importer.Product
 	groups   map[string][]string
 }
 
@@ -339,8 +346,8 @@ func (t *csafProducts) scoped(items []csafScoped, pick func(csafScoped) string) 
 	return out
 }
 
-func csafProduct(fpn *csafFullProductName, version string) Product {
-	p := Product{Name: line(fpn.Name, capShort), Version: line(version, capShort)}
+func csafProduct(fpn *csafFullProductName, version string) importer.Product {
+	p := importer.Product{Name: line(fpn.Name, capShort), Version: line(version, capShort)}
 	if h := fpn.Helper; h != nil {
 		p.PURL = line(h.PURL, capReference)
 		p.CPE = line(h.CPE, capShort)
@@ -349,12 +356,12 @@ func csafProduct(fpn *csafFullProductName, version string) Product {
 }
 
 // csafTree resolves the product tree into product ids.
-func (b *Builder) csafTree(pt *csafProductTree) (*csafProducts, error) {
-	t := &csafProducts{products: map[string]Product{}, groups: map[string][]string{}}
+func csafTree(b *importer.Builder, pt *csafProductTree) (*csafProducts, error) {
+	t := &csafProducts{products: map[string]importer.Product{}, groups: map[string][]string{}}
 	if pt == nil {
 		return t, nil
 	}
-	add := func(id string, p Product) error {
+	add := func(id string, p importer.Product) error {
 		id = strings.TrimSpace(id)
 		if id == "" {
 			return nil
@@ -362,8 +369,8 @@ func (b *Builder) csafTree(pt *csafProductTree) (*csafProducts, error) {
 		if _, ok := t.products[id]; ok {
 			return nil
 		}
-		if len(t.products) >= b.lim.MaxComponents {
-			return b.tooMany("products", b.lim.MaxComponents)
+		if len(t.products) >= b.Limits().MaxComponents {
+			return b.TooMany("products", b.Limits().MaxComponents)
 		}
 		t.products[id] = p
 		return nil
@@ -380,7 +387,7 @@ func (b *Builder) csafTree(pt *csafProductTree) (*csafProducts, error) {
 		stack = append(stack, frame{&pt.Branches[i], ""})
 	}
 	for len(stack) > 0 {
-		if err := b.tick(); err != nil {
+		if err := b.Tick(); err != nil {
 			return nil, err
 		}
 		f := stack[len(stack)-1]
@@ -421,14 +428,14 @@ func (b *Builder) csafTree(pt *csafProductTree) (*csafProducts, error) {
 			if p.PURL == "" && p.CPE == "" {
 				p.PURL, p.CPE = platform.PURL, platform.CPE
 			}
-			p.Subcomponents = []Product{withoutSubcomponents(comp)}
+			p.Subcomponents = []importer.Product{withoutSubcomponents(comp)}
 			if err := add(rel.FullProductName.ProductID, p); err != nil {
 				return nil, err
 			}
 		}
 		if len(next) == len(pending) {
 			for _, rel := range next {
-				b.issue(Issue{Path: "/product_tree/relationships", Message: fmt.Sprintf("relationship %q refers to an undefined or circular product: left out", line(rel.FullProductName.ProductID, 128))})
+				b.Issue(importer.Issue{Path: "/product_tree/relationships", Message: fmt.Sprintf("relationship %q refers to an undefined or circular product: left out", line(rel.FullProductName.ProductID, 128))})
 			}
 			break
 		}
@@ -446,7 +453,7 @@ func (b *Builder) csafTree(pt *csafProductTree) (*csafProducts, error) {
 }
 
 // withoutSubcomponents keeps a nested product one level deep.
-func withoutSubcomponents(p Product) Product {
+func withoutSubcomponents(p importer.Product) importer.Product {
 	p.Subcomponents = nil
 	return p
 }
