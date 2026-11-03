@@ -10,10 +10,10 @@ vendored (a new upstream version), and every vendored version whose latest
 release tag differs from the pinned one (a corrected schema).
 
 apply downloads the schema files of FORMAT at TAG, checks that each is JSON
-(nothing upstream is executed), writes them to interop/FORMAT/schemas/VERSION/,
+(nothing upstream is executed), writes them to v2/interop/FORMAT/schemas/VERSION/,
 records their sha256 in upstreams.json, writes schema-diff.md against the
 previous vendored version, and for a new version copies the latest mapping
-directory to interop/FORMAT/VERSION/ as the starting point.
+directory to v2/interop/FORMAT/VERSION/ as the starting point.
 
 Network: only https to the hosts upstreams.json pins (api.github.com,
 raw.githubusercontent.com); redirects elsewhere are refused. Stdlib only.
@@ -146,7 +146,7 @@ def apply(up, name, version, tag):
     m = re.compile(fm["tag_pattern"]).match(tag)
     if not m or m.group("version") != version:
         raise SystemExit("tag %s does not name version %s" % (tag, version))
-    dest = os.path.join(ROOT, "interop", name, "schemas", version)
+    dest = os.path.join(ROOT, "v2", "interop", name, "schemas", version)
     os.makedirs(dest, exist_ok=True)
     files = []
     for tpl in fm["files"]:
@@ -170,13 +170,13 @@ def apply(up, name, version, tag):
             # The same template of the previous version.
             if i >= len(prev["files"]):
                 continue
-            old = os.path.join(ROOT, "interop", name, "schemas", prev["version"], prev["files"][i]["file"])
+            old = os.path.join(ROOT, "v2", "interop", name, "schemas", prev["version"], prev["files"][i]["file"])
             if os.path.isfile(old):
                 diff += ["## " + fe["file"], "", "```", schema_diff(old, os.path.join(dest, fe["file"])), "```", ""]
         with open(os.path.join(dest, "schema-diff.md"), "w", encoding="utf-8") as f:
             f.write("\n".join(diff) + "\n")
-        mdir = os.path.join(ROOT, "interop", name, version)
-        src = os.path.join(ROOT, "interop", name, prev["version"])
+        mdir = os.path.join(ROOT, "v2", "interop", name, version)
+        src = os.path.join(ROOT, "v2", "interop", name, prev["version"])
         if not os.path.isdir(mdir) and os.path.isdir(src):
             shutil.copytree(src, mdir)
             for p in os.listdir(mdir):

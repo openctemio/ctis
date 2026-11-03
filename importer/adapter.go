@@ -164,7 +164,7 @@ func (d *JSONDoc) IssueAt(path string, i int, pointer, msg string) Issue {
 }
 
 // SpecFromMapping is the spec of an interoperability import mapping
-// (interop/<format>/<version>/import.json): its fields with their targets
+// (v2/interop/<format>/<version>/import.json): its fields with their targets
 // and reasons, its notes as rules.
 func SpecFromMapping(m *engine.Mapping) Spec {
 	s := Spec{
@@ -172,7 +172,7 @@ func SpecFromMapping(m *engine.Mapping) Spec {
 		Title:         m.Title,
 		SourceVersion: m.Source,
 		Rules:         append([]string(nil), m.Notes...),
-		Origin:        fmt.Sprintf("`interop/%s/%s/%s.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/%s`", m.Format, m.Version, m.Direction, m.Format),
+		Origin:        fmt.Sprintf("`v2/interop/%s/%s/%s.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `v2/interop/%s`", m.Format, m.Version, m.Direction, m.Format),
 	}
 	for _, f := range m.Fields {
 		target := f.Target

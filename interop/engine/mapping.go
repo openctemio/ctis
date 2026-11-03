@@ -4,8 +4,8 @@
 // A mapping file describes one direction (import or export) of one upstream
 // version of one standard format:
 //
-//	interop/<format>/<upstream-version>/import.json
-//	interop/<format>/<upstream-version>/export.json
+//	v2/interop/<format>/<upstream-version>/import.json
+//	v2/interop/<format>/<upstream-version>/export.json
 //
 // It lists every member of the upstream format the adapter knows and what
 // becomes of it (a CTIS member, a named Go hook, or a stated reason to drop

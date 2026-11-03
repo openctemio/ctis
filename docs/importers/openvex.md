@@ -1,6 +1,6 @@
 # OpenVEX mapping
 
-Generated from `interop/openvex/0.2.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/openvex`; do not edit.
+Generated from `v2/interop/openvex/0.2.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `v2/interop/openvex`; do not edit.
 
 - Format: `openvex`
 - Source versions: OpenVEX v0.2.0 (the v0.0.1 string forms of vulnerability, products and subcomponents are read too)

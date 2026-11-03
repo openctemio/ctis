@@ -3,10 +3,10 @@
 
   1. interop/upstreams.json is well formed: every format names its repository,
      a tag pattern, its files and the hosts are the pinned ones;
-  2. every vendored file exists under interop/<format>/schemas/<version>/ and
+  2. every vendored file exists under v2/interop/<format>/schemas/<version>/ and
      its sha256 equals the one in upstreams.json; no other file is there;
   3. every vendored version of a format has a mapping directory
-     interop/<format>/<version>/ and every mapping directory a vendored schema;
+     v2/interop/<format>/<version>/ and every mapping directory a vendored schema;
   4. with --validate (needs jsonschema): every upstream sample document of
      conformance/interop/<format>/<version>/ validates against the vendored
      schema of that version. References resolve only to vendored files; a
@@ -61,8 +61,8 @@ def check_upstreams(errors):
                 fail(errors, "%s: tag_pattern needs a (?P<version>...) group" % name)
         except re.error as e:
             fail(errors, "%s: tag_pattern: %s" % (name, e))
-        if fm.get("module") != "interop/" + name:
-            fail(errors, "%s: module must be interop/%s" % (name, name))
+        if fm.get("module") != "v2/interop/" + name:
+            fail(errors, "%s: module must be v2/interop/%s" % (name, name))
         seen = set()
         for v in fm.get("vendored", []):
             ver = v.get("version", "")
@@ -72,7 +72,7 @@ def check_upstreams(errors):
             seen.add(ver)
             if not re.match(r"^[A-Za-z0-9._-]{1,64}$", v.get("ref", "")):
                 fail(errors, "%s %s: ref %r" % (name, ver, v.get("ref")))
-            d = os.path.join(ROOT, "interop", name, "schemas", ver)
+            d = os.path.join(ROOT, "v2", "interop", name, "schemas", ver)
             want = set()
             for fe in v.get("files", []):
                 fn = fe.get("file", "")
@@ -92,12 +92,12 @@ def check_upstreams(errors):
             for extra in sorted(have - want):
                 if extra != "schema-diff.md":
                     fail(errors, "%s %s: %s is not listed in upstreams.json" % (name, ver, extra))
-            if not os.path.isdir(os.path.join(ROOT, "interop", name, ver)):
-                fail(errors, "%s %s: no mapping directory interop/%s/%s" % (name, ver, name, ver))
-        for d in glob.glob(os.path.join(ROOT, "interop", name, "[0-9]*")):
+            if not os.path.isdir(os.path.join(ROOT, "v2", "interop", name, ver)):
+                fail(errors, "%s %s: no mapping directory v2/interop/%s/%s" % (name, ver, name, ver))
+        for d in glob.glob(os.path.join(ROOT, "v2", "interop", name, "[0-9]*")):
             if os.path.basename(d) not in seen:
                 fail(errors, "%s: mapping directory %s has no vendored schema" % (name, os.path.basename(d)))
-        sdir = os.path.join(ROOT, "interop", name, "schemas")
+        sdir = os.path.join(ROOT, "v2", "interop", name, "schemas")
         for d in glob.glob(os.path.join(sdir, "*")):
             if os.path.basename(d) not in seen:
                 fail(errors, "%s: schemas/%s is not in upstreams.json" % (name, os.path.basename(d)))
@@ -117,7 +117,7 @@ def validate_samples(errors, formats):
             continue
         for v in fm["vendored"]:
             ver = v["version"]
-            d = os.path.join(ROOT, "interop", name, "schemas", ver)
+            d = os.path.join(ROOT, "v2", "interop", name, "schemas", ver)
             resources = []
             for fe in v["files"]:
                 with open(os.path.join(d, fe["file"]), encoding="utf-8") as f:

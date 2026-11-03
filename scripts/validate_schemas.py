@@ -90,7 +90,7 @@ def main():
     valid += sorted(glob.glob(os.path.join(ROOT, "testdata", "**", "*.golden.json"), recursive=True))
     # The interoperability adapters: their importer golden reports and the
     # CTIS inputs of the export vectors.
-    valid += sorted(glob.glob(os.path.join(ROOT, "interop", "*", "testdata", "**", "*.golden.json"), recursive=True))
+    valid += sorted(glob.glob(os.path.join(ROOT, "v2", "interop", "*", "testdata", "**", "*.golden.json"), recursive=True))
     valid += sorted(glob.glob(os.path.join(ROOT, "conformance", "interop", "**", "*.ctis.json"), recursive=True))
     # Reports made by the sample mappings of importer/mapping.
     valid += sorted(glob.glob(os.path.join(ROOT, "importer", "mapping", "testdata", "*", "expect.ctis.json")))

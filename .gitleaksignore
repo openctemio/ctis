@@ -5,6 +5,5 @@ b2f3ed90ce2bac565381302d061b9ed2ef9722fa:importer/nuclei.go:generic-credential-u
 7a23ef368a4676ffffdb85ede5b6b1114558d5ae:CHANGELOG.md:generic-credential-uri:9
 7a23ef368a4676ffffdb85ede5b6b1114558d5ae:recon_converter.go:generic-credential-uri:664
 a5578f813a53eb1081da9d69e27508455ff8da74:importer/urlcreds.go:generic-credential-uri:18
-# Interop layer (PR 101): a doc comment naming the user:pass URL form, and the CycloneDX 1.6 schema's description of a "password" member (vendored upstream schema).
+# Interop layer (PR 101): a doc comment naming the user:pass URL form (the vendored CycloneDX schema is allowlisted by path in .betterleaks.toml).
 ebf06fda7063fba16f0c8cb51408daa3e7b831e4:internal/importkit/kit.go:generic-credential-uri:529
-ebf06fda7063fba16f0c8cb51408daa3e7b831e4:interop/cyclonedx/schemas/1.6/bom-1.6.schema.json:generic-password:5434

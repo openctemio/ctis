@@ -1,6 +1,6 @@
 # SARIF 2.1.0 mapping
 
-Generated from `interop/sarif/2.1.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/sarif`; do not edit.
+Generated from `v2/interop/sarif/2.1.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `v2/interop/sarif`; do not edit.
 
 - Format: `sarif`
 - Source versions: SARIF 2.1.0 (OASIS) as written by CodeQL, semgrep, trivy, gitleaks, betterleaks and other static analysis tools

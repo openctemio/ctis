@@ -87,7 +87,7 @@ Every object sets `additionalProperties: false` except the `properties` bags (op
 `ctis` checks a document the way a strict receiver does: the version must be one this release implements, unknown members are refused, and `Report.Validate` must pass. It reads only the files you name (or `-` for standard input) and never fetches a URL.
 
 ```bash
-go install github.com/openctemio/ctis/v2/cmd/ctis@latest   # once cmd/ctis is tagged; or download a release binary
+go install github.com/openctemio/ctis/v2/cmd/ctis@latest   # once v2/cmd/ctis is tagged; or download a release binary
 ctis validate report.ctis.json             # exit 0 valid, 1 invalid, 2 usage or I/O error
 ctis validate --json a.json b.json         # one JSON object per file
 ctis validate --max-size 1048576 -         # standard input, at most 1 MiB (default 64 MiB)
@@ -137,7 +137,7 @@ The adapters `sarif.Export`, `cyclonedx.Export` and `ocsf.Export` write a docume
 
 ## Converters
 
-`sarif.Import` (module `interop/sarif`) converts a SARIF log; `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports` convert subdomain, DNS, port, HTTP probe and crawl results into the 2.0 asset graph (domain names, addresses, services with `exposes`, web origins with their certificate, endpoints).
+`sarif.Import` (module `v2/interop/sarif`) converts a SARIF log; `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports` convert subdomain, DNS, port, HTTP probe and crawl results into the 2.0 asset graph (domain names, addresses, services with `exposes`, web origins with their certificate, endpoints).
 
 ## Web URLs
 
@@ -177,6 +177,6 @@ Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
 - Specification text and other prose (`docs/`, `proposals/`): [Creative Commons Attribution 4.0 International](LICENSE-docs).
 - Schemas, examples, conformance vectors and code: [Apache License 2.0](LICENSE). See also [NOTICE](NOTICE).
 - Patent commitment for implementers: [PATENTS.md](PATENTS.md).
-- Vendored upstream schemas (`interop/*/schemas/`): their own licences, see [NOTICE](NOTICE) and `interop/upstreams.json`.
+- Vendored upstream schemas (`v2/interop/*/schemas/`): their own licences, see [NOTICE](NOTICE) and `interop/upstreams.json`.
 
 Governance and the proposal process: [GOVERNANCE.md](GOVERNANCE.md), [proposals/README.md](proposals/README.md).

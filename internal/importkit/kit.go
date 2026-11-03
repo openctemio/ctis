@@ -1,6 +1,6 @@
 // Package importkit holds the text, reference and package helpers shared by
 // the importers of package importer and the interoperability adapters
-// (interop/<format>, nested modules of this repository). It is internal: the
+// (v2/interop/<format>, nested modules of this repository). It is internal: the
 // helpers are not part of the module's API and change with the importers.
 package importkit
 
