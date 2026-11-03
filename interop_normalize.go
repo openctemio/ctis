@@ -277,8 +277,11 @@ func VulnerabilityIDs(v *VulnerabilityDetails) []VulnerabilityID {
 }
 
 // PreferredVulnerabilityID picks the one id receivers key on, so two tools
-// that name the same vulnerability differently agree: the lexically smallest
-// CVE, else the first GHSA, else the first OSV id, else the first vendor id.
+// that name the same vulnerability differently agree: the numerically
+// smallest CVE (by year, then sequence number, so CVE-2021-9999 comes before
+// CVE-2021-10000), else the first GHSA, else the first OSV id, else the first
+// vendor id. A CVE id that does not parse sorts after every well-formed one,
+// by text.
 func PreferredVulnerabilityID(v *VulnerabilityDetails) (VulnerabilityID, bool) {
 	ids := VulnerabilityIDs(v)
 	if len(ids) == 0 {
@@ -295,11 +298,99 @@ func PreferredVulnerabilityID(v *VulnerabilityDetails) (VulnerabilityID, bool) {
 			continue
 		}
 		if typ == VulnerabilityIDCVE {
-			sort.Slice(cands, func(a, b int) bool { return cands[a].ID < cands[b].ID })
+			sort.SliceStable(cands, func(a, b int) bool { return cveLess(cands[a].ID, cands[b].ID) })
 		}
 		return cands[0], true
 	}
 	return VulnerabilityID{}, false
+}
+
+// parseCVE splits CVE-YYYY-N+ into its year and sequence digits (sequence
+// without leading zeros). It reports false for anything else.
+func parseCVE(id string) (year, seq string, ok bool) {
+	rest, found := strings.CutPrefix(strings.ToUpper(strings.TrimSpace(id)), "CVE-")
+	if !found {
+		return "", "", false
+	}
+	year, seq, found = strings.Cut(rest, "-")
+	if !found || year == "" || seq == "" || !allDigits(year) || !allDigits(seq) {
+		return "", "", false
+	}
+	seq = strings.TrimLeft(seq, "0")
+	if seq == "" {
+		seq = "0"
+	}
+	return strings.TrimLeft(year, "0"), seq, true
+}
+
+func allDigits(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// numLess compares two digit strings without leading zeros as numbers, so it
+// holds for sequence numbers of any length.
+func numLess(a, b string) bool {
+	if len(a) != len(b) {
+		return len(a) < len(b)
+	}
+	return a < b
+}
+
+// cveLess orders CVE ids by year, then sequence number. Ids that do not parse
+// come after those that do and are ordered by text, so the order is total.
+func cveLess(a, b string) bool {
+	ay, as, aok := parseCVE(a)
+	by, bs, bok := parseCVE(b)
+	switch {
+	case aok && bok:
+		if ay != by {
+			return numLess(ay, by)
+		}
+		if as != bs {
+			return numLess(as, bs)
+		}
+		return a < b
+	case aok != bok:
+		return aok
+	default:
+		return a < b
+	}
+}
+
+// purlTypeByEcosystem maps the ecosystem names producers put in
+// vulnerability.ecosystem (package manager or language names) to the package
+// URL type, so one package gets one key whichever name the producer used.
+// Names already equal to a purl type map to themselves.
+var purlTypeByEcosystem = map[string]string{
+	"pip": "pypi", "pypi": "pypi", "python": "pypi",
+	"go": "golang", "golang": "golang", "gomod": "golang",
+	"npm": "npm", "node": "npm", "nodejs": "npm", "yarn": "npm", "pnpm": "npm",
+	"maven": "maven", "java": "maven", "gradle": "maven",
+	"nuget": "nuget", "dotnet": "nuget", ".net": "nuget",
+	"gem": "gem", "rubygems": "gem", "ruby": "gem", "bundler": "gem",
+	"cargo": "cargo", "crates.io": "cargo", "rust": "cargo",
+	"composer": "composer", "packagist": "composer", "php": "composer",
+	"hex": "hex", "elixir": "hex",
+	"pub": "pub", "dart": "pub",
+	"cocoapods": "cocoapods", "swift": "swift", "swifturl": "swift",
+	"conan": "conan", "cran": "cran", "hackage": "hackage", "haskell": "hackage",
+	"deb": "deb", "debian": "deb", "rpm": "rpm", "apk": "apk", "alpine": "apk",
+	"github actions": "githubactions", "githubactions": "githubactions",
+}
+
+// purlType returns the package URL type for an ecosystem name, or the
+// lower-cased name when it is not in the table.
+func purlType(ecosystem string) string {
+	e := strings.ToLower(strings.TrimSpace(ecosystem))
+	if t, ok := purlTypeByEcosystem[e]; ok {
+		return t
+	}
+	return e
 }
 
 // maxLocationKeyLen bounds LocationKey; longer keys keep a prefix and a hash.
@@ -330,7 +421,9 @@ func LocationKey(f *Finding) string {
 	case f.Vulnerability != nil && versionlessPURL(f.Vulnerability.PURL) != "":
 		key = "pkg:" + versionlessPURL(f.Vulnerability.PURL)
 	case f.Vulnerability != nil && strings.TrimSpace(f.Vulnerability.Package) != "":
-		key = "pkg:" + strings.ToLower(strings.TrimSpace(f.Vulnerability.Ecosystem)) + "/" + strings.TrimSpace(f.Vulnerability.Package)
+		key = "pkg:" + purlType(f.Vulnerability.Ecosystem) + "/" + strings.TrimSpace(f.Vulnerability.Package)
+	case f.Web != nil && webLocation(f.Web.URL) != "":
+		key = "url:" + webLocation(f.Web.URL)
 	case f.Location != nil && webLocation(f.Location.Path) != "":
 		key = "url:" + webLocation(f.Location.Path)
 	case f.Location != nil && strings.TrimSpace(f.Location.Path) != "":

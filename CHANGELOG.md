@@ -4,6 +4,22 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+Patch release (1.6.7, proposed): bug fixes in the receiver-side keys and normalisation, conformance vectors, and the `ctis` command line tool. No report format change.
+
+### Fixed: interoperability keys and URL asset names
+
+- `LocationKey` now reads `finding.web`: a web finding is keyed `url:<origin><path>` from `web.url`, before `location.path`, as the identity rules specify. Findings without `web` get the same key as before.
+- `PreferredVulnerabilityID` orders CVE ids numerically, by year and then sequence number (`CVE-2021-9999` before `CVE-2021-10000`), where it compared text. An id that does not parse sorts after the well-formed ones, by text, so the choice stays deterministic. A finding with several CVEs of different sequence lengths can now prefer a different one than before.
+- The `pkg:` fallback key of `LocationKey` maps `vulnerability.ecosystem` to its package URL type (`pip` is `pypi`, `go` is `golang`, `rubygems` is `gem`, `crates.io` is `cargo`, and so on; a name not in the table is only lower-cased), so one package gets one key whichever name a producer used. Keys built from a package URL are unchanged.
+- Behaviour fix: `NormalizeAssetName` lower-cases only the scheme and host of `http_service` and `discovered_url` values and keeps the case of the path and query, which are case-sensitive. Names that differed only in path case used to merge into one asset and no longer do; the lower-cased host and the dropped trailing slash are unchanged.
+- `fingerprint`: recipe v1 is pinned by golden values (`TestRecipeV1Pinned`) and documented. The `:` joiner ambiguity and the unsalted secret prefix are fixed by recipe v2 (`ctis-fp/2`, unit-separator joiner, HMAC-SHA256 of the secret under the producer's key) at CTIS 2.0; v1 outputs do not change.
+
+### Added: conformance vectors and the `ctis` command line tool
+
+- New `conformance/` directory: canonical forms of asset values, `LocationKey`, `PreferredVulnerabilityID` and v1 fingerprint vectors as JSON, plus a document manifest (the examples, the invalid examples and extra cases) with the expected result of each. `go test ./...` runs them, `scripts/validate_schemas.py` checks the schema-level ones against `schemas/v1`, and `conformance/README.md` says how another implementation runs them.
+- New command `cmd/ctis` (standard library only): `ctis validate [--json] [--max-size N] <file|->...`, `ctis canon`, `ctis conformance [dir]`, `ctis version`. Exit status 0 valid, 1 invalid, 2 usage or I/O error. Inputs are size-bounded and nothing is fetched.
+- Releases attach `ctis` binaries for linux, darwin and windows on amd64 and arm64 with a `SHA256SUMS` file; CI builds the tool and runs it over `examples/`.
+
 ## [1.6.6] - 2026-10-31
 
 Patch release: more edge protection signatures. The format does not change.

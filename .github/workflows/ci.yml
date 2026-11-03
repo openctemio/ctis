@@ -125,6 +125,35 @@ jobs:
           pip install "jsonschema[format-nongpl]==4.25.1"
           python3 scripts/validate_schemas.py
 
+  cli:
+    name: ctis CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27'
+          cache: true
+
+      - name: Build the CLI
+        run: go build -trimpath -o "$RUNNER_TEMP/ctis" ./cmd/ctis
+
+      - name: Valid examples validate
+        run: '"$RUNNER_TEMP/ctis" validate examples/*.json'
+
+      - name: Invalid examples are refused
+        run: |
+          for f in examples/invalid/*.json; do
+            if "$RUNNER_TEMP/ctis" validate "$f" >/dev/null; then
+              echo "ERROR: $f was accepted"; exit 1
+            fi
+          done
+          echo "all invalid examples refused"
+
+      - name: Conformance vectors
+        run: '"$RUNNER_TEMP/ctis" conformance conformance'
+
   fuzz:
     name: Fuzz (smoke)
     runs-on: ubuntu-latest

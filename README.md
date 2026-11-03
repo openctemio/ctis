@@ -94,6 +94,20 @@ https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.j
 
 Replace `main` with a release tag (`vX.Y.Z`) for an immutable copy. Every object sets `additionalProperties: false` except the `properties` bags: put producer-specific data in `properties`.
 
+## Validate a report
+
+`ctis` is a single static binary (standard library only) that checks a report the way a strict receiver does: unknown members are refused, the version must be one this release implements, and `Report.Validate` must pass. It reads only the files you name (or `-` for standard input) and never fetches a URL.
+
+```bash
+go install github.com/openctemio/ctis/cmd/ctis@latest   # or download a binary from the release page
+ctis validate report.json                  # exit 0 valid, 1 invalid, 2 usage or I/O error
+ctis validate --json a.json b.json         # one JSON object per file
+ctis validate --max-size 1048576 -         # read standard input, at most 1 MiB (default 64 MiB)
+ctis conformance conformance               # run the conformance vectors
+```
+
+Release binaries come with `SHA256SUMS`. The conformance vectors in [`conformance/`](conformance/README.md) let any other implementation check its canonical forms, correlation keys and fingerprints against this one.
+
 ## Validating CTIS reports
 
 `report.json` references the other schemas, so load all eight.

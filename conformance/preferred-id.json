@@ -1,0 +1,97 @@
+{
+  "description": "PreferredVulnerabilityID: the numerically smallest CVE (year, then sequence number), else the first GHSA, else the first OSV id, else the first vendor id. Ids are canonicalised first (CVE upper case).",
+  "cases": [
+    {
+      "name": "sequence length matters",
+      "vulnerability": {
+        "cve_ids": [
+          "CVE-2021-10000",
+          "CVE-2021-9999"
+        ]
+      },
+      "expected": {
+        "type": "cve",
+        "id": "CVE-2021-9999"
+      }
+    },
+    {
+      "name": "year first",
+      "vulnerability": {
+        "cve_ids": [
+          "CVE-2022-0001",
+          "CVE-2021-99999"
+        ]
+      },
+      "expected": {
+        "type": "cve",
+        "id": "CVE-2021-99999"
+      }
+    },
+    {
+      "name": "lower case is canonicalised",
+      "vulnerability": {
+        "cve_id": "cve-2024-9999",
+        "cve_ids": [
+          "CVE-2024-0001"
+        ]
+      },
+      "expected": {
+        "type": "cve",
+        "id": "CVE-2024-0001"
+      }
+    },
+    {
+      "name": "leading zeros are not part of the number",
+      "vulnerability": {
+        "cve_ids": [
+          "CVE-2021-00100",
+          "CVE-2021-0099"
+        ]
+      },
+      "expected": {
+        "type": "cve",
+        "id": "CVE-2021-0099"
+      }
+    },
+    {
+      "name": "cve wins over ghsa",
+      "vulnerability": {
+        "cve_id": "CVE-2024-0001",
+        "ids": [
+          {
+            "type": "ghsa",
+            "id": "GHSA-jfh8-c2jp-5v3q"
+          }
+        ]
+      },
+      "expected": {
+        "type": "cve",
+        "id": "CVE-2024-0001"
+      }
+    },
+    {
+      "name": "ghsa wins over osv",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "osv",
+            "id": "PYSEC-2021-1"
+          },
+          {
+            "type": "ghsa",
+            "id": "GHSA-jfh8-c2jp-5v3q"
+          }
+        ]
+      },
+      "expected": {
+        "type": "ghsa",
+        "id": "GHSA-jfh8-c2jp-5v3q"
+      }
+    },
+    {
+      "name": "none",
+      "vulnerability": {},
+      "expected": null
+    }
+  ]
+}

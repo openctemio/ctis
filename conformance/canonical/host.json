@@ -1,0 +1,20 @@
+{
+  "description": "host names: trimmed, lower case, no trailing dot",
+  "cases": [
+    {
+      "type": "host",
+      "input": "Web-Server-01",
+      "expected": "web-server-01"
+    },
+    {
+      "type": "host",
+      "input": "server.corp.local.",
+      "expected": "server.corp.local"
+    },
+    {
+      "type": "host",
+      "input": " SRV01 ",
+      "expected": "srv01"
+    }
+  ]
+}
