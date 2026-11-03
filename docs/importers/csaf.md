@@ -1,6 +1,6 @@
 # CSAF 2.0 (VEX and security advisory profiles) mapping
 
-Generated from `interop/csaf/2.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/csaf`; do not edit.
+Generated from `v2/interop/csaf/2.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `v2/interop/csaf`; do not edit.
 
 - Format: `csaf`
 - Source versions: CSAF 2.0 JSON (csaf_vex, csaf_security_advisory, csaf_base)

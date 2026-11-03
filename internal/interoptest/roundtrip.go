@@ -1,5 +1,5 @@
 // Package interoptest holds the test helpers the interoperability adapters
-// (interop/<format>, nested modules of this repository) share: golden files,
+// (v2/interop/<format>, nested modules of this repository) share: golden files,
 // round-trip comparison with declared losses, field coverage of mapping
 // files. It is internal and only imported by tests.
 package interoptest

@@ -93,7 +93,7 @@ jobs:
             # The vectors and golden files of the adapter, against the new
             # mapping directory; the result goes in the pull request.
             status="passed"
-            (cd "interop/$format" && go test ./... > "$RUNNER_TEMP/test.log" 2>&1) || status="failed"
+            (cd "v2/interop/$format" && go test ./... > "$RUNNER_TEMP/test.log" 2>&1) || status="failed"
             python3 scripts/check_interop_schemas.py >> "$RUNNER_TEMP/test.log" 2>&1 || status="failed"
             git add -A
             git commit -q -s -m "chore(interop): ${format} ${version} upstream schema (${tag})"
@@ -101,9 +101,9 @@ jobs:
             {
               echo "Upstream ${format} ${kind} version **${version}** (tag \`${tag}\`)."
               echo
-              echo "- Vendored schema under \`interop/${format}/schemas/${version}/\` (sha256 in \`interop/upstreams.json\`), diff in \`schema-diff.md\`."
+              echo "- Vendored schema under \`v2/interop/${format}/schemas/${version}/\` (sha256 in \`interop/upstreams.json\`), diff in \`schema-diff.md\`."
               if [ "$kind" = new ]; then
-                echo "- \`interop/${format}/${version}/\` is a copy of the latest mapping: review \`detect\`, the members the schema diff adds (until they are listed they are kept as passthrough) and the tables, then add vectors under \`conformance/interop/${format}/${version}/\`."
+                echo "- \`v2/interop/${format}/${version}/\` is a copy of the latest mapping: review \`detect\`, the members the schema diff adds (until they are listed they are kept as passthrough) and the tables, then add vectors under \`conformance/interop/${format}/${version}/\`."
               fi
               echo "- Adapter tests and schema checks: **${status}**."
               echo

@@ -39,8 +39,8 @@ Every adapter depends on the Go standard library and the core module only.
 ## Mapping files
 
 ```
-interop/<format>/<upstream-version>/import.json
-interop/<format>/<upstream-version>/export.json
+v2/interop/<format>/<upstream-version>/import.json
+v2/interop/<format>/<upstream-version>/export.json
 ```
 
 A mapping file describes one direction of one upstream version. `apiVersion` is `openctem.io/interop/v1`. The package `interop/engine` loads it strictly: unknown members are errors, and so are hooks the adapter does not register and tables the adapter looks up that are missing. The adapter embeds its mapping directories and loads every version side by side (`engine.LoadFS`).
@@ -110,14 +110,14 @@ Each adapter's tests run the vectors of every version the adapter reads (`TestCo
 `interop/upstreams.json` pins, per format:
 - the official schema repository and the tag pattern of its releases;
 - the schema files;
-- the vendored versions, with the ref and the sha256 of each copy under `interop/<format>/schemas/<version>/`.
+- the vendored versions, with the ref and the sha256 of each copy under `v2/interop/<format>/schemas/<version>/`.
 
 CI checks the vendored files against the sha256 values.
 
 `.github/workflows/interop-upstream.yml` runs weekly and on demand (`scripts/interop_watch.py`). For the newest new version of each format, and for a corrected schema of a vendored version, it:
 1. vendors the schema files and records their sha256;
 2. writes `schema-diff.md`;
-3. copies the latest mapping directory to `interop/<format>/<new-version>/` (a new version only);
+3. copies the latest mapping directory to `v2/interop/<format>/<new-version>/` (a new version only);
 4. runs the adapter's tests and vectors;
 5. opens a pull request labelled `upstream-update`.
 
@@ -134,12 +134,12 @@ Security of the watcher:
 2. In the copied mapping directory, adjust `detect`, so that each document selects exactly one version, and `version`.
 3. List the members the schema diff adds. Until they are listed they are passthrough. Map them with `set` rules, a table entry, a hook, or `ignored` with a reason.
 4. Add vectors under `conformance/interop/<format>/<version>/` and run `go test ./...` in the adapter (`-update` writes the golden files).
-5. Add an entry to the adapter's `CHANGELOG.md` and release only that adapter: tag `interop/<format>/vX.Y.Z`. The core version changes only when the CTEM model changes.
+5. Add an entry to the adapter's `CHANGELOG.md` and release only that adapter: tag `v2/interop/<format>/vX.Y.Z`. The core version changes only when the CTEM model changes.
 
 No Go code changes for a field-to-field addition. A new structure that needs a hook is Go code in the adapter.
 
 ## Modules, versions and releases
 
-- The core module `github.com/openctemio/ctis/v2` is tagged `vX.Y.Z`. Each adapter `github.com/openctemio/ctis/v2/interop/<format>` is tagged `interop/<format>/vX.Y.Z`, and the command `cmd/ctis` is tagged `cmd/ctis/vX.Y.Z`. `release.yml` validates an adapter tag: module path, changelog, zero external dependencies, build on every platform, tests.
-- An adapter's `go.mod` requires the core `v2.0.0` and has a `replace` to `../..` so the repository builds before the core tag. A consumer's build ignores the replace. Once v2.0.0 and the adapter tags exist, the replace lines go (`cmd/ctis` needs that for `go install ...@version`).
+- The core module `github.com/openctemio/ctis/v2` is tagged `vX.Y.Z`. Each adapter `github.com/openctemio/ctis/v2/interop/<format>` is tagged `v2/interop/<format>/vX.Y.Z`, and the command `v2/cmd/ctis` is tagged `v2/cmd/ctis/vX.Y.Z`. `release.yml` validates an adapter tag: module path, changelog, zero external dependencies, build on every platform, tests.
+- An adapter's `go.mod` requires the core `v2.0.0` and has a `replace` to `../..` so the repository builds before the core tag. A consumer's build ignores the replace. Once v2.0.0 and the adapter tags exist, the replace lines go (`v2/cmd/ctis` needs that for `go install ...@version`).
 - The adapters share internal helpers of the core module: `internal/importkit` (text, package URL and reference helpers), `internal/exportkit` (the exporters' common rules) and `internal/interoptest` (test helpers). A Go `internal` package is importable by every module under the same path prefix. These helpers are not public API; an adapter release requires a core release whose internals it builds with.

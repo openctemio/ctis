@@ -175,9 +175,9 @@ jobs:
           go-version: '1.27'
           cache: true
 
-      # cmd/ctis is its own module (it links the adapters).
+      # v2/cmd/ctis is its own module (it links the adapters).
       - name: Build the CLI
-        working-directory: cmd/ctis
+        working-directory: v2/cmd/ctis
         run: go build -trimpath -o "$RUNNER_TEMP/ctis" .
 
       - name: Valid examples validate
@@ -197,7 +197,7 @@ jobs:
 
       - name: Import and export through the adapters
         run: |
-          "$RUNNER_TEMP/ctis" import interop/sarif/testdata/importers/semgrep.sarif > "$RUNNER_TEMP/r.ctis.json"
+          "$RUNNER_TEMP/ctis" import v2/interop/sarif/testdata/importers/semgrep.sarif > "$RUNNER_TEMP/r.ctis.json"
           "$RUNNER_TEMP/ctis" validate "$RUNNER_TEMP/r.ctis.json"
           for f in sarif cyclonedx ocsf; do
             "$RUNNER_TEMP/ctis" export --format "$f" "$RUNNER_TEMP/r.ctis.json" > /dev/null
@@ -236,7 +236,7 @@ jobs:
           # the write-back.
           go test -run '^$' -fuzz '^FuzzCollect$' -fuzztime 20s -fuzzminimizetime 1x ./interop/engine
           # The SARIF adapter reads hostile logs.
-          (cd interop/sarif && go test -run '^$' -fuzz '^FuzzFromSARIF$' -fuzztime 20s -fuzzminimizetime 1x .)
+          (cd v2/interop/sarif && go test -run '^$' -fuzz '^FuzzFromSARIF$' -fuzztime 20s -fuzzminimizetime 1x .)
 
   build-compat:
     name: Cross-platform build

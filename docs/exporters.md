@@ -4,11 +4,11 @@ The interoperability adapters ([interop.md](interop.md)) write a CTIS report out
 
 | Function | Output | Target version |
 |---|---|---|
-| `sarif.Export(r *ctis.Report, opts *sarif.ExportOptions) ([]byte, error)` (`interop/sarif`) | SARIF log (JSON) | SARIF 2.1.0 |
-| `cyclonedx.Export(r *ctis.Report, opts *cyclonedx.ExportOptions) ([]byte, error)` (`interop/cyclonedx`) | BOM with vulnerabilities (VDR/VEX), JSON | CycloneDX 1.6 |
-| `ocsf.Events(r *ctis.Report, opts *ocsf.Options) ([]ocsf.Event, error)`, `ocsf.Export` (`interop/ocsf`) | one event per finding (`Export`: a JSON array) | OCSF 1.3.0 (`ocsf.Version`), classes Vulnerability Finding (2002) and Compliance Finding (2003) |
+| `sarif.Export(r *ctis.Report, opts *sarif.ExportOptions) ([]byte, error)` (`v2/interop/sarif`) | SARIF log (JSON) | SARIF 2.1.0 |
+| `cyclonedx.Export(r *ctis.Report, opts *cyclonedx.ExportOptions) ([]byte, error)` (`v2/interop/cyclonedx`) | BOM with vulnerabilities (VDR/VEX), JSON | CycloneDX 1.6 |
+| `ocsf.Events(r *ctis.Report, opts *ocsf.Options) ([]ocsf.Event, error)`, `ocsf.Export` (`v2/interop/ocsf`) | one event per finding (`Export`: a JSON array) | OCSF 1.3.0 (`ocsf.Version`), classes Vulnerability Finding (2002) and Compliance Finding (2003) |
 
-The mapping is based on the CTIS 2.0 types. Each exporter's export mapping (`interop/<format>/<version>/export.json`) lists every member it writes, its source and the hook that writes it, and holds its value tables (SARIF levels, security-severity scores, precision; CycloneDX hash algorithms, VEX states, justifications, CVSS methods; OCSF severity and status ids). The shared rules are in `internal/exportkit`. Each CTIS object is mapped by its own function (`sarifRuleOf`, `sarifResultOf`, `sarifLocationOf`, `sarifSuppressionsOf`, `sarifCodeFlowOf`, `sarifWebOf`; `cdxComponentOf`, `cdxSubjectOf`, `cdxVulnOf`, `cdxVersionsOf`; `ocsfEventOf`, `ocsfResourceOf`, `ocsfComplianceOf`, `ocsfVulnerabilitiesOf`, `ocsfScoresOf`, `ocsfCodeOf`), so a rename of CTIS members changes one function per object.
+The mapping is based on the CTIS 2.0 types. Each exporter's export mapping (`v2/interop/<format>/<version>/export.json`) lists every member it writes, its source and the hook that writes it, and holds its value tables (SARIF levels, security-severity scores, precision; CycloneDX hash algorithms, VEX states, justifications, CVSS methods; OCSF severity and status ids). The shared rules are in `internal/exportkit`. Each CTIS object is mapped by its own function (`sarifRuleOf`, `sarifResultOf`, `sarifLocationOf`, `sarifSuppressionsOf`, `sarifCodeFlowOf`, `sarifWebOf`; `cdxComponentOf`, `cdxSubjectOf`, `cdxVulnOf`, `cdxVersionsOf`; `ocsfEventOf`, `ocsfResourceOf`, `ocsfComplianceOf`, `ocsfVulnerabilitiesOf`, `ocsfScoresOf`, `ocsfCodeOf`), so a rename of CTIS members changes one function per object.
 
 ## Rules common to every exporter
 
@@ -64,7 +64,7 @@ Accepted losses (members SARIF cannot carry, or that `sarif.Import` does not rea
 - Findings of several rules that share an id: the rule's description, CWE and help come from the first one.
 - The `compliance`, `exposure`, `malware` and `license` types have no SARIF tag. They come back from the tool name only.
 
-Round-trip fixtures: `interop/sarif/testdata/export/features.sarif` and the SARIF fixtures of `interop/sarif/testdata/sarif/`. Each goes fixture → `sarif.Import` → `sarif.Export` → `sarif.Import` and must give the same report. No member that `sarif.Import` produces is lost; the sidecars `interop/sarif/testdata/export/<fixture>.losses.json` are empty. `examples/sast.json` and `examples/secret.json` go CTIS → `sarif.Export` → `sarif.Import`, and the losses above are listed in `ctis-sast.losses.json` and `ctis-secret.losses.json`. The golden output is `interop/sarif/testdata/export/features.golden.sarif`. Import catalogs the rules results name (rules no result names are not copied) and repeats the rule's text on each finding, so a CTIS → SARIF → CTIS round trip adds `description`, `rule_name`, `references` and `tags` to findings that named a catalog rule (listed in `ctis-sast.losses.json`).
+Round-trip fixtures: `v2/interop/sarif/testdata/export/features.sarif` and the SARIF fixtures of `v2/interop/sarif/testdata/sarif/`. Each goes fixture → `sarif.Import` → `sarif.Export` → `sarif.Import` and must give the same report. No member that `sarif.Import` produces is lost; the sidecars `v2/interop/sarif/testdata/export/<fixture>.losses.json` are empty. `examples/sast.json` and `examples/secret.json` go CTIS → `sarif.Export` → `sarif.Import`, and the losses above are listed in `ctis-sast.losses.json` and `ctis-secret.losses.json`. The golden output is `v2/interop/sarif/testdata/export/features.golden.sarif`. Import catalogs the rules results name (rules no result names are not copied) and repeats the rule's text on each finding, so a CTIS → SARIF → CTIS round trip adds `description`, `rule_name`, `references` and `tags` to findings that named a catalog rule (listed in `ctis-sast.losses.json`).
 
 ## CycloneDX 1.6
 
@@ -106,7 +106,7 @@ Accepted losses:
 - The justification component_not_present comes back as vulnerable_code_not_present, with native_justification code_not_present.
 - The CVSS v3 method: a `CVSSv3` rating with a 3.1 vector comes back as `CVSSv31`.
 
-Round-trip fixture: `interop/cyclonedx/testdata/export/vdr.cdx.json` goes through the importer, `cyclonedx.Export` and the importer again. The report, its findings and dependencies, the VEX statements kept in the report and the unmapped paths come back equal, except for the documented loss in `vdr.losses.json`. `examples/vulnerability-sca.json` goes CTIS → `cyclonedx.Export` → importer, with its losses in `ctis-vulnerability-sca.losses.json`. Golden files: `vdr.golden.cdx.json`, `vulnerability-sca.golden.cdx.json`.
+Round-trip fixture: `v2/interop/cyclonedx/testdata/export/vdr.cdx.json` goes through the importer, `cyclonedx.Export` and the importer again. The report, its findings and dependencies, the VEX statements kept in the report and the unmapped paths come back equal, except for the documented loss in `vdr.losses.json`. `examples/vulnerability-sca.json` goes CTIS → `cyclonedx.Export` → importer, with its losses in `ctis-vulnerability-sca.losses.json`. Golden files: `vdr.golden.cdx.json`, `vulnerability-sca.golden.cdx.json`.
 
 ## OCSF 1.3.0
 
@@ -141,13 +141,13 @@ Every finding is one event of the Findings category (`category_uid` 2). Vulnerab
 | `type` | `unmapped["ctis_type"]` |
 | `secret.type`, `service`, `masked_value` | `unmapped["secret_type"]`, `secret_service`, `secret_masked_value` (masked) |
 
-Accepted losses: everything not in the table. The full list, with reasons, is in `interop/ocsf/testdata/export/*.losses.json`. In short: identity and lifecycle members (`id`, `native`, `source_lifecycle`, `source_extra`, `partial_fingerprints`, suppression details, `vex`), the code context (`data_flow`, columns, snippet, logical location, commit), `evidence_items`, exposure, most misconfiguration, secret and remediation details, non-CVE vulnerability ids, threat signal details, `is_direct`, `owasp_ids`, `fixed_versions` beyond the first, `affected_version_range`, and the CVSS source. Scores of a finding without a CVE have no OCSF place.
+Accepted losses: everything not in the table. The full list, with reasons, is in `v2/interop/ocsf/testdata/export/*.losses.json`. In short: identity and lifecycle members (`id`, `native`, `source_lifecycle`, `source_extra`, `partial_fingerprints`, suppression details, `vex`), the code context (`data_flow`, columns, snippet, logical location, commit), `evidence_items`, exposure, most misconfiguration, secret and remediation details, non-CVE vulnerability ids, threat signal details, `is_direct`, `owasp_ids`, `fixed_versions` beyond the first, `affected_version_range`, and the CVSS source. Scores of a finding without a CVE have no OCSF place.
 
-OCSF has no importer. The round-trip test reads the events back with a test-only reverse mapper (`ocsfToCTIS` in `interop/ocsf/export_test.go`). The mapped members of the examples `vulnerability-sca`, `network-vulnerability-interop`, `sast`, `secret`, `compliance` and `misconfiguration` must come back equal. Golden files: `interop/ocsf/testdata/export/<example>.golden.ocsf.json` (not `*.golden.json`, which the schema check validates as CTIS reports), and the vectors of `conformance/interop/ocsf/1.3.0`.
+OCSF has no importer. The round-trip test reads the events back with a test-only reverse mapper (`ocsfToCTIS` in `v2/interop/ocsf/export_test.go`). The mapped members of the examples `vulnerability-sca`, `network-vulnerability-interop`, `sast`, `secret`, `compliance` and `misconfiguration` must come back equal. Golden files: `v2/interop/ocsf/testdata/export/<example>.golden.ocsf.json` (not `*.golden.json`, which the schema check validates as CTIS reports), and the vectors of `conformance/interop/ocsf/1.3.0`.
 
 ## Testing
 
-- `go test ./...` in `interop/sarif`, `interop/cyclonedx` and `interop/ocsf` runs the round trips, goldens, determinism, secret and passthrough tests and the conformance vectors. `-update` rewrites the golden files.
+- `go test ./...` in `v2/interop/sarif`, `v2/interop/cyclonedx` and `v2/interop/ocsf` runs the round trips, goldens, determinism, secret and passthrough tests and the conformance vectors. `-update` rewrites the golden files.
 - Sidecar `*.losses.json`: a list of member paths into the compared JSON, each with a reason. `findings[].x` drops a member of every element. `vex[vex.status=not_affected]` drops the elements whose member equals the value. The comparison drops these paths on both sides, so a member that should survive cannot be hidden by accident in another fixture.
 
 ## Mapping files

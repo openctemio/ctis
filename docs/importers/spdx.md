@@ -1,6 +1,6 @@
 # SPDX JSON mapping
 
-Generated from `interop/spdx/2.3/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/spdx`; do not edit.
+Generated from `v2/interop/spdx/2.3/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `v2/interop/spdx`; do not edit.
 
 - Format: `spdx`
 - Source versions: SPDX 2.2 and 2.3 JSON

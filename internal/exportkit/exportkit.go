@@ -1,5 +1,5 @@
 // Package exportkit holds the rules every exporter of the interoperability
-// adapters (interop/<format>, nested modules of this repository) follows. It
+// adapters (v2/interop/<format>, nested modules of this repository) follows. It
 // is internal: not part of the module's API.
 package exportkit
 
@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-// Exporters: CTIS to SARIF 2.1.0 (interop/sarif), CycloneDX 1.6
-// (interop/cyclonedx) and OCSF 1.3.0 (interop/ocsf).
+// Exporters: CTIS to SARIF 2.1.0 (v2/interop/sarif), CycloneDX 1.6
+// (v2/interop/cyclonedx) and OCSF 1.3.0 (v2/interop/ocsf).
 //
 // Every exporter follows the same rules:
 //   - Deterministic: the same report gives the same bytes. Findings keep the

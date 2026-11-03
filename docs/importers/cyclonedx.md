@@ -1,6 +1,6 @@
 # CycloneDX JSON (SBOM, VDR, VEX) mapping
 
-Generated from `interop/cyclonedx/1.6/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/cyclonedx`; do not edit.
+Generated from `v2/interop/cyclonedx/1.6/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `v2/interop/cyclonedx`; do not edit.
 
 - Format: `cyclonedx`
 - Source versions: CycloneDX 1.4, 1.5 and 1.6 JSON

@@ -99,11 +99,11 @@ consumer builds with that Go.
 ## Modules and the interoperability adapters
 
 The repository holds several Go modules: the core (`.`), one module per
-standard-format adapter (`interop/<format>`) and the command (`cmd/ctis`).
+standard-format adapter (`v2/interop/<format>`) and the command (`v2/cmd/ctis`).
 CI builds, tests and lints every one of them
 (`.github/scripts/modules.sh`); each depends on the standard library and the
 core module only. A change to a standard format's mapping changes that
-adapter only: its mapping files (`interop/<format>/<version>/`), its vectors
+adapter only: its mapping files (`v2/interop/<format>/<version>/`), its vectors
 (`conformance/interop/<format>/<version>/`) and its `CHANGELOG.md`, released
-with a tag `interop/<format>/vX.Y.Z`. How to add an upstream version is in
+with a tag `v2/interop/<format>/vX.Y.Z`. How to add an upstream version is in
 [docs/interop.md](docs/interop.md).
