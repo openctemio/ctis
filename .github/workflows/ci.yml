@@ -120,6 +120,11 @@ jobs:
           go-version: '1.27'
           cache: true
 
+      # The command builds against this commit's core (it may use core
+      # changes not released yet); see the test job.
+      - name: Use this commit's modules
+        run: go work init $(bash .github/scripts/modules.sh)
+
       - name: Run go vet
         run: |
           for m in $(bash .github/scripts/modules.sh); do (cd "$m" && go vet ./...) || exit 1; done
@@ -282,6 +287,11 @@ jobs:
         with:
           go-version: '1.27'
           cache: true
+
+      # The command builds against this commit's core (it may use core
+      # changes not released yet); see the test job.
+      - name: Use this commit's modules
+        run: go work init $(bash .github/scripts/modules.sh)
 
       - name: Build
         run: |
