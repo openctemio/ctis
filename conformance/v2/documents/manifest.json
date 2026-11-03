@@ -243,6 +243,31 @@
    "result": "invalid",
    "category": "validate",
    "error": "findings[0]: vulnerability.ids[0] (\"cve\", \"CVE 2024 1\") is not a valid"
+  },
+  {
+   "file": "invalid/rule-ref-unknown.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: rule_ref \"r-1\" names no rule in this report",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/rule-ref-rule-id-differs.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: rule_id \"py.sqli\" differs from rule_id \"py.xss\" of rule \"r-1\"",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/rule-duplicate-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "rules[1]: duplicate id \"r-1\"",
+   "schema_level": false
+  },
+  {
+   "file": "valid/rule-catalog.json",
+   "result": "valid"
   }
  ]
 }

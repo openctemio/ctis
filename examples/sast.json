@@ -28,6 +28,24 @@
       "value": "github.com/example/shop"
     }
   ],
+  "rules": [
+    {
+      "id": "r-sqli",
+      "rule_id": "python.django.security.injection.sql.sql-injection-db-cursor-execute",
+      "name": "SQL injection through a database cursor",
+      "short_description": "Request data reaches a raw SQL query.",
+      "help": "Use parameterized queries (cursor.execute(sql, params)) or the ORM.",
+      "help_uri": "https://cwe.mitre.org/data/definitions/89.html",
+      "default_severity": "high",
+      "tags": [
+        "security",
+        "injection"
+      ],
+      "cwe_ids": [
+        "CWE-89"
+      ]
+    }
+  ],
   "findings": [
     {
       "id": "f-1",
@@ -41,6 +59,7 @@
         "SQL Injection"
       ],
       "rule_id": "python.django.security.injection.sql.sql-injection-db-cursor-execute",
+      "rule_ref": "r-sqli",
       "asset_ref": "repo",
       "fingerprint": "0e1d2c3b4a5f69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
       "partial_fingerprints": {

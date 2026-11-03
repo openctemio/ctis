@@ -26,6 +26,9 @@ type Report struct {
 	// Assets observed.
 	Assets []Asset `json:"assets,omitempty"`
 
+	// Rules and checks the findings name by rule_ref, described once.
+	Rules []Rule `json:"rules,omitempty"`
+
 	// Findings observed. Each names its asset by asset_ref.
 	Findings []Finding `json:"findings,omitempty"`
 
@@ -769,6 +772,10 @@ type Finding struct {
 	// Rule or check that detected the finding.
 	RuleID   string `json:"rule_id,omitempty"`
 	RuleName string `json:"rule_name,omitempty"`
+
+	// The rule of this report's rules[] that detected the finding. When
+	// set, rule_id is required and equals the rule's rule_id.
+	RuleRef string `json:"rule_ref,omitempty"`
 
 	// The asset of this report the finding is on (required).
 	AssetRef string `json:"asset_ref"`

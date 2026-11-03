@@ -173,6 +173,14 @@
     {
       "member": "findings[].vulnerability.ids",
       "reason": "as cve_id: CVE ids are written; GHSA, OSV and vendor ids have no OCSF member"
+    },
+    {
+      "member": "rules",
+      "reason": "OCSF has no document-level rule catalog; the rule id and name travel per finding in finding_info.analytic"
+    },
+    {
+      "member": "findings[].rule_ref",
+      "reason": "OCSF has no document-level rule catalog; the rule id and name travel per finding in finding_info.analytic"
     }
   ]
 }

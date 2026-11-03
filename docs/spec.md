@@ -70,6 +70,7 @@ A CTIS document is one UTF-8 JSON object (RFC 8259), the **report**. Duplicate m
 | `metadata` | yes | `id` (UUIDv7) and `generated_at` are required |
 | `tool` | no | The producing tool |
 | `assets` | no | Things that exist, each in the canonical form of its type (section 5) |
+| `rules` | no | Rules and checks described once; findings name them by `rule_ref` (section 6.7) |
 | `findings` | no | Security findings, each on one asset of the document (section 6) |
 | `dependencies` | no | Software components (SBOM) |
 | `relationships` | no | Typed edges between two assets of the document (section 7) |
@@ -222,6 +223,10 @@ Web3 is a profile, not a type: a smart-contract issue is a `vulnerability` or `w
 - `secret.masked_value` MUST NOT reveal more than 4 characters at either end, nor more than half of the secret. Receivers SHOULD mask it again rather than trust the producer; the Go module does this with `RedactSecretFinding`.
 - A secret's fingerprint input is `HMAC-SHA256(producer key, secret)` only ([fingerprints.md](fingerprints.md)).
 
+### 6.7 Rule catalog
+
+`rules[]` describes each rule or check once: `id` (a document reference, required), `rule_id` (the tool's identifier, required), `name`, `short_description`, `full_description`, `help` (plain text), `help_uri` (http or https, never fetched), `default_severity`, `tags[]`, `cwe_ids[]` and `extensions`. A finding names its rule with `rule_ref`. When `rule_ref` is set, the finding's `rule_id` is required and MUST equal the rule's `rule_id`, so identity (fingerprints, correlation key) never depends on the catalog. A finding's own `severity`, `title` and `description` describe the instance and take precedence over the rule's text. `rule_name` MAY be omitted when `rule_ref` is set; receivers then take the name from the rule. Rule ids are unique within the document, and a `rule_ref` that names no rule makes the document invalid.
+
 ## 7. Relationships, coverage and absence
 
 ### 7.1 Relationships
@@ -317,7 +322,7 @@ Every member carries its bound in the schema; `Validate` refuses a document that
 | Member | Limit |
 |---|---|
 | `assets`, `findings`, `dependencies` | 1,000,000 entries each (receivers SHOULD set lower limits and split into segments) |
-| `relationships` | 10,000; `endpoints` 200,000 |
+| `relationships` | 10,000; `endpoints` 200,000; `rules` 10,000 |
 | asset `value` | 2,048 characters |
 | document references (`id`, `*_ref`) | 255 characters, `^[A-Za-z0-9][A-Za-z0-9._:/@+=~%-]{0,254}$`, not UUID-shaped |
 | `source_refs` | 16 entries; `system` an open token, `id` 256 characters |
@@ -331,6 +336,7 @@ Every member carries its bound in the schema; `Validate` refuses a document that
 | `technologies` | 100 entries |
 | `extensions` | 32 namespaces; 64 KiB serialized per object |
 | `owners` | 20; `threat_signals` 16; `capec_ids` 32 |
+| rule `rule_id` / `name` / `short_description` / `full_description` / `help` | 1,024 / 1,024 / 1,024 / 32 KiB / 32 KiB characters; `tags` 64 of 256; `cwe_ids` 32 |
 | `metadata.targets` | 100,000 entries, `target` 2,048 bytes, unique |
 | `metadata.segment.count` | 1 to 10,000 |
 
@@ -357,6 +363,7 @@ CTEM Interchange Schema (CTIS) 2.0: one producer's observations of assets, findi
 | `metadata` | `ReportMetadata` | yes |  |  |
 | `properties` | `Properties` |  |  |  |
 | `relationships` | array of `Relationship` |  |  | Typed relationships between two assets of this report, named by their ids |
+| `rules` | array of `Rule` |  |  | Rules and checks the findings name by rule_ref, described once |
 | `tool` | `Tool` |  |  |  |
 | `version` | string | yes | pattern `^2\.(0\|[1-9][0-9]{0,3})$`; maxLength 1024 | CTIS specification version as MAJOR.MINOR. Receivers decode a document of their own or an older minor strictly, ignore unknown members and map unknown enum values to their fallback in a document of a newer minor, and reject another major (spec section Versioning). 1.x documents are rejected. |
 
@@ -432,6 +439,24 @@ Report metadata. No member carries a tenant identifier: the tenant comes from th
 | `source_refs` | array of `SourceRef` |  |  | The producer's own references for the work (a job id in its scheduler, a scan id in the source product) |
 | `started_at` | string (date-time) |  | maxLength 64 | When the work that produced the report started |
 | `targets` | array of `TargetOutcome` |  |  | How each target of the work ended. An item seen earlier on target T is gone only when a coverage_type full report lists T with state done and omits it |
+
+#### Rule
+
+A rule or check described once; findings name it by rule_ref and keep an equal rule_id
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `cwe_ids` | array of string |  | items: pattern `^CWE-[1-9][0-9]{0,5}$` | CWE identifiers the rule checks for |
+| `default_severity` | `Severity` |  |  | Severity the tool gives the rule when a finding does not override it |
+| `extensions` | `Extensions` |  |  |  |
+| `full_description` | string |  | maxLength 32768 | Full description (plain text) |
+| `help` | string |  | maxLength 32768 | How to fix what the rule finds (plain text) |
+| `help_uri` | string |  | pattern `^[Hh][Tt][Tt][Pp][Ss]?://[^\s/?#]+[^\s]*$`; maxLength 2048 | Page that documents the rule (http or https). Receivers never fetch it. |
+| `id` | `DocumentRef` | yes |  | Document-local reference findings name the rule by |
+| `name` | string |  | maxLength 1024 | Human-readable rule name |
+| `rule_id` | string | yes | minLength 1; maxLength 1024 | The tool's identifier of the rule |
+| `short_description` | string |  | maxLength 1024 | One-sentence description (plain text) |
+| `tags` | array of string |  | items: maxLength 256 | The tool's tags for the rule |
 
 #### Segment
 
@@ -815,6 +840,7 @@ A security finding on one asset of the report
 | `remediation` | `Remediation` |  |  |  |
 | `rule_id` | string |  | maxLength 1024 | Rule/check ID that detected this finding |
 | `rule_name` | string |  | maxLength 1024 | Rule name |
+| `rule_ref` | `DocumentRef` |  |  | The rule of the report's rules[] that detected the finding; rule_id is then required and equal to the rule's rule_id |
 | `scores` | array of `Score` |  |  | Every score of the finding with its source and date (CVSS v3.1 and v4.0 together, vendor scores, EPSS, SSVC). vulnerability.cvss_* stays the primary CVSS score. |
 | `secret` | `SecretDetails` |  |  |  |
 | `severity` | `Severity` | yes |  |  |

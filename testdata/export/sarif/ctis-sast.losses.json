@@ -77,6 +77,14 @@
     {
       "member": "findings[].data_flow.sources[].taint_state",
       "reason": "as data_flow.summary"
+    },
+    {
+      "member": "rules",
+      "reason": "the SARIF exporter builds run.tool.driver.rules[] from the findings; mapping CTIS rules[] to it lands with the interop SARIF adapter"
+    },
+    {
+      "member": "findings[].rule_ref",
+      "reason": "the SARIF exporter builds run.tool.driver.rules[] from the findings; mapping CTIS rules[] to it lands with the interop SARIF adapter"
     }
   ]
 }

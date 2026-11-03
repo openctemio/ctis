@@ -27,6 +27,7 @@ CTIS 2.0 is a one-time breaking cleanup of the format: one name per concept, one
 ### Added
 
 - Everything first prepared as the additive half of 2.0: version-gated decoding (`ctis.Decode`, `ctis.Unknown`, `ctis.EnumFallback`), `extensions`, finding types `exposure`, `weakness`, `malware`, `license`, severity `unknown`, `finding.validation`, `finding.tool`, `finding.dependency_ref`, `dependencies[].asset_ref`, seven new relationship types, asset context (`environment`, `owners`, `first_seen_at`, `last_seen_at`, `state`), the new asset types, `metadata.targets`, `started_at`, `ended_at`, `segment` with the normative absence rule, `threat_signals`, CAPEC ids, canonical forms and asset keys, open vocabularies, the exporters (`ToSARIF`, `ToCycloneDX`, `ToOCSF`), fingerprint recipe v2 and the correlation key.
+- Rule catalog: top-level `rules[]` (`id`, `rule_id`, `name`, `short_description`, `full_description`, `help`, `help_uri`, `default_severity`, `tags`, `cwe_ids`, `extensions`) and `finding.rule_ref`; a finding with `rule_ref` keeps an equal `rule_id`, so identity never depends on the catalog (spec 6.7).
 - `metadata.profiles[]`, `metadata.source_refs[]`, `asset.source_refs[]`, `finding.source_refs[]`, `finding.technique`, `technical.http`, `technical.identity`, `location.commit`, `ctis.Bool`, `ctis.PrimaryCVSS`, `ctis.HasThreatSignal`, `ctis.CVEs`, `VulnerabilityDetails.AddID`, `Extensions.Set`/`Get`.
 
 ### Renames and removals (old → new)
