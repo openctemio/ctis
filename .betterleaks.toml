@@ -12,8 +12,8 @@ paths = [
     '''(^|/)testdata/''',
     '''_test\.go$''',
     '''(^|/)__tests__/''',
-    # Conformance vectors hold expected hashes and HMAC digests of throwaway strings.
-    '''(^|/)conformance/v2/fingerprint/secret-digest\.json$''',
+    # Conformance vectors: expected hashes and HMAC digests of throwaway strings; not credentials.
+    '''(^|/)conformance/v2/(fingerprint|correlation)/[^/]+\.json$''',
     '''\.test\.[jt]sx?$''',
     '''(^|/)(go\.sum|package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$''',
 ]
