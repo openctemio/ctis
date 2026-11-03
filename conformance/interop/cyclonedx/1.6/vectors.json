@@ -1,0 +1,16 @@
+{
+  "format": "cyclonedx",
+  "version": "1.6",
+  "vectors": [
+    {
+      "name": "vdr",
+      "input": "vdr.cdx.json",
+      "expect": "vdr.expect.json",
+      "roundtrip": true,
+      "losses": [
+        {"member": "metadata.id", "reason": "a converted document is a new document with its own UUIDv7"}
+      ]
+    },
+    {"name": "newer-minor", "input": "newer-minor.json", "expect": "newer-minor.expect.json", "kept": ["/citations"]}
+  ]
+}

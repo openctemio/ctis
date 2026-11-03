@@ -1,0 +1,20 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "example-app-sbom",
+  "documentNamespace": "https://sbom.example/example-app/2.4.0",
+  "creationInfo": {"created": "2026-10-01T08:00:00Z", "creators": ["Tool: example-sbom-1.0"]},
+  "documentDescribes": ["SPDXRef-app"],
+  "packages": [
+    {"SPDXID": "SPDXRef-app", "name": "example-app", "versionInfo": "2.4.0", "downloadLocation": "NOASSERTION", "primaryPackagePurpose": "APPLICATION",
+     "externalRefs": [{"referenceCategory": "PACKAGE-MANAGER", "referenceType": "purl", "referenceLocator": "pkg:npm/example-app@2.4.0"}]},
+    {"SPDXID": "SPDXRef-lodash", "name": "lodash", "versionInfo": "4.17.20", "downloadLocation": "NOASSERTION", "licenseConcluded": "MIT",
+     "externalRefs": [{"referenceCategory": "PACKAGE-MANAGER", "referenceType": "purl", "referenceLocator": "pkg:npm/lodash@4.17.20"}]}
+  ],
+  "relationships": [
+    {"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-app"},
+    {"spdxElementId": "SPDXRef-app", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "SPDXRef-lodash"}
+  ],
+  "revieweds": [{"reviewDate": "2026-10-02T09:00:00Z", "reviewer": "Tool: example-review", "comment": "a deprecated SPDX 2.x member the mapping does not list"}]
+}

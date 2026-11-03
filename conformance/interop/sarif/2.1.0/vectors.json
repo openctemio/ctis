@@ -1,0 +1,84 @@
+{
+  "format": "sarif",
+  "version": "2.1.0",
+  "vectors": [
+    {
+      "name": "passthrough",
+      "input": "passthrough.sarif.json",
+      "expect": "passthrough.expect.json",
+      "roundtrip": true,
+      "kept": [
+        "/runs/0/defaultSourceLanguage",
+        "/runs/0/language",
+        "/runs/0/tool/driver/dottedQuadFileVersion",
+        "findings[0]/rank",
+        "findings[0]/occurrenceCount",
+        "findings[0]/fixes"
+      ],
+      "reemitted": [
+        "/runs/0/defaultSourceLanguage",
+        "/runs/0/language",
+        "/runs/0/tool/driver/dottedQuadFileVersion",
+        "/runs/0/results/0/rank",
+        "/runs/0/results/0/occurrenceCount",
+        "/runs/0/results/0/fixes"
+      ],
+      "never": [
+        "ghp_vectorTokenNeverKept0123456789",
+        "javascript:"
+      ],
+      "losses": [
+        {
+          "member": "metadata.id",
+          "reason": "a converted document is a new document with its own UUIDv7"
+        },
+        {
+          "member": "metadata.generated_at",
+          "reason": "the import's clock"
+        }
+      ]
+    },
+    {
+      "name": "secret",
+      "input": "secret.sarif.json",
+      "expect": "secret.expect.json",
+      "roundtrip": true,
+      "kept": [
+        "findings[0]/fixes",
+        "findings[0]/occurrenceCount"
+      ],
+      "reemitted": [
+        "/runs/0/results/0/occurrenceCount"
+      ],
+      "never": [
+        "AKIAQ3EGRZ7X2VECTOR9"
+      ],
+      "losses": [
+        {
+          "member": "metadata.id",
+          "reason": "a converted document is a new document with its own UUIDv7"
+        },
+        {
+          "member": "metadata.generated_at",
+          "reason": "the import's clock"
+        },
+        {
+          "member": "findings[].location.snippet",
+          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+        },
+        {
+          "member": "findings[].description",
+          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+        },
+        {
+          "member": "findings[].extensions",
+          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+        },
+        {
+          "member": "rules[].short_description",
+          "reason": "a masked secret read back is masked again: AKIA******** is no full redaction, so the second import writes REDACTED"
+        }
+      ]
+    }
+  ]
+}

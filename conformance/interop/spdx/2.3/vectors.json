@@ -1,0 +1,7 @@
+{
+  "format": "spdx",
+  "version": "2.3",
+  "vectors": [
+    {"name": "sbom", "input": "sbom.spdx.json", "expect": "sbom.expect.json", "kept": ["/revieweds"]}
+  ]
+}

@@ -120,6 +120,7 @@ func parseSARIF(b *importer.Builder, r io.Reader) error {
 	}
 	b.Result().Report.Metadata.Branch = rep.Metadata.Branch
 	b.Result().Report.Rules = rep.Rules
+	b.Result().Report.Extensions = rep.Extensions
 	assetID, err := b.Asset(asset)
 	if err != nil {
 		return err

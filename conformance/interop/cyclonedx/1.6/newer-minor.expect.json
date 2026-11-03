@@ -1,0 +1,61 @@
+{
+  "report": {
+    "version": "2.0",
+    "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+    "metadata": {
+      "id": "0192f0a0-0000-7000-8000-000000000001",
+      "generated_at": "2026-10-05T12:00:00Z",
+      "channel": "manual",
+      "properties": {
+        "bom_serial_number": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b80",
+        "bom_version": 1,
+        "cyclonedx_spec_version": "1.7"
+      }
+    },
+    "tool": {
+      "name": "cyclonedx",
+      "techniques": [
+        "sca"
+      ]
+    },
+    "assets": [
+      {
+        "id": "unclassified-example-app@2.4.0",
+        "type": "unclassified",
+        "value": "example-app@2.4.0",
+        "name": "example-app",
+        "properties": {
+          "component_type": "application",
+          "version": "2.4.0"
+        }
+      }
+    ],
+    "dependencies": [
+      {
+        "id": "pkg:npm/lodash@4.17.20",
+        "name": "lodash",
+        "version": "4.17.20",
+        "type": "library",
+        "purl": "pkg:npm/lodash@4.17.20",
+        "source_id": "pkg:npm/lodash@4.17.20",
+        "relationship": "direct",
+        "asset_ref": "unclassified-example-app@2.4.0"
+      }
+    ],
+    "extensions": {
+      "org.ctis.interop.cyclonedx": {
+        "unmapped": {
+          "/citations": [
+            {
+              "attributedTo": "scanner",
+              "bom-ref": "cite-1",
+              "note": "a member CycloneDX 1.7 added",
+              "timestamp": "2026-10-01T08:00:00Z"
+            }
+          ]
+        },
+        "version": "1.7"
+      }
+    }
+  }
+}

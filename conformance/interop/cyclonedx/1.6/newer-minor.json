@@ -1,0 +1,10 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b80",
+  "version": 1,
+  "metadata": {"component": {"bom-ref": "app", "type": "application", "name": "example-app", "version": "2.4.0"}},
+  "components": [{"bom-ref": "pkg:npm/lodash@4.17.20", "type": "library", "name": "lodash", "version": "4.17.20", "purl": "pkg:npm/lodash@4.17.20"}],
+  "dependencies": [{"ref": "app", "dependsOn": ["pkg:npm/lodash@4.17.20"]}],
+  "citations": [{"bom-ref": "cite-1", "timestamp": "2026-10-01T08:00:00Z", "attributedTo": "scanner", "note": "a member CycloneDX 1.7 added"}]
+}

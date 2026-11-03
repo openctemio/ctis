@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/openctemio/ctis/v2"
 	"github.com/openctemio/ctis/v2/importer"
 	"github.com/openctemio/ctis/v2/internal/interoptest"
 )
@@ -39,5 +40,17 @@ func TestRegistered(t *testing.T) {
 	}
 	if got := Versions(); len(got) != 1 || got[0] != "2.1.0" {
 		t.Fatalf("Versions() = %v", got)
+	}
+}
+
+// TestConformanceVectors runs conformance/interop/sarif/<version>: the
+// upstream samples, their CTIS golden files, the round trips with their
+// accepted losses and the passthrough.
+func TestConformanceVectors(t *testing.T) {
+	for _, v := range Versions() {
+		t.Run(v, func(t *testing.T) {
+			interoptest.ImportVectors(t, "../../conformance/interop/sarif/"+v, importer.FormatSARIF, v, Namespace,
+				func(r *ctis.Report) ([]byte, error) { return Export(r, nil) })
+		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/openctemio/ctis/v2"
 	"github.com/openctemio/ctis/v2/importer"
 	"github.com/openctemio/ctis/v2/internal/interoptest"
 )
@@ -39,5 +40,15 @@ func TestRegistered(t *testing.T) {
 	}
 	if got := Versions(); len(got) != 2 || got[0] != "1.5" || got[1] != "1.6" {
 		t.Fatalf("Versions() = %v", got)
+	}
+}
+
+// TestConformanceVectors runs conformance/interop/cyclonedx/<version>: the upstream
+// samples, their CTIS golden files and the passthrough.
+func TestConformanceVectors(t *testing.T) {
+	for _, v := range Versions() {
+		t.Run(v, func(t *testing.T) {
+			interoptest.ImportVectors(t, "../../conformance/interop/cyclonedx/"+v, importer.FormatCycloneDX, v, Namespace, func(r *ctis.Report) ([]byte, error) { return Export(r, nil) })
+		})
 	}
 }

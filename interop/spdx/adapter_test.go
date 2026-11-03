@@ -34,3 +34,13 @@ func TestRegistered(t *testing.T) {
 		t.Fatalf("Versions() = %v", got)
 	}
 }
+
+// TestConformanceVectors runs conformance/interop/spdx/<version>: the upstream
+// samples, their CTIS golden files and the passthrough.
+func TestConformanceVectors(t *testing.T) {
+	for _, v := range Versions() {
+		t.Run(v, func(t *testing.T) {
+			interoptest.ImportVectors(t, "../../conformance/interop/spdx/"+v, importer.FormatSPDX, v, Namespace, nil)
+		})
+	}
+}

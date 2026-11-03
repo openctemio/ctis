@@ -1,0 +1,8 @@
+{
+  "format": "ocsf",
+  "version": "1.3.0",
+  "vectors": [
+    {"name": "vulnerability-sca", "input": "vulnerability-sca.ctis.json", "expect": "vulnerability-sca.ocsf.json"},
+    {"name": "compliance", "input": "compliance.ctis.json", "expect": "compliance.ocsf.json"}
+  ]
+}

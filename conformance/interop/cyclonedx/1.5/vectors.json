@@ -1,0 +1,22 @@
+{
+  "format": "cyclonedx",
+  "version": "1.5",
+  "vectors": [
+    {
+      "name": "vdr",
+      "input": "vdr.cdx.json",
+      "expect": "vdr.expect.json",
+      "roundtrip": true,
+      "losses": [
+        {
+          "member": "metadata.id",
+          "reason": "a converted document is a new document with its own UUIDv7"
+        },
+        {
+          "member": "metadata.properties.cyclonedx_spec_version",
+          "reason": "the exporter writes CycloneDX 1.6, the latest version this adapter writes; 1.6 reads every 1.5 member"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "report": {
+    "version": "2.0",
+    "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+    "metadata": {
+      "id": "0192f0a0-0000-7000-8000-000000000001",
+      "generated_at": "2026-10-05T12:00:00Z",
+      "channel": "manual"
+    },
+    "tool": {
+      "name": "examplescan",
+      "version": "3.4.1",
+      "info_url": "https://scanner.example/docs"
+    },
+    "assets": [
+      {
+        "id": "unclassified-examplescan-import",
+        "type": "unclassified",
+        "value": "examplescan-import",
+        "name": "examplescan-import"
+      }
+    ],
+    "rules": [
+      {
+        "id": "rule-1",
+        "rule_id": "EX-SQLI",
+        "name": "SqlInjection",
+        "short_description": "Request data reaches a SQL query.",
+        "full_description": "A query string is built from request data without parameters.",
+        "help": "Use parameterized queries.",
+        "help_uri": "https://scanner.example/rules/EX-SQLI",
+        "default_severity": "high",
+        "tags": [
+          "security",
+          "CWE-89"
+        ],
+        "cwe_ids": [
+          "CWE-89"
+        ]
+      }
+    ],
+    "findings": [
+      {
+        "id": "finding-1",
+        "type": "vulnerability",
+        "title": "User input flows into cursor.execute",
+        "description": "Request data reaches a SQL query.",
+        "severity": "high",
+        "confidence": 85,
+        "rule_id": "EX-SQLI",
+        "rule_name": "SqlInjection",
+        "rule_ref": "rule-1",
+        "asset_ref": "unclassified-examplescan-import",
+        "location": {
+          "path": "app/views.py",
+          "start_line": 42,
+          "end_line": 42,
+          "start_column": 5
+        },
+        "vulnerability": {
+          "cwe_ids": [
+            "CWE-89"
+          ]
+        },
+        "references": [
+          "https://scanner.example/rules/EX-SQLI"
+        ],
+        "tags": [
+          "security",
+          "CWE-89"
+        ],
+        "partial_fingerprints": {
+          "primaryLocationLineHash": "4f2a9c11:1"
+        },
+        "correlation_id": "5b9b2c1e-6a3d-4c1f-9b7e-2d1c0a9f8e71",
+        "baseline_state": "new",
+        "kind": "fail",
+        "extensions": {
+          "org.ctis.interop.sarif": {
+            "unmapped": {
+              "/fixes": [
+                {
+                  "artifactChanges": [
+                    {
+                      "artifactLocation": {
+                        "uri": "app/views.py"
+                      },
+                      "replacements": [
+                        {
+                          "deletedRegion": {
+                            "startLine": 42
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "description": {
+                    "text": "Use cursor.execute(sql, params)"
+                  }
+                }
+              ],
+              "/occurrenceCount": 3,
+              "/rank": 87.5
+            },
+            "version": "2.1.0"
+          }
+        }
+      }
+    ],
+    "extensions": {
+      "org.ctis.interop.sarif": {
+        "unmapped": {
+          "/runs/0/defaultSourceLanguage": "python",
+          "/runs/0/language": "en-US",
+          "/runs/0/tool/driver/dottedQuadFileVersion": "3.4.1.0"
+        },
+        "version": "2.1.0"
+      }
+    }
+  }
+}

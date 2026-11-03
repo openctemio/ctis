@@ -1,0 +1,34 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {"category": "vendor", "name": "Example Vendor", "namespace": "https://vendor.example"},
+    "title": "Example VEX for example-app",
+    "tracking": {
+      "current_release_date": "2026-10-01T08:00:00Z",
+      "id": "EXV-2026-001",
+      "initial_release_date": "2026-10-01T08:00:00Z",
+      "revision_history": [{"date": "2026-10-01T08:00:00Z", "number": "1", "summary": "Initial."}],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {"category": "vendor", "name": "Example Vendor", "branches": [
+        {"category": "product_name", "name": "example-app", "branches": [
+          {"category": "product_version", "name": "2.4.0", "product": {"name": "example-app 2.4.0", "product_id": "EXAPP-2.4.0", "product_identification_helper": {"purl": "pkg:npm/example-app@2.4.0"}}}
+        ]}
+      ]}
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2021-23337",
+      "notes": [{"category": "description", "text": "Command injection in lodash template."}],
+      "product_status": {"known_not_affected": ["EXAPP-2.4.0"]},
+      "flags": [{"label": "vulnerable_code_not_in_execute_path", "product_ids": ["EXAPP-2.4.0"]}],
+      "threats": [{"category": "impact", "details": "The template function is never called.", "product_ids": ["EXAPP-2.4.0"]}]
+    }
+  ]
+}

@@ -339,7 +339,14 @@ func (rd *recordData) setValues(fields []int, raw json.RawMessage) {
 
 // keep scrubs and stores one member.
 func (p *Passthrough) keep(u *Unmapped, ptr, name string, raw []byte) {
-	if sensitiveName.MatchString(name) || len(raw) > p.lim.MaxBytes || len(u.Entries) >= p.lim.MaxEntries {
+	// A member the scrub rules drop is left out silently (it is never
+	// kept, whatever the limits); a member over a limit marks the object
+	// truncated.
+	if sensitiveName.MatchString(name) {
+		p.Dropped++
+		return
+	}
+	if len(raw) > p.lim.MaxBytes || len(u.Entries) >= p.lim.MaxEntries {
 		p.Dropped++
 		u.Truncated = true
 		return
@@ -347,7 +354,9 @@ func (p *Passthrough) keep(u *Unmapped, ptr, name string, raw []byte) {
 	v, ok := scrubRaw(raw, name, p.lim.MaxDepth, nil)
 	if !ok {
 		p.Dropped++
-		u.Truncated = true
+		if tooDeepRaw(raw, p.lim.MaxDepth) {
+			u.Truncated = true
+		}
 		return
 	}
 	size := len(ptr) + len(v) + 6
@@ -650,4 +659,12 @@ func PointerPath(ptr string) (string, bool) {
 		b.WriteString(PathKey(t))
 	}
 	return b.String(), true
+}
+
+func tooDeepRaw(raw []byte, maxDepth int) bool {
+	var v any
+	if json.Unmarshal(raw, &v) != nil {
+		return false
+	}
+	return tooDeep(v, 0, maxDepth)
 }
