@@ -111,6 +111,17 @@
         "platform"
       ],
       "description": "On a rule: who authored it in OpenCTEM, a tenant (its own rule) or the platform."
+    },
+    "ignore_file_paths": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500,
+        "pattern": "^[^\\u0000-\\u001f]+$"
+      },
+      "description": "On metadata from a CI scan: the path patterns of the repository's scanner ignore file (plain relative patterns, never opened). OpenCTEM turns them into pending suppression requests on verified default-branch runs; they never suppress anything by themselves."
     }
   }
 }
