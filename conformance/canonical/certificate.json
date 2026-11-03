@@ -1,0 +1,14 @@
+{
+  "function": "CanonicalCertificateFingerprint",
+  "description": "Certificates: SHA-256 of the DER, 64 lowercase hex digits.",
+  "vectors": [
+    {
+      "input": "AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB",
+      "output": "abababababababababababababababababababababababababababababababab"
+    },
+    {
+      "input": "ababababababababababababababababababababababababababababababab",
+      "error": true
+    }
+  ]
+}

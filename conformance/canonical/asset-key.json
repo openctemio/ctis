@@ -1,0 +1,41 @@
+{
+  "function": "AssetKey",
+  "description": "uuidv5(AssetKeyNamespace 9678743b-b91d-59fa-b168-ed192fe9eed3, type + 0x1F + canonical value).",
+  "vectors": [
+    {
+      "input": {
+        "type": "domain",
+        "value": "example.com"
+      },
+      "output": "d4bd8947-822b-5ddc-8438-942b535944d9"
+    },
+    {
+      "input": {
+        "type": "ip_address",
+        "value": "192.0.2.1"
+      },
+      "output": "7a201702-acdd-500a-a085-b3c156441cfb"
+    },
+    {
+      "input": {
+        "type": "repository",
+        "value": "github.com/example/shop"
+      },
+      "output": "f68170bf-92d2-5300-8b98-7b50a7b0cf6b"
+    },
+    {
+      "input": {
+        "type": "package",
+        "value": "pkg:npm/left-pad"
+      },
+      "output": "b64518f6-0a0f-57d6-a509-41858a22d33b"
+    },
+    {
+      "input": {
+        "type": "container_image",
+        "value": "docker.io/library/nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "output": "779020a0-0af6-58cb-a8c2-a5b904f64da2"
+    }
+  ]
+}

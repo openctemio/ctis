@@ -1,0 +1,63 @@
+{
+  "function": "CanonicalDomain",
+  "description": "Domain names: trimmed, lowercase, no trailing dot, non-ASCII labels as Punycode A-labels (IDNA-lite: Unicode lowercase and ideographic full stops only; no UTS 46 mapping, no NFC normalisation).",
+  "vectors": [
+    {
+      "input": "Example.COM.",
+      "output": "example.com"
+    },
+    {
+      "input": "  www.example.com  ",
+      "output": "www.example.com"
+    },
+    {
+      "input": "_dmarc.example.com",
+      "output": "_dmarc.example.com"
+    },
+    {
+      "input": "bücher.example",
+      "output": "xn--bcher-kva.example"
+    },
+    {
+      "input": "BÜCHER.example",
+      "output": "xn--bcher-kva.example",
+      "note": "Unicode lowercase before encoding"
+    },
+    {
+      "input": "xn--bcher-kva.example",
+      "output": "xn--bcher-kva.example",
+      "note": "an A-label passes unchanged"
+    },
+    {
+      "input": "日本語。jp",
+      "output": "xn--wgv71a119e.jp",
+      "note": "ideographic full stop is a dot"
+    },
+    {
+      "input": "пример.рф",
+      "output": "xn--e1afmkfd.xn--p1ai"
+    },
+    {
+      "input": "*.example.com",
+      "error": true,
+      "note": "a wildcard is a certificate attribute, not an asset"
+    },
+    {
+      "input": "a..example.com",
+      "error": true
+    },
+    {
+      "input": "",
+      "error": true
+    },
+    {
+      "input": "exa mple.com",
+      "error": true
+    },
+    {
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.example",
+      "error": true,
+      "note": "label longer than 63 bytes"
+    }
+  ]
+}

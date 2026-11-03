@@ -1,0 +1,37 @@
+{
+  "function": "CanonicalIP",
+  "description": "IP addresses: IPv4 without leading zeros, IPv6 per RFC 5952, IPv4-mapped IPv6 as IPv4, no zone.",
+  "vectors": [
+    {
+      "input": "192.0.2.1",
+      "output": "192.0.2.1"
+    },
+    {
+      "input": "2001:DB8:0:0:0:0:0:1",
+      "output": "2001:db8::1"
+    },
+    {
+      "input": "2001:db8:0:0:1:0:0:1",
+      "output": "2001:db8::1:0:0:1",
+      "note": "the first longest zero run is compressed"
+    },
+    {
+      "input": "::ffff:192.0.2.1",
+      "output": "192.0.2.1"
+    },
+    {
+      "input": "fe80::1%eth0",
+      "output": "fe80::1",
+      "note": "the zone is dropped"
+    },
+    {
+      "input": "192.0.2.010",
+      "error": true,
+      "note": "leading zeros are ambiguous (octal)"
+    },
+    {
+      "input": "example.com",
+      "error": true
+    }
+  ]
+}

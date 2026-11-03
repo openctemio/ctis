@@ -1,0 +1,47 @@
+{
+  "function": "CanonicalService",
+  "description": "Services: <canonical host>:<port>/<transport>, an IPv6 host in brackets.",
+  "vectors": [
+    {
+      "input": {
+        "host": "Example.com",
+        "port": 443,
+        "transport": "TCP"
+      },
+      "output": "example.com:443/tcp"
+    },
+    {
+      "input": {
+        "host": "2001:db8::1",
+        "port": 53,
+        "transport": "udp"
+      },
+      "output": "[2001:db8::1]:53/udp"
+    },
+    {
+      "input": {
+        "host": "::ffff:192.0.2.1",
+        "port": 22,
+        "transport": "tcp"
+      },
+      "output": "192.0.2.1:22/tcp"
+    },
+    {
+      "input": {
+        "host": "example.com",
+        "port": 0,
+        "transport": "tcp"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "host": "example.com",
+        "port": 80,
+        "transport": "http"
+      },
+      "error": true,
+      "note": "http is an application protocol, not a transport"
+    }
+  ]
+}

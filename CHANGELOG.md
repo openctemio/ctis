@@ -27,6 +27,7 @@ Every member is optional, so a report without them is unchanged. `SchemaVersion`
 - `vulnerability.capec_ids` and `vulnerability.threat_signals[]` (`ctis.ThreatSignal`, with `due_on`).
 - Schema annotation `"x-ctis-pii": true` on personal-data members (`author`, `author_email`, `suppression.suppressed_by`, `compliance.regulatory_owner`, `owners[].ref`, `validation.validator`).
 - Example `examples/ctem-coverage.json` and invalid examples for a malformed extension namespace, a date-time `due_on` and an unknown target class.
+- Canonical forms and asset keys (spec section 5.3): `CanonicalDomain` (IDNA-lite with a Punycode encoder), `CanonicalIP`, `CanonicalCIDR`, `CanonicalService`, `CanonicalOrigin`, `CanonicalURL`, `CanonicalPurl`, `CanonicalCPE`, `CanonicalARN`, `CanonicalAzureResourceID`, `CanonicalGCPResourceName`, `CanonicalImage`, `CanonicalCertificateFingerprint`, `AssetKey` and `AssetKeyNamespace`; vectors in `conformance/canonical`.
 
 ### Changed: open vocabularies and naming (ships in 2.0)
 

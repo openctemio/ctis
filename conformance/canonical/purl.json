@@ -1,0 +1,57 @@
+{
+  "function": "CanonicalPurl",
+  "description": "Package URLs: versionless identity in canonical form, version separate; qualifiers and subpath are not identity.",
+  "vectors": [
+    {
+      "input": "pkg:npm/%40Angular/Core@12.0.0",
+      "output": {
+        "identity": "pkg:npm/%40angular/core",
+        "version": "12.0.0"
+      }
+    },
+    {
+      "input": "pkg:npm/@angular/core",
+      "output": {
+        "identity": "pkg:npm/%40angular/core",
+        "version": ""
+      }
+    },
+    {
+      "input": "pkg:PyPI/Django_Rest@3.1?os=linux#sub",
+      "output": {
+        "identity": "pkg:pypi/django-rest",
+        "version": "3.1"
+      }
+    },
+    {
+      "input": "pkg:maven/org.Apache/Commons-Lang3@3.12.0",
+      "output": {
+        "identity": "pkg:maven/org.Apache/Commons-Lang3",
+        "version": "3.12.0"
+      },
+      "note": "maven names keep their case"
+    },
+    {
+      "input": "pkg:golang/github.com/Example/Mod@v1.2.3",
+      "output": {
+        "identity": "pkg:golang/github.com/Example/Mod",
+        "version": "v1.2.3"
+      }
+    },
+    {
+      "input": "pkg:github/Example/Repo@main",
+      "output": {
+        "identity": "pkg:github/example/repo",
+        "version": "main"
+      }
+    },
+    {
+      "input": "npm/left-pad",
+      "error": true
+    },
+    {
+      "input": "pkg:npm",
+      "error": true
+    }
+  ]
+}
