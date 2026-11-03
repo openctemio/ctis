@@ -59,12 +59,31 @@ func NormalizeAssetName(assetType AssetType, name string) string {
 		return name
 
 	case AssetTypeHTTPService, AssetTypeDiscoveredURL:
-		// Lightweight URL normalize: lowercase host
-		name = strings.ToLower(name)
-		name = strings.TrimRight(name, "/")
-		return name
+		// Scheme and host are case-insensitive; the path and query are not
+		// (/Admin and /admin can be different resources), so keep their case.
+		return normalizeURLName(name)
 
 	default:
 		return name
 	}
+}
+
+// normalizeURLName lower-cases the scheme and the host of a URL-like value
+// and keeps everything after the authority (path, query, fragment) as given.
+// User info keeps its case. A value without a scheme is read as host[/path].
+// A trailing slash is dropped.
+func normalizeURLName(name string) string {
+	scheme, rest := "", name
+	if i := strings.Index(name, "://"); i > 0 {
+		scheme, rest = strings.ToLower(name[:i])+"://", name[i+3:]
+	}
+	authority, tail := rest, ""
+	if i := strings.IndexAny(rest, "/?#"); i >= 0 {
+		authority, tail = rest[:i], rest[i:]
+	}
+	userinfo := ""
+	if i := strings.LastIndex(authority, "@"); i >= 0 {
+		userinfo, authority = authority[:i+1], authority[i+1:]
+	}
+	return strings.TrimRight(scheme+userinfo+strings.ToLower(authority)+tail, "/")
 }

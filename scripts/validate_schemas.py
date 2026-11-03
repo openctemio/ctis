@@ -5,7 +5,11 @@
   2. every $ref resolves, through a registry built from the files' $ids;
   3. examples/*.json and the converter golden files validate against
      report.json;
-  4. examples/invalid/*.json do not.
+  4. examples/invalid/*.json do not;
+  5. conformance/v1/documents/manifest.json: every document it lists as valid
+     validates, and every one it lists as invalid is rejected, except those
+     marked "schema_level": false (only semantic validation refuses them; the
+     Go conformance test covers those).
 
 The Go tests use their own small validator (the module has no dependencies);
 this script cross-checks it against python-jsonschema.
@@ -104,11 +108,41 @@ def main():
         else:
             print(f"rejected {rel}")
 
+    failures += check_manifest(validator)
+
     if not valid:
         print("no examples found")
         failures += 1
     print(f"{len(schemas)} schemas, {len(valid)} valid documents, {failures} failure(s)")
     return 1 if failures else 0
+
+
+def check_manifest(validator):
+    base = os.path.join(ROOT, "conformance", "v1", "documents")
+    manifest = load(os.path.join(base, "manifest.json"))
+    failures = 0
+    for entry in manifest["documents"]:
+        path = os.path.normpath(os.path.join(base, entry["file"]))
+        rel = os.path.relpath(path, ROOT)
+        valid = entry["result"] == "valid"
+        if not valid and entry["result"] != "invalid":
+            print(f"MANIFEST {rel}: result must be valid or invalid")
+            failures += 1
+            continue
+        if not valid and entry.get("schema_level") is False:
+            print(f"skipped  {rel} (semantic-only invalid)")
+            continue
+        try:
+            ok = validator.is_valid(load(path))
+        except ValueError:
+            # Not JSON at all: invalid for every schema.
+            ok = False
+        if ok != valid:
+            failures += 1
+            print(f"MANIFEST {rel}: schema says {'valid' if ok else 'invalid'}, manifest says {entry['result']}")
+        else:
+            print(f"manifest {rel} ({entry['result']})")
+    return failures
 
 
 # Invalid examples the schema itself cannot reject (none today).
