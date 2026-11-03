@@ -19,6 +19,14 @@ Patch release (1.6.7, proposed): bug fixes in the receiver-side keys and normali
 - New `conformance/v1/` directory (a `v2/` sits next to it later): canonical forms of asset values, `LocationKey`, `PreferredVulnerabilityID` and v1 fingerprint vectors as JSON, plus a document manifest (the examples, the invalid examples and extra cases) with the expected result of each. `go test ./...` runs them, `scripts/validate_schemas.py` checks the schema-level ones against `schemas/v1`, and `conformance/README.md` says how another implementation runs them.
 - New command `cmd/ctis` (standard library only): `ctis validate [--json] [--max-size N] <file|->...`, `ctis canon`, `ctis conformance [dir]`, `ctis version`. Exit status 0 valid, 1 invalid, 2 usage or I/O error. Inputs are size-bounded and nothing is fetched.
 - Releases attach `ctis` binaries for linux, darwin and windows on amd64 and arm64 with a `SHA256SUMS` file; CI builds the tool and runs it over `examples/`.
+||||||| 2c49645
+
+### Changed: governance, licences and contributions
+
+- Contributions are made under the Developer Certificate of Origin (`git commit -s`), checked by the `dco` workflow; the contributor license agreement no longer applies to this repository.
+- The specification text and other prose (`docs/`, `proposals/`) are licensed under CC BY 4.0 (`LICENSE-docs`); schemas, examples, conformance vectors and code stay under Apache-2.0.
+- New: `GOVERNANCE.md` (scope, roles, decisions, versioning and support), `PATENTS.md` (patent commitment for implementers), `MAINTAINERS.md`, and the proposal process in `proposals/`.
+- Removed two stray files from the repository root.
 
 ## [1.6.6] - 2026-10-31
 

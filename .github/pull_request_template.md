@@ -1,8 +1,8 @@
 ## Summary
 
-<!-- What does this change and why? -->
+<!-- What does this change and why? A change to the format links its proposal (proposals/README.md). -->
 
 ## Checklist
 
 - [ ] Tests or a manual check show the change works.
-- [ ] Every commit author has accepted the OpenCTEM [Contributor License Agreement](https://docs.openctem.io/legal/cla/) (the `cla` check tells you how), or is a maintainer.
+- [ ] Every commit is signed off (`git commit -s`, Developer Certificate of Origin; see CONTRIBUTING.md).
