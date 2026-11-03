@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "examplescan",
+          "version": "3.4.1",
+          "informationUri": "https://scanner.example/docs",
+          "dottedQuadFileVersion": "3.4.1.0",
+          "rules": [
+            {
+              "id": "EX-SQLI",
+              "name": "SqlInjection",
+              "shortDescription": {"text": "Request data reaches a SQL query."},
+              "fullDescription": {"text": "A query string is built from request data without parameters."},
+              "help": {"text": "Use parameterized queries."},
+              "helpUri": "https://scanner.example/rules/EX-SQLI",
+              "defaultConfiguration": {"level": "error"},
+              "properties": {"tags": ["security", "CWE-89"], "precision": "high"}
+            }
+          ]
+        }
+      },
+      "defaultSourceLanguage": "python",
+      "language": "en-US",
+      "invocations": [{"executionSuccessful": true, "commandLine": "examplescan --token ghp_vectorTokenNeverKept0123456789 ."}],
+      "results": [
+        {
+          "ruleId": "EX-SQLI",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {"text": "User input flows into cursor.execute"},
+          "locations": [
+            {"physicalLocation": {"artifactLocation": {"uri": "app/views.py"}, "region": {"startLine": 42, "endLine": 42, "startColumn": 5}}}
+          ],
+          "partialFingerprints": {"primaryLocationLineHash": "4f2a9c11:1"},
+          "correlationGuid": "5b9b2c1e-6a3d-4c1f-9b7e-2d1c0a9f8e71",
+          "baselineState": "new",
+          "kind": "fail",
+          "rank": 87.5,
+          "occurrenceCount": 3,
+          "hostedViewerUri": "javascript:alert(1)",
+          "fixes": [{"description": {"text": "Use cursor.execute(sql, params)"}, "artifactChanges": [{"artifactLocation": {"uri": "app/views.py"}, "replacements": [{"deletedRegion": {"startLine": 42}}]}]}]
+        }
+      ]
+    }
+  ]
+}

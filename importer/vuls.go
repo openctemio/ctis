@@ -122,7 +122,7 @@ func vulsCVEs(raw json.RawMessage) ([]string, []vulsCVE, error) {
 	return keys, out, nil
 }
 
-func parseVuls(b *builder, r io.Reader) error {
+func parseVuls(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatVuls, b.lim)
 	if err != nil {
 		return err

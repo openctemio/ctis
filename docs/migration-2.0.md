@@ -201,6 +201,25 @@ The 2.0 asset types: `domain_name`, `ip_address`, `ip_range`, `certificate`,
 | `audit_reports[].date` | `published_at` |
 | auditor, detection tool, marketplace, wallet provider, DEX, bounty platform, oracle and flash-loan provider enums | open tokens |
 
+## Standard formats: the interoperability adapters
+
+The standard-format code left the core module. Each format is its own module with declarative mapping files ([interop.md](interop.md)); import the adapter you use. `importer.Parse` reads an adapter's formats once the adapter is imported (`import _ "github.com/openctemio/ctis/v2/interop/<format>"`), and otherwise fails with `ErrUnknownFormat` naming the module.
+
+| Old | New |
+|---|---|
+| `ctis.FromSARIF(data, opts)` | `sarif.Import(data, opts)` (`github.com/openctemio/ctis/v2/interop/sarif`); it also fills `rules[]` and `finding.rule_ref` and keeps unmapped members under `extensions["org.ctis.interop.sarif"]` |
+| `ctis.ConvertOptions`, `ctis.DefaultConvertOptions()` | `sarif.Options`, `sarif.DefaultOptions()` (adds `NoPassthrough`) |
+| `ctis.SARIFLog`, `SARIFRun`, `SARIFResult`, `SARIFRule`, ... (`SARIF*` types) | `sarif.Log`, `sarif.Run`, `sarif.Result`, `sarif.Rule`, ... (the prefix dropped) |
+| `ctis.ToSARIF(r)` | `sarif.Export(r, nil)` (`*sarif.ExportOptions`); `rules[]` becomes `run.tool.driver.rules[]` |
+| `ctis.ToCycloneDX(r, opts)`, `ctis.CycloneDXOptions` | `cyclonedx.Export(r, opts)`, `cyclonedx.ExportOptions` (`interop/cyclonedx`) |
+| `ctis.ToOCSF(r, opts)`, `ctis.OCSFOptions`, `ctis.OCSFEvent` (and the other `OCSF*` types), `ctis.OCSFVersion`, `ctis.OCSFClass*`, `ctis.OCSFCategoryFindings`, `ctis.OCSFActivity*` | `ocsf.Events(r, opts)` (or `ocsf.Export` for the JSON array), `ocsf.Options`, `ocsf.Event`, ..., `ocsf.Version`, `ocsf.Class*`, `ocsf.CategoryFindings`, `ocsf.Activity*` (`interop/ocsf`) |
+| `ctis.MaxExportBytes`, `ctis.ErrExportTooLarge` | `MaxBytes`, `ErrTooLarge` of each adapter |
+| `importer` reads CycloneDX, SPDX, CSAF, OpenVEX, SARIF itself | the adapters `interop/cyclonedx`, `interop/spdx`, `interop/csaf`, `interop/openvex`, `interop/sarif` register them (`importer.Register`); each also has `Import(data, *importer.Options)` |
+| `importer.Spec` from `importer/spec_<format>.go` for those formats | generated from the adapter's `interop/<format>/<version>/import.json` (`importer.SpecFromMapping`) |
+| `ctis.MaskSecretMatch` in `sarif.go` | unchanged name, in the core (`secret_redact.go`); new `ctis.RedactSecretFindingWith`, `ctis.RedactedSecret` |
+| SARIF web request/response to evidence (unexported) | `ctis.HTTPExchange(req, resp *ctis.HTTPMessageParts)` for any converter |
+| `cmd/ctis` in the core module | module `github.com/openctemio/ctis/v2/cmd/ctis`; new `ctis import` and `ctis export --format sarif|cyclonedx|ocsf` |
+
 ## Fingerprints
 
 Producers and importers use recipe v2 (`ctis-fp/2`: `fingerprint.V2Auto`,

@@ -170,6 +170,13 @@ func flowLine(s string, limit int) string {
 	return flowText(strings.Join(strings.Fields(s), " "), limit)
 }
 
+// FlowPath cleans a path or file URI to a POSIX path and says whether it
+// is absolute, the way NormalizeDataFlow reads the paths of a trace. It
+// returns "" for a value that is no file path: another URI scheme, an empty
+// value, a path with control characters. Converters use it to read the base
+// directories a producer names for its relative paths.
+func FlowPath(p string) (string, bool) { return flowPath(p) }
+
 // flowPath cleans a path or file URI to a POSIX path and says whether it is
 // absolute. It returns "" for a value that is no file path: another URI
 // scheme, an empty value, a path with control characters.

@@ -4,65 +4,25 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/internal/goldencheck"
 )
 
 // Evidence items carry the HTTP exchange as captured: every credential in
 // them is inside a marked span, and none is anywhere else in the report.
 func TestEvidenceSecretsMarked(t *testing.T) {
 	cases := map[string][]string{
-		"zap/report.golden.json":             {"fake-session-cookie-value", "fake-bearer-token"},
-		"zap/api.golden.json":                {"fake-xml-session"},
-		"sarif/web.sarif.golden.json":        {"EXAMPLEKEY0123456789", "EXAMPLEBEARER0123456789", "EXAMPLEPASS0123", "EXAMPLESESSION0123"},
-		"nuclei/all-fields.golden.json":      {"session=abc"},
-		"nuclei/dast.golden.json":            {"s3cr3t-session"},
-		"sarif/all-fields.sarif.golden.json": nil,
+		"zap/report.golden.json":        {"fake-session-cookie-value", "fake-bearer-token"},
+		"zap/api.golden.json":           {"fake-xml-session"},
+		"nuclei/all-fields.golden.json": {"session=abc"},
+		"nuclei/dast.golden.json":       {"s3cr3t-session"},
 	}
 	for file, secrets := range cases {
-		b, err := os.ReadFile(filepath.Join(fixtureRoot, file))
-		if err != nil {
-			t.Fatal(err)
-		}
-		var doc struct {
-			Findings []map[string]json.RawMessage `json:"findings"`
-		}
-		if err := json.Unmarshal(b, &doc); err != nil {
-			t.Fatal(err)
-		}
-		n := 0
-		rest := b
-		for _, fd := range doc.Findings {
-			raw, ok := fd["evidence_items"]
-			if !ok {
-				continue
-			}
-			var items []ctis.EvidenceItem
-			if err := json.Unmarshal(raw, &items); err != nil {
-				t.Fatalf("%s: %v", file, err)
-			}
-			for i := range items {
-				n++
-				for _, s := range secrets {
-					if ptrs := unmarkedIn(&items[i], s); len(ptrs) > 0 {
-						t.Errorf("%s: %q unmarked at %v", file, s, ptrs)
-					}
-				}
-			}
-			rest = bytes.Replace(rest, raw, nil, 1)
-		}
-		if len(secrets) > 0 && n == 0 {
-			t.Errorf("%s: no evidence items", file)
-		}
-		for _, s := range secrets {
-			if bytes.Contains(rest, []byte(s)) {
-				t.Errorf("%s: %q outside evidence items", file, s)
-			}
-		}
+		goldencheck.EvidenceSecretsMarked(t, filepath.Join(fixtureRoot, file), secrets)
 	}
 }
 

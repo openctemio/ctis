@@ -138,7 +138,7 @@ func brDisc(r *brRecord) *brDisclosureIn {
 	return r.Disclosure
 }
 
-func parseBountyReport(b *builder, r io.Reader) error {
+func parseBountyReport(b *Builder, r io.Reader) error {
 	intake := defaultBountyIntake
 	if o := strings.ToLower(strings.TrimSpace(b.opts.BountyIntake)); o != "" {
 		if !validIntake(o) {
@@ -164,7 +164,7 @@ func parseBountyReport(b *builder, r io.Reader) error {
 	return b.brCSV(data, intake, seen)
 }
 
-func (b *builder) brJSON(data []byte, intake string, seen map[string]bool) error {
+func (b *Builder) brJSON(data []byte, intake string, seen map[string]bool) error {
 	doc, err := scanJSON(data, FormatBountyReport, b.lim, b.obs, brRecords)
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func (b *builder) brJSON(data []byte, intake string, seen map[string]bool) error
 	return nil
 }
 
-func (b *builder) brCSV(data []byte, intake string, seen map[string]bool) error {
+func (b *Builder) brCSV(data []byte, intake string, seen map[string]bool) error {
 	if !utf8.Valid(data) {
 		return &ParseError{Format: FormatBountyReport, Msg: "input is not valid UTF-8", Err: ErrMalformed}
 	}
@@ -276,7 +276,7 @@ func brCSVError(err error, empty string) error {
 }
 
 // brCount counts a record and bounds how many one input may hold.
-func (b *builder) brCount(i int) error {
+func (b *Builder) brCount(i int) error {
 	b.res.Stats.Records++
 	if i >= b.lim.MaxFindings {
 		return b.tooMany("records", b.lim.MaxFindings)
@@ -388,7 +388,7 @@ func normBountySeverity(s string) (sev ctis.Severity, prop string, ok bool) {
 	return "", "", false
 }
 
-func (b *builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string) Issue, seen map[string]bool) error {
+func (b *Builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string) Issue, seen map[string]bool) error {
 	skip := func(msg string) error {
 		b.issue(at(msg))
 		b.res.Stats.Skipped++

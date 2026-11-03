@@ -1,0 +1,117 @@
+name: Interop upstream watcher
+
+# Watches the official repositories of the standards the interoperability
+# adapters follow (interop/upstreams.json). On a new upstream release it
+# vendors the schema (sha256 recorded), writes a schema diff, copies the
+# latest mapping directory as the starting point, runs the adapter's tests
+# and conformance/interop vectors, and opens a pull request labelled
+# upstream-update for a maintainer to finish the mapping.
+#
+# Security: network access is only in the watch steps, only https to the
+# hosts upstreams.json pins (scripts/interop_watch.py refuses anything else,
+# redirects included); upstream files are parsed as JSON and never executed;
+# the Go build uses no module proxy (GOPROXY=off; every module is stdlib and
+# this repository only); the only secret is GITHUB_TOKEN, scoped below.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      format:
+        description: 'Only this format (empty: every format)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: interop-upstream
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: Watch upstream formats
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27'
+          cache: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          INTEROP_FORMAT: ${{ inputs.format }}
+        run: |
+          if [ -n "$INTEROP_FORMAT" ] && ! [[ "$INTEROP_FORMAT" =~ ^[a-z][a-z0-9-]*$ ]]; then
+            echo "bad format input"; exit 1
+          fi
+          python3 scripts/interop_watch.py plan > plan.jsonl
+          cat plan.jsonl
+
+      - name: Vendor, test and open pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GOPROXY: 'off'
+          GOFLAGS: '-mod=mod'
+        run: |
+          set -euo pipefail
+          git config user.name "ctis upstream watcher"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          gh label create upstream-update --repo "$GITHUB_REPOSITORY" --color 0e8a16 \
+            --description "A new upstream version of a standard format" 2>/dev/null || true
+          base="$(git rev-parse HEAD)"
+          while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            format="$(jq -r .format <<<"$line")"; version="$(jq -r .version <<<"$line")"
+            tag="$(jq -r .tag <<<"$line")"; kind="$(jq -r .kind <<<"$line")"
+            [[ "$format" =~ ^[a-z][a-z0-9-]*$ && "$version" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]] || { echo "skip bad plan line"; continue; }
+            branch="upstream/${format}-${version}"
+            if git ls-remote --exit-code --heads "https://github.com/${GITHUB_REPOSITORY}.git" "$branch" >/dev/null 2>&1; then
+              echo "$branch exists; skip"; continue
+            fi
+            git checkout -q -B "$branch" "$base"
+            python3 scripts/interop_watch.py apply "$format" "$version" "$tag"
+            if [ -z "$(git status --porcelain)" ]; then
+              echo "$format $version: nothing changed"; continue
+            fi
+            # The vectors and golden files of the adapter, against the new
+            # mapping directory; the result goes in the pull request.
+            status="passed"
+            (cd "interop/$format" && go test ./... > "$RUNNER_TEMP/test.log" 2>&1) || status="failed"
+            python3 scripts/check_interop_schemas.py >> "$RUNNER_TEMP/test.log" 2>&1 || status="failed"
+            git add -A
+            git commit -q -s -m "chore(interop): ${format} ${version} upstream schema (${tag})"
+            git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$branch"
+            {
+              echo "Upstream ${format} ${kind} version **${version}** (tag \`${tag}\`)."
+              echo
+              echo "- Vendored schema under \`interop/${format}/schemas/${version}/\` (sha256 in \`interop/upstreams.json\`), diff in \`schema-diff.md\`."
+              if [ "$kind" = new ]; then
+                echo "- \`interop/${format}/${version}/\` is a copy of the latest mapping: review \`detect\`, the members the schema diff adds (until they are listed they are kept as passthrough) and the tables, then add vectors under \`conformance/interop/${format}/${version}/\`."
+              fi
+              echo "- Adapter tests and schema checks: **${status}**."
+              echo
+              echo '```'
+              tail -n 60 "$RUNNER_TEMP/test.log"
+              echo '```'
+            } > body.md
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+              --title "chore(interop): ${format} ${version} upstream schema" \
+              --label upstream-update --body-file body.md
+          done < plan.jsonl

@@ -1,0 +1,36 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-797c-924c-10e888800c76",
+    "generated_at": "2026-10-02T11:00:00Z",
+    "channel": "scanner"
+  },
+  "tool": {
+    "name": "kube-bench",
+    "version": "0.8.0"
+  },
+  "assets": [
+    {
+      "id": "cluster",
+      "type": "kubernetes_cluster",
+      "value": "prod-eu-1"
+    }
+  ],
+  "findings": [
+    {
+      "id": "f-1",
+      "type": "compliance",
+      "title": "Anonymous auth is enabled on the API server",
+      "severity": "medium",
+      "rule_id": "1.2.1",
+      "asset_ref": "cluster",
+      "compliance": {
+        "framework": "cis",
+        "framework_version": "1.9",
+        "control_id": "1.2.1",
+        "control_name": "Ensure that the --anonymous-auth argument is set to false"
+      },
+      "kind": "fail"
+    }
+  ]
+}

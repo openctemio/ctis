@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/openctemio/ctis/v2/interop/engine"
 )
 
 // Spec is the mapping spec of one format: every source field the importer
@@ -19,6 +21,10 @@ type Spec struct {
 	Rules []string
 	// The fields, in document order.
 	Fields []Field
+	// Origin is where the spec is kept and how its document is
+	// regenerated; empty for the importers of this package
+	// (importer/spec_<format>.go).
+	Origin string
 }
 
 // Field is one row of a mapping spec.
@@ -97,6 +103,10 @@ func (s Spec) Coverage() Coverage {
 	return c
 }
 
+// Problems returns the problems of the spec itself: a field with neither or
+// both of Target and Ignored, a duplicate path, an empty path.
+func (s Spec) Problems() []string { return s.check() }
+
 // check returns the problems of the spec itself: a field with neither or
 // both of Target and Ignored, a duplicate path, an empty path.
 func (s Spec) check() []string {
@@ -121,7 +131,11 @@ func (s Spec) Markdown() string {
 	var b strings.Builder
 	c := s.Coverage()
 	fmt.Fprintf(&b, "# %s mapping\n\n", s.Title)
-	fmt.Fprintf(&b, "Generated from `importer/spec_%s.go`; do not edit. Regenerate with `go test ./importer -run TestMappingDocs -update`.\n\n", s.Format)
+	if s.Origin != "" {
+		fmt.Fprintf(&b, "Generated from %s; do not edit.\n\n", s.Origin)
+	} else {
+		fmt.Fprintf(&b, "Generated from `importer/spec_%s.go`; do not edit. Regenerate with `go test ./importer -run TestMappingDocs -update`.\n\n", s.Format)
+	}
 	fmt.Fprintf(&b, "- Format: `%s`\n", s.Format)
 	fmt.Fprintf(&b, "- Source versions: %s\n", s.SourceVersion)
 	fmt.Fprintf(&b, "- Fields: %d mapped, %d ignored on purpose (%.0f%% mapped)\n\n", c.Mapped, c.Ignored, c.Percent())
@@ -173,51 +187,7 @@ func registerSpec(s Spec) Spec {
 	return s
 }
 
-// pathMatch matches a path against a pattern of the Field.Path syntax.
-func pathMatch(pattern, p string) bool {
-	if pattern == p {
-		return true
-	}
-	return segmentsMatch(strings.Split(pattern, "/"), strings.Split(p, "/"))
-}
-
-// segmentsMatch matches path segments; a "**" segment matches zero or more
-// segments, anywhere in the pattern (CSAF product branches nest to any
-// depth).
-func segmentsMatch(pat, segs []string) bool {
-	for len(pat) > 0 {
-		if pat[0] == "**" {
-			for k := 0; k <= len(segs); k++ {
-				if segmentsMatch(pat[1:], segs[k:]) {
-					return true
-				}
-			}
-			return false
-		}
-		if len(segs) == 0 || !wildcard(pat[0], segs[0]) {
-			return false
-		}
-		pat, segs = pat[1:], segs[1:]
-	}
-	return len(segs) == 0
-}
-
-// wildcard matches s against a pattern where "*" is any run of characters.
-func wildcard(pattern, s string) bool {
-	if !strings.Contains(pattern, "*") {
-		return pattern == s
-	}
-	parts := strings.Split(pattern, "*")
-	if !strings.HasPrefix(s, parts[0]) {
-		return false
-	}
-	s = s[len(parts[0]):]
-	for i := 1; i < len(parts)-1; i++ {
-		j := strings.Index(s, parts[i])
-		if j < 0 {
-			return false
-		}
-		s = s[j+len(parts[i]):]
-	}
-	return strings.HasSuffix(s, parts[len(parts)-1])
-}
+// pathMatch matches a path against a pattern of the Field.Path syntax
+// (engine.MatchPath; the interoperability mapping files use the same
+// syntax).
+func pathMatch(pattern, p string) bool { return engine.MatchPath(pattern, p) }

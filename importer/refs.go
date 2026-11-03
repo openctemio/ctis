@@ -1,79 +1,14 @@
 package importer
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/openctemio/ctis/v2"
 )
 
 // Helpers for the CTIS 2.0 members the importers fill: document references,
 // raw-text evidence, threat signals, web URLs.
-
-// docRef builds a document-local reference "<prefix>-<s>" (ctis.IsDocumentRef:
-// never UUID-shaped, at most 255 characters of the reference alphabet). When
-// s does not fit the alphabet or the length, the reference is the prefix and
-// a hash of s, so it is stable and still unique per s.
-func docRef(prefix, s string) string {
-	ref := prefix + "-" + s
-	if ctis.IsDocumentRef(ref) && !strings.HasSuffix(ref, "-") {
-		return ref
-	}
-	h := sha256.Sum256([]byte(s))
-	return prefix + "-h" + hex.EncodeToString(h[:12])
-}
-
-// refOr returns s when it already is a document reference, else a reference
-// derived from it (docRef with the prefix).
-func refOr(prefix, s string) string {
-	if ctis.IsDocumentRef(s) {
-		return s
-	}
-	return docRef(prefix, s)
-}
-
-// webURL returns s when it is an http or https URL, else "".
-func webURL(s string) string {
-	s = strings.TrimSpace(s)
-	if ctis.IsWebURL(s) {
-		return s
-	}
-	return ""
-}
-
-// addWebRefs appends the http(s) URLs among refs (bounded, distinct).
-func addWebRefs(dst []string, refs ...string) []string {
-	for _, r := range refs {
-		if u := webURL(r); u != "" {
-			dst = addRefs(dst, u)
-		}
-	}
-	return dst
-}
-
-// rawTextEvidence adds source text as a raw_text evidence item. The text is
-// bounded; an empty text adds nothing. Callers pass text that holds no
-// credential (ctis.RedactSecretFinding masks what the builder sees).
-func rawTextEvidence(f *ctis.Finding, label, body, protocol string) {
-	body = text(body, capEvidence)
-	if body == "" || len(f.EvidenceItems) >= ctis.MaxEvidenceItems {
-		return
-	}
-	if len(body) > ctis.MaxEvidenceTextBytes {
-		cut := ctis.MaxEvidenceTextBytes - len(truncMarker)
-		for cut > 0 && !utf8.RuneStart(body[cut]) {
-			cut--
-		}
-		body = body[:cut] + truncMarker
-	}
-	f.EvidenceItems = append(f.EvidenceItems, ctis.EvidenceItem{
-		Kind: ctis.EvidenceKindRawText, Version: 1, Label: line(label, ctis.MaxEvidenceLabelLen),
-		Text: body, Protocol: protocol,
-	})
-}
 
 // addSignal records a threat assertion of source on v.
 func addSignal(v *ctis.VulnerabilityDetails, typ ctis.ThreatSignalType, source string, asOf *time.Time) {
@@ -130,7 +65,7 @@ func ensureRemediation(f *ctis.Finding) *ctis.Remediation {
 }
 
 // assetValue returns the canonical value of an asset the builder holds.
-func (b *builder) assetValue(id string) string {
+func (b *Builder) assetValue(id string) string {
 	if i, ok := b.assets[id]; ok {
 		return b.res.Report.Assets[i].Value
 	}
@@ -138,7 +73,7 @@ func (b *builder) assetValue(id string) string {
 }
 
 // relate adds a relationship between two assets of the report, once.
-func (b *builder) relate(typ ctis.RelationshipType, from, to string) {
+func (b *Builder) relate(typ ctis.RelationshipType, from, to string) {
 	if from == "" || to == "" || from == to {
 		return
 	}
@@ -157,7 +92,7 @@ func (b *builder) relate(typ ctis.RelationshipType, from, to string) {
 // hostID (a host, domain name or address) and returns its id, or "" when the
 // pieces make no canonical service value. appProtocol is an IANA service
 // name or empty.
-func (b *builder) service(hostID string, port int, transport ctis.Transport, appProtocol string) string {
+func (b *Builder) service(hostID string, port int, transport ctis.Transport, appProtocol string) string {
 	host := b.assetValue(hostID)
 	if host == "" || port < 1 || port > 65535 || transport == "" {
 		return ""
@@ -175,22 +110,4 @@ func (b *builder) service(hostID string, port int, transport ctis.Transport, app
 	}
 	b.relate(ctis.RelExposes, hostID, id)
 	return id
-}
-
-// tokenOf lowercases the name of an advisory source into an open token
-// (a-z, 0-9, '.', '_', '-'); anything else becomes '-'. It may be empty.
-func tokenOf(s string) string {
-	var b strings.Builder
-	for _, r := range strings.ToLower(strings.TrimSpace(s)) {
-		switch {
-		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' || r == '_' || r == '-':
-			b.WriteRune(r)
-		case b.Len() > 0:
-			b.WriteByte('-')
-		}
-		if b.Len() >= 63 {
-			break
-		}
-	}
-	return strings.Trim(b.String(), "-")
 }

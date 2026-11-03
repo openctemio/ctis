@@ -144,7 +144,7 @@ func (f *flexStr) UnmarshalXMLAttr(a xml.Attr) error {
 	return nil
 }
 
-func parseZAP(b *builder, r io.Reader) error {
+func parseZAP(b *Builder, r io.Reader) error {
 	br := bufio.NewReader(r)
 	for {
 		c, err := br.Peek(1)
@@ -172,7 +172,7 @@ func parseZAP(b *builder, r io.Reader) error {
 
 const zapSiteJ = "/site[]"
 
-func (b *builder) zapJSON(r io.Reader) error {
+func (b *Builder) zapJSON(r io.Reader) error {
 	data, err := readAll(r, FormatZAP, b.lim)
 	if err != nil {
 		return err
@@ -219,7 +219,7 @@ func (b *builder) zapJSON(r io.Reader) error {
 	return nil
 }
 
-func (b *builder) zapXML(r io.Reader) error {
+func (b *Builder) zapXML(r io.Reader) error {
 	xr := newXMLReader(r, FormatZAP, b.lim, nil, b.obs)
 	dec := xml.NewTokenDecoder(xr)
 	sawRoot := false
@@ -268,7 +268,7 @@ func (b *builder) zapXML(r io.Reader) error {
 	return nil
 }
 
-func (b *builder) zapMeta(version, generated string) {
+func (b *Builder) zapMeta(version, generated string) {
 	if v := line(version, 64); v != "" && b.res.Report.Tool != nil {
 		b.res.Report.Tool.Version = v
 	}
@@ -314,7 +314,7 @@ func zapSiteAsset(s *zapSite) (ctis.Asset, string, int, bool) { // asset, scheme
 	return a, scheme, port, true
 }
 
-func (b *builder) zapSite(s *zapSite, lineNo int, ptr string) error {
+func (b *Builder) zapSite(s *zapSite, lineNo int, ptr string) error {
 	asset, scheme, port, ok := zapSiteAsset(s)
 	if !ok {
 		b.issue(Issue{Line: lineNo, Path: ptr, Message: "site without a host: skipped"})
@@ -350,7 +350,7 @@ func (b *builder) zapSite(s *zapSite, lineNo int, ptr string) error {
 	return nil
 }
 
-func (b *builder) zapFinding(a *zapAlert, assetID, scheme string, port, lineNo int, ptr string) (ctis.Finding, bool) {
+func (b *Builder) zapFinding(a *zapAlert, assetID, scheme string, port, lineNo int, ptr string) (ctis.Finding, bool) {
 	title := line(firstNonEmpty(a.Alert.String(), a.Name.String()), capTitle)
 	plugin := line(a.PluginID.String(), capShort)
 	if title == "" || plugin == "" {
@@ -433,7 +433,7 @@ type zapLocation struct {
 // zapLocations splits an alert into one finding per method, URL template
 // and parameter, each with its web location and the evidence of its own
 // instances. An alert without instances stays one finding.
-func (b *builder) zapLocations(f ctis.Finding, instances []zapInstance, lineNo int, ptr string) []ctis.Finding {
+func (b *Builder) zapLocations(f ctis.Finding, instances []zapInstance, lineNo int, ptr string) []ctis.Finding {
 	if len(instances) == 0 {
 		return []ctis.Finding{f}
 	}

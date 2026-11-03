@@ -1,8 +1,12 @@
-// Command ctis checks CTIS documents and runs the conformance vectors. It
-// uses only the standard library, reads only the files it is given (or
-// standard input) and never fetches a URL.
+// Command ctis checks CTIS documents, runs the conformance vectors and
+// converts to and from the standard formats through the interoperability
+// adapters. It uses only the standard library and the modules of this
+// repository, reads only the files it is given (or standard input) and never
+// fetches a URL.
 //
 //	ctis validate [--json] [--max-size BYTES] <file|->...
+//	ctis import [--format F] [--result] [--no-passthrough] <file|->
+//	ctis export --format sarif|cyclonedx|ocsf [--no-passthrough] <file|->
 //	ctis canon <asset-type> <value>
 //	ctis conformance [dir]   (default conformance/v2)
 //	ctis version
@@ -45,6 +49,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return cmdCanon(args[1:], stdout, stderr)
 	case "conformance":
 		return cmdConformance(args[1:], stdout, stderr)
+	case "import":
+		return cmdImport(args[1:], stdin, stdout, stderr)
+	case "export":
+		return cmdExport(args[1:], stdin, stdout, stderr)
 	case "version", "--version":
 		_, _ = fmt.Fprintf(stdout, "ctis %s (CTIS %s)\n", version, ctis.SchemaVersion)
 		return 0
@@ -62,6 +70,8 @@ func usage(w io.Writer) {
   ctis validate [--json] [--max-size BYTES] <file|->...
   ctis canon <asset-type> <value>
   ctis conformance [dir]   (default conformance/v2)
+  ctis import [--format F] [--result] [--no-passthrough] [--max-size BYTES] <file|->
+  ctis export --format sarif|cyclonedx|ocsf [--no-passthrough] [--max-size BYTES] <file|->
   ctis version
 `)
 }

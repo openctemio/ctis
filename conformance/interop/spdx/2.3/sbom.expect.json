@@ -1,0 +1,64 @@
+{
+  "report": {
+    "version": "2.0",
+    "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+    "metadata": {
+      "id": "0192f0a0-0000-7000-8000-000000000001",
+      "generated_at": "2026-10-05T12:00:00Z",
+      "channel": "manual",
+      "properties": {
+        "sbom_created": "2026-10-01T08:00:00Z",
+        "sbom_name": "example-app-sbom",
+        "sbom_namespace": "https://sbom.example/example-app/2.4.0",
+        "sbom_tools": "example-sbom-1.0",
+        "spdx_version": "SPDX-2.3"
+      }
+    },
+    "tool": {
+      "name": "spdx",
+      "techniques": [
+        "sca"
+      ]
+    },
+    "assets": [
+      {
+        "id": "package-pkg:npm/example-app",
+        "type": "package",
+        "value": "pkg:npm/example-app",
+        "name": "example-app",
+        "properties": {
+          "package_purpose": "application",
+          "version": "2.4.0"
+        }
+      }
+    ],
+    "dependencies": [
+      {
+        "id": "SPDXRef-lodash",
+        "name": "lodash",
+        "version": "4.17.20",
+        "purl": "pkg:npm/lodash@4.17.20",
+        "source_id": "SPDXRef-lodash",
+        "licenses": [
+          "MIT"
+        ],
+        "relationship": "direct",
+        "asset_ref": "package-pkg:npm/example-app"
+      }
+    ],
+    "extensions": {
+      "org.ctis.interop.spdx": {
+        "unmapped": {
+          "/revieweds": [
+            {
+              "comment": "a deprecated SPDX 2.x member the mapping does not list",
+              "reviewDate": "2026-10-02T09:00:00Z",
+              "reviewer": "Tool: example-review"
+            }
+          ]
+        },
+        "version": "2.3"
+      }
+    }
+  }
+}

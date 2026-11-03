@@ -1,6 +1,6 @@
 # SPDX JSON mapping
 
-Generated from `importer/spec_spdx.go`; do not edit. Regenerate with `go test ./importer -run TestMappingDocs -update`.
+Generated from `interop/spdx/2.3/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/spdx`; do not edit.
 
 - Format: `spdx`
 - Source versions: SPDX 2.2 and 2.3 JSON
@@ -8,6 +8,7 @@ Generated from `importer/spec_spdx.go`; do not edit. Regenerate with `go test ./
 
 ## Rules
 
+- This mapping reads SPDX 2.3 JSON and the earlier 2.x JSON versions, whose members are a subset.
 - SPDX holds packages, not vulnerabilities: the result is one asset and its dependencies, no findings.
 - The asset is the described package (documentDescribes, else the DESCRIBES / DESCRIBED_BY relationship of the document): value is its purl, else name@version; a CONTAINER with an image reference is a container_image, a package with a purl is a package, anything else is unclassified. Without one, an unclassified asset named after the document holds the dependencies, and an issue says so. A document without packages creates no asset.
 - Every other package is a dependency: id is its SPDXID (a second package with a used SPDXID is skipped with an issue); licenses are licenseConcluded, else licenseDeclared, never NOASSERTION or NONE.

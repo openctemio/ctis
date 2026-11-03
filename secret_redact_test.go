@@ -84,7 +84,7 @@ func TestContainsSecret(t *testing.T) {
 }
 
 // A raw value that is also part of the mask word is not masked again
-// inside the mask (found by FuzzFromSARIF: "REDAREDACTED").
+// inside the mask (found by the SARIF fuzzer: "REDAREDACTED").
 func TestRedactDoesNotRemaskTheMask(t *testing.T) {
 	for _, raw := range []string{"CTED", "REDA", "ACTED", "****"} {
 		f := Finding{Type: FindingTypeSecret, Title: "found " + raw,
@@ -95,6 +95,22 @@ func TestRedactDoesNotRemaskTheMask(t *testing.T) {
 		}
 		if strings.Contains(f.Location.Snippet, "REDAREDACTED") || strings.Contains(f.Secret.MaskedValue, "REDAREDACTED") {
 			t.Errorf("%q: mask masked again: %q %q", raw, f.Location.Snippet, f.Secret.MaskedValue)
+		}
+	}
+}
+
+func TestMaskSecret(t *testing.T) {
+	for in, want := range map[string]string{
+		"":                     "REDACTED",
+		"abc":                  "REDACTED",
+		"0123456789abcde":      "REDACTED", // 15
+		"0123456789abcdef":     "0123********",
+		"  0123456789abcdef  ": "0123********",
+		"ключключключключключ":   "ключ********", // runes, not bytes
+		strings.Repeat("x", 1e5): "xxxx********",
+	} {
+		if got := maskSecret(in); got != want {
+			t.Errorf("maskSecret(%.20q) = %q, want %q", in, got, want)
 		}
 	}
 }

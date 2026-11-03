@@ -25,7 +25,7 @@ func addTestdataSeeds(f *testing.F, glob string) {
 }
 
 func FuzzValidate(f *testing.F) {
-	addTestdataSeeds(f, "sarif/*.golden.json")
+	addTestdataSeeds(f, "importers/*/*.golden.json")
 	if examples, _ := filepath.Glob("examples/*.json"); len(examples) > 0 {
 		for _, name := range examples {
 			if b, err := os.ReadFile(name); err == nil {
@@ -53,36 +53,6 @@ func FuzzValidate(f *testing.F) {
 		}
 		if _, err := json.Marshal(&r); err != nil {
 			t.Fatalf("a decoded report must marshal again: %v", err)
-		}
-	})
-}
-
-func FuzzFromSARIF(f *testing.F) {
-	addTestdataSeeds(f, "sarif/*.sarif")
-	addTestdataSeeds(f, "importers/sarif/codeflows.sarif.json")
-	f.Add([]byte(`{"runs":[{"tool":{"driver":{"rules":[{"id":"r"}]}},"results":[{"ruleIndex":-1,"rule":{"index":99},"message":{"text":""}}]}]}`))
-	f.Add([]byte(`{"runs":[{"originalUriBaseIds":{"R":{"uri":"file:///w/"}},"results":[{"message":{"text":"t"},"codeFlows":[{"threadFlows":[{"locations":[{"kinds":["source"],"location":{"physicalLocation":{"artifactLocation":{"uri":"file:///w/a.js"},"region":{"startLine":1,"snippet":{"text":"password = \"hunter2hunter2\""}}}}},{"location":{"physicalLocation":{"artifactLocation":{"uri":"../x"}}}}]}]}]}]}]}`))
-	f.Fuzz(func(t *testing.T, data []byte) {
-		r, err := FromSARIF(data, nil)
-		if err != nil {
-			return
-		}
-		if r.Version != SchemaVersion {
-			t.Fatalf("version %q", r.Version)
-		}
-		_ = r.Validate()
-		// A secret finding never carries a snippet other than a redaction.
-		for _, fd := range r.Findings {
-			if fd.Type != FindingTypeSecret || fd.Location == nil || fd.Location.Snippet == "" {
-				continue
-			}
-			s := fd.Location.Snippet
-			if !isRedacted(s) && !strings.HasSuffix(s, "********") {
-				t.Fatalf("secret finding snippet not redacted: %q", s)
-			}
-		}
-		for _, fd := range r.Findings {
-			checkDataFlow(t, fd.DataFlow)
 		}
 	})
 }

@@ -8,3 +8,10 @@ The specification text and other prose in docs/ and proposals/ are licensed
 under the Creative Commons Attribution 4.0 International license (LICENSE-docs).
 Schemas, examples, conformance vectors and code are licensed under the Apache
 License, Version 2.0 (LICENSE). Patent commitment: PATENTS.md.
+
+interop/*/schemas/ holds unmodified copies of the official schemas of the
+standards the interoperability adapters follow, under their own licences and
+with their notices: SARIF and CSAF (OASIS Open), CycloneDX (OWASP Foundation,
+Apache License 2.0), SPDX (The Linux Foundation and its contributors),
+OpenVEX (CC0-1.0) and OCSF (Apache License 2.0). Sources, versions and sha256
+of every copy are listed in interop/upstreams.json.

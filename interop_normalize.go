@@ -34,7 +34,7 @@ func token(s string) string {
 //     5 Urgent), mapped one band each: info, low, medium, high, critical.
 //   - defectdojo: the severity labels Critical, High, Medium, Low, Info.
 //   - sarif: result level error, warning, note, none (the same mapping
-//     FromSARIF uses).
+//     the SARIF adapter uses).
 var nativeSeverityTables = map[NativeScheme]map[string]Severity{
 	NativeSchemeNessus: {
 		"0": SeverityInfo, "1": SeverityLow, "2": SeverityMedium, "3": SeverityHigh, "4": SeverityCritical,

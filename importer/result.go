@@ -33,6 +33,9 @@ type Result struct {
 	// show them so the spec is extended.
 	Unmapped []string `json:"unmapped,omitempty"`
 
+	// Source field paths the file held, sorted; only with Options.Observe.
+	Fields []string `json:"fields,omitempty"`
+
 	// Layout of a multi-file bundle ("v3", "v4" for reconftw); empty for a
 	// single file.
 	Layout string `json:"layout,omitempty"`

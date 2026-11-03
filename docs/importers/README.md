@@ -11,23 +11,28 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 |---|---|---|---|---|---|---|
 | `betterleaks` | [betterleaks JSON report](betterleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `bounty_report` | [Bug-bounty / disclosure reports (JSON and CSV)](bounty_report.md) | 21 | 0 | 100% | 21 | 100% |
-| `csaf` | [CSAF 2.0 (VEX and security advisory profiles)](csaf.md) | 45 | 55 | 45% | 168 | 39% |
-| `cyclonedx` | [CycloneDX JSON (SBOM, VDR, VEX)](cyclonedx.md) | 75 | 77 | 49% | 119 | 63% |
 | `defectdojo` | [DefectDojo Generic Findings Import JSON](defectdojo.md) | 65 | 8 | 89% | 74 | 88% |
 | `gitleaks` | [gitleaks JSON report](gitleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `grype` | [grype JSON output](grype.md) | 84 | 49 | 63% | 155 | 54% |
 | `nessus` | [Nessus v2 XML (.nessus)](nessus.md) | 128 | 40 | 76% | 162 | 80% |
 | `nuclei` | [nuclei JSON lines](nuclei.md) | 43 | 10 | 81% | 49 | 90% |
 | `opengrep` | [opengrep JSON output](opengrep.md) | 52 | 23 | 69% | 116 | 70% |
-| `openvex` | [OpenVEX](openvex.md) | 29 | 11 | 72% | 40 | 72% |
 | `osv` | [osv-scanner JSON results (OSV records)](osv.md) | 43 | 13 | 77% | 78 | 72% |
 | `qualys` | [Qualys VM host list detection XML](qualys.md) | 60 | 15 | 80% | 76 | 80% |
 | `qualys_kb` | [Qualys KnowledgeBase XML](qualys_kb.md) | 53 | 30 | 64% | 97 | 61% |
 | `reconftw` | [reconFTW results directory (v4)](reconftw.md) | 52 | 51 | 50% | 78 | 68% |
 | `reconftw_v3` | [reconFTW results directory (v3)](reconftw_v3.md) | 49 | 47 | 51% | 70 | 71% |
-| `sarif` | [SARIF 2.1.0](sarif.md) | 85 | 48 | 64% | 137 | 71% |
 | `semgrep` | [semgrep JSON output](semgrep.md) | 52 | 23 | 69% | 173 | 47% |
-| `spdx` | [SPDX JSON](spdx.md) | 28 | 34 | 45% | 79 | 35% |
 | `trivy` | [trivy JSON](trivy.md) | 81 | 25 | 76% | 126 | 77% |
 | `vuls` | [vuls JSON scan result](vuls.md) | 62 | 58 | 52% | 135 | 60% |
 | `zap` | [ZAP traditional report (JSON and XML)](zap.md) | 72 | 13 | 85% | 90 | 81% |
+
+The standard formats are read by interoperability adapters, each its own Go module that registers its format into this package. Their specs and coverage are generated and checked by the adapter's own tests:
+
+| Format | Spec | Module |
+|---|---|---|
+| `sarif` | [sarif.md](sarif.md) | `github.com/openctemio/ctis/v2/interop/sarif` |
+| `cyclonedx` | [cyclonedx.md](cyclonedx.md) | `github.com/openctemio/ctis/v2/interop/cyclonedx` |
+| `spdx` | [spdx.md](spdx.md) | `github.com/openctemio/ctis/v2/interop/spdx` |
+| `csaf` | [csaf.md](csaf.md) | `github.com/openctemio/ctis/v2/interop/csaf` |
+| `openvex` | [openvex.md](openvex.md) | `github.com/openctemio/ctis/v2/interop/openvex` |

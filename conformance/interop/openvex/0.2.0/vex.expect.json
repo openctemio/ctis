@@ -1,0 +1,67 @@
+{
+  "report": {
+    "version": "2.0",
+    "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+    "metadata": {
+      "id": "0192f0a0-0000-7000-8000-000000000001",
+      "generated_at": "2026-10-05T12:00:00Z",
+      "channel": "manual",
+      "source_refs": [
+        {
+          "system": "openvex",
+          "id": "https://vex.example/example-app/2026-001"
+        }
+      ],
+      "properties": {
+        "author": "Example Vendor Security",
+        "document_version": "1",
+        "openvex_context": "https://openvex.dev/ns/v0.2.0"
+      }
+    },
+    "tool": {
+      "name": "openvex"
+    }
+  },
+  "vex": [
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2021-23337"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:npm/example-app@2.4.0"
+        }
+      ],
+      "vex": {
+        "status": "not_affected",
+        "justification": "vulnerable_code_not_in_execute_path",
+        "native_justification": "vulnerable_code_not_in_execute_path",
+        "statement": "The template function is never called.",
+        "source": "Example Vendor Security (https://vex.example/example-app/2026-001)",
+        "as_of": "2026-10-01T08:00:00Z"
+      }
+    },
+    {
+      "vulnerability_ids": [
+        {
+          "type": "cve",
+          "id": "CVE-2021-44906"
+        }
+      ],
+      "products": [
+        {
+          "purl": "pkg:npm/example-app@2.4.0"
+        }
+      ],
+      "vex": {
+        "status": "affected",
+        "statement": "Upgrade minimist to 1.2.6.",
+        "source": "Example Vendor Security (https://vex.example/example-app/2026-001)",
+        "as_of": "2026-10-01T08:00:00Z"
+      }
+    }
+  ]
+}

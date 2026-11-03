@@ -1,0 +1,31 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-01T08:00:00Z",
+    "component": {"bom-ref": "app", "type": "application", "name": "example-app", "version": "2.4.0", "purl": "pkg:npm/example-app@2.4.0"}
+  },
+  "components": [
+    {"bom-ref": "pkg:npm/lodash@4.17.20", "type": "library", "name": "lodash", "version": "4.17.20", "purl": "pkg:npm/lodash@4.17.20", "licenses": [{"license": {"id": "MIT"}}]},
+    {"bom-ref": "pkg:npm/minimist@1.2.5", "type": "library", "name": "minimist", "version": "1.2.5", "purl": "pkg:npm/minimist@1.2.5"}
+  ],
+  "dependencies": [
+    {"ref": "app", "dependsOn": ["pkg:npm/lodash@4.17.20"]},
+    {"ref": "pkg:npm/lodash@4.17.20", "dependsOn": ["pkg:npm/minimist@1.2.5"]}
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2021-23337",
+      "source": {"name": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-23337"},
+      "ratings": [{"source": {"name": "NVD"}, "score": 7.2, "severity": "high", "method": "CVSSv31", "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H"}],
+      "cwes": [94],
+      "description": "Command injection in lodash template.",
+      "recommendation": "Upgrade lodash to 4.17.21.",
+      "published": "2021-02-15T13:15:00Z",
+      "affects": [{"ref": "pkg:npm/lodash@4.17.20"}],
+      "analysis": {"state": "exploitable", "detail": "Reachable from the template renderer."}
+    }
+  ]
+}

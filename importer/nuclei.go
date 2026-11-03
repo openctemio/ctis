@@ -79,7 +79,7 @@ type nucleiResult struct {
 	FuzzingPosition  string `json:"fuzzing_position"`
 }
 
-func parseNuclei(b *builder, r io.Reader) error {
+func parseNuclei(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatNuclei, b.lim)
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func offsetAt(doc *jsonDoc, i int) int64 {
 // nucleiRecord reads one result. A record that is not valid JSON, not an
 // object of results, or over a limit is skipped with an issue at its line;
 // a hostile line cannot stop the others.
-func (b *builder) nucleiRecord(raw []byte, ln int, ref string) error {
+func (b *Builder) nucleiRecord(raw []byte, ln int, ref string) error {
 	b.res.Stats.Records++
 	if err := b.tick(); err != nil {
 		return err
@@ -190,7 +190,7 @@ func (b *builder) nucleiRecord(raw []byte, ln int, ref string) error {
 
 // nucleiAssetID returns the asset of a result, adding it on first use: the
 // web origin of an http result, else the host (a domain name or an address).
-func (b *builder) nucleiAssetID(t ctis.AssetType, v string, r *nucleiResult, web bool) (string, error) {
+func (b *Builder) nucleiAssetID(t ctis.AssetType, v string, r *nucleiResult, web bool) (string, error) {
 	a := ctis.Asset{Type: t, Value: v, Name: v}
 	if p := net.ParseIP(strings.TrimSpace(r.IP)); p != nil && t != ctis.AssetTypeIPAddress {
 		a.Properties = ctis.Properties{"ip_address": p.String()}
@@ -494,17 +494,4 @@ func hasControl(s string) bool {
 		}
 	}
 	return false
-}
-
-// stripUserinfo removes credentials from a URL (https://user:pass@host/).
-func stripUserinfo(s string) string {
-	if !strings.Contains(s, "@") || !strings.Contains(s, "://") {
-		return s
-	}
-	u, err := url.Parse(s)
-	if err != nil || u.User == nil {
-		return s
-	}
-	u.User = nil
-	return u.String()
 }

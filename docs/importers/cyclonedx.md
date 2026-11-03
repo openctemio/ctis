@@ -1,6 +1,6 @@
 # CycloneDX JSON (SBOM, VDR, VEX) mapping
 
-Generated from `importer/spec_cyclonedx.go`; do not edit. Regenerate with `go test ./importer -run TestMappingDocs -update`.
+Generated from `interop/cyclonedx/1.6/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/cyclonedx`; do not edit.
 
 - Format: `cyclonedx`
 - Source versions: CycloneDX 1.4, 1.5 and 1.6 JSON
@@ -8,6 +8,7 @@ Generated from `importer/spec_cyclonedx.go`; do not edit. Regenerate with `go te
 
 ## Rules
 
+- This mapping reads CycloneDX 1.6 and later 1.x documents: members a later minor adds are kept as passthrough until a mapping for that version lists them.
 - The subject (metadata.component) is the asset: value is its purl, else name@version; a container with an image reference is a container_image, a component with a package URL is a package, anything else is unclassified. Without a subject, an unclassified asset named after the serial number holds the components and findings, and an issue says so. A BOM without components or findings (a pure VEX) creates no asset.
 - Every other component, at any nesting depth, is a dependency of the subject: id is its bom-ref (else purl, else name@version); a second component with a used bom-ref is skipped with an issue. depends_on keeps only refs that name a component; relationship is direct when the subject depends on it, transitive when the BOM has a dependency graph.
 - One finding per vulnerability and affected component of this BOM (affects[].ref naming a component, or the subject). A ref that is a package URL outside the BOM is a VEX product but no finding.

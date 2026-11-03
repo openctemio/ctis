@@ -36,7 +36,7 @@ type leakRecord struct {
 
 // leakFinding maps a leak record to a CTIS secret finding of the given
 // tool. The raw secret never leaves this function: the snippet, the title
-// and the message hold it masked the way FromSARIF masks a secret match
+// and the message hold it masked the way every converter masks a secret match (ctis.MaskSecretMatch)
 // (ctis.MaskSecretMatch), and the fingerprint input is the masked value
 // (CTIS spec 5.2). The commit author and e-mail are kept: they say who
 // committed the secret, which is who must rotate it.

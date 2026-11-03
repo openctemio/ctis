@@ -1,0 +1,22 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://vex.example/example-app/2026-001",
+  "author": "Example Vendor Security",
+  "timestamp": "2026-10-01T08:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {"name": "CVE-2021-23337"},
+      "products": [{"@id": "pkg:npm/example-app@2.4.0"}],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The template function is never called."
+    },
+    {
+      "vulnerability": {"name": "CVE-2021-44906"},
+      "products": [{"@id": "pkg:npm/example-app@2.4.0"}],
+      "status": "affected",
+      "action_statement": "Upgrade minimist to 1.2.6."
+    }
+  ]
+}

@@ -650,34 +650,60 @@ func cutUTF8(s string, n int) string {
 	return s[:n]
 }
 
-// sarifHTTPExchange builds an http_exchange item from a SARIF result's
-// webRequest and webResponse, capped and with sensitive values marked.
-func sarifHTTPExchange(req *SARIFWebRequest, resp *SARIFWebResponse) (EvidenceItem, bool) {
+// HTTPMessageParts is one side of an HTTP exchange as a converter read it
+// from another format: the members it found, still raw. HTTPExchange cleans,
+// caps and marks them.
+type HTTPMessageParts struct {
+	// Request only.
+	Method string
+	Target string
+
+	// Response only. Reason is the reason phrase.
+	Status int
+	Reason string
+
+	// HTTPVersion as "HTTP/1.1"; empty when unknown.
+	HTTPVersion string
+
+	Headers map[string]string
+
+	// Body is the decoded body. A non-nil Body that is empty states a body
+	// member without content.
+	Body *string
+}
+
+// HTTPExchange builds an http_exchange evidence item from the two sides of
+// an exchange, capped (FitEvidenceItem) and with sensitive values marked
+// (MarkSensitive). A request needs a method or a target; a response needs a
+// status, a header or a body. It returns false when neither side qualifies,
+// and when a sensitive value could not be marked (the item is refused
+// rather than written with a value unmarked).
+func HTTPExchange(req, resp *HTTPMessageParts) (EvidenceItem, bool) {
 	it := EvidenceItem{Kind: EvidenceKindHTTPExchange, Version: 1, HTTP: &EvidenceHTTP{}}
 	if req != nil && (req.Target != "" || req.Method != "") {
 		r := &EvidenceRequest{
 			Method:      httpToken(req.Method),
 			URL:         cleanURL(req.Target),
-			HTTPVersion: httpVersion(sarifProtocol(req.Protocol, req.Version)),
+			HTTPVersion: httpVersion(req.HTTPVersion),
 		}
 		for _, k := range sortedMapKeys(req.Headers) {
 			r.Headers = appendHeader(r.Headers, k, req.Headers[k])
 		}
-		r.Body, r.BodyEncoding, r.BodyTruncated, r.BodySize = sarifBody(req.Body)
+		r.Body, r.BodyEncoding, r.BodyTruncated, r.BodySize = partsBody(req.Body)
 		it.HTTP.Request = r
 	}
-	if resp != nil && !resp.NoResponseReceived && (resp.StatusCode != 0 || len(resp.Headers) > 0 || resp.Body != nil) {
+	if resp != nil && (resp.Status != 0 || len(resp.Headers) > 0 || resp.Body != nil) {
 		r := &EvidenceResponse{
-			Reason:      cleanReason(resp.ReasonPhrase),
-			HTTPVersion: httpVersion(sarifProtocol(resp.Protocol, resp.Version)),
+			Reason:      cleanReason(resp.Reason),
+			HTTPVersion: httpVersion(resp.HTTPVersion),
 		}
-		if resp.StatusCode >= minStatusCode && resp.StatusCode <= maxStatusCode {
-			r.Status = resp.StatusCode
+		if resp.Status >= minStatusCode && resp.Status <= maxStatusCode {
+			r.Status = resp.Status
 		}
 		for _, k := range sortedMapKeys(resp.Headers) {
 			r.Headers = appendHeader(r.Headers, k, resp.Headers[k])
 		}
-		r.Body, r.BodyEncoding, r.BodyTruncated, r.BodySize = sarifBody(resp.Body)
+		r.Body, r.BodyEncoding, r.BodyTruncated, r.BodySize = partsBody(resp.Body)
 		it.HTTP.Response = r
 	}
 	if it.HTTP.Request == nil && it.HTTP.Response == nil {
@@ -690,24 +716,11 @@ func sarifHTTPExchange(req *SARIFWebRequest, resp *SARIFWebResponse) (EvidenceIt
 	return it, true
 }
 
-func sarifProtocol(protocol, version string) string {
-	if protocol == "" || version == "" {
-		return ""
-	}
-	return strings.ToUpper(protocol) + "/" + version
-}
-
-func sarifBody(c *SARIFContent) (string, string, bool, int64) {
-	if c == nil {
+func partsBody(b *string) (string, string, bool, int64) {
+	if b == nil || *b == "" {
 		return "", "", false, 0
 	}
-	if c.Text != "" {
-		return capBody(c.Text)
-	}
-	if raw, err := base64.StdEncoding.DecodeString(c.Binary); err == nil && len(raw) > 0 {
-		return capBody(string(raw))
-	}
-	return "", "", false, 0
+	return capBody(*b)
 }
 
 func sortedMapKeys(m map[string]string) []string {

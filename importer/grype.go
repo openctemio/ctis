@@ -140,7 +140,7 @@ type grypeOutput struct {
 
 const grypeM = "/matches[]"
 
-func parseGrype(b *builder, r io.Reader) error {
+func parseGrype(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatGrype, b.lim)
 	if err != nil {
 		return err
@@ -221,7 +221,7 @@ func parseGrype(b *builder, r io.Reader) error {
 // grypeAsset is the scanned source: an image is a container asset named by
 // the image reference, a directory or file a repository-like asset named by
 // its path, an SBOM unclassified.
-func (b *builder) grypeAsset(kind string, target json.RawMessage, distro, distroVersion string) ctis.Asset {
+func (b *Builder) grypeAsset(kind string, target json.RawMessage, distro, distroVersion string) ctis.Asset {
 	if a := b.opts.DefaultAsset; a != nil && a.Value != "" {
 		return b.defaultAsset()
 	}
@@ -313,7 +313,7 @@ func grypeDependency(a *grypeArtifact) ctis.Dependency {
 	return d
 }
 
-func (b *builder) grypeFinding(m *grypeMatch, vid, assetID, ptr string, i int, doc *jsonDoc) ctis.Finding {
+func (b *Builder) grypeFinding(m *grypeMatch, vid, assetID, ptr string, i int, doc *jsonDoc) ctis.Finding {
 	v := &m.Vulnerability
 	art := &m.Artifact
 	pkg := line(art.Name, capShort)

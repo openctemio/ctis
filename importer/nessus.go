@@ -60,7 +60,7 @@ func (it *nessusItem) values() map[string][]string {
 	return out
 }
 
-func parseNessus(b *builder, r io.Reader) error {
+func parseNessus(b *Builder, r io.Reader) error {
 	xr := newXMLReader(r, FormatNessus, b.lim, map[string]string{"tag": "name"}, b.obs)
 	dec := xml.NewTokenDecoder(xr)
 	sawRoot := false
@@ -139,7 +139,7 @@ type nessusHostProps map[string]string
 
 func (p nessusHostProps) get(name string) string { return strings.TrimSpace(p[name]) }
 
-func (b *builder) nessusHost(h *nessusHost, lineNo int) error {
+func (b *Builder) nessusHost(h *nessusHost, lineNo int) error {
 	props := nessusHostProps{}
 	for _, t := range h.Tags {
 		if _, ok := props[t.Name]; !ok {
@@ -359,7 +359,7 @@ var nessusExtra = []string{
 	"vpr_score", "rhsa", "usn", "dsa", "glsa", "fedora", "suse", "osvdb", "edb-id",
 }
 
-func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, credentialed *bool, lineNo int) (ctis.Finding, bool) {
+func (b *Builder) nessusFinding(it *nessusItem, assetID, assetValue string, credentialed *bool, lineNo int) (ctis.Finding, bool) {
 	v := it.values()
 	pluginID := strings.TrimSpace(it.PluginID)
 	itemPath := "/NessusClientData_v2/Report/ReportHost/ReportItem"
@@ -647,15 +647,6 @@ func prefixed(kind, id string) string {
 	return kind + "-" + id
 }
 
-func firstNonEmpty(vals ...string) string {
-	for _, s := range vals {
-		if s = strings.TrimSpace(s); s != "" {
-			return s
-		}
-	}
-	return ""
-}
-
 func splitLines(s string) []string {
 	var out []string
 	for _, l := range strings.Split(s, "\n") {
@@ -664,15 +655,6 @@ func splitLines(s string) []string {
 		}
 	}
 	return out
-}
-
-func appendUnique(dst []string, s string) []string {
-	for _, d := range dst {
-		if d == s {
-			return dst
-		}
-	}
-	return append(dst, s)
 }
 
 // addAdvisory adds a vendor advisory to the finding's remediation.

@@ -17,13 +17,13 @@ func init() {
 	tools[FormatBetterleaks] = ctis.Tool{Name: "betterleaks", Vendor: "Betterleaks", InfoURL: "https://github.com/betterleaks/betterleaks", Techniques: []ctis.Technique{ctis.TechniqueSecret}}
 }
 
-func parseBetterleaks(b *builder, r io.Reader) error {
+func parseBetterleaks(b *Builder, r io.Reader) error {
 	return parseLeaks(b, r, FormatBetterleaks, "betterleaks")
 }
 
 // parseLeaks reads a leaks report (a JSON array of leak records) of the
 // given format and tool.
-func parseLeaks(b *builder, r io.Reader, format Format, tool string) error {
+func parseLeaks(b *Builder, r io.Reader, format Format, tool string) error {
 	data, err := readAll(r, format, b.lim)
 	if err != nil {
 		return err

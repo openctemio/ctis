@@ -2,7 +2,6 @@ package importer
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/openctemio/ctis/v2"
 )
@@ -17,19 +16,9 @@ import (
 // dropped. Parse never returns a report that fails ctis.Report.Validate;
 // if one still would, that is a bug and Parse fails instead.
 
-// probeTime is any non-zero time: Validate requires metadata.generated_at.
-var probeTime = time.Unix(1, 0).UTC()
-
-// probeID is a UUIDv7: Validate requires metadata.id.
-const probeID = "0192f0a0-0000-7000-8000-000000000001"
-
-func probe() ctis.Report {
-	return ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{ID: probeID, GeneratedAt: probeTime}}
-}
-
 // guard drops the entities that are not valid CTIS and returns how many it
 // dropped of each kind.
-func (b *builder) guard() error {
+func (b *Builder) guard() error {
 	rep := b.res.Report
 	var droppedAssets, droppedFindings, droppedDeps, droppedStatements int
 	firstErr := map[string]string{}
@@ -57,7 +46,23 @@ func (b *builder) guard() error {
 	}
 	rep.Assets = keptAssets
 
-	// Findings, each with its asset, unique ids.
+	// Rules of the catalog, one by one, unique ids.
+	keptRules := rep.Rules[:0]
+	rulesByID := map[string]ctis.Rule{}
+	for _, r := range rep.Rules {
+		p := probe()
+		p.Rules = []ctis.Rule{r}
+		if err := p.Validate(); err != nil || rulesByID[r.ID].ID != "" {
+			note("rule", err)
+			continue
+		}
+		rulesByID[r.ID] = r
+		keptRules = append(keptRules, r)
+	}
+	droppedRules := len(rep.Rules) - len(keptRules)
+	rep.Rules = keptRules
+
+	// Findings, each with its asset (and rule), unique ids.
 	keptFindings := rep.Findings[:0]
 	findingIDs := map[string]bool{}
 	assetsByID := map[string]ctis.Asset{}
@@ -75,7 +80,13 @@ func (b *builder) guard() error {
 			continue
 		}
 		p.Assets = []ctis.Asset{a}
-		// A dependency_ref is checked against the whole report below.
+		// A dependency_ref is checked against the whole report below. A
+		// rule_ref to a rule that was left out is cleared.
+		if r, ok := rulesByID[f.RuleRef]; ok && f.RuleRef != "" {
+			p.Rules = []ctis.Rule{r}
+		} else {
+			f.RuleRef = ""
+		}
 		pf := f
 		pf.DependencyRef = ""
 		p.Findings = []ctis.Finding{pf}
@@ -180,7 +191,7 @@ func (b *builder) guard() error {
 	for _, d := range []struct {
 		kind string
 		n    int
-	}{{"asset", droppedAssets}, {"endpoint", droppedEndpoints}, {"finding", droppedFindings}, {"component", droppedDeps}, {"VEX statement", droppedStatements}} {
+	}{{"asset", droppedAssets}, {"rule", droppedRules}, {"endpoint", droppedEndpoints}, {"finding", droppedFindings}, {"component", droppedDeps}, {"VEX statement", droppedStatements}} {
 		if d.n == 0 {
 			continue
 		}

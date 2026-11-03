@@ -30,39 +30,55 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
+      # Every module (the core, each interoperability adapter, the command)
+      # depends on nothing outside this repository: stdlib only.
       - name: Verify zero external dependencies
         run: |
-          DEPS=$(go list -m all 2>/dev/null | grep -v "github.com/openctemio/ctis" | wc -l)
-          if [ "$DEPS" -gt 0 ]; then
-            echo "ERROR: ctis module must have zero external dependencies"
-            go list -m all
-            exit 1
-          fi
-          echo "Zero external dependencies confirmed"
+          for m in $(bash .github/scripts/modules.sh); do
+            DEPS=$(cd "$m" && go list -m all 2>/dev/null | grep -v "^github.com/openctemio/ctis/v2" | wc -l)
+            if [ "$DEPS" -gt 0 ]; then
+              echo "ERROR: module $m must have zero external dependencies"
+              (cd "$m" && go list -m all)
+              exit 1
+            fi
+          done
+          echo "Zero external dependencies confirmed in every module"
 
       - name: Build
-        run: go build -v ./...
+        run: |
+          for m in $(bash .github/scripts/modules.sh); do (cd "$m" && go build ./...) || exit 1; done
 
-      # Includes the schema <-> Go parity tests, the examples and the
-      # converter outputs validated against schemas/v2.
+      # Includes the schema <-> Go parity tests, the examples, the converter
+      # outputs validated against schemas/v2, and per adapter its golden
+      # files, round trips and the conformance/interop vectors.
       - name: Run tests
-        run: go test -race -coverprofile=coverage.out ./...
+        run: |
+          for m in $(bash .github/scripts/modules.sh); do
+            out="$GITHUB_WORKSPACE/coverage-$(echo "$m" | tr '/.' '__').out"
+            (cd "$m" && go test -race -coverprofile="$out" ./...) || exit 1
+          done
 
+      # The floor applies to every module on its own.
       - name: Check coverage
         if: matrix.go-version == '1.27'
         run: |
-          COVERAGE=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
-          echo "Total coverage: ${COVERAGE}% (minimum ${COVERAGE_MIN}%)"
-          awk -v c="$COVERAGE" -v m="$COVERAGE_MIN" 'BEGIN { exit (c + 0 >= m + 0) ? 0 : 1 }' || {
-            echo "ERROR: coverage ${COVERAGE}% is below ${COVERAGE_MIN}%"
-            exit 1
-          }
+          fail=0
+          for m in $(bash .github/scripts/modules.sh); do
+            f="$GITHUB_WORKSPACE/coverage-$(echo "$m" | tr '/.' '__').out"
+            COVERAGE=$(cd "$m" && go tool cover -func="$f" | awk '/^total:/ {sub("%", "", $3); print $3}')
+            echo "$f: ${COVERAGE}% (minimum ${COVERAGE_MIN}%)"
+            awk -v c="$COVERAGE" -v m="$COVERAGE_MIN" 'BEGIN { exit (c + 0 >= m + 0) ? 0 : 1 }' || {
+              echo "ERROR: $f coverage ${COVERAGE}% is below ${COVERAGE_MIN}%"
+              fail=1
+            }
+          done
+          exit $fail
 
       - name: Upload coverage
         if: matrix.go-version == '1.27'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          files: ./coverage.out
+          files: ./coverage-*.out
         continue-on-error: true
 
   lint:
@@ -72,6 +88,9 @@ jobs:
 
       - name: Actions are pinned to commit SHAs
         run: bash .github/scripts/check-action-pins.sh
+
+      - name: go directives are minimal and not newer than the consumers' Go
+        run: bash .github/scripts/check-go-directive.sh
 
       - name: Customer identifiers (self-test)
         run: bash .github/scripts/check-customer-identifiers.test.sh >/dev/null
@@ -95,7 +114,8 @@ jobs:
           cache: true
 
       - name: Run go vet
-        run: go vet ./...
+        run: |
+          for m in $(bash .github/scripts/modules.sh); do (cd "$m" && go vet ./...) || exit 1; done
 
       - name: Check formatting
         run: |
@@ -106,10 +126,20 @@ jobs:
             exit 1
           fi
 
-      - name: Run golangci-lint
+      - name: Install golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
+          install-only: true
+
+      # Every module, with the root configuration.
+      - name: Run golangci-lint
+        run: |
+          for m in $(bash .github/scripts/modules.sh); do
+            echo "::group::golangci-lint $m"
+            (cd "$m" && golangci-lint run --config "$GITHUB_WORKSPACE/.golangci.yml" ./...) || exit 1
+            echo "::endgroup::"
+          done
 
   schema-validate:
     runs-on: ubuntu-latest
@@ -128,6 +158,12 @@ jobs:
           pip install "jsonschema[format-nongpl]==4.25.1"
           python3 scripts/validate_schemas.py
 
+      # The vendored upstream schemas match the sha256 of
+      # interop/upstreams.json, and the upstream samples of
+      # conformance/interop validate against them (offline).
+      - name: Interop schemas and vectors
+        run: python3 scripts/check_interop_schemas.py --validate
+
   cli:
     name: ctis CLI
     runs-on: ubuntu-latest
@@ -139,8 +175,10 @@ jobs:
           go-version: '1.27'
           cache: true
 
+      # cmd/ctis is its own module (it links the adapters).
       - name: Build the CLI
-        run: go build -trimpath -o "$RUNNER_TEMP/ctis" ./cmd/ctis
+        working-directory: cmd/ctis
+        run: go build -trimpath -o "$RUNNER_TEMP/ctis" .
 
       - name: Valid examples validate
         run: '"$RUNNER_TEMP/ctis" validate examples/*.json'
@@ -157,6 +195,14 @@ jobs:
       - name: Conformance vectors
         run: '"$RUNNER_TEMP/ctis" conformance conformance/v2'
 
+      - name: Import and export through the adapters
+        run: |
+          "$RUNNER_TEMP/ctis" import interop/sarif/testdata/importers/semgrep.sarif > "$RUNNER_TEMP/r.ctis.json"
+          "$RUNNER_TEMP/ctis" validate "$RUNNER_TEMP/r.ctis.json"
+          for f in sarif cyclonedx ocsf; do
+            "$RUNNER_TEMP/ctis" export --format "$f" "$RUNNER_TEMP/r.ctis.json" > /dev/null
+          done
+
   fuzz:
     name: Fuzz (smoke)
     runs-on: ubuntu-latest
@@ -172,7 +218,7 @@ jobs:
         run: |
           # A short minimization keeps a new input from running past the
           # time budget (the run then fails with "context deadline exceeded").
-          for target in FuzzValidate FuzzFromSARIF FuzzConvertRecon FuzzParseVersion FuzzHTTPExchangeFromRaw FuzzParseHTTPXLine FuzzDecode FuzzCanonical; do
+          for target in FuzzValidate FuzzConvertRecon FuzzParseVersion FuzzHTTPExchangeFromRaw FuzzParseHTTPXLine FuzzDecode FuzzCanonical; do
             go test -run '^$' -fuzz "^${target}\$" -fuzztime 20s -fuzzminimizetime 1x .
           done
           # The importers read hostile files; a short minimization keeps the
@@ -186,6 +232,11 @@ jobs:
           done
           # Web URLs: hostile URLs from crawlers, specs and scanners.
           go test -run '^$' -fuzz '^FuzzWebURL$' -fuzztime 20s -fuzzminimizetime 1x ./weburl
+          # Interop engine: hostile documents through the passthrough and
+          # the write-back.
+          go test -run '^$' -fuzz '^FuzzCollect$' -fuzztime 20s -fuzzminimizetime 1x ./interop/engine
+          # The SARIF adapter reads hostile logs.
+          (cd interop/sarif && go test -run '^$' -fuzz '^FuzzFromSARIF$' -fuzztime 20s -fuzzminimizetime 1x .)
 
   build-compat:
     name: Cross-platform build
@@ -203,7 +254,8 @@ jobs:
           cache: true
 
       - name: Build
-        run: go build -v ./...
+        run: |
+          for m in $(bash .github/scripts/modules.sh); do (cd "$m" && go build ./...) || exit 1; done
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}

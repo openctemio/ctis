@@ -1,0 +1,78 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "CodeQL",
+    "version": "2.15.0",
+    "techniques": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "repository",
+      "value": "github.com/example/shop",
+      "name": "github.com/example/shop",
+      "properties": {
+        "branch": "refs/heads/main",
+        "commit_sha": "3f1c2a9e0b7d4c5a8e6f1d2b3c4a5e6f7a8b9c0d",
+        "source": "sarif_version_control_provenance"
+      }
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule-1",
+      "rule_id": "go/sql-injection",
+      "name": "go/sql-injection",
+      "short_description": "Database query built from user-controlled sources",
+      "full_description": "Building a database query from user-controlled sources is vulnerable to insertion of malicious code by the user.",
+      "default_severity": "high",
+      "tags": [
+        "security",
+        "external/cwe/cwe-089"
+      ],
+      "cwe_ids": [
+        "CWE-89"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "type": "weakness",
+      "title": "This query depends on a user-provided value.",
+      "description": "Database query built from user-controlled sources",
+      "severity": "high",
+      "confidence": 85,
+      "rule_id": "go/sql-injection",
+      "rule_name": "go/sql-injection",
+      "rule_ref": "rule-1",
+      "asset_ref": "asset-1",
+      "location": {
+        "path": "internal/store/orders.go",
+        "start_line": 42,
+        "start_column": 9,
+        "end_column": 61
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ]
+      },
+      "tags": [
+        "security",
+        "external/cwe/cwe-089"
+      ],
+      "partial_fingerprints": {
+        "primaryLocationLineHash": "8e1f0c2d3a4b5c6d:1"
+      }
+    }
+  ]
+}

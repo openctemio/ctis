@@ -17,4 +17,4 @@ func init() {
 	tools[FormatOpengrep] = ctis.Tool{Name: "opengrep", Vendor: "Opengrep", InfoURL: "https://github.com/opengrep/opengrep", Techniques: []ctis.Technique{ctis.TechniqueSAST}}
 }
 
-func parseOpengrep(b *builder, r io.Reader) error { return parseSemgrepShape(b, r, opengrepEngine) }
+func parseOpengrep(b *Builder, r io.Reader) error { return parseSemgrepShape(b, r, opengrepEngine) }

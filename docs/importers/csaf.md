@@ -1,6 +1,6 @@
 # CSAF 2.0 (VEX and security advisory profiles) mapping
 
-Generated from `importer/spec_csaf.go`; do not edit. Regenerate with `go test ./importer -run TestMappingDocs -update`.
+Generated from `interop/csaf/2.0/import.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/csaf`; do not edit.
 
 - Format: `csaf`
 - Source versions: CSAF 2.0 JSON (csaf_vex, csaf_security_advisory, csaf_base)
@@ -8,6 +8,7 @@ Generated from `importer/spec_csaf.go`; do not edit. Regenerate with `go test ./
 
 ## Rules
 
+- This mapping reads CSAF 2.0 documents (the VEX and security advisory profiles); a document of a later 2.x version is read with it, and the members it adds are kept as passthrough.
 - A CSAF document describes products, not findings: the report has no assets or findings, and Result.VEX holds one statement per vulnerability, product_status group and statement text.
 - Status groups: known_not_affected is not_affected; known_affected, first_affected and last_affected are affected; fixed, first_fixed and recommended are fixed; under_investigation is under_investigation.
 - not_affected: the justification is the label of a flag that names the product (directly or through a product group); the statement is the details of an impact threat for the product. A not_affected product with neither is left out with an issue: a bare claim never suppresses a finding.

@@ -3,7 +3,11 @@ name: Release
 on:
   push:
     tags:
+      # The core module: vMAJOR.MINOR.PATCH.
       - 'v*'
+      # An interoperability adapter: interop/<format>/vX.Y.Z (its own module,
+      # released on its own when its upstream format changes).
+      - 'interop/*/v*'
 
 permissions:
   contents: read
@@ -11,6 +15,7 @@ permissions:
 jobs:
   validate:
     name: Validate release
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -74,6 +79,7 @@ jobs:
   release:
     name: Create release
     needs: validate
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -99,8 +105,8 @@ jobs:
               EXT=""; [ "$GOOS" = "windows" ] && EXT=".exe"
               OUT="dist/ctis_${TAG}_${GOOS}_${GOARCH}${EXT}"
               echo "Building $OUT"
-              CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH \
-                go build -trimpath -ldflags "-s -w -X main.version=$TAG" -o "$OUT" ./cmd/ctis
+              (cd cmd/ctis && CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH \
+                go build -trimpath -ldflags "-s -w -X main.version=$TAG" -o "../../$OUT" .)
             done
           done
           (cd dist && sha256sum ctis_* > SHA256SUMS && cat SHA256SUMS)
@@ -166,3 +172,83 @@ jobs:
           open(path, "w").write(text)
           PY
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+
+  # An adapter tag validates and releases that module only: its path, its
+  # changelog, zero external dependencies, the build on every platform, its
+  # tests (golden files, round trips, conformance/interop vectors).
+  validate-adapter:
+    name: Validate adapter release
+    if: startsWith(github.ref, 'refs/tags/interop/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27'
+          cache: true
+
+      - name: Verify tag against module and changelog
+        id: tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          if ! [[ "$TAG" =~ ^interop/([a-z][a-z0-9-]*)/v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "ERROR: tag $TAG is not interop/<format>/vMAJOR.MINOR.PATCH"; exit 1
+          fi
+          FORMAT="${BASH_REMATCH[1]}"; MAJOR="${BASH_REMATCH[2]}"; VERSION="${TAG##*/v}"
+          DIR="interop/$FORMAT"
+          WANT="github.com/openctemio/ctis/v2/interop/$FORMAT"
+          if [ "$MAJOR" -ge 2 ]; then WANT="$WANT/v$MAJOR"; fi
+          MODULE="$(cd "$DIR" && go list -m)"
+          if [ "$MODULE" != "$WANT" ]; then
+            echo "ERROR: tag $TAG needs module path $WANT, $DIR/go.mod has $MODULE"; exit 1
+          fi
+          if ! grep -qE "^## \[$VERSION\]" "$DIR/CHANGELOG.md"; then
+            echo "ERROR: $DIR/CHANGELOG.md has no '## [$VERSION]' section"; exit 1
+          fi
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify zero external dependencies
+        working-directory: ${{ steps.tag.outputs.dir }}
+        run: |
+          DEPS=$(go list -m all 2>/dev/null | grep -v "^github.com/openctemio/ctis/v2" | wc -l)
+          if [ "$DEPS" -gt 0 ]; then
+            echo "ERROR: the adapter must depend on the core module only"
+            go list -m all
+            exit 1
+          fi
+
+      - name: Build all platforms and test
+        working-directory: ${{ steps.tag.outputs.dir }}
+        run: |
+          for GOOS in linux darwin windows; do
+            for GOARCH in amd64 arm64; do
+              GOOS=$GOOS GOARCH=$GOARCH go build ./...
+            done
+          done
+          go test -race ./...
+
+  release-adapter:
+    name: Create adapter release
+    needs: validate-adapter
+    if: startsWith(github.ref, 'refs/tags/interop/')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Create release from the adapter changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          DIR="$(dirname "$TAG")"; VERSION="${TAG##*/v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' "$DIR/CHANGELOG.md" > notes.md
+          printf '\n## Installation\n```bash\ngo get github.com/openctemio/ctis/v2/%s@v%s\n```\n' "$DIR" "$VERSION" >> notes.md
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md

@@ -4,31 +4,14 @@ import (
 	"strings"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/internal/importkit"
 )
 
 // The asset of a code report (SARIF, semgrep, betterleaks, a trivy
 // file-system scan): one repository every finding is filed on.
 
 // codeAssetID is the id of the one asset of a code report.
-const codeAssetID = "asset-1"
-
-// repoAsset is a repository asset with the branch and commit it was scanned
-// at, and where the importer learned it (properties.source). It carries no
-// criticality: that is the receiver's call (CTIS spec 4.1).
-func repoAsset(value, branch, commit, source string) ctis.Asset {
-	value = line(value, capShort)
-	if c, err := ctis.CanonicalAssetValue(ctis.AssetTypeRepository, value); err == nil {
-		value = c
-	}
-	props := ctis.Properties{"source": source}
-	if b := line(branch, capShort); b != "" {
-		props["branch"] = b
-	}
-	if c := line(commit, 128); c != "" {
-		props["commit_sha"] = c
-	}
-	return ctis.Asset{ID: codeAssetID, Type: ctis.AssetTypeRepository, Value: value, Name: value, Properties: props}
-}
+const codeAssetID = importkit.CodeAssetID
 
 // codeAsset returns the asset a code report is filed on:
 //
@@ -36,7 +19,7 @@ func repoAsset(value, branch, commit, source string) ctis.Asset {
 //  2. else the asset the file names (fromFile, when not nil);
 //  3. else Options.DefaultAsset, else an unclassified asset named after
 //     the tool, with an issue saying the file names no repository.
-func (b *builder) codeAsset(fromFile *ctis.Asset) ctis.Asset {
+func (b *Builder) codeAsset(fromFile *ctis.Asset) ctis.Asset {
 	if r := strings.TrimSpace(b.opts.Repository); r != "" {
 		return repoAsset(r, b.opts.Branch, b.opts.CommitSHA, "import_options")
 	}
@@ -55,7 +38,7 @@ func (b *builder) codeAsset(fromFile *ctis.Asset) ctis.Asset {
 }
 
 // bindAll adds the asset and points every finding of the report at it.
-func (b *builder) bindAll(a ctis.Asset) error {
+func (b *Builder) bindAll(a ctis.Asset) error {
 	id, err := b.asset(a)
 	if err != nil {
 		return err

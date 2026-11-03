@@ -1,0 +1,7 @@
+{
+  "format": "csaf",
+  "version": "2.0",
+  "vectors": [
+    {"name": "vex", "input": "vex.csaf.json", "expect": "vex.expect.json"}
+  ]
+}

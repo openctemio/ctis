@@ -34,40 +34,6 @@ func requireNoSecret(t *testing.T, res *Result, secrets ...string) {
 	}
 }
 
-func TestSecretMaskedEverywhere_SARIF(t *testing.T) {
-	for _, driver := range []string{"betterleaks", "gitleaks", "trufflehog"} {
-		t.Run(driver, func(t *testing.T) {
-			// The snippet is the whole code line; the message and the rule
-			// description repeat the bare secret; a property holds it too.
-			in := `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"` + driver + `","rules":[{"id":"aws-access-token","shortDescription":{"text":"AWS key ` + leakKey + `"}}]}},
-			  "results":[{"ruleId":"aws-access-token","message":{"text":"aws-access-token found ` + leakKey + ` in config.py"},
-			    "properties":{"match":"` + leakKey + `","tags":["` + leakKey + `"]},
-			    "locations":[{"physicalLocation":{"artifactLocation":{"uri":"config.py"},"region":{"startLine":3,"snippet":{"text":"aws_key = \"` + leakKey + `\""}}}}]}]}]}`
-			res, err := parseString(t, in, Options{Format: FormatSARIF, Repository: "github.com/example/shop"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			requireNoSecret(t, res, leakKey)
-			if got := res.Report.Findings[0].Title; !strings.Contains(got, "AKIA********") {
-				t.Errorf("title = %q, want the masked secret", got)
-			}
-		})
-	}
-}
-
-// A secret shorter than six characters was not masked in the title.
-func TestSecretMaskedEverywhere_SARIFShortSecret(t *testing.T) {
-	short := "pw" + "12x"
-	in := `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"gitleaks","rules":[{"id":"generic"}]}},
-	  "results":[{"ruleId":"generic","message":{"text":"password ` + short + ` committed"},
-	    "locations":[{"physicalLocation":{"artifactLocation":{"uri":"a.env"},"region":{"startLine":1,"snippet":{"text":"` + short + `"}}}}]}]}]}`
-	res, err := parseString(t, in, Options{Format: FormatSARIF, Repository: "github.com/example/shop"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	requireNoSecret(t, res, short)
-}
-
 func TestSecretMaskedEverywhere_Leaks(t *testing.T) {
 	for _, f := range []Format{FormatGitleaks, FormatBetterleaks} {
 		t.Run(string(f), func(t *testing.T) {
@@ -127,7 +93,7 @@ func TestSecretMaskedEverywhere_QualysResults(t *testing.T) {
 // DefectDojo export of a secret scan, a future format) is masked by the
 // builder: snippet, title and every other field.
 func TestSecretMaskedEverywhere_Builder(t *testing.T) {
-	b := &builder{res: &Result{Report: ctis.NewReport()}, lim: DefaultLimits()}
+	b := &Builder{res: &Result{Report: ctis.NewReport()}, lim: DefaultLimits()}
 	b.res.Stats.BySeverity = map[ctis.Severity]int{}
 	f := ctis.Finding{
 		Type: ctis.FindingTypeSecret, Title: "found " + leakToken, Severity: ctis.SeverityHigh,
