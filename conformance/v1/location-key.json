@@ -1,0 +1,199 @@
+{
+  "description": "LocationKey: the location part of the correlation key. Branch order: package (purl, else ecosystem+name), url (web.url, then location.path), file, net, resource.",
+  "cases": [
+    {
+      "name": "purl without version",
+      "finding": {
+        "vulnerability": {
+          "purl": "pkg:NPM/%40babel/core@7.0.0?arch=x#sub",
+          "package": "x"
+        }
+      },
+      "expected": "pkg:npm/%40babel/core"
+    },
+    {
+      "name": "package by name",
+      "finding": {
+        "vulnerability": {
+          "package": "lodash",
+          "ecosystem": "NPM"
+        }
+      },
+      "expected": "pkg:npm/lodash"
+    },
+    {
+      "name": "pip ecosystem is pypi",
+      "finding": {
+        "vulnerability": {
+          "package": "requests",
+          "ecosystem": "pip"
+        }
+      },
+      "expected": "pkg:pypi/requests"
+    },
+    {
+      "name": "go ecosystem is golang",
+      "finding": {
+        "vulnerability": {
+          "package": "golang.org/x/net",
+          "ecosystem": "go"
+        }
+      },
+      "expected": "pkg:golang/golang.org/x/net"
+    },
+    {
+      "name": "rubygems ecosystem is gem",
+      "finding": {
+        "vulnerability": {
+          "package": "rails",
+          "ecosystem": "RubyGems"
+        }
+      },
+      "expected": "pkg:gem/rails"
+    },
+    {
+      "name": "crates.io ecosystem is cargo",
+      "finding": {
+        "vulnerability": {
+          "package": "serde",
+          "ecosystem": "crates.io"
+        }
+      },
+      "expected": "pkg:cargo/serde"
+    },
+    {
+      "name": "maven keeps its name",
+      "finding": {
+        "vulnerability": {
+          "package": "org.apache.logging.log4j:log4j-core",
+          "ecosystem": "Maven"
+        }
+      },
+      "expected": "pkg:maven/org.apache.logging.log4j:log4j-core"
+    },
+    {
+      "name": "package wins over web",
+      "finding": {
+        "vulnerability": {
+          "package": "lodash",
+          "ecosystem": "npm"
+        },
+        "web": {
+          "url": "https://example.com/a"
+        }
+      },
+      "expected": "pkg:npm/lodash"
+    },
+    {
+      "name": "web url",
+      "finding": {
+        "web": {
+          "url": "HTTPS://Example.COM:443/Admin/Login"
+        }
+      },
+      "expected": "url:https://example.com/Admin/Login"
+    },
+    {
+      "name": "web url wins over location path",
+      "finding": {
+        "web": {
+          "url": "https://example.com/a"
+        },
+        "location": {
+          "path": "https://other.example/b"
+        }
+      },
+      "expected": "url:https://example.com/a"
+    },
+    {
+      "name": "web url wins over file path",
+      "finding": {
+        "web": {
+          "url": "https://example.com/a"
+        },
+        "location": {
+          "path": "src/app.py"
+        }
+      },
+      "expected": "url:https://example.com/a"
+    },
+    {
+      "name": "location path as url",
+      "finding": {
+        "location": {
+          "path": "HTTPS://user:pw@Example.COM:443/a/b?q=1#frag"
+        }
+      },
+      "expected": "url:https://example.com/a/b"
+    },
+    {
+      "name": "url keeps a non default port",
+      "finding": {
+        "location": {
+          "path": "http://example.com:8080"
+        }
+      },
+      "expected": "url:http://example.com:8080/"
+    },
+    {
+      "name": "url ipv6 default port",
+      "finding": {
+        "location": {
+          "path": "http://[::1]:80/x"
+        }
+      },
+      "expected": "url:http://[::1]/x"
+    },
+    {
+      "name": "file",
+      "finding": {
+        "location": {
+          "path": ".\\src\\..\\src\\app.py",
+          "start_line": 9
+        }
+      },
+      "expected": "file:src/app.py"
+    },
+    {
+      "name": "network port",
+      "finding": {
+        "network": {
+          "port": 22
+        }
+      },
+      "expected": "net:22/tcp"
+    },
+    {
+      "name": "network udp",
+      "finding": {
+        "network": {
+          "port": 161,
+          "protocol": "UDP"
+        }
+      },
+      "expected": "net:161/udp"
+    },
+    {
+      "name": "host level network",
+      "finding": {
+        "network": {}
+      },
+      "expected": "net:host"
+    },
+    {
+      "name": "resource",
+      "finding": {
+        "misconfiguration": {
+          "resource_type": "aws_s3_bucket",
+          "resource_name": "logs"
+        }
+      },
+      "expected": "resource:aws_s3_bucket/logs"
+    },
+    {
+      "name": "no location",
+      "finding": {},
+      "expected": ""
+    }
+  ]
+}

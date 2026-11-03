@@ -1,0 +1,40 @@
+{
+  "description": "IP addresses: dotted quad, RFC 5952 for IPv6, mapped IPv4 becomes IPv4; a host that is an IP is canonicalised as an IP",
+  "cases": [
+    {
+      "type": "ip_address",
+      "input": "192.168.1.1",
+      "expected": "192.168.1.1"
+    },
+    {
+      "type": "ip_address",
+      "input": "2001:0db8::0001",
+      "expected": "2001:db8::1"
+    },
+    {
+      "type": "ip_address",
+      "input": "2001:DB8:0:0:0:0:0:1",
+      "expected": "2001:db8::1"
+    },
+    {
+      "type": "ip_address",
+      "input": "::ffff:192.168.1.1",
+      "expected": "192.168.1.1"
+    },
+    {
+      "type": "host",
+      "input": "192.168.1.10",
+      "expected": "192.168.1.10"
+    },
+    {
+      "type": "host",
+      "input": "::FFFF:10.0.0.1",
+      "expected": "10.0.0.1"
+    },
+    {
+      "type": "ip_address",
+      "input": "not-an-ip",
+      "expected": "not-an-ip"
+    }
+  ]
+}
