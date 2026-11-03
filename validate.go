@@ -164,6 +164,7 @@ func validateTool(where string, t *Tool, add func(string, ...any)) {
 			add("%s.techniques[%d] %q is invalid", where, i, truncateForError(string(tq)))
 		}
 	}
+	validateToolContent(where, t.Content, add)
 }
 
 func validateAsset(i int, a *Asset, add func(string, ...any)) {

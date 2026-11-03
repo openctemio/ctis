@@ -32,3 +32,22 @@ func (b *Builder) statement(s VEXStatement) error {
 	b.res.VEX = append(b.res.VEX, s)
 	return nil
 }
+
+// dropIncomplete removes the evidence items MarkSensitive could not mark
+// completely: an item is dropped rather than sent with a value unmarked.
+func dropIncomplete(items []ctis.EvidenceItem, incomplete []int) []ctis.EvidenceItem {
+	if len(incomplete) == 0 {
+		return items
+	}
+	skip := make(map[int]bool, len(incomplete))
+	for _, i := range incomplete {
+		skip[i] = true
+	}
+	out := items[:0]
+	for i := range items {
+		if !skip[i] {
+			out = append(out, items[i])
+		}
+	}
+	return out
+}

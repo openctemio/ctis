@@ -300,6 +300,9 @@
         "identity": {
           "$ref": "#/$defs/IdentityTechnical"
         },
+        "network_device": {
+          "$ref": "#/$defs/NetworkDeviceTechnical"
+        },
         "web3": {
           "$ref": "web3-asset.json"
         }
@@ -1014,6 +1017,29 @@
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
           "description": "Identity provider, an open token (aws, azure, gcp, okta, ldap)"
+        }
+      }
+    },
+    "NetworkDeviceTechnical": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Technical details of a network_device asset",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "router",
+            "switch",
+            "firewall",
+            "load_balancer",
+            "wireless_access_point",
+            "vpn_gateway",
+            "other"
+          ],
+          "description": "Kind of network device; other is the fallback"
         }
       }
     }

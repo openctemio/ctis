@@ -4,6 +4,16 @@
     "id": "019a2b3c-4d5e-7000-8000-000000000001",
     "generated_at": "2026-11-03T00:00:00Z"
   },
+  "tool": {
+    "name": "scanner",
+    "content": [
+      {
+        "name": "templates",
+        "version": "v10.3.1",
+        "sha256": "abababababababababababababababababababababababababababababababab"
+      }
+    ]
+  },
   "assets": [
     {
       "id": "a",
@@ -15,7 +25,14 @@
     {
       "id": "r-1",
       "rule_id": "py.sqli",
-      "name": "SQL injection"
+      "name": "SQL injection",
+      "content_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "content_path": "http/sqli/generic.yaml",
+      "extensions": {
+        "io.openctem": {
+          "rule_source": "tenant"
+        }
+      }
     }
   ],
   "findings": [
