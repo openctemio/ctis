@@ -9,8 +9,11 @@
       "finding": {
         "rule_id": "CVE-2021-23337",
         "vulnerability": {
-          "cve_ids": [
-            "CVE-2021-23337"
+          "ids": [
+            {
+              "type": "cve",
+              "id": "CVE-2021-23337"
+            }
           ],
           "purl": "pkg:npm/lodash@4.17.20"
         }
@@ -26,8 +29,11 @@
       "finding": {
         "rule_id": "GHSA-35jh-r3h4-6jhm",
         "vulnerability": {
-          "cve_ids": [
-            "cve-2021-23337"
+          "ids": [
+            {
+              "type": "cve",
+              "id": "cve-2021-23337"
+            }
           ],
           "purl": "pkg:npm/lodash@4.17.21"
         }
@@ -42,12 +48,18 @@
       "tool": "trivy",
       "finding": {
         "vulnerability": {
-          "cve_ids": [
-            "CVE-2021-10000",
-            "CVE-2021-9999"
+          "ids": [
+            {
+              "type": "cve",
+              "id": "CVE-2021-10000"
+            },
+            {
+              "type": "cve",
+              "id": "CVE-2021-9999"
+            }
           ],
-          "package": "lodash",
-          "ecosystem": "npm"
+          "package_name": "lodash",
+          "purl": "pkg:npm/lodash"
         }
       },
       "vulnerability_id": "CVE-2021-9999",
@@ -60,8 +72,11 @@
       "tool": "trivy",
       "finding": {
         "vulnerability": {
-          "cve_ids": [
-            "CVE-2021-23337"
+          "ids": [
+            {
+              "type": "cve",
+              "id": "CVE-2021-23337"
+            }
           ],
           "purl": "pkg:npm/lodash@4.17.20"
         }
@@ -148,7 +163,7 @@
         "rule_id": "12345",
         "network": {
           "port": 443,
-          "protocol": "TCP"
+          "transport": "tcp"
         }
       },
       "vulnerability_id": "rule:nessus/12345",

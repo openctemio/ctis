@@ -1,0 +1,202 @@
+{
+  "function": "CanonicalAssetValue",
+  "description": "The canonical asset value of each 2.0 asset type (spec section Canonical forms). The asset key is AssetKey(type, this value). Types without a structured form are trimmed and must not contain control characters.",
+  "vectors": [
+    {
+      "input": {
+        "type": "domain_name",
+        "value": "WWW.Example.COM."
+      },
+      "output": "www.example.com"
+    },
+    {
+      "input": {
+        "type": "domain_name",
+        "value": "bücher.example"
+      },
+      "output": "xn--bcher-kva.example"
+    },
+    {
+      "input": {
+        "type": "domain_name",
+        "value": "*.example.com"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "ip_address",
+        "value": "::ffff:192.0.2.1"
+      },
+      "output": "192.0.2.1"
+    },
+    {
+      "input": {
+        "type": "ip_address",
+        "value": "2001:DB8:0:0:0:0:0:1"
+      },
+      "output": "2001:db8::1"
+    },
+    {
+      "input": {
+        "type": "ip_range",
+        "value": "10.1.2.3/8"
+      },
+      "output": "10.0.0.0/8"
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "WEB01.Example.com."
+      },
+      "output": "web01.example.com"
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "192.168.001.010"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "::FFFF:10.0.0.1"
+      },
+      "output": "10.0.0.1"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "Example.com:443/TCP"
+      },
+      "output": "example.com:443/tcp"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "[2001:DB8::1]:53/udp"
+      },
+      "output": "[2001:db8::1]:53/udp"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "10.0.0.1:22"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "10.0.0.1:70000/tcp"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "web_origin",
+        "value": "HTTPS://Example.COM:443/Admin?x=1"
+      },
+      "output": "https://example.com"
+    },
+    {
+      "input": {
+        "type": "web_origin",
+        "value": "http://example.com:8080/"
+      },
+      "output": "http://example.com:8080"
+    },
+    {
+      "input": {
+        "type": "web_origin",
+        "value": "ftp://example.com"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "repository",
+        "value": "https://GitHub.com/Org/Repo.git"
+      },
+      "output": "github.com/org/repo"
+    },
+    {
+      "input": {
+        "type": "repository",
+        "value": "git@gitlab.com:Group/Sub/Proj.git"
+      },
+      "output": "gitlab.com/group/sub/proj"
+    },
+    {
+      "input": {
+        "type": "repository",
+        "value": "https://git.example.com/Team/App/"
+      },
+      "output": "git.example.com/Team/App"
+    },
+    {
+      "input": {
+        "type": "package",
+        "value": "pkg:npm/%40babel/core@7.0.0"
+      },
+      "output": "pkg:npm/%40babel/core"
+    },
+    {
+      "input": {
+        "type": "container_image",
+        "value": "nginx@sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "output": "docker.io/library/nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "input": {
+        "type": "certificate",
+        "value": "AB:CD:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+      },
+      "output": "abcdefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "as64500"
+      },
+      "output": "AS64500"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "AS0x1"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "cloud_resource",
+        "value": "ARN:AWS:S3:::Bucket"
+      },
+      "output": "arn:aws:s3:::Bucket"
+    },
+    {
+      "input": {
+        "type": "cloud_resource",
+        "value": "/subscriptions/ABC/resourceGroups/RG"
+      },
+      "output": "/subscriptions/abc/resourcegroups/rg"
+    },
+    {
+      "input": {
+        "type": "identity",
+        "value": "  alice@example.com "
+      },
+      "output": "alice@example.com"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "Billing Portal"
+      },
+      "output": "Billing Portal"
+    }
+  ]
+}

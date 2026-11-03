@@ -1,82 +1,31 @@
 {
-  "description": "LocationKey: the location part of the correlation key. Branch order: package (purl, else ecosystem+name), url (web.url, then location.path), file, net, resource.",
+  "description": "LocationKey: a partial CTIS 2.0 finding object to the expected key. Branch order: pkg: (versionless purl; a package name alone has no key, the ecosystem is the purl type), url: from web.url then location.path, file:, net:<port>/<transport>, resource:.",
   "cases": [
     {
       "name": "purl without version",
       "finding": {
         "vulnerability": {
           "purl": "pkg:NPM/%40babel/core@7.0.0?arch=x#sub",
-          "package": "x"
+          "package_name": "x"
         }
       },
       "expected": "pkg:npm/%40babel/core"
     },
     {
-      "name": "package by name",
+      "name": "package name without purl has no package key",
       "finding": {
         "vulnerability": {
-          "package": "lodash",
-          "ecosystem": "NPM"
+          "package_name": "lodash"
         }
       },
-      "expected": "pkg:npm/lodash"
-    },
-    {
-      "name": "pip ecosystem is pypi",
-      "finding": {
-        "vulnerability": {
-          "package": "requests",
-          "ecosystem": "pip"
-        }
-      },
-      "expected": "pkg:pypi/requests"
-    },
-    {
-      "name": "go ecosystem is golang",
-      "finding": {
-        "vulnerability": {
-          "package": "golang.org/x/net",
-          "ecosystem": "go"
-        }
-      },
-      "expected": "pkg:golang/golang.org/x/net"
-    },
-    {
-      "name": "rubygems ecosystem is gem",
-      "finding": {
-        "vulnerability": {
-          "package": "rails",
-          "ecosystem": "RubyGems"
-        }
-      },
-      "expected": "pkg:gem/rails"
-    },
-    {
-      "name": "crates.io ecosystem is cargo",
-      "finding": {
-        "vulnerability": {
-          "package": "serde",
-          "ecosystem": "crates.io"
-        }
-      },
-      "expected": "pkg:cargo/serde"
-    },
-    {
-      "name": "maven keeps its name",
-      "finding": {
-        "vulnerability": {
-          "package": "org.apache.logging.log4j:log4j-core",
-          "ecosystem": "Maven"
-        }
-      },
-      "expected": "pkg:maven/org.apache.logging.log4j:log4j-core"
+      "expected": ""
     },
     {
       "name": "package wins over web",
       "finding": {
         "vulnerability": {
-          "package": "lodash",
-          "ecosystem": "npm"
+          "package_name": "lodash",
+          "purl": "pkg:npm/lodash@4.17.21"
         },
         "web": {
           "url": "https://example.com/a"
@@ -168,7 +117,7 @@
       "finding": {
         "network": {
           "port": 161,
-          "protocol": "UDP"
+          "transport": "udp"
         }
       },
       "expected": "net:161/udp"
@@ -194,6 +143,33 @@
       "name": "no location",
       "finding": {},
       "expected": ""
+    },
+    {
+      "name": "purl type is lowercased, name kept",
+      "finding": {
+        "vulnerability": {
+          "purl": "pkg:PyPI/Django@4.2"
+        }
+      },
+      "expected": "pkg:pypi/Django"
+    },
+    {
+      "name": "golang purl namespace",
+      "finding": {
+        "vulnerability": {
+          "purl": "pkg:golang/golang.org/x/net@v0.17.0"
+        }
+      },
+      "expected": "pkg:golang/golang.org/x/net"
+    },
+    {
+      "name": "maven purl",
+      "finding": {
+        "vulnerability": {
+          "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
+        }
+      },
+      "expected": "pkg:maven/org.apache.logging.log4j/log4j-core"
     }
   ]
 }

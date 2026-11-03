@@ -1,17 +1,18 @@
 {
-  "version": "1.3",
+  "version": "2.0",
   "metadata": {
-    "timestamp": "2026-10-02T00:00:00Z"
+    "id": "019a2b3c-4d5e-7000-8000-000000000001",
+    "generated_at": "2026-11-03T00:00:00Z"
   },
   "assets": [
     {
       "id": "a",
-      "type": "domain",
+      "type": "domain_name",
       "value": "example.com"
     },
     {
       "id": "a",
-      "type": "domain",
+      "type": "domain_name",
       "value": "example.org"
     }
   ]

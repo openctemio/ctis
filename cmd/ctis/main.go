@@ -4,7 +4,7 @@
 //
 //	ctis validate [--json] [--max-size BYTES] <file|->...
 //	ctis canon <asset-type> <value>
-//	ctis conformance [dir]   (default conformance/v1)
+//	ctis conformance [dir]   (default conformance/v2)
 //	ctis version
 //
 // Exit status: 0 everything valid, 1 a document is invalid or a vector
@@ -61,7 +61,7 @@ func usage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `usage:
   ctis validate [--json] [--max-size BYTES] <file|->...
   ctis canon <asset-type> <value>
-  ctis conformance [dir]   (default conformance/v1)
+  ctis conformance [dir]   (default conformance/v2)
   ctis version
 `)
 }
@@ -141,12 +141,22 @@ func cmdCanon(args []string, stdout, stderr io.Writer) int {
 		usage(stderr)
 		return 2
 	}
-	_, _ = fmt.Fprintln(stdout, ctis.NormalizeAssetName(ctis.AssetType(args[0]), args[1]))
+	t := ctis.AssetType(args[0])
+	if !t.IsValid() {
+		_, _ = fmt.Fprintf(stderr, "ctis: unknown asset type %q\n", args[0])
+		return 1
+	}
+	v, err := ctis.CanonicalAssetValue(t, args[1])
+	if err != nil {
+		_, _ = fmt.Fprintf(stderr, "ctis: %v\n", err)
+		return 1
+	}
+	_, _ = fmt.Fprintf(stdout, "%s\t%s\n", v, ctis.AssetKey(t, v))
 	return 0
 }
 
 func cmdConformance(args []string, stdout, stderr io.Writer) int {
-	dir := "conformance/v1"
+	dir := "conformance/v2"
 	switch len(args) {
 	case 0:
 	case 1:

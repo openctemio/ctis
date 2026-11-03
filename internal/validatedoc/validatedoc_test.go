@@ -6,18 +6,20 @@ import (
 )
 
 func TestCheck(t *testing.T) {
-	const ok = `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"}}`
+	const meta = `"metadata":{"id":"019a2b3c-4d5e-7000-8000-000000000001","generated_at":"2026-10-02T00:00:00Z"}`
+	const ok = `{"version":"2.0",` + meta + `}`
 	cases := []struct {
 		name, in, cat, sub string
 	}{
 		{"valid", ok, "", ""},
 		{"not json", `nope`, CategoryDecode, "invalid character"},
-		{"unknown member", `{"version":"1.3","bogus":1}`, CategoryDecode, "bogus"},
-		{"trailing data", ok + ` {}`, CategoryDecode, "after the report"},
-		{"future major", `{"version":"2.0","metadata":{"timestamp":"2026-10-02T00:00:00Z"}}`, CategoryVersion, `"2.0"`},
-		{"future minor", `{"version":"1.99","metadata":{"timestamp":"2026-10-02T00:00:00Z"}}`, CategoryVersion, `"1.99"`},
-		{"missing version", `{"metadata":{"timestamp":"2026-10-02T00:00:00Z"}}`, CategoryVersion, `""`},
-		{"semantic", `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"vulnerability","title":"t","severity":"high","asset_ref":"x"}]}`, CategoryValidate, "asset_ref"},
+		{"unknown member", `{"version":"2.0","bogus":1}`, CategoryDecode, "bogus"},
+		{"trailing data", ok + ` {}`, CategoryDecode, "invalid character"},
+		{"old major", `{"version":"1.6","metadata":{"timestamp":"2026-10-02T00:00:00Z"}}`, CategoryVersion, "upgrade the producer"},
+		{"future major", `{"version":"3.0",` + meta + `}`, CategoryVersion, `"3.0"`},
+		{"future minor", `{"version":"2.99",` + meta + `}`, CategoryVersion, `"2.99"`},
+		{"missing version", `{` + meta + `}`, CategoryVersion, "required"},
+		{"semantic", `{"version":"2.0",` + meta + `,"findings":[{"type":"vulnerability","title":"t","severity":"high","asset_ref":"x"}]}`, CategoryValidate, "asset_ref"},
 	}
 	for _, c := range cases {
 		p := Check([]byte(c.in))

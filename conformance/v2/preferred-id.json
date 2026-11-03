@@ -4,9 +4,15 @@
     {
       "name": "sequence length matters",
       "vulnerability": {
-        "cve_ids": [
-          "CVE-2021-10000",
-          "CVE-2021-9999"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2021-10000"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2021-9999"
+          }
         ]
       },
       "expected": {
@@ -17,9 +23,15 @@
     {
       "name": "year first",
       "vulnerability": {
-        "cve_ids": [
-          "CVE-2022-0001",
-          "CVE-2021-99999"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2022-0001"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2021-99999"
+          }
         ]
       },
       "expected": {
@@ -30,9 +42,15 @@
     {
       "name": "lower case is canonicalised",
       "vulnerability": {
-        "cve_id": "cve-2024-9999",
-        "cve_ids": [
-          "CVE-2024-0001"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "cve-2024-9999"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2024-0001"
+          }
         ]
       },
       "expected": {
@@ -43,9 +61,15 @@
     {
       "name": "leading zeros are not part of the number",
       "vulnerability": {
-        "cve_ids": [
-          "CVE-2021-00100",
-          "CVE-2021-0099"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2021-00100"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2021-0099"
+          }
         ]
       },
       "expected": {
@@ -56,8 +80,11 @@
     {
       "name": "cve wins over ghsa",
       "vulnerability": {
-        "cve_id": "CVE-2024-0001",
         "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-0001"
+          },
           {
             "type": "ghsa",
             "id": "GHSA-jfh8-c2jp-5v3q"

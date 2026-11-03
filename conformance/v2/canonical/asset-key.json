@@ -4,10 +4,10 @@
   "vectors": [
     {
       "input": {
-        "type": "domain",
+        "type": "domain_name",
         "value": "example.com"
       },
-      "output": "d4bd8947-822b-5ddc-8438-942b535944d9"
+      "output": "ec26bc85-1b25-5494-9b45-31ab67de6b23"
     },
     {
       "input": {

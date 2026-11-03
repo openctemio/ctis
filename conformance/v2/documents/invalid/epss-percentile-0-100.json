@@ -1,1 +1,28 @@
-{"version": "1.3", "metadata": {"timestamp": "2026-10-02T00:00:00Z"}, "findings": [{"type": "vulnerability", "title": "t", "severity": "high", "vulnerability": {"epss_percentile": 97.5}}]}
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7b6d-bc45-d2af7a7b4264",
+    "generated_at": "2026-10-02T00:00:00Z"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "t",
+      "severity": "high",
+      "asset_ref": "a",
+      "scores": [
+        {
+          "system": "epss_percentile",
+          "value": 97.5
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ]
+}
