@@ -7,14 +7,13 @@ import (
 	"time"
 )
 
-// Contract members (CTIS 1.5, spec section 4.11): the capability a report
-// answers, typed technologies, typed relationships between the report's
-// assets, and the ATT&CK techniques a finding enables. All optional.
+// Graph and context members: typed technologies, typed relationships between
+// the report's assets, and the ATT&CK techniques a finding enables. All
+// optional.
 
-// Limits of the 1.5 members. The schema states them too; Validate refuses a
+// Limits of these members. The schema states them too; Validate refuses a
 // report that exceeds them.
 const (
-	MaxCapabilityRefLen    = 128
 	MaxTechnologies        = 100
 	MaxTechnologyNameLen   = 128
 	MaxTechnologyVerLen    = 64
@@ -27,20 +26,8 @@ const (
 	MaxFindingEvidenceSize = 64 * 1024
 )
 
-var (
-	// capabilityRefRE is the form of a capability reference: a dotted id
-	// and a major, "scan.ports@1".
-	capabilityRefRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+@[1-9][0-9]{0,2}$`)
-	// attackTechniqueRE is a MITRE ATT&CK technique or sub-technique id.
-	attackTechniqueRE = regexp.MustCompile(`^T[0-9]{4}(\.[0-9]{3})?$`)
-)
-
-// IsCapabilityRef reports whether s has the form of a capability reference
-// ("scan.ports@1"). It does not say whether the capability exists; the
-// capability package does.
-func IsCapabilityRef(s string) bool {
-	return len(s) <= MaxCapabilityRefLen && capabilityRefRE.MatchString(s)
-}
+// attackTechniqueRE is a MITRE ATT&CK technique or sub-technique id.
+var attackTechniqueRE = regexp.MustCompile(`^T[0-9]{4}(\.[0-9]{3})?$`)
 
 // IsAttackTechniqueID reports whether s is a well-formed MITRE ATT&CK
 // technique id ("T1190") or sub-technique id ("T1595.002").
@@ -143,11 +130,8 @@ type Relationship struct {
 	Extensions Extensions `json:"extensions,omitempty"`
 }
 
-// validateContractReport checks the 1.5 report-level members.
-func validateContractReport(r *Report, assetIDs map[string]bool, add func(string, ...any)) {
-	if c := r.Metadata.Capability; c != "" && !IsCapabilityRef(c) {
-		add("metadata.capability %q is not a capability reference (id@major)", truncateForError(c))
-	}
+// validateRelationships checks the report's relationships.
+func validateRelationships(r *Report, assetIDs map[string]bool, add func(string, ...any)) {
 	if len(r.Relationships) > MaxRelationships {
 		add("relationships has %d entries, at most %d", len(r.Relationships), MaxRelationships)
 	}
@@ -162,8 +146,8 @@ func validateContractReport(r *Report, assetIDs map[string]bool, add func(string
 			switch {
 			case strings.TrimSpace(ref[1]) == "":
 				add("relationships[%d]: %s is required", i, ref[0])
-			case len(ref[1]) > MaxRelationshipRefLen:
-				add("relationships[%d]: %s longer than %d", i, ref[0], MaxRelationshipRefLen)
+			case len(ref[1]) > MaxRelationshipRefLen || IsUUIDShaped(ref[1]):
+				validateDocumentRef(fmt.Sprintf("relationships[%d].%s", i, ref[0]), ref[1], add)
 			case !assetIDs[ref[1]]:
 				add("relationships[%d]: %s %q names no asset in this report", i, ref[0], truncateForError(ref[1]))
 			}
@@ -224,14 +208,14 @@ func validateTechnologyList(add func(string, ...any), techs []Technology) {
 	}
 }
 
-// validateFindingTechniques checks finding.attack.
+// validateFindingTechniques checks finding.attack_technique_ids.
 func validateFindingTechniques(i int, ids []string, add func(string, ...any)) {
 	if len(ids) > MaxFindingTechniques {
-		add("findings[%d]: attack has %d entries, at most %d", i, len(ids), MaxFindingTechniques)
+		add("findings[%d]: attack_technique_ids has %d entries, at most %d", i, len(ids), MaxFindingTechniques)
 	}
 	for j, id := range ids {
 		if j < MaxFindingTechniques && !IsAttackTechniqueID(id) {
-			add("findings[%d]: attack[%d] %q is not an ATT&CK technique id", i, j, truncateForError(id))
+			add("findings[%d]: attack_technique_ids[%d] %q is not an ATT&CK technique id", i, j, truncateForError(id))
 		}
 	}
 }

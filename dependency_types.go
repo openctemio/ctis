@@ -1,75 +1,107 @@
 package ctis
 
-// =============================================================================
-// Dependency Types (SBOM)
-// =============================================================================
+import "slices"
 
-// Dependency represents a software component or library.
+// Dependency is a software component (SBOM). Its identity is the versionless
+// purl; the ecosystem is the purl type.
 type Dependency struct {
-	// Unique identifier for this dependency
+	// Document-local reference. Never UUID-shaped.
 	ID string `json:"id,omitempty"`
 
-	// Package name
-	Name string `json:"name"`
-
-	// Package version
+	// Component name (required) and version.
+	Name    string `json:"name"`
 	Version string `json:"version,omitempty"`
 
-	// Package type: library, framework, application, os
-	Type string `json:"type,omitempty"`
+	// Component type (CycloneDX component types, verbatim).
+	Type DependencyType `json:"type,omitempty"`
 
-	// Ecosystem: npm, pypi, maven, gomod, etc.
-	Ecosystem string `json:"ecosystem,omitempty"`
-
-	// Package URL (PURL)
+	// Package URL.
 	PURL string `json:"purl,omitempty"`
 
-	// Unique identifier from scanner (e.g., Trivy UID)
-	UID string `json:"uid,omitempty"`
+	// The producer's own id of the component (a CycloneDX bom-ref, an SPDX
+	// element id).
+	SourceID string `json:"source_id,omitempty"`
 
-	// License information
+	// SPDX license ids or expressions.
 	Licenses []string `json:"licenses,omitempty"`
 
-	// Dependency relationship: direct, indirect, root, transit
-	Relationship string `json:"relationship,omitempty"`
+	// Place in the dependency graph: root, direct, transitive.
+	Relationship DependencyRelationship `json:"relationship,omitempty"`
 
-	// Dependencies (list of IDs or names this component depends on)
+	// Ids of the dependencies of this report this one depends on.
 	DependsOn []string `json:"depends_on,omitempty"`
 
-	// File path where this dependency is defined
-	Path string `json:"path,omitempty"` // file path
-
-	// Location in file (deprecated, use Locations)
-	Location *FindingLocation `json:"location,omitempty"`
-
-	// All locations where this dependency is defined
+	// Where the component is declared (manifest, lock file).
 	Locations []DependencyLocation `json:"locations,omitempty"`
 
-	// AssetRef names the asset of this report the component was found in
-	// (2.0): a repository, a container image, a host.
+	// The asset of this report the component was found in.
 	AssetRef string `json:"asset_ref,omitempty"`
 
-	// Custom properties
+	// Opaque bag; no meaning.
 	Properties Properties `json:"properties,omitempty"`
 
-	// Namespaced producer data (2.0).
+	// Namespaced producer data.
 	Extensions Extensions `json:"extensions,omitempty"`
 }
 
-// DependencyLocation represents a location where a dependency is defined.
+// DependencyLocation is a place in a file where a component is declared.
 type DependencyLocation struct {
-	// File path
-	Path string `json:"path,omitempty"`
-
-	// Start line number
-	StartLine int `json:"start_line,omitempty"`
-
-	// End line number
-	EndLine int `json:"end_line,omitempty"`
-
-	// Start column number
-	StartColumn int `json:"start_column,omitempty"`
-
-	// End column number
-	EndColumn int `json:"end_column,omitempty"`
+	Path        string `json:"path,omitempty"`
+	StartLine   int    `json:"start_line,omitempty"`
+	EndLine     int    `json:"end_line,omitempty"`
+	StartColumn int    `json:"start_column,omitempty"`
+	EndColumn   int    `json:"end_column,omitempty"`
 }
+
+// DependencyRelationship is the place of a component in the graph.
+type DependencyRelationship string
+
+// Dependency relationships.
+const (
+	DependencyRoot       DependencyRelationship = "root"
+	DependencyDirect     DependencyRelationship = "direct"
+	DependencyTransitive DependencyRelationship = "transitive"
+)
+
+// AllDependencyRelationships returns every dependency relationship.
+func AllDependencyRelationships() []DependencyRelationship {
+	return []DependencyRelationship{DependencyRoot, DependencyDirect, DependencyTransitive}
+}
+
+// IsValid reports whether r is a known relationship.
+func (r DependencyRelationship) IsValid() bool {
+	return slices.Contains(AllDependencyRelationships(), r)
+}
+
+// DependencyType is a CycloneDX component type, verbatim.
+type DependencyType string
+
+// Dependency types.
+const (
+	DependencyTypeApplication      DependencyType = "application"
+	DependencyTypeFramework        DependencyType = "framework"
+	DependencyTypeLibrary          DependencyType = "library"
+	DependencyTypeContainer        DependencyType = "container"
+	DependencyTypePlatform         DependencyType = "platform"
+	DependencyTypeOperatingSystem  DependencyType = "operating-system"
+	DependencyTypeDevice           DependencyType = "device"
+	DependencyTypeDeviceDriver     DependencyType = "device-driver"
+	DependencyTypeFirmware         DependencyType = "firmware"
+	DependencyTypeFile             DependencyType = "file"
+	DependencyTypeMachineLearning  DependencyType = "machine-learning-model"
+	DependencyTypeData             DependencyType = "data"
+	DependencyTypeCryptographicAst DependencyType = "cryptographic-asset"
+)
+
+// AllDependencyTypes returns every dependency type.
+func AllDependencyTypes() []DependencyType {
+	return []DependencyType{
+		DependencyTypeApplication, DependencyTypeFramework, DependencyTypeLibrary, DependencyTypeContainer,
+		DependencyTypePlatform, DependencyTypeOperatingSystem, DependencyTypeDevice, DependencyTypeDeviceDriver,
+		DependencyTypeFirmware, DependencyTypeFile, DependencyTypeMachineLearning, DependencyTypeData,
+		DependencyTypeCryptographicAst,
+	}
+}
+
+// IsValid reports whether t is a known dependency type.
+func (t DependencyType) IsValid() bool { return slices.Contains(AllDependencyTypes(), t) }

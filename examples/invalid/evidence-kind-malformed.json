@@ -1,1 +1,27 @@
-{"version": "1.6", "metadata": {"timestamp": "2026-10-07T00:00:00Z"}, "findings": [{"type": "vulnerability", "title": "t", "severity": "high", "evidence_items": [{"kind": "HTTP Exchange"}]}]}
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-715a-b765-203fb61223d8",
+    "generated_at": "2026-10-07T00:00:00Z"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "t",
+      "severity": "high",
+      "evidence_items": [
+        {
+          "kind": "HTTP Exchange"
+        }
+      ],
+      "asset_ref": "a"
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ]
+}

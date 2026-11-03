@@ -5,33 +5,42 @@ import (
 	"strings"
 )
 
-// Specification version and schema location.
+// Specification version, schema location and media type.
 //
 // SchemaVersion is the MAJOR.MINOR of the CTIS specification this module
-// implements, and the value producers put in Report.Version. It moves with the
-// module's minor version: module v1.3.x implements CTIS 1.3. A parity test
+// implements and the value producers put in Report.Version. It moves with the
+// module's minor version: module v2.0.x implements CTIS 2.0. A parity test
 // keeps it equal to the "default" of report.json#/properties/version.
 //
-// Compatibility rule (docs/spec.md, "Versioning"):
-//   - A consumer accepts every report whose major equals SchemaMajor.
-//   - A minor release only adds optional fields or enum values.
-//   - A consumer that decodes strictly (unknown fields rejected) still refuses
-//     a field newer than its own minor, so a producer must not send fields from
-//     a minor newer than the consumer it talks to. Upgrade receivers first.
+// Compatibility rule (docs/spec.md, "Versioning"): a receiver decodes a
+// document of its own minor or an older one strictly, ignores unknown members
+// (and maps unknown enum values to their fallback) only in a document of a
+// newer minor of the same major, and rejects every other major. There is no
+// conversion between majors: a 1.x document is rejected and its producer must
+// be upgraded.
 const (
-	SchemaVersion = "1.6"
-	SchemaMajor   = 1
+	SchemaVersion = "2.0"
+	SchemaMajor   = 2
 
-	// SchemaBaseURL is the base of the published schema $ids. Every file in
-	// schemas/v1 is reachable at SchemaBaseURL + its file name.
-	SchemaBaseURL = "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/"
+	// SchemaBaseURL is the base of the published schema $ids. The $ids are
+	// immutable and versioned; they are identifiers on the project's domain
+	// and receivers never fetch them.
+	SchemaBaseURL = "https://schemas.openctem.io/ctis/" + SchemaVersion + "/"
 
 	// SchemaURL is the $id of the report schema, for Report.Schema.
 	SchemaURL = SchemaBaseURL + "report.json"
+
+	// MediaType is the media type of a CTIS document. MediaTypeVersioned
+	// carries the version parameter producers send.
+	MediaType          = "application/vnd.ctis+json"
+	MediaTypeVersioned = MediaType + "; version=" + SchemaVersion
+
+	// FileSuffix is the file name suffix of a CTIS document.
+	FileSuffix = ".ctis.json"
 )
 
 // SupportedSchemaVersions returns every CTIS version this module reads with
-// full knowledge of its members, oldest first: 1.0 up to SchemaVersion. A
+// full knowledge of its members, oldest first: 2.0 up to SchemaVersion. A
 // report declaring any of them decodes strictly into the Go types and passes
 // Validate. Code that compared a version against a literal such as "1.3"
 // should check membership here instead (or IsCompatibleVersion, which also

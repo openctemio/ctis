@@ -51,7 +51,6 @@ var (
 	extNamespaceRE = regexp.MustCompile(ExtensionNamespacePattern)
 	capecIDRE      = regexp.MustCompile(`^CAPEC-[1-9][0-9]{0,5}$`)
 	dateOnlyRE     = regexp.MustCompile(`^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$`)
-	evidenceRefRE  = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
 )
 
 // IsOpenToken reports whether s is a value of an open vocabulary.
@@ -66,6 +65,27 @@ func IsExtensionNamespace(s string) bool {
 // namespace and each value an object whose members that namespace defines.
 // A receiver validates a namespace it knows and ignores one it does not.
 type Extensions map[string]map[string]any
+
+// OpenCTEMNamespace is the extensions namespace of the OpenCTEM receiver
+// profile (schemas/extensions/io.openctem/2.json).
+const OpenCTEMNamespace = "io.openctem"
+
+// Set stores value under key in namespace ns, creating the maps it needs.
+func (e *Extensions) Set(ns, key string, value any) {
+	if *e == nil {
+		*e = Extensions{}
+	}
+	if (*e)[ns] == nil {
+		(*e)[ns] = map[string]any{}
+	}
+	(*e)[ns][key] = value
+}
+
+// Get returns the value under key in namespace ns.
+func (e Extensions) Get(ns, key string) (any, bool) {
+	v, ok := e[ns][key]
+	return v, ok
+}
 
 // =============================================================================
 // Asset context
@@ -278,8 +298,8 @@ type ThreatSignal struct {
 // =============================================================================
 
 // TargetState is how one target of the work ended. The vocabulary is the
-// one of the outcome package (revision 2), copied here so the root package
-// does not import it; a test keeps the two equal.
+// one of the platform-sensor outcome vocabulary (revision 2); CTIS owns its
+// own copy.
 type TargetState string
 
 // Target states.
@@ -433,9 +453,6 @@ func validateCoverageMetadata(m *ReportMetadata, add func(string, ...any)) {
 		if s.Index < 0 || s.Index >= s.Count {
 			add("metadata.segment.index %d is outside 0-%d", s.Index, s.Count-1)
 		}
-		if strings.TrimSpace(m.ID) == "" {
-			add("metadata.segment needs metadata.id: the segments of one result share it")
-		}
 	}
 	if len(m.Targets) > MaxTargets {
 		add("metadata.targets has %d entries, at most %d", len(m.Targets), MaxTargets)
@@ -521,8 +538,8 @@ func validateCoverageAsset(i int, a *Asset, add func(string, ...any)) {
 
 // validateCoverageFinding checks the 2.0 additive members of one finding.
 func validateCoverageFinding(i int, f *Finding, depIDs map[string]bool, add func(string, ...any)) {
-	if f.Tool != nil && strings.TrimSpace(f.Tool.Name) == "" {
-		add("findings[%d]: tool.name is required when tool is present", i)
+	if f.Tool != nil {
+		validateTool(fmt.Sprintf("findings[%d].tool", i), f.Tool, add)
 	}
 	if f.DependencyRef != "" {
 		switch {
@@ -549,20 +566,27 @@ func validateCoverageFinding(i int, f *Finding, depIDs map[string]bool, add func
 			add("findings[%d]: validation.evidence_refs has %d entries, at most %d", i, len(v.EvidenceRefs), MaxEvidenceRefs)
 		}
 		for j, ref := range v.EvidenceRefs {
-			if j < MaxEvidenceRefs && !evidenceRefRE.MatchString(ref) {
-				add("findings[%d]: validation.evidence_refs[%d] %q is not a sha256:<hex> or attachment id", i, j, truncateForError(ref))
+			if j >= MaxEvidenceRefs {
+				break
 			}
+			if ref == "" {
+				add("findings[%d]: validation.evidence_refs[%d] is empty", i, j)
+			}
+			validateDocumentRef(fmt.Sprintf("findings[%d].validation.evidence_refs[%d]", i, j), ref, add)
 		}
 	}
+	if len(f.CAPECIDs) > MaxCAPECIDs {
+		add("findings[%d]: capec_ids has %d entries, at most %d", i, len(f.CAPECIDs), MaxCAPECIDs)
+	}
+	for j, id := range f.CAPECIDs {
+		if j < MaxCAPECIDs && !capecIDRE.MatchString(id) {
+			add("findings[%d]: capec_ids[%d] %q is not a CAPEC id", i, j, truncateForError(id))
+		}
+	}
+	if f.Technique != "" && !f.Technique.IsValid() {
+		add("findings[%d]: invalid technique %q", i, truncateForError(string(f.Technique)))
+	}
 	if vu := f.Vulnerability; vu != nil {
-		if len(vu.CAPECIDs) > MaxCAPECIDs {
-			add("findings[%d]: vulnerability.capec_ids has %d entries, at most %d", i, len(vu.CAPECIDs), MaxCAPECIDs)
-		}
-		for j, id := range vu.CAPECIDs {
-			if j < MaxCAPECIDs && !capecIDRE.MatchString(id) {
-				add("findings[%d]: vulnerability.capec_ids[%d] %q is not a CAPEC id", i, j, truncateForError(id))
-			}
-		}
 		if len(vu.ThreatSignals) > MaxThreatSignals {
 			add("findings[%d]: vulnerability.threat_signals has %d entries, at most %d", i, len(vu.ThreatSignals), MaxThreatSignals)
 		}

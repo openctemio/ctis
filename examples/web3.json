@@ -1,7 +1,17 @@
 {
-  "version": "1.3",
-  "metadata": {"timestamp": "2026-10-02T13:00:00Z", "source_type": "scanner", "scope": {"name": "vault", "type": "blockchain"}},
-  "tool": {"name": "slither", "version": "0.10.4", "capabilities": ["web3"]},
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7ba8-9ad2-8ff6585413aa",
+    "generated_at": "2026-10-02T13:00:00Z",
+    "channel": "scanner"
+  },
+  "tool": {
+    "name": "slither",
+    "version": "0.10.4",
+    "techniques": [
+      "sast"
+    ]
+  },
   "assets": [
     {
       "id": "vault",
@@ -14,7 +24,13 @@
           "chain_id": 1,
           "network_type": "mainnet",
           "address": "0x1234567890abcdef1234567890abcdef12345678",
-          "contract": {"name": "Vault", "verified": true, "compiler_version": "0.8.24", "contract_type": "defi", "is_proxy": false}
+          "contract": {
+            "name": "Vault",
+            "is_verified": true,
+            "compiler_version": "0.8.24",
+            "contract_type": "defi",
+            "is_proxy": false
+          }
         }
       }
     }
@@ -22,12 +38,16 @@
   "findings": [
     {
       "id": "f-1",
-      "type": "web3",
+      "type": "weakness",
       "title": "Reentrancy in Vault.withdraw(uint256)",
       "severity": "critical",
       "rule_id": "reentrancy-eth",
       "asset_ref": "vault",
-      "location": {"path": "contracts/Vault.sol", "start_line": 57, "end_line": 66},
+      "location": {
+        "path": "contracts/Vault.sol",
+        "start_line": 57,
+        "end_line": 66
+      },
       "web3": {
         "vulnerability_class": "reentrancy",
         "swc_id": "SWC-107",
@@ -37,7 +57,11 @@
         "function_selector": "0x2e1a7d4d",
         "detection_tool": "slither",
         "detection_confidence": "high",
-        "reentrancy": {"type": "single_function", "external_call": "msg.sender.call{value: amount}(\"\")", "state_modified_after_call": "balances[msg.sender]"}
+        "reentrancy": {
+          "type": "single_function",
+          "external_call": "msg.sender.call{value: amount}(\"\")",
+          "state_modified_after_call": "balances[msg.sender]"
+        }
       }
     }
   ]

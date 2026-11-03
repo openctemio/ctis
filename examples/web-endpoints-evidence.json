@@ -1,11 +1,15 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "6b0c9a52-1f3e-4d8a-9f61-2a7c3e5d4b10",
-    "timestamp": "2026-10-07T10:00:00Z",
-    "source_type": "scanner",
-    "capability": "crawl.web@1"
+    "id": "019a2b3c-4d5e-77c7-b16e-39de118340ee",
+    "generated_at": "2026-10-07T10:00:00Z",
+    "channel": "scanner",
+    "extensions": {
+      "io.openctem": {
+        "capability": "crawl.web@1"
+      }
+    }
   },
   "tool": {
     "name": "katana",
@@ -14,7 +18,7 @@
   "assets": [
     {
       "id": "origin-1",
-      "type": "http_service",
+      "type": "web_origin",
       "value": "https://shop.example.com"
     }
   ],
@@ -28,7 +32,7 @@
       "template": "/products/{int}",
       "kind": "page",
       "source": "crawl",
-      "parent": "https://shop.example.com/",
+      "parent_url": "https://shop.example.com/",
       "status_code": 200,
       "content_type": "text/html",
       "auth": "none",
@@ -53,7 +57,7 @@
           "location": "json",
           "name": "/item_id",
           "type_hint": "integer",
-          "required": true
+          "is_required": true
         },
         {
           "location": "header",

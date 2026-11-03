@@ -1,1 +1,26 @@
-{"version": "1.4", "metadata": {"timestamp": "2026-10-05T00:00:00Z"}, "findings": [{"type": "vulnerability", "title": "t", "severity": "high", "vex": {"status": "not_affected", "justification": "not_reachable"}}]}
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7f76-b6a4-6e5266d27c44",
+    "generated_at": "2026-10-05T00:00:00Z"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "t",
+      "severity": "high",
+      "vex": {
+        "status": "not_affected",
+        "justification": "not_reachable"
+      },
+      "asset_ref": "a"
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ]
+}

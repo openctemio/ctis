@@ -32,10 +32,10 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 	}
 	if len(ev.Resources) > 0 {
 		r := ev.Resources[0]
-		f.AssetRef, f.AssetValue, f.AssetType = r.UID, r.Name, AssetType(r.Type)
+		f.AssetRef = r.UID
 	}
 	if ev.Unmapped["secret_type"] != "" || ev.Unmapped["secret_service"] != "" || ev.Unmapped["secret_masked_value"] != "" {
-		f.Secret = &SecretDetails{SecretType: ev.Unmapped["secret_type"], Service: ev.Unmapped["secret_service"], MaskedValue: ev.Unmapped["secret_masked_value"]}
+		f.Secret = &SecretDetails{Type: ev.Unmapped["secret_type"], Service: ev.Unmapped["secret_service"], MaskedValue: ev.Unmapped["secret_masked_value"]}
 	}
 	rem := ev.Remediation
 	if c := ev.Compliance; c != nil {
@@ -46,8 +46,8 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 		if f.Type == FindingTypeMisconfiguration {
 			f.Misconfiguration = &MisconfigurationDetails{PolicyID: c.Control, Provider: std}
 		} else {
-			result := strings.ToLower(c.Status)
-			f.Compliance = &ComplianceDetails{Framework: std, FrameworkVersion: ev.Unmapped["compliance_framework_version"], ControlID: c.Control, Result: result}
+			f.Kind = strings.ToLower(c.Status)
+			f.Compliance = &ComplianceDetails{Framework: ComplianceFramework(std), FrameworkVersion: ev.Unmapped["compliance_framework_version"], ControlID: c.Control}
 		}
 	}
 	for i, v := range ev.Vulnerabilities {
@@ -70,14 +70,19 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 		}
 		vd := f.Vulnerability
 		if i == 0 {
-			vd.ExploitAvailable = v.IsExploitAvailable
+			if v.IsExploitAvailable {
+				vd.ThreatSignals = []ThreatSignal{{Type: ThreatSignalPublicExploit, Source: "ocsf"}}
+			}
 			if len(v.AffectedPackages) > 0 {
 				p := v.AffectedPackages[0]
-				vd.Package, vd.AffectedVersion, vd.PURL, vd.FixedVersion = p.Name, p.Version, p.PURL, p.FixedInVersion
+				vd.PackageName, vd.InstalledVersion, vd.PURL = p.Name, p.Version, p.PURL
+				if p.FixedInVersion != "" {
+					vd.FixedVersions = []string{p.FixedInVersion}
+				}
 			}
 		}
 		if v.CVE != nil {
-			vd.CVEIDs = append(vd.CVEIDs, v.CVE.UID)
+			vd.IDs = append(vd.IDs, VulnerabilityID{Type: VulnerabilityIDCVE, ID: v.CVE.UID})
 			for _, c := range v.CVE.CVSS {
 				s := Score{System: ScoreSystemCVSS, Version: c.Version, Vector: c.VectorString}
 				if c.BaseScore != nil {
@@ -103,7 +108,10 @@ func ocsfToCTIS(ev *OCSFEvent) Finding {
 		}
 	}
 	if rem != nil {
-		f.Remediation = &Remediation{Recommendation: rem.Desc, References: rem.References}
+		f.Remediation = &Remediation{Recommendation: rem.Desc}
+		if len(f.References) == 0 {
+			f.References = rem.References
+		}
 	}
 	return f
 }
@@ -168,13 +176,28 @@ func ocsfExpected(t *testing.T, r *Report, src *Finding) Finding {
 	if f.Fingerprint == "" {
 		f.Fingerprint = f.ID
 	}
-	if a := findAsset(r, f.AssetRef); a != nil {
-		f.AssetValue, f.AssetType = a.Value, a.Type
+	if f.Remediation != nil {
+		f.Remediation = &Remediation{Recommendation: f.Remediation.Recommendation}
+		if f.Remediation.Recommendation == "" {
+			f.Remediation = nil
+		}
 	}
 	if v := f.Vulnerability; v != nil {
-		v.CVEIDs = ocsfCVEs(v)
-		if len(v.CWEIDs) == 0 && v.CWEID != "" {
-			v.CWEIDs = []string{v.CWEID}
+		cves := ocsfCVEs(v)
+		v.IDs = nil
+		for _, id := range cves {
+			v.IDs = append(v.IDs, VulnerabilityID{Type: VulnerabilityIDCVE, ID: id})
+		}
+		if HasThreatSignal(v, ThreatSignalPublicExploit, ThreatSignalWeaponized, ThreatSignalExploitedInWild, ThreatSignalKEV) {
+			v.ThreatSignals = []ThreatSignal{{Type: ThreatSignalPublicExploit, Source: "ocsf"}}
+		} else {
+			v.ThreatSignals = nil
+		}
+		if len(v.FixedVersions) > 1 {
+			v.FixedVersions = v.FixedVersions[:1]
+		}
+		if v.PackageName == "" {
+			v.FixedVersions = nil
 		}
 		cvss, epss := ocsfScoresOf(&f)
 		f.Scores = nil
@@ -191,7 +214,7 @@ func ocsfExpected(t *testing.T, r *Report, src *Finding) Finding {
 				f.Scores = append(f.Scores, Score{System: ScoreSystemEPSSPercentile, Value: epss.Percentile})
 			}
 		}
-		if len(v.CVEIDs) == 0 {
+		if len(v.IDs) == 0 {
 			f.Scores = nil
 		}
 	}

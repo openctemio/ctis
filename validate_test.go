@@ -9,8 +9,8 @@ import (
 
 func validReport() *Report {
 	return &Report{
-		Version:  "1.0",
-		Metadata: ReportMetadata{Timestamp: time.Date(2026, 10, 2, 0, 0, 0, 0, time.UTC)},
+		Version:  "2.0",
+		Metadata: ReportMetadata{ID: testReportID, GeneratedAt: time.Date(2026, 10, 2, 0, 0, 0, 0, time.UTC)},
 		Tool:     &Tool{Name: "scanner"},
 		Findings: []Finding{
 			{
@@ -20,8 +20,11 @@ func validReport() *Report {
 				Severity: SeverityHigh,
 				Status:   FindingStatusOpen,
 				AssetRef: "a1",
-				Vulnerability: &VulnerabilityDetails{
-					CVSSScore: 9.8, EPSSScore: 0.97, EPSSPercentile: 0.999, VPRScore: 9.0,
+				Scores: []Score{
+					{System: ScoreSystemCVSS, Version: "3.1", Value: f64(9.8)},
+					{System: ScoreSystemEPSS, Value: f64(0.97)},
+					{System: ScoreSystemEPSSPercentile, Value: f64(0.999)},
+					{System: ScoreSystemVendor, Value: f64(9.0), Source: "tenable"},
 				},
 			},
 		},
@@ -105,10 +108,10 @@ func TestSeverity_Score_UnknownIsFailSafe(t *testing.T) {
 
 func TestReport_Validate_Report(t *testing.T) {
 	cases := map[string]func(*Report){
-		"zero timestamp":       func(r *Report) { r.Metadata.Timestamp = time.Time{} },
+		"zero timestamp":       func(r *Report) { r.Metadata.GeneratedAt = time.Time{} },
 		"garbage version":      func(r *Report) { r.Version = "9.9-garbage" },
-		"other major":          func(r *Report) { r.Version = "2.0" },
-		"version with v":       func(r *Report) { r.Version = "v1.3" },
+		"other major":          func(r *Report) { r.Version = "1.6" },
+		"version with v":       func(r *Report) { r.Version = "v2.0" },
 		"tool without name":    func(r *Report) { r.Tool = &Tool{} },
 		"duplicate asset id":   func(r *Report) { r.Assets = append(r.Assets, r.Assets[0]) },
 		"duplicate finding id": func(r *Report) { r.Findings = append(r.Findings, r.Findings[0]) },
@@ -116,14 +119,21 @@ func TestReport_Validate_Report(t *testing.T) {
 		"asset confidence":     func(r *Report) { r.Assets[0].Confidence = 500 },
 		"finding confidence":   func(r *Report) { r.Findings[0].Confidence = -1 },
 		"rank":                 func(r *Report) { r.Findings[0].Rank = 101 },
-		"cvss above 10":        func(r *Report) { r.Findings[0].Vulnerability.CVSSScore = 99 },
-		"cvss negative":        func(r *Report) { r.Findings[0].Vulnerability.CVSSScore = -0.1 },
-		"cvss NaN":             func(r *Report) { r.Findings[0].Vulnerability.CVSSScore = math.NaN() },
-		"epss above 1":         func(r *Report) { r.Findings[0].Vulnerability.EPSSScore = 7 },
+		"cvss above 10":        func(r *Report) { r.Findings[0].Scores[0].Value = f64(99) },
+		"cvss negative":        func(r *Report) { r.Findings[0].Scores[0].Value = f64(-0.1) },
+		"cvss NaN":             func(r *Report) { r.Findings[0].Scores[0].Value = f64(math.NaN()) },
+		"epss above 1":         func(r *Report) { r.Findings[0].Scores[1].Value = f64(7) },
 		"epss percentile 0-100": func(r *Report) {
-			r.Findings[0].Vulnerability.EPSSPercentile = 97.5
+			r.Findings[0].Scores[2].Value = f64(97.5)
 		},
-		"vpr":                     func(r *Report) { r.Findings[0].Vulnerability.VPRScore = math.Inf(1) },
+		"vendor":                  func(r *Report) { r.Findings[0].Scores[3].Value = f64(math.Inf(1)) },
+		"missing asset_ref":       func(r *Report) { r.Findings[0].AssetRef = "" },
+		"missing asset id":        func(r *Report) { r.Assets[0].ID = "" },
+		"non-canonical value":     func(r *Report) { r.Assets[0].Value = "https://GitHub.com/Org/Repo.git" },
+		"missing metadata id":     func(r *Report) { r.Metadata.ID = "" },
+		"javascript reference":    func(r *Report) { r.Findings[0].References = []string{"javascript:alert(1)"} },
+		"bad channel":             func(r *Report) { r.Metadata.Channel = "carrier-pigeon" },
+		"bad technique":           func(r *Report) { r.Tool.Techniques = []Technique{"tech-detect"} },
 		"dependency without name": func(r *Report) { r.Dependencies = []Dependency{{Version: "1"}} },
 		"duplicate dependency id": func(r *Report) {
 			r.Dependencies = []Dependency{{ID: "d", Name: "a"}, {ID: "d", Name: "b"}}
@@ -139,13 +149,12 @@ func TestReport_Validate_Report(t *testing.T) {
 		})
 	}
 
-	// Accepted: any minor of major 1, a report without tool, findings
-	// without asset_ref, boundary scores.
+	// Accepted: any minor of major 2, a report without tool, boundary
+	// scores.
 	r := validReport()
-	r.Version = "1.42"
+	r.Version = "2.42"
 	r.Tool = nil
-	r.Findings[0].AssetRef = ""
-	r.Findings[0].Vulnerability = &VulnerabilityDetails{CVSSScore: 10, EPSSScore: 1, EPSSPercentile: 0}
+	r.Findings[0].Scores = []Score{{System: ScoreSystemCVSS, Version: "3.1", Value: f64(10)}, {System: ScoreSystemEPSS, Value: f64(1)}, {System: ScoreSystemEPSSPercentile, Value: f64(0)}}
 	if err := r.Validate(); err != nil {
 		t.Errorf("must pass: %v", err)
 	}

@@ -109,8 +109,8 @@ func TestNormalizeDataFlow_Bounds(t *testing.T) {
 			t.Fatalf("not cleaned: %+v", s)
 		}
 	}
-	if got.Confidence != 0 || got.Tainted || !got.CrossFile {
-		t.Errorf("flags: confidence %d tainted %v cross_file %v", got.Confidence, got.Tainted, got.CrossFile)
+	if got.Confidence != 0 || got.IsTainted || !got.IsCrossFile {
+		t.Errorf("flags: confidence %d tainted %v cross_file %v", got.Confidence, got.IsTainted, got.IsCrossFile)
 	}
 }
 

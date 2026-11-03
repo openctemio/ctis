@@ -13,12 +13,12 @@ func webReport() *Report {
 	at := time.Date(2026, 10, 7, 9, 59, 3, 0, time.UTC)
 	return &Report{
 		Version:  SchemaVersion,
-		Metadata: ReportMetadata{Timestamp: at},
-		Assets:   []Asset{{ID: "origin-1", Type: AssetTypeHTTPService, Value: "https://api.example.com"}},
+		Metadata: ReportMetadata{ID: testReportID, GeneratedAt: at},
+		Assets:   []Asset{{ID: "origin-1", Type: AssetTypeWebOrigin, Value: "https://api.example.com"}},
 		Endpoints: []Endpoint{{
 			ID: "ep-1", Origin: "https://api.example.com", OriginRef: "origin-1", Method: "POST",
 			Path: "/api/v1/orders/42", Template: "/api/v1/orders/{int}", Kind: EndpointKindAPI, Source: EndpointSourceCrawl,
-			Parent: "https://api.example.com/app", StatusCode: 200, ContentType: "application/json", Auth: EndpointAuthRequired,
+			ParentURL: "https://api.example.com/app", StatusCode: 200, ContentType: "application/json", Auth: EndpointAuthRequired,
 			Technologies: []Technology{{Name: "nginx"}},
 			Params:       []EndpointParam{{Location: ParamLocationJSON, Name: "/note", TypeHint: "string"}, {Location: ParamLocationQuery, Name: "page"}},
 		}},
@@ -100,7 +100,7 @@ func TestWebMembersRefused(t *testing.T) {
 		"kind":                  {func(r *Report) { r.Endpoints[0].Kind = "shell" }, "invalid kind"},
 		"source":                {func(r *Report) { r.Endpoints[0].Source = "guess" }, "invalid source"},
 		"auth":                  {func(r *Report) { r.Endpoints[0].Auth = "maybe" }, "invalid auth"},
-		"parent with value":     {func(r *Report) { r.Endpoints[0].Parent = "https://a.example/x?sid=s3cr3t" }, "parent must"},
+		"parent with value":     {func(r *Report) { r.Endpoints[0].ParentURL = "https://a.example/x?sid=s3cr3t" }, "parent_url must"},
 		"status":                {func(r *Report) { r.Endpoints[0].StatusCode = 99 }, "outside 100-599"},
 		"content type":          {func(r *Report) { r.Endpoints[0].ContentType = long }, "content_type"},
 		"param location":        {func(r *Report) { r.Endpoints[0].Params[0].Location = "body" }, "invalid location"},
@@ -108,7 +108,8 @@ func TestWebMembersRefused(t *testing.T) {
 		"param name empty":      {func(r *Report) { r.Endpoints[0].Params[0].Name = " " }, "name must"},
 		"type hint":             {func(r *Report) { r.Endpoints[0].Params[0].TypeHint = "String!" }, "type_hint"},
 		"too many params":       {func(r *Report) { r.Endpoints[0].Params = make([]EndpointParam, 101) }, "at most 100"},
-		"hostile id":            {func(r *Report) { r.Endpoints[0].ID = "ep 1<script>" }, "invalid id"},
+		"hostile id":            {func(r *Report) { r.Endpoints[0].ID = "ep 1<script>" }, "is not a document reference"},
+		"uuid id":               {func(r *Report) { r.Endpoints[0].ID = "6f1c2b0e-4a7d-4e3b-9c1a-2b3c4d5e6f70" }, "UUID-shaped"},
 		"duplicate id": {func(r *Report) {
 			r.Endpoints = append(r.Endpoints, r.Endpoints[0])
 		}, "duplicate id"},
@@ -242,15 +243,7 @@ func TestRedactSecretFindingKeepsMarkedEvidenceSpans(t *testing.T) {
 	}
 }
 
-func TestOlderReportsStillValidate16(t *testing.T) {
-	raw := []byte(`{"version":"1.5","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"vulnerability","title":"t","severity":"high","evidence":"legacy text"}]}`)
-	r, err := decodeStrict(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := r.Validate(); err != nil {
-		t.Fatal(err)
-	}
+func TestEvidenceKinds(t *testing.T) {
 	if !IsKnownEvidenceKind(EvidenceKindCurl) || IsKnownEvidenceKind("dns_trace") {
 		t.Fatal("IsKnownEvidenceKind")
 	}

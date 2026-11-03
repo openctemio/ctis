@@ -1,5 +1,10 @@
 {
   "fixture": "testdata/sarif/trivy.sarif",
   "note": "Accepted losses of the round trip fixture -> FromSARIF -> ToSARIF -> FromSARIF. Every member FromSARIF produces from this fixture comes back equal, so the list is empty; members SARIF cannot carry from a CTIS-native report are listed in docs/exporters.md (SARIF, accepted losses).",
-  "losses": []
+  "losses": [
+    {
+      "member": "metadata.id",
+      "reason": "a converted document is a new document with its own idempotency key (a fresh UUIDv7)"
+    }
+  ]
 }

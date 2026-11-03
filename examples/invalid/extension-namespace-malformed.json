@@ -1,5 +1,12 @@
 {
-  "version": "1.6",
-  "metadata": {"timestamp": "2026-11-03T00:00:00Z"},
-  "extensions": {"openctem": {"capability": "scan.ports@1"}}
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-780c-81cd-2d118a47692d",
+    "generated_at": "2026-11-03T00:00:00Z"
+  },
+  "extensions": {
+    "openctem": {
+      "capability": "scan.ports@1"
+    }
+  }
 }

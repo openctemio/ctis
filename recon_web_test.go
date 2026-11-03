@@ -46,7 +46,7 @@ func TestReconCrawlEndpoints(t *testing.T) {
 	}
 	p := by["GET /products/{int}"]
 	if p.Path != "/products/42" || p.Kind != EndpointKindPage || p.Source != EndpointSourceCrawl ||
-		p.StatusCode != 200 || p.ContentType != "text/html" || p.Parent != "https://shop.example.com/?sid=" {
+		p.StatusCode != 200 || p.ContentType != "text/html" || p.ParentURL != "https://shop.example.com/?sid=" {
 		t.Errorf("products: %+v", p)
 	}
 	var names []string
@@ -70,9 +70,14 @@ func TestReconCrawlEndpoints(t *testing.T) {
 	if c := by["POST /cart"]; len(c.Params) != 1 || c.Params[0].Name != "qty" {
 		t.Errorf("cart params %+v", c.Params)
 	}
-	// Legacy assets stay, redacted.
-	if _, ok := assetsByValue(r)["https://shop.example.com/products/42?ref=&utm="]; !ok {
-		t.Errorf("legacy asset: %v", keys(assetsByValue(r)))
+	// One web_origin asset per origin, named by every endpoint.
+	if len(r.Assets) != 1 || r.Assets[0].Type != AssetTypeWebOrigin || r.Assets[0].Value != "https://shop.example.com" {
+		t.Errorf("assets: %v", keys(assetsByValue(r)))
+	}
+	for _, e := range r.Endpoints {
+		if e.OriginRef != r.Assets[0].ID {
+			t.Errorf("endpoint %s has origin_ref %q", e.Path, e.OriginRef)
+		}
 	}
 
 	// Merging two crawls combines endpoints by origin, method and template.

@@ -1,8 +1,8 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.openctem.io/ctis/2.0/web3-finding.json",
   "title": "Web3 Vulnerability Details",
-  "description": "Web3/Smart contract vulnerability-specific details",
+  "description": "Web3 profile: details of a smart-contract finding (a vulnerability or weakness finding with a web3 block). Vendor and product vocabularies are open tokens.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -24,11 +24,13 @@
     },
     "chain": {
       "type": "string",
-      "description": "Chain name"
+      "description": "Chain name",
+      "maxLength": 1024
     },
     "function_signature": {
       "type": "string",
-      "description": "Affected function signature (e.g., withdraw(uint256))"
+      "description": "Affected function signature (e.g., withdraw(uint256))",
+      "maxLength": 1024
     },
     "function_selector": {
       "type": "string",
@@ -37,14 +39,15 @@
     },
     "vulnerable_pattern": {
       "type": "string",
-      "description": "Vulnerable code pattern"
+      "description": "Vulnerable code pattern",
+      "maxLength": 4096
     },
     "bytecode_offset": {
       "type": "integer",
       "minimum": 0,
       "description": "Bytecode offset"
     },
-    "exploitable_on_mainnet": {
+    "is_exploitable_on_mainnet": {
       "type": "boolean"
     },
     "estimated_impact_usd": {
@@ -57,7 +60,8 @@
     },
     "attack_vector": {
       "type": "string",
-      "description": "Attack vector description"
+      "description": "Attack vector description",
+      "maxLength": 1024
     },
     "poc": {
       "$ref": "#/$defs/Web3POC"
@@ -67,22 +71,29 @@
       "items": {
         "type": "string",
         "pattern": "^0x[a-fA-F0-9]{64}$"
-      }
+      },
+      "maxItems": 1000
     },
     "attacker_addresses": {
       "type": "array",
       "items": {
         "type": "string",
         "pattern": "^0x[a-fA-F0-9]{40}$"
-      }
+      },
+      "maxItems": 1000
     },
     "detection_tool": {
       "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: slither, mythril, securify, manticore, echidna, foundry, aderyn, wake, 4naly3er, solhint, mythx, certora, custom"
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+      "description": "Open token (vendor neutral since 2.0). Known values: slither, mythril, securify, manticore, echidna, foundry, aderyn, wake, 4naly3er, solhint, mythx, certora, custom"
     },
     "detection_confidence": {
       "type": "string",
-      "enum": ["high", "medium", "low"]
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
     },
     "is_false_positive": {
       "type": "boolean"
@@ -152,22 +163,34 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["transaction", "script", "foundry_test", "hardhat_test"]
+          "enum": [
+            "transaction",
+            "script",
+            "foundry_test",
+            "hardhat_test"
+          ]
         },
         "code": {
           "type": "string",
-          "description": "POC code or script"
+          "description": "POC code or script",
+          "maxLength": 65536
         },
         "tx_data": {
           "type": "string",
-          "description": "Transaction data"
+          "description": "Transaction data",
+          "maxLength": 65536
         },
         "expected_outcome": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 4096
         },
         "tested_on": {
           "type": "string",
-          "enum": ["mainnet_fork", "testnet", "local"]
+          "enum": [
+            "mainnet_fork",
+            "testnet",
+            "local"
+          ]
         },
         "fork_block_number": {
           "type": "integer",
@@ -194,7 +217,8 @@
           "maximum": 100
         },
         "suggestion": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 4096
         }
       }
     },
@@ -204,20 +228,29 @@
       "description": "Access control vulnerability details",
       "properties": {
         "missing_modifier": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 1024
         },
         "unprotected_function": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 1024
         },
         "callable_by": {
           "type": "string",
-          "enum": ["anyone", "owner_only", "role_based", "whitelist"]
+          "enum": [
+            "anyone",
+            "owner_only",
+            "role_based",
+            "whitelist"
+          ]
         },
         "escalation_path": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 1024
         },
         "missing_role_check": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 1024
         }
       }
     },
@@ -228,20 +261,29 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cross_function", "cross_contract", "read_only", "single_function"]
+          "enum": [
+            "cross_function",
+            "cross_contract",
+            "read_only",
+            "single_function"
+          ]
         },
         "external_call": {
           "type": "string",
-          "description": "Vulnerable external call"
+          "description": "Vulnerable external call",
+          "maxLength": 1024
         },
         "state_modified_after_call": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 1024
         },
         "entry_point": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 1024
         },
         "callback": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 1024
         },
         "max_depth": {
           "type": "integer",
@@ -256,7 +298,8 @@
       "properties": {
         "oracle_type": {
           "type": "string",
-          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: chainlink, uniswap_twap, uniswap_spot, band, tellor, custom"
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+          "description": "Open token (vendor neutral since 2.0). Known values: chainlink, uniswap_twap, uniswap_spot, band, tellor, custom"
         },
         "oracle_address": {
           "type": "string",
@@ -264,7 +307,12 @@
         },
         "manipulation_method": {
           "type": "string",
-          "enum": ["flash_loan", "sandwich", "time_manipulation", "multi_block"]
+          "enum": [
+            "flash_loan",
+            "sandwich",
+            "time_manipulation",
+            "multi_block"
+          ]
         },
         "price_impact_percent": {
           "type": "number",
@@ -274,8 +322,15 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["staleness_check", "min_answer_check", "max_answer_check", "sequencer_check", "deviation_check"]
-          }
+            "enum": [
+              "staleness_check",
+              "min_answer_check",
+              "max_answer_check",
+              "sequencer_check",
+              "deviation_check"
+            ]
+          },
+          "maxItems": 1000
         }
       }
     },
@@ -286,11 +341,18 @@
       "properties": {
         "provider": {
           "type": "string",
-          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: aave, dydx, uniswap, balancer, compound, maker"
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+          "description": "Open token (vendor neutral since 2.0). Known values: aave, dydx, uniswap, balancer, compound, maker"
         },
         "attack_type": {
           "type": "string",
-          "enum": ["price_manipulation", "governance_attack", "collateral_theft", "arbitrage", "liquidation"]
+          "enum": [
+            "price_manipulation",
+            "governance_attack",
+            "collateral_theft",
+            "arbitrage",
+            "liquidation"
+          ]
         },
         "required_capital_usd": {
           "type": "number",
@@ -302,7 +364,11 @@
         },
         "attack_steps": {
           "type": "array",
-          "items": {"type": "string"}
+          "items": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "maxItems": 1000
         }
       }
     }

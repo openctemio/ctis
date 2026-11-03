@@ -40,9 +40,10 @@ func TestParseHTTPXLine(t *testing.T) {
 			t.Errorf("header members must not be observed one by one: %s", p)
 		}
 	}
-	// The same line becomes an http_service asset through the converter.
+	// The same line becomes a web_origin asset (with its name, address and
+	// certificate) through the converter.
 	rep, err := ConvertReconToCTIS(&ReconToCTISInput{ScannerName: "httpx", ReconType: "http_probe", LiveHosts: []LiveHostInput{h}}, nil)
-	if err != nil || len(rep.Assets) != 2 {
+	if err != nil || len(rep.Assets) != 4 || rep.Assets[0].Type != AssetTypeWebOrigin || rep.Validate() != nil {
 		t.Fatalf("convert: %v, %d assets", err, len(rep.Assets))
 	}
 }
@@ -101,7 +102,7 @@ func TestEndpointSourceImport(t *testing.T) {
 	if len(eps) != 2 || eps[0].Source != EndpointSourceImport || eps[1].Source != EndpointSourceJS {
 		t.Fatalf("endpoints %+v", eps)
 	}
-	r := &Report{Version: SchemaVersion, Metadata: ReportMetadata{Timestamp: time.Unix(1700000000, 0).UTC()}, Endpoints: eps}
+	r := &Report{Version: SchemaVersion, Metadata: ReportMetadata{ID: testReportID, GeneratedAt: time.Unix(1700000000, 0).UTC()}, Endpoints: eps}
 	if err := r.Validate(); err != nil {
 		t.Fatalf("an import endpoint does not validate: %v", err)
 	}

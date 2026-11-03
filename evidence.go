@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Typed evidence of a finding (CTIS 1.6, spec section 4.13): what a tool
+// Typed evidence of a finding (spec section 6.5): what a tool
 // sent and received, or saw, when it found the issue. An item has an
 // envelope (kind, version, label, capture time, content hash, sensitive
 // spans) and the body of its kind. Kinds this module knows are validated

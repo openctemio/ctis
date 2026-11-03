@@ -11,12 +11,12 @@ func TestNormalizeAssetName(t *testing.T) {
 		want      string
 	}{
 		// Domain
-		{AssetTypeDomain, "Example.COM", "example.com"},
-		{AssetTypeDomain, "example.com.", "example.com"},
-		{AssetTypeDomain, " example.com ", "example.com"},
+		{AssetTypeDomainName, "Example.COM", "example.com"},
+		{AssetTypeDomainName, "example.com.", "example.com"},
+		{AssetTypeDomainName, " example.com ", "example.com"},
 
 		// Subdomain
-		{AssetTypeSubdomain, "API.Example.COM.", "api.example.com"},
+		{AssetTypeDomainName, "API.Example.COM.", "api.example.com"},
 
 		// IP
 		{AssetTypeIPAddress, "192.168.1.1", "192.168.1.1"},
@@ -38,8 +38,8 @@ func TestNormalizeAssetName(t *testing.T) {
 		{"unknown", " something ", "something"},
 
 		// Empty
-		{AssetTypeDomain, "", ""},
-		{AssetTypeDomain, "  ", ""},
+		{AssetTypeDomainName, "", ""},
+		{AssetTypeDomainName, "  ", ""},
 	}
 
 	for _, tt := range tests {

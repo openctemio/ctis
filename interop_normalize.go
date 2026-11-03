@@ -243,37 +243,63 @@ func canonicalTypedID(in VulnerabilityID) (VulnerabilityID, bool) {
 }
 
 // VulnerabilityIDs returns every id of a vulnerability, canonical and without
-// duplicates: cve_id, then cve_ids, then ids, in that order, at most
-// MaxVulnerabilityIDs. Invalid entries (and non-CVE values in cve_id or
-// cve_ids) are skipped.
+// duplicates, in the order of vulnerability.ids, at most MaxVulnerabilityIDs.
+// Invalid entries are skipped.
 func VulnerabilityIDs(v *VulnerabilityDetails) []VulnerabilityID {
 	if v == nil {
 		return nil
 	}
 	var out []VulnerabilityID
 	seen := map[string]bool{}
-	add := func(id VulnerabilityID, ok bool) {
+	for _, raw := range v.IDs {
+		id, ok := canonicalTypedID(raw)
 		if !ok || len(out) >= MaxVulnerabilityIDs {
-			return
+			continue
 		}
 		k := string(id.Type) + "\x00" + id.ID
 		if seen[k] {
-			return
+			continue
 		}
 		seen[k] = true
 		out = append(out, id)
 	}
-	// cve_id and cve_ids hold CVE ids only; anything else there is skipped.
-	if v.CVEID != "" {
-		add(canonicalTypedID(VulnerabilityID{Type: VulnerabilityIDCVE, ID: v.CVEID}))
-	}
-	for _, c := range v.CVEIDs {
-		add(canonicalTypedID(VulnerabilityID{Type: VulnerabilityIDCVE, ID: c}))
-	}
-	for _, id := range v.IDs {
-		add(canonicalTypedID(id))
+	return out
+}
+
+// CVEs returns the CVE ids of a vulnerability, canonical, in order.
+func CVEs(v *VulnerabilityDetails) []string {
+	var out []string
+	for _, id := range VulnerabilityIDs(v) {
+		if id.Type == VulnerabilityIDCVE {
+			out = append(out, id.ID)
+		}
 	}
 	return out
+}
+
+// AddID adds a vulnerability id to v.IDs: raw is recognized (CVE, GHSA,
+// OSV-style ids) by NormalizeVulnerabilityID, else kept as a vendor id of the
+// given source when source is set. It skips duplicates and reports whether
+// v.IDs holds the id afterwards.
+func (v *VulnerabilityDetails) AddID(raw, source string) bool {
+	id, ok := NormalizeVulnerabilityID(raw)
+	if !ok {
+		raw = strings.TrimSpace(raw)
+		if raw == "" || source == "" || len(raw) > MaxVulnerabilityIDLen {
+			return false
+		}
+		id = VulnerabilityID{Type: VulnerabilityIDVendor, ID: raw, Source: source}
+	}
+	for _, have := range v.IDs {
+		if have.Type == id.Type && have.ID == id.ID {
+			return true
+		}
+	}
+	if len(v.IDs) >= MaxVulnerabilityIDs {
+		return false
+	}
+	v.IDs = append(v.IDs, id)
+	return true
 }
 
 // PreferredVulnerabilityID picks the one id receivers key on, so two tools
@@ -362,37 +388,6 @@ func cveLess(a, b string) bool {
 	}
 }
 
-// purlTypeByEcosystem maps the ecosystem names producers put in
-// vulnerability.ecosystem (package manager or language names) to the package
-// URL type, so one package gets one key whichever name the producer used.
-// Names already equal to a purl type map to themselves.
-var purlTypeByEcosystem = map[string]string{
-	"pip": "pypi", "pypi": "pypi", "python": "pypi",
-	"go": "golang", "golang": "golang", "gomod": "golang",
-	"npm": "npm", "node": "npm", "nodejs": "npm", "yarn": "npm", "pnpm": "npm",
-	"maven": "maven", "java": "maven", "gradle": "maven",
-	"nuget": "nuget", "dotnet": "nuget", ".net": "nuget",
-	"gem": "gem", "rubygems": "gem", "ruby": "gem", "bundler": "gem",
-	"cargo": "cargo", "crates.io": "cargo", "rust": "cargo",
-	"composer": "composer", "packagist": "composer", "php": "composer",
-	"hex": "hex", "elixir": "hex",
-	"pub": "pub", "dart": "pub",
-	"cocoapods": "cocoapods", "swift": "swift", "swifturl": "swift",
-	"conan": "conan", "cran": "cran", "hackage": "hackage", "haskell": "hackage",
-	"deb": "deb", "debian": "deb", "rpm": "rpm", "apk": "apk", "alpine": "apk",
-	"github actions": "githubactions", "githubactions": "githubactions",
-}
-
-// purlType returns the package URL type for an ecosystem name, or the
-// lower-cased name when it is not in the table.
-func purlType(ecosystem string) string {
-	e := strings.ToLower(strings.TrimSpace(ecosystem))
-	if t, ok := purlTypeByEcosystem[e]; ok {
-		return t
-	}
-	return e
-}
-
 // maxLocationKeyLen bounds LocationKey; longer keys keep a prefix and a hash.
 const maxLocationKeyLen = 512
 
@@ -401,12 +396,12 @@ const maxLocationKeyLen = 512
 // location). The asset is not part of it. In order of precedence:
 //
 //   - "pkg:<type>/<namespace>/<name>": the package URL without version,
-//     qualifiers or subpath; else "pkg:<ecosystem>/<package>" by name;
+//     qualifiers or subpath;
 //   - "url:<scheme>://<host>[:port]/<path>": a web location, lower-case
 //     scheme and host, default port, user info, query and fragment removed;
 //   - "file:<path>": a repository-relative POSIX path (line numbers are not
 //     part of it: they move when unrelated code changes);
-//   - "net:<port>/<protocol>" or "net:host" for a host-level network finding;
+//   - "net:<port>/<transport>" or "net:host" for a host-level network finding;
 //   - "resource:<type>/<name>" for a misconfigured resource;
 //   - "" when the finding names no location.
 //
@@ -420,8 +415,6 @@ func LocationKey(f *Finding) string {
 	switch {
 	case f.Vulnerability != nil && versionlessPURL(f.Vulnerability.PURL) != "":
 		key = "pkg:" + versionlessPURL(f.Vulnerability.PURL)
-	case f.Vulnerability != nil && strings.TrimSpace(f.Vulnerability.Package) != "":
-		key = "pkg:" + purlType(f.Vulnerability.Ecosystem) + "/" + strings.TrimSpace(f.Vulnerability.Package)
 	case f.Web != nil && webLocation(f.Web.URL) != "":
 		key = "url:" + webLocation(f.Web.URL)
 	case f.Location != nil && webLocation(f.Location.Path) != "":
@@ -515,7 +508,7 @@ func networkPort(n *NetworkLocation) string {
 	if n.Port <= 0 {
 		return "host"
 	}
-	proto := strings.ToLower(strings.TrimSpace(n.Protocol))
+	proto := strings.ToLower(strings.TrimSpace(string(n.Transport)))
 	if proto == "" {
 		proto = "tcp"
 	}
@@ -590,54 +583,6 @@ func truncateRunes(s string, n int) string {
 	return s
 }
 
-// AllScores returns every score of a finding: its scores member followed by
-// the single-valued members of the vulnerability block (cvss_*, epss_*,
-// vpr_score) expressed as scores, so a receiver can show and store one list
-// whatever version of CTIS the producer wrote. A legacy score is left out
-// when scores already holds one of the same system, version and source.
-func AllScores(f *Finding) []Score {
-	if f == nil {
-		return nil
-	}
-	out := append([]Score(nil), f.Scores...)
-	v := f.Vulnerability
-	if v == nil {
-		return out
-	}
-	has := func(sys ScoreSystem, version, source string) bool {
-		for _, s := range out {
-			if s.System == sys && s.Version == version && strings.EqualFold(s.Source, source) {
-				return true
-			}
-		}
-		return false
-	}
-	num := func(x float64) *float64 { return &x }
-	if v.CVSSScore > 0 || v.CVSSVector != "" {
-		version := v.CVSSVersion
-		if version == "" {
-			version = CVSSVersionOfVector(v.CVSSVector)
-		}
-		if !has(ScoreSystemCVSS, version, v.CVSSSource) {
-			s := Score{System: ScoreSystemCVSS, Version: version, Vector: v.CVSSVector, Source: v.CVSSSource}
-			if v.CVSSScore > 0 {
-				s.Value = num(v.CVSSScore)
-			}
-			out = append(out, s)
-		}
-	}
-	if v.EPSSScore > 0 && !has(ScoreSystemEPSS, "", "") {
-		out = append(out, Score{System: ScoreSystemEPSS, Value: num(v.EPSSScore)})
-	}
-	if v.EPSSPercentile > 0 && !has(ScoreSystemEPSSPercentile, "", "") {
-		out = append(out, Score{System: ScoreSystemEPSSPercentile, Value: num(v.EPSSPercentile)})
-	}
-	if v.VPRScore > 0 && !has(ScoreSystemVPR, "", "tenable") {
-		out = append(out, Score{System: ScoreSystemVPR, Value: num(v.VPRScore), Source: "tenable"})
-	}
-	return out
-}
-
 // CVSSVersionOfVector returns the CVSS version a vector string declares
 // ("3.0", "3.1", "4.0"), "2.0" for a prefix-less v2 vector (AV:N/AC:L/...),
 // or "" when it is not a CVSS vector.
@@ -700,8 +645,6 @@ func scoreProblem(s Score) string {
 			return "cvss score needs a value or a vector"
 		}
 		return val(0, 10)
-	case ScoreSystemVPR:
-		return val(0, 10)
 	case ScoreSystemEPSS, ScoreSystemEPSSPercentile:
 		return val(0, 1)
 	case ScoreSystemSSVC:
@@ -718,4 +661,41 @@ func scoreProblem(s Score) string {
 		return val(-maxVendorScoreMagnitude, maxVendorScoreMagnitude)
 	}
 	return ""
+}
+
+// HasThreatSignal reports whether v carries a threat signal of one of the
+// types.
+func HasThreatSignal(v *VulnerabilityDetails, types ...ThreatSignalType) bool {
+	if v == nil {
+		return false
+	}
+	for _, s := range v.ThreatSignals {
+		for _, t := range types {
+			if s.Type == t {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// PrimaryCVSS returns the CVSS score of a finding receivers show first: the
+// one of the highest version that has a value, else the first CVSS score.
+func PrimaryCVSS(f *Finding) (Score, bool) {
+	if f == nil {
+		return Score{}, false
+	}
+	best, found := Score{}, false
+	for _, s := range f.Scores {
+		if s.System != ScoreSystemCVSS {
+			continue
+		}
+		switch {
+		case !found:
+			best, found = s, true
+		case s.Value != nil && (best.Value == nil || s.Version > best.Version):
+			best = s
+		}
+	}
+	return best, found
 }

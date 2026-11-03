@@ -3,6 +3,10 @@
   "note": "Accepted losses of fixture -> importer -> ToCycloneDX -> importer. Report, findings, dependencies and the kept VEX statements come back equal.",
   "losses": [
     {
+      "member": "report.metadata.id",
+      "reason": "a converted document is a new document with its own idempotency key (a fresh UUIDv7)"
+    },
+    {
       "member": "vex[vex.status=not_affected]",
       "reason": "The importer turns a not_affected (or resolved) analysis into a VEX statement and drops the finding; the statement is in importer.Result.VEX, not in the report, so ToCycloneDX, which sees only the report, cannot write it again."
     },

@@ -15,10 +15,10 @@
     },
     "component": {
       "type": "application",
-      "bom-ref": "sbom-pkg:generic/shop-api@4.2.0",
+      "bom-ref": "package-pkg:generic/shop-api",
       "name": "shop-api",
       "version": "4.2.0",
-      "purl": "pkg:generic/shop-api@4.2.0"
+      "purl": "pkg:generic/shop-api"
     }
   },
   "components": [
@@ -80,7 +80,7 @@
   ],
   "dependencies": [
     {
-      "ref": "sbom-pkg:generic/shop-api@4.2.0",
+      "ref": "package-pkg:generic/shop-api",
       "dependsOn": [
         "pkg:npm/lodash@4.17.20",
         "pkg:maven/org.example/parser@1.0.0"

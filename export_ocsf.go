@@ -218,7 +218,7 @@ func ToOCSF(r *Report, opts *OCSFOptions) ([]OCSFEvent, error) {
 	}
 	fallback := opts.Time
 	if fallback.IsZero() {
-		fallback = r.Metadata.Timestamp
+		fallback = r.Metadata.GeneratedAt
 	}
 	events := make([]OCSFEvent, 0, len(r.Findings))
 	size := 0
@@ -358,7 +358,7 @@ func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time)
 		ev.Unmapped["compliance_framework_version"] = cd.FrameworkVersion
 	}
 	if s := f.Secret; s != nil {
-		for k, v := range map[string]string{"secret_type": s.SecretType, "secret_service": s.Service, "secret_masked_value": s.MaskedValue} {
+		for k, v := range map[string]string{"secret_type": s.Type, "secret_service": s.Service, "secret_masked_value": s.MaskedValue} {
 			if v != "" {
 				ev.Unmapped[k] = v
 			}
@@ -367,7 +367,7 @@ func ocsfEventOf(r *Report, f *Finding, product OCSFProduct, fallback time.Time)
 
 	var rem *OCSFRemediation
 	if f.Remediation != nil && f.Remediation.Recommendation != "" {
-		rem = &OCSFRemediation{Desc: f.Remediation.Recommendation, References: f.Remediation.References}
+		rem = &OCSFRemediation{Desc: f.Remediation.Recommendation, References: f.References}
 	}
 	if class == OCSFClassComplianceFinding {
 		ev.Compliance = ocsfComplianceOf(f)
@@ -382,8 +382,8 @@ func ocsfResourceOf(r *Report, f *Finding) (OCSFResource, bool) {
 	if a := findAsset(r, f.AssetRef); a != nil {
 		return OCSFResource{UID: a.ID, Name: a.Value, Type: string(a.Type)}, true
 	}
-	if f.AssetValue != "" || f.AssetRef != "" {
-		return OCSFResource{UID: f.AssetRef, Name: f.AssetValue, Type: string(f.AssetType)}, true
+	if f.AssetRef != "" {
+		return OCSFResource{UID: f.AssetRef}, true
 	}
 	return OCSFResource{}, false
 }
@@ -392,17 +392,17 @@ func ocsfComplianceOf(f *Finding) *OCSFCompliance {
 	c := &OCSFCompliance{Standards: []string{}}
 	if cd := f.Compliance; cd != nil {
 		if cd.Framework != "" {
-			c.Standards = []string{cd.Framework}
+			c.Standards = []string{string(cd.Framework)}
 		}
 		c.Control = cd.ControlID
-		switch strings.ToLower(cd.Result) {
+		switch strings.ToLower(f.Kind) {
 		case "pass":
 			c.StatusID, c.Status = 1, "Pass"
 		case "fail":
 			c.StatusID, c.Status = 3, "Fail"
 		case "":
 		default:
-			c.StatusID, c.Status = 99, cd.Result
+			c.StatusID, c.Status = 99, f.Kind
 		}
 	}
 	if m := f.Misconfiguration; m != nil {
@@ -435,9 +435,13 @@ func ocsfVulnerabilitiesOf(f *Finding, rem *OCSFRemediation) []OCSFVulnerability
 		}
 		return []OCSFVulnerability{first}
 	}
-	first.IsExploitAvailable = v.ExploitAvailable
-	if v.Package != "" {
-		first.AffectedPackages = []OCSFPackage{{Name: v.Package, Version: v.AffectedVersion, PURL: v.PURL, FixedInVersion: v.FixedVersion}}
+	first.IsExploitAvailable = HasThreatSignal(v, ThreatSignalPublicExploit, ThreatSignalWeaponized, ThreatSignalExploitedInWild, ThreatSignalKEV)
+	if v.PackageName != "" {
+		pkg := OCSFPackage{Name: v.PackageName, Version: v.InstalledVersion, PURL: v.PURL}
+		if len(v.FixedVersions) > 0 {
+			pkg.FixedInVersion = v.FixedVersions[0]
+		}
+		first.AffectedPackages = []OCSFPackage{pkg}
 	}
 	if loc := ocsfCodeOf(f.Location); loc != nil {
 		first.AffectedCode = []OCSFAffectedCode{*loc}
@@ -445,9 +449,6 @@ func ocsfVulnerabilitiesOf(f *Finding, rem *OCSFRemediation) []OCSFVulnerability
 
 	cves := ocsfCVEs(v)
 	cwes := v.CWEIDs
-	if len(cwes) == 0 && v.CWEID != "" {
-		cwes = []string{v.CWEID}
-	}
 	n := max(len(cves), len(cwes), 1)
 	out := make([]OCSFVulnerability, n)
 	out[0] = first
@@ -477,10 +478,6 @@ func ocsfCVEs(v *VulnerabilityDetails) []string {
 			seen[u] = true
 			out = append(out, u)
 		}
-	}
-	add(v.CVEID)
-	for _, id := range v.CVEIDs {
-		add(id)
 	}
 	for _, id := range v.IDs {
 		if id.Type == VulnerabilityIDCVE {
@@ -519,15 +516,6 @@ func ocsfScoresOf(f *Finding) ([]OCSFCVSS, *OCSFEPSS) {
 				epss.Percentile = &val
 			}
 		}
-	}
-	if len(cvss) == 0 && f.Vulnerability != nil && (f.Vulnerability.CVSSScore > 0 || f.Vulnerability.CVSSVector != "") {
-		v := f.Vulnerability
-		c := OCSFCVSS{Version: v.CVSSVersion, VectorString: v.CVSSVector}
-		if v.CVSSScore > 0 {
-			val := v.CVSSScore
-			c.BaseScore = &val
-		}
-		cvss = append(cvss, c)
 	}
 	return cvss, epss
 }

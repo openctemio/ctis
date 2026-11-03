@@ -1,9 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "timestamp": "2026-10-02T00:00:00Z",
-    "source_type": "scanner",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-02T00:00:00Z",
+    "channel": "scanner",
     "branch": {
       "name": "main",
       "is_default_branch": true,
@@ -14,7 +15,7 @@
     "name": "betterleaks",
     "version": "1.1.0",
     "info_url": "https://github.com/betterleaks/betterleaks",
-    "capabilities": [
+    "techniques": [
       "secret"
     ]
   },
@@ -43,7 +44,9 @@
         "end_column": 39,
         "snippet": "REDACTED",
         "branch": "main",
-        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+        "commit": {
+          "sha": "0123456789abcdef0123456789abcdef01234567"
+        }
       },
       "tags": [
         "key",
@@ -76,7 +79,9 @@
         "end_column": 48,
         "snippet": "REDACTED",
         "branch": "main",
-        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+        "commit": {
+          "sha": "0123456789abcdef0123456789abcdef01234567"
+        }
       },
       "tags": [
         "entropy"

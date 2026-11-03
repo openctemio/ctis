@@ -1,9 +1,9 @@
 {
-  "version": "1.3",
+  "version": "2.0",
   "metadata": {
-    "id": "sast-2026-10-02-01",
-    "timestamp": "2026-10-02T09:00:00Z",
-    "source_type": "scanner",
+    "id": "019a2b3c-4d5e-70a4-9175-c1a42d56f70b",
+    "generated_at": "2026-10-02T09:00:00Z",
+    "channel": "scanner",
     "coverage_type": "incremental",
     "branch": {
       "name": "feature/search",
@@ -14,22 +14,38 @@
       "pull_request_url": "https://github.com/example/shop/pull/128"
     }
   },
-  "tool": {"name": "semgrep", "version": "1.85.0", "capabilities": ["sast"]},
-  "assets": [{"id": "repo", "type": "repository", "value": "github.com/example/shop"}],
+  "tool": {
+    "name": "semgrep",
+    "version": "1.85.0",
+    "techniques": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "repo",
+      "type": "repository",
+      "value": "github.com/example/shop"
+    }
+  ],
   "findings": [
     {
       "id": "f-1",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "SQL query built from request data",
       "message": "User-controlled data from a request is passed to 'execute()'.",
       "severity": "high",
       "confidence": 95,
       "category": "security",
-      "vulnerability_class": ["SQL Injection"],
+      "vulnerability_classes": [
+        "SQL Injection"
+      ],
       "rule_id": "python.django.security.injection.sql.sql-injection-db-cursor-execute",
       "asset_ref": "repo",
       "fingerprint": "0e1d2c3b4a5f69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
-      "partial_fingerprints": {"primaryLocationLineHash": "39fa2ee980eb94b0:1"},
+      "partial_fingerprints": {
+        "primaryLocationLineHash": "39fa2ee980eb94b0:1"
+      },
       "location": {
         "path": "app/views.py",
         "start_line": 42,
@@ -37,30 +53,66 @@
         "start_column": 9,
         "end_column": 61,
         "snippet": "cursor.execute(\"SELECT * FROM users WHERE id = \" + uid)",
-        "logical_location": {"name": "user_detail", "kind": "function", "fully_qualified_name": "app.views.user_detail"}
+        "logical_location": {
+          "name": "user_detail",
+          "kind": "function",
+          "fully_qualified_name": "app.views.user_detail"
+        },
+        "commit": {
+          "author": "Jane Developer",
+          "author_email": "jane@example.com",
+          "committed_at": "2026-09-30T14:22:00Z"
+        }
       },
       "data_flow": {
-        "sources": [{"path": "app/views.py", "line": 40, "label": "uid", "type": "source", "taint_state": "tainted", "content": "uid = request.GET['id']"}],
-        "sinks": [{"path": "app/views.py", "line": 42, "index": 1, "type": "sink", "called_function": "cursor.execute"}],
-        "tainted": true,
+        "sources": [
+          {
+            "path": "app/views.py",
+            "line": 40,
+            "label": "uid",
+            "type": "source",
+            "taint_state": "tainted",
+            "content": "uid = request.GET['id']"
+          }
+        ],
+        "sinks": [
+          {
+            "path": "app/views.py",
+            "line": 42,
+            "index": 1,
+            "type": "sink",
+            "called_function": "cursor.execute"
+          }
+        ],
+        "is_tainted": true,
         "taint_type": "user_input",
-        "vulnerability_type": "sql_injection",
         "summary": "uid (user_input) flows from app/views.py:40 to cursor.execute() at line 42"
       },
-      "vulnerability": {"cwe_id": "CWE-89", "cwe_ids": ["CWE-89"], "owasp_ids": ["A03:2021"]},
-      "remediation": {"recommendation": "Use parameterised queries.", "fix_code": "cursor.execute(\"SELECT * FROM users WHERE id = %s\", [uid])", "auto_fixable": true},
-      "author": "Jane Developer",
-      "author_email": "jane@example.com",
-      "commit_date": "2026-09-30T14:22:00Z"
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "owasp_ids": [
+          "A03:2021"
+        ]
+      },
+      "remediation": {
+        "recommendation": "Use parameterised queries.",
+        "fix_code": "cursor.execute(\"SELECT * FROM users WHERE id = %s\", [uid])",
+        "is_auto_fixable": true
+      }
     },
     {
       "id": "f-2",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "Use of weak hash function MD5",
       "severity": "low",
       "rule_id": "python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-md5",
       "asset_ref": "repo",
-      "location": {"path": "tests/fixtures.py", "start_line": 8},
+      "location": {
+        "path": "tests/fixtures.py",
+        "start_line": 8
+      },
       "status": "suppressed",
       "suppression": {
         "kind": "in_source",

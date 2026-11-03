@@ -1,8 +1,8 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/endpoint.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.openctem.io/ctis/2.0/endpoint.json",
   "title": "CTIS Endpoint",
-  "description": "One method and path a web origin serves, as a tool saw it (1.6). Parameters are named, never valued: a value member is refused.",
+  "description": "One method and path a web origin serves, as a tool saw it. Parameters are named, never valued: a value member is refused.",
   "type": "object",
   "required": [
     "origin",
@@ -11,9 +11,8 @@
   "additionalProperties": false,
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
-      "description": "Id within the report (finding.web.endpoint_ref)"
+      "$ref": "report.json#/$defs/DocumentRef",
+      "description": "Document-local reference, named by finding.web.endpoint_ref"
     },
     "origin": {
       "type": "string",
@@ -21,8 +20,8 @@
       "description": "Normalised origin: scheme://host[:port]"
     },
     "origin_ref": {
-      "type": "string",
-      "description": "Id of the http_service asset of the origin in this report"
+      "$ref": "report.json#/$defs/DocumentRef",
+      "description": "The web_origin asset of the origin in this report"
     },
     "method": {
       "type": "string",
@@ -59,7 +58,7 @@
     "source": {
       "$ref": "#/$defs/EndpointSource"
     },
-    "parent": {
+    "parent_url": {
       "type": "string",
       "maxLength": 2048,
       "description": "Page the endpoint was found on, redacted (no query value, user info or fragment)"
@@ -166,7 +165,7 @@
           "type": "string",
           "pattern": "^[a-z][a-z0-9_]{0,31}$"
         },
-        "required": {
+        "is_required": {
           "type": "boolean"
         }
       }

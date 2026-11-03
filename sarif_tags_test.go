@@ -119,8 +119,8 @@ func TestDetectFindingType_Betterleaks(t *testing.T) {
 		if got := detectFindingType(name, ""); got != FindingTypeSecret {
 			t.Errorf("detectFindingType(%q) = %s, want secret", name, got)
 		}
-		if got := detectCapabilities(name, ""); !reflect.DeepEqual(got, []string{"secret"}) {
-			t.Errorf("detectCapabilities(%q) = %q, want [secret]", name, got)
+		if got := detectTechniques(name, ""); !reflect.DeepEqual(got, []Technique{TechniqueSecret}) {
+			t.Errorf("detectTechniques(%q) = %q, want [secret]", name, got)
 		}
 	}
 	report, err := FromSARIF(readTestdata(t, "sarif/betterleaks.sarif"), nil)
@@ -132,7 +132,7 @@ func TestDetectFindingType_Betterleaks(t *testing.T) {
 			t.Errorf("finding %d type = %s, want secret", i, f.Type)
 		}
 	}
-	if !reflect.DeepEqual(report.Tool.Capabilities, []string{"secret"}) {
-		t.Errorf("tool capabilities = %q, want [secret]", report.Tool.Capabilities)
+	if !reflect.DeepEqual(report.Tool.Techniques, []Technique{TechniqueSecret}) {
+		t.Errorf("tool techniques = %q, want [secret]", report.Tool.Techniques)
 	}
 }

@@ -5,265 +5,332 @@ import (
 	"time"
 )
 
-// Report is the root CTIS document containing assets and findings.
+// Report is the root CTIS document: one producer's observations of assets and
+// findings at metadata.generated_at. A document carries natural keys
+// (canonical forms) and the producer's own references, never a receiver's
+// database keys.
 type Report struct {
-	// Schema version (required)
+	// Specification version, MAJOR.MINOR (required).
 	Version string `json:"version"`
 
-	// Schema URL for validation (optional)
+	// Schema URL for validation (optional). An identifier: receivers never
+	// fetch it.
 	Schema string `json:"$schema,omitempty"`
 
-	// Report metadata
+	// Report metadata (required).
 	Metadata ReportMetadata `json:"metadata"`
 
-	// Tool information (for collector/scanner reports)
+	// The tool that produced the report.
 	Tool *Tool `json:"tool,omitempty"`
 
-	// Assets discovered/collected
+	// Assets observed.
 	Assets []Asset `json:"assets,omitempty"`
 
-	// Findings discovered
+	// Findings observed. Each names its asset by asset_ref.
 	Findings []Finding `json:"findings,omitempty"`
 
-	// Dependencies (SBOM)
+	// Software components (SBOM).
 	Dependencies []Dependency `json:"dependencies,omitempty"`
 
-	// Typed relationships between assets of this report (1.5). Optional:
-	// a receiver may also derive relationships from technical members.
+	// Typed relationships between assets of this report.
 	Relationships []Relationship `json:"relationships,omitempty"`
 
-	// Endpoints are the methods and paths web origins serve, as a tool
-	// saw them (1.6). Names of parameters only, never values.
+	// Endpoints are the methods and paths web origins serve, as a tool saw
+	// them. Names of parameters only, never values.
 	Endpoints []Endpoint `json:"endpoints,omitempty"`
 
-	// Custom properties. Receivers SHOULD NOT give meaning to keys in
-	// properties; namespaced data goes in Extensions (2.0).
+	// An opaque bag. Receivers MUST NOT give meaning to its keys; namespaced
+	// data goes in Extensions.
 	Properties Properties `json:"properties,omitempty"`
 
-	// Extensions holds namespaced producer data, keyed by a reverse-DNS
-	// namespace (2.0, section 4.14).
+	// Namespaced producer data, keyed by a reverse-DNS namespace.
 	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // ReportMetadata contains metadata about the report.
 type ReportMetadata struct {
-	// Unique identifier for this report/scan (recommended)
-	ID string `json:"id,omitempty"`
+	// Producer-generated UUIDv7 that identifies this document (required). A
+	// retry re-sends the same id; receivers deduplicate on (credential, id).
+	// Every segment of a split result shares it. It is never a receiver's
+	// key.
+	ID string `json:"id"`
 
-	// Timestamp when the report was generated (required)
-	Timestamp time.Time `json:"timestamp"`
+	// When the producer generated the report (required).
+	GeneratedAt time.Time `json:"generated_at"`
 
-	// Duration of the scan/collection in milliseconds (optional)
+	// Duration of the work in milliseconds.
 	DurationMs int `json:"duration_ms,omitempty"`
 
-	// Source type: scanner, collector, integration, manual
-	SourceType string `json:"source_type,omitempty"`
+	// How the data reached the document: scanner, collector, integration,
+	// manual.
+	Channel Channel `json:"channel,omitempty"`
 
-	// External reference (job ID, scan ID)
-	SourceRef string `json:"source_ref,omitempty"`
+	// The producer's own references for the work (a job id in the
+	// producer's scheduler, a scan id in the source product).
+	SourceRefs []SourceRef `json:"source_refs,omitempty"`
 
-	// Coverage type: full, incremental, partial
-	// - full: Complete scan of entire scope (enables auto-resolve)
-	// - incremental: Diff scan of changed files only (no auto-resolve)
-	// - partial: Partial scan of specific directories (no auto-resolve)
-	CoverageType string `json:"coverage_type,omitempty"`
+	// Coverage type: full, incremental, partial. Only full lets a receiver
+	// call an absent item gone (with targets).
+	CoverageType CoverageType `json:"coverage_type,omitempty"`
 
-	// Branch information for git-based scans
-	// Used for branch-aware finding lifecycle management
+	// Branch information for git-based scans.
 	Branch *BranchInfo `json:"branch,omitempty"`
 
-	// Target scope of the scan/collection
-	Scope *Scope `json:"scope,omitempty"`
+	// Conformance profiles the producer claims for this document.
+	Profiles []Profile `json:"profiles,omitempty"`
 
-	// The capability this report answers, "scan.ports@1" (1.5). A
-	// producer claim: a receiver that bound the report to a command uses
-	// the command's capability and treats this as a hint.
-	Capability string `json:"capability,omitempty"`
-
-	// When the work that produced the report started and ended (2.0).
+	// When the work that produced the report started and ended.
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	EndedAt   *time.Time `json:"ended_at,omitempty"`
 
-	// How each target of the work ended (2.0). With coverage_type full, a
-	// target in state done is what lets a receiver call an item gone.
+	// How each target of the work ended. With coverage_type full, a target
+	// in state done is what lets a receiver call an item gone.
 	Targets []TargetOutcome `json:"targets,omitempty"`
 
 	// Segment places this document in a result split over several
-	// documents that share one metadata.id (2.0).
+	// documents that share one metadata.id.
 	Segment *Segment `json:"segment,omitempty"`
 
-	// Custom properties
+	// Opaque bag; no meaning.
 	Properties Properties `json:"properties,omitempty"`
 
-	// Namespaced producer data (2.0).
+	// Namespaced producer data.
 	Extensions Extensions `json:"extensions,omitempty"`
 }
 
+// Channel is how the data of a report reached the document.
+type Channel string
+
+// Channels.
+const (
+	ChannelScanner     Channel = "scanner"
+	ChannelCollector   Channel = "collector"
+	ChannelIntegration Channel = "integration"
+	ChannelManual      Channel = "manual"
+)
+
+// AllChannels returns every channel.
+func AllChannels() []Channel {
+	return []Channel{ChannelScanner, ChannelCollector, ChannelIntegration, ChannelManual}
+}
+
+// IsValid reports whether c is a known channel.
+func (c Channel) IsValid() bool { return slices.Contains(AllChannels(), c) }
+
+// CoverageType says how much of the scope the work covered.
+type CoverageType string
+
+// Coverage types.
+const (
+	CoverageFull        CoverageType = "full"
+	CoverageIncremental CoverageType = "incremental"
+	CoveragePartial     CoverageType = "partial"
+)
+
+// AllCoverageTypes returns every coverage type.
+func AllCoverageTypes() []CoverageType {
+	return []CoverageType{CoverageFull, CoverageIncremental, CoveragePartial}
+}
+
+// IsValid reports whether c is a known coverage type.
+func (c CoverageType) IsValid() bool { return slices.Contains(AllCoverageTypes(), c) }
+
+// Profile is a conformance profile a producer claims for a document.
+type Profile string
+
+// Profiles.
+const (
+	ProfileCore          Profile = "core"
+	ProfileDiscovery     Profile = "discovery"
+	ProfileVulnerability Profile = "vulnerability"
+	ProfileCode          Profile = "code"
+	ProfileSBOM          Profile = "sbom"
+	ProfileValidation    Profile = "validation"
+	ProfileWeb3          Profile = "web3"
+)
+
+// AllProfiles returns every profile.
+func AllProfiles() []Profile {
+	return []Profile{ProfileCore, ProfileDiscovery, ProfileVulnerability, ProfileCode, ProfileSBOM, ProfileValidation, ProfileWeb3}
+}
+
+// IsValid reports whether p is a known profile.
+func (p Profile) IsValid() bool { return slices.Contains(AllProfiles(), p) }
+
+// SourceRef is a producer's own identifier of an item in its own system: a
+// plugin id, a scan id, an issue key in the source product. System is an
+// open token naming the system; ID is opaque. It is never a receiver's key,
+// and receivers never use it as one.
+type SourceRef struct {
+	System string `json:"system"`
+	ID     string `json:"id"`
+}
+
 // BranchInfo contains git branch context for CI/CD scans.
-// Used for branch-aware finding lifecycle management (auto-resolve, expiry).
 type BranchInfo struct {
-	// Branch name (e.g., "main", "feature/xyz", "refs/heads/main")
+	// Branch name ("main", "feature/xyz").
 	Name string `json:"name"`
 
-	// Whether this is the default branch (main/master)
-	// Auto-resolve only applies to default branch scans
+	// Whether this is the repository's default branch. Auto-resolve applies
+	// only to default branch scans.
 	IsDefaultBranch bool `json:"is_default_branch"`
 
-	// Commit SHA being scanned
+	// Commit SHA being scanned.
 	CommitSHA string `json:"commit_sha,omitempty"`
 
-	// Base branch for PR/MR scans (e.g., "main" when scanning a PR targeting main)
+	// Base branch for pull request scans.
 	BaseBranch string `json:"base_branch,omitempty"`
 
-	// PR/MR number if this is a pull request scan
+	// Pull request number.
 	PullRequestNumber int `json:"pull_request_number,omitempty"`
 
-	// PR/MR URL if this is a pull request scan
+	// Pull request URL (http or https).
 	PullRequestURL string `json:"pull_request_url,omitempty"`
 
-	// Repository URL for context
+	// Repository URL (http or https).
 	RepositoryURL string `json:"repository_url,omitempty"`
 }
 
-// Scope defines the target scope of the scan/collection.
-type Scope struct {
-	// Scope name or identifier
-	Name string `json:"name,omitempty"`
-
-	// Scope type: domain, network, repository, cloud_account
-	Type string `json:"type,omitempty"`
-
-	// Included targets
-	Includes []string `json:"includes,omitempty"`
-
-	// Excluded targets
-	Excludes []string `json:"excludes,omitempty"`
-}
-
-// Tool describes the tool that generated this report.
+// Tool describes the tool that generated the report, or one finding.
 type Tool struct {
-	// Tool name (required)
+	// Tool name (required).
 	Name string `json:"name"`
 
-	// Tool version (recommended)
+	// Tool version.
 	Version string `json:"version,omitempty"`
 
-	// Tool vendor/organization
+	// Tool vendor or organization.
 	Vendor string `json:"vendor,omitempty"`
 
-	// Tool information URL
+	// Tool information URL (http or https).
 	InfoURL string `json:"info_url,omitempty"`
 
-	// Tool capabilities
-	Capabilities []string `json:"capabilities,omitempty"`
-
-	// Custom properties
-	Properties Properties `json:"properties,omitempty"`
+	// Detection techniques the tool applies. A finding may override with
+	// its own technique.
+	Techniques []Technique `json:"techniques,omitempty"`
 }
 
+// Technique is a detection technique: how a finding was found. It is a
+// separate axis from the channel (how the data reached the document).
+type Technique string
+
+// Techniques (closed set).
+const (
+	TechniqueSAST      Technique = "sast"
+	TechniqueSCA       Technique = "sca"
+	TechniqueSecret    Technique = "secret"
+	TechniqueIaC       Technique = "iac"
+	TechniqueContainer Technique = "container"
+	TechniqueDAST      Technique = "dast"
+	TechniqueVA        Technique = "va"
+	TechniqueEASM      Technique = "easm"
+	TechniqueCSPM      Technique = "cspm"
+	TechniqueBAS       Technique = "bas"
+	TechniquePentest   Technique = "pentest"
+	TechniqueManual    Technique = "manual"
+)
+
+// AllTechniques returns every technique.
+func AllTechniques() []Technique {
+	return []Technique{
+		TechniqueSAST, TechniqueSCA, TechniqueSecret, TechniqueIaC, TechniqueContainer, TechniqueDAST,
+		TechniqueVA, TechniqueEASM, TechniqueCSPM, TechniqueBAS, TechniquePentest, TechniqueManual,
+	}
+}
+
+// IsValid reports whether t is a known technique.
+func (t Technique) IsValid() bool { return slices.Contains(AllTechniques(), t) }
+
 // =============================================================================
-// Asset Types
+// Assets
 // =============================================================================
 
-// Asset represents a discovered asset.
+// Asset is an observed asset. Its identity is AssetKey(type, canonical
+// value); receivers compute the key and never trust a producer's.
 type Asset struct {
-	// Unique identifier for this asset within the report
-	ID string `json:"id,omitempty"`
+	// Document-local reference (required): findings, relationships,
+	// dependencies and endpoints name the asset by it. Never UUID-shaped,
+	// never a receiver's key.
+	ID string `json:"id"`
 
-	// Asset type (required): domain, ip_address, repository, certificate, etc.
+	// Asset type (required).
 	Type AssetType `json:"type"`
 
-	// Primary value of the asset (required)
-	// For domain: "example.com"
-	// For ip_address: "192.168.1.1"
-	// For repository: "github.com/org/repo"
+	// The asset's value in the canonical form of its type (required):
+	// "www.example.com", "192.0.2.10", "192.0.2.10:443/tcp",
+	// "https://www.example.com", "github.com/org/repo".
 	Value string `json:"value"`
 
-	// Human-readable name
+	// Human-readable name.
 	Name string `json:"name,omitempty"`
 
-	// Description
+	// Description (plain text).
 	Description string `json:"description,omitempty"`
 
-	// Tags for categorization
+	// Tags for categorization.
 	Tags []string `json:"tags,omitempty"`
 
-	// Asset criticality: critical, high, medium, low, info
+	// Business criticality: critical, high, medium, low.
 	Criticality Criticality `json:"criticality,omitempty"`
 
-	// Confidence score 0-100 (how confident the source is about this asset)
+	// How sure the producer is about the asset, 0-100.
 	Confidence int `json:"confidence,omitempty"`
 
-	// When this asset was discovered
-	DiscoveredAt *time.Time `json:"discovered_at,omitempty"`
-
-	// Asset-specific technical details
-	Technical *AssetTechnical `json:"technical,omitempty"`
-
-	// Related assets (by ID within this report)
-	RelatedAssets []string `json:"related_assets,omitempty"`
-
-	// CTEM: Compliance context for the asset
-	Compliance *AssetCompliance `json:"compliance,omitempty"`
-
-	// CTEM: Services running on this asset
-	Services []ServiceInfo `json:"services,omitempty"`
-
-	// CTEM: Is the asset directly accessible from the internet
-	IsInternetAccessible bool `json:"is_internet_accessible,omitempty"`
-
-	// Stable identifiers of the asset. A platform matches an incoming asset
-	// to an existing one on these before it falls back to the name or an IP
-	// address, so a renamed host or repository keeps its history.
-	Identifiers *AssetIdentifiers `json:"identifiers,omitempty"`
-
-	// What a scanner observed about the host that helps match it across
-	// tools (FQDN, NetBIOS name, MACs, OS CPE, cloud id, agent id). Weaker
-	// than Identifiers.
-	IdentityHints *IdentityHints `json:"identity_hints,omitempty"`
-
-	// Technologies the asset runs, as a fingerprinting tool identified
-	// them (1.5). Replaces the untyped properties.technologies list.
-	Technologies []Technology `json:"technologies,omitempty"`
-
-	// Deployment environment of the asset (2.0).
-	Environment Environment `json:"environment,omitempty"`
-
-	// Who owns the asset (2.0). The refs are personal data.
-	Owners []AssetOwner `json:"owners,omitempty"`
-
-	// When the producer first and last observed the asset (2.0).
+	// When the producer first and last observed the asset.
 	FirstSeenAt *time.Time `json:"first_seen_at,omitempty"`
 	LastSeenAt  *time.Time `json:"last_seen_at,omitempty"`
 
-	// State of the asset (2.0). gone only on an authoritative signal,
-	// named by StateReason.
+	// Type-specific technical details.
+	Technical *AssetTechnical `json:"technical,omitempty"`
+
+	// Compliance context.
+	Compliance *AssetCompliance `json:"compliance,omitempty"`
+
+	// Whether the asset is reachable from the internet. Absent means
+	// unknown; false means verified not reachable.
+	IsInternetAccessible *bool `json:"is_internet_accessible,omitempty"`
+
+	// Stable identifiers read from the asset itself.
+	Identifiers *AssetIdentifiers `json:"identifiers,omitempty"`
+
+	// Remote observations that help match the asset across tools.
+	IdentityHints *IdentityHints `json:"identity_hints,omitempty"`
+
+	// Technologies the asset runs.
+	Technologies []Technology `json:"technologies,omitempty"`
+
+	// Deployment environment.
+	Environment Environment `json:"environment,omitempty"`
+
+	// Who owns the asset. The refs are personal data.
+	Owners []AssetOwner `json:"owners,omitempty"`
+
+	// State of the asset. gone only on an authoritative signal, named by
+	// StateReason.
 	State       AssetState       `json:"state,omitempty"`
 	StateReason AssetStateReason `json:"state_reason,omitempty"`
 
-	// Custom properties
+	// The producer's own identifiers of the asset in its own systems.
+	SourceRefs []SourceRef `json:"source_refs,omitempty"`
+
+	// Opaque bag; no meaning.
 	Properties Properties `json:"properties,omitempty"`
 
-	// Namespaced producer data (2.0).
+	// Namespaced producer data.
 	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // AssetIdentifiers holds identifiers that stay the same when an asset is
-// renamed or readdressed. Send only values read from the asset itself; leave
-// a field empty rather than guessing. In order of trust:
-//
-//  1. MachineID, the operating system's own host ID
-//  2. CloudResourceID
-//  3. BIOSUUID, then SerialNumber
-//  4. MACAddresses
-//
-// SCMRepoID identifies a repository.
+// renamed or readdressed, read from the asset itself. In order of trust:
+// MachineID, CloudResourceID, BIOSUUID then SerialNumber, MACAddresses.
+// SCMRepoID identifies a repository. They are the asset's own identifiers,
+// never a receiver's keys.
 type AssetIdentifiers struct {
-	// Host ID read by a sensor on the host: /etc/machine-id on Linux,
-	// MachineGuid on Windows, IOPlatformUUID on macOS.
+	// Host ID read on the host: /etc/machine-id, MachineGuid,
+	// IOPlatformUUID.
 	MachineID string `json:"machine_id,omitempty"`
 
-	// Cloud instance ID (i-0abc...), VM ID or resource ARN.
+	// Cloud instance ID, VM ID or resource ARN.
 	CloudResourceID string `json:"cloud_resource_id,omitempty"`
 
 	// SMBIOS system UUID.
@@ -272,995 +339,606 @@ type AssetIdentifiers struct {
 	// Hardware serial number.
 	SerialNumber string `json:"serial_number,omitempty"`
 
-	// MAC addresses of the host's network interfaces. Receivers ignore
-	// locally administered, multicast and known shared addresses.
+	// MAC addresses of the host's interfaces.
 	MACAddresses []string `json:"mac_addresses,omitempty"`
 
-	// Repository ID assigned by the source-code host (the numeric GitHub
-	// repository ID, the GitLab project ID). It survives renames and
-	// transfers.
+	// Repository ID assigned by the source-code host. It survives renames.
 	SCMRepoID string `json:"scm_repo_id,omitempty"`
 }
 
-// AssetCompliance contains CTEM compliance context for an asset.
+// AssetCompliance contains compliance context for an asset.
 type AssetCompliance struct {
-	// Compliance frameworks this asset is in scope for: PCI-DSS, HIPAA, SOC2, GDPR, ISO27001
-	Frameworks []string `json:"frameworks,omitempty"`
+	// Compliance frameworks the asset is in scope for, from the framework
+	// registry (ComplianceFramework).
+	Frameworks []ComplianceFramework `json:"frameworks,omitempty"`
 
-	// Data classification level: public, internal, confidential, restricted, secret
-	DataClassification string `json:"data_classification,omitempty"`
+	// Data classification: public, internal, confidential, restricted.
+	DataClassification DataClassification `json:"data_classification,omitempty"`
 
-	// Asset contains Personally Identifiable Information
-	PIIExposed bool `json:"pii_exposed,omitempty"`
+	// The asset holds personally identifiable information.
+	HasPII bool `json:"has_pii,omitempty"`
 
-	// Asset contains Protected Health Information
-	PHIExposed bool `json:"phi_exposed,omitempty"`
-
-	// Regulatory owner email/username
-	RegulatoryOwner string `json:"regulatory_owner,omitempty"`
+	// The asset holds protected health information.
+	HasPHI bool `json:"has_phi,omitempty"`
 }
 
-// ServiceInfo represents a network service discovered on an asset.
-type ServiceInfo struct {
-	// Port number
-	Port int `json:"port"`
+// DataClassification is a data classification level.
+type DataClassification string
 
-	// Transport protocol: tcp, udp
-	Protocol string `json:"protocol,omitempty"`
+// Data classification levels.
+const (
+	DataPublic       DataClassification = "public"
+	DataInternal     DataClassification = "internal"
+	DataConfidential DataClassification = "confidential"
+	DataRestricted   DataClassification = "restricted"
+)
 
-	// Service type: http, https, ssh, ftp, mysql, postgresql, etc.
-	ServiceType string `json:"service_type,omitempty"`
-
-	// Product name: Apache, nginx, OpenSSH, etc.
-	Product string `json:"product,omitempty"`
-
-	// Product version
-	Version string `json:"version,omitempty"`
-
-	// Service banner
-	Banner string `json:"banner,omitempty"`
-
-	// Common Platform Enumeration identifier
-	CPE string `json:"cpe,omitempty"`
-
-	// Is this service publicly accessible from the internet
-	IsPublic bool `json:"is_public,omitempty"`
-
-	// TLS enabled
-	TLSEnabled bool `json:"tls_enabled,omitempty"`
-
-	// TLS version: TLS 1.2, TLS 1.3
-	TLSVersion string `json:"tls_version,omitempty"`
-
-	// Service state: active, inactive, filtered
-	State string `json:"state,omitempty"`
+// AllDataClassifications returns every data classification level.
+func AllDataClassifications() []DataClassification {
+	return []DataClassification{DataPublic, DataInternal, DataConfidential, DataRestricted}
 }
 
-// AssetTechnical contains type-specific technical details.
+// IsValid reports whether d is a known data classification.
+func (d DataClassification) IsValid() bool { return slices.Contains(AllDataClassifications(), d) }
+
+// AssetTechnical contains type-specific technical details. Set the member
+// that matches the asset type.
 type AssetTechnical struct {
-	// For domain assets
+	// For domain_name assets.
 	Domain *DomainTechnical `json:"domain,omitempty"`
 
-	// For IP address assets
+	// For ip_address assets.
 	IPAddress *IPAddressTechnical `json:"ip_address,omitempty"`
 
-	// For repository assets
+	// For repository assets.
 	Repository *RepositoryTechnical `json:"repository,omitempty"`
 
-	// For certificate assets
+	// For certificate assets.
 	Certificate *CertificateTechnical `json:"certificate,omitempty"`
 
-	// For cloud assets
+	// For cloud assets.
 	Cloud *CloudTechnical `json:"cloud,omitempty"`
 
-	// For service assets
+	// For service assets.
 	Service *ServiceTechnical `json:"service,omitempty"`
 
-	// For Web3 assets (smart contracts, wallets, tokens, etc.)
+	// For web_origin assets.
+	HTTP *HTTPTechnical `json:"http,omitempty"`
+
+	// For identity assets.
+	Identity *IdentityTechnical `json:"identity,omitempty"`
+
+	// For web3 assets (web3 profile).
 	Web3 *Web3Technical `json:"web3,omitempty"`
 }
 
 // DomainTechnical contains domain-specific technical details.
 type DomainTechnical struct {
-	// Registrar information
+	// Registrar.
 	Registrar string `json:"registrar,omitempty"`
 
-	// Registration date
+	// Registration and expiry times.
 	RegisteredAt *time.Time `json:"registered_at,omitempty"`
+	ExpiresAt    *time.Time `json:"expires_at,omitempty"`
 
-	// Expiration date
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
-
-	// Nameservers
+	// Nameservers (canonical domain names).
 	Nameservers []string `json:"nameservers,omitempty"`
 
-	// DNS records
+	// DNS records.
 	DNSRecords []DNSRecord `json:"dns_records,omitempty"`
 
-	// WHOIS data
+	// WHOIS data, as key/value strings.
 	WHOIS map[string]string `json:"whois,omitempty"`
 }
 
-// DNSRecord represents a DNS record.
+// DNSRecord represents a DNS record. Type is the RR type verbatim (A, AAAA,
+// CNAME, MX, TXT ...); TTL is in seconds.
 type DNSRecord struct {
-	Type  string `json:"type"`  // A, AAAA, CNAME, MX, TXT, etc.
-	Name  string `json:"name"`  // Record name
-	Value string `json:"value"` // Record value
+	Type  string `json:"type"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 	TTL   int    `json:"ttl,omitempty"`
 }
 
-// IPAddressTechnical contains IP address-specific technical details.
+// IPAddressTechnical contains IP address-specific technical details. Open
+// ports are service assets linked by exposes.
 type IPAddressTechnical struct {
-	// IP version: 4 or 6
+	// IP version: 4 or 6.
 	Version int `json:"version,omitempty"`
 
-	// Hostname (if resolved)
+	// Hostname (if resolved).
 	Hostname string `json:"hostname,omitempty"`
 
-	// ASN information
-	ASN int `json:"asn,omitempty"`
-
-	// ASN organization
+	// Autonomous system number and organization.
+	ASN    int    `json:"asn,omitempty"`
 	ASNOrg string `json:"asn_org,omitempty"`
 
-	// Country code
+	// ISO 3166-1 alpha-2 country code.
 	Country string `json:"country,omitempty"`
 
-	// City
+	// City.
 	City string `json:"city,omitempty"`
 
-	// Open ports
-	Ports []PortInfo `json:"ports,omitempty"`
-
-	// Geolocation
+	// Geolocation.
 	Geolocation *Geolocation `json:"geolocation,omitempty"`
 }
 
-// PortInfo contains information about an open port.
-type PortInfo struct {
-	Port     int    `json:"port"`
-	Protocol string `json:"protocol,omitempty"` // tcp, udp
-	State    string `json:"state,omitempty"`    // open, filtered, closed
-	Service  string `json:"service,omitempty"`  // http, ssh, etc.
-	Banner   string `json:"banner,omitempty"`
-	Version  string `json:"version,omitempty"`
-}
-
-// Geolocation contains geographic coordinates.
+// Geolocation contains geographic coordinates; accuracy is in meters.
 type Geolocation struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	Accuracy  float64 `json:"accuracy,omitempty"` // in meters
+	Accuracy  float64 `json:"accuracy,omitempty"`
 }
 
 // RepositoryTechnical contains repository-specific technical details.
 type RepositoryTechnical struct {
-	// SCM platform: github, gitlab, bitbucket
+	// Source-code host: an open token (github, gitlab, bitbucket).
 	Platform string `json:"platform,omitempty"`
 
-	// Organization/owner
+	// Organization or owner path.
 	Owner string `json:"owner,omitempty"`
 
-	// Repository name
+	// Repository name.
 	Name string `json:"name,omitempty"`
 
-	// Default branch
+	// Default branch.
 	DefaultBranch string `json:"default_branch,omitempty"`
 
-	// Repository visibility: public, private, internal
+	// Visibility: public, private, internal.
 	Visibility string `json:"visibility,omitempty"`
 
-	// Repository URL
+	// Repository web URL (http or https).
 	URL string `json:"url,omitempty"`
 
-	// Clone URL
-	CloneURL string `json:"clone_url,omitempty"`
-
-	// Language breakdown
+	// Bytes per language.
 	Languages map[string]int `json:"languages,omitempty"`
 
-	// Stars count
+	// Stars and forks.
 	Stars int `json:"stars,omitempty"`
-
-	// Forks count
 	Forks int `json:"forks,omitempty"`
 
-	// Last commit SHA
-	LastCommitSHA string `json:"last_commit_sha,omitempty"`
-
-	// Last commit date
-	LastCommitAt *time.Time `json:"last_commit_at,omitempty"`
+	// Last commit.
+	LastCommitSHA string     `json:"last_commit_sha,omitempty"`
+	LastCommitAt  *time.Time `json:"last_commit_at,omitempty"`
 }
 
-// CertificateTechnical contains certificate-specific technical details.
+// CertificateTechnical contains certificate details. The asset value is the
+// SHA-256 fingerprint of the DER.
 type CertificateTechnical struct {
-	// Serial number
-	SerialNumber string `json:"serial_number,omitempty"`
+	SerialNumber       string     `json:"serial_number,omitempty"`
+	SubjectCN          string     `json:"subject_cn,omitempty"`
+	SubjectAltNames    []string   `json:"subject_alt_names,omitempty"`
+	IssuerCN           string     `json:"issuer_cn,omitempty"`
+	IssuerOrg          string     `json:"issuer_org,omitempty"`
+	NotBefore          *time.Time `json:"not_before,omitempty"`
+	NotAfter           *time.Time `json:"not_after,omitempty"`
+	SignatureAlgorithm string     `json:"signature_algorithm,omitempty"`
+	KeyAlgorithm       string     `json:"key_algorithm,omitempty"`
+	KeySize            int        `json:"key_size,omitempty"` // bits
 
-	// Subject common name
-	SubjectCN string `json:"subject_cn,omitempty"`
+	// SHA-256 of the DER, lowercase hex.
+	SHA256Fingerprint string `json:"sha256_fingerprint,omitempty"`
 
-	// Subject alternative names
-	SANs []string `json:"sans,omitempty"`
-
-	// Issuer common name
-	IssuerCN string `json:"issuer_cn,omitempty"`
-
-	// Issuer organization
-	IssuerOrg string `json:"issuer_org,omitempty"`
-
-	// Valid from
-	NotBefore *time.Time `json:"not_before,omitempty"`
-
-	// Valid until
-	NotAfter *time.Time `json:"not_after,omitempty"`
-
-	// Signature algorithm
-	SignatureAlgorithm string `json:"signature_algorithm,omitempty"`
-
-	// Key algorithm
-	KeyAlgorithm string `json:"key_algorithm,omitempty"`
-
-	// Key size in bits
-	KeySize int `json:"key_size,omitempty"`
-
-	// SHA-256 fingerprint
-	Fingerprint string `json:"fingerprint,omitempty"`
-
-	// Is self-signed
-	SelfSigned bool `json:"self_signed,omitempty"`
-
-	// Is expired
-	Expired bool `json:"expired,omitempty"`
-
-	// Is wildcard
-	Wildcard bool `json:"wildcard,omitempty"`
+	IsSelfSigned bool `json:"is_self_signed,omitempty"`
+	IsWildcard   bool `json:"is_wildcard,omitempty"`
 }
 
-// CloudTechnical contains cloud resource-specific technical details.
+// CloudTechnical contains cloud resource details.
 type CloudTechnical struct {
-	// Cloud provider: aws, gcp, azure
+	// Provider: an open token (aws, azure, gcp, oci, alibaba).
 	Provider string `json:"provider,omitempty"`
 
-	// Account/project ID
+	// Account, subscription or project.
 	AccountID string `json:"account_id,omitempty"`
 
-	// Region
-	Region string `json:"region,omitempty"`
-
-	// Availability zone
-	Zone string `json:"zone,omitempty"`
-
-	// Resource type: ec2, s3, rds, etc.
+	Region       string `json:"region,omitempty"`
+	Zone         string `json:"zone,omitempty"`
 	ResourceType string `json:"resource_type,omitempty"`
+	ResourceID   string `json:"resource_id,omitempty"`
+	ARN          string `json:"arn,omitempty"`
 
-	// Resource ID
-	ResourceID string `json:"resource_id,omitempty"`
-
-	// Resource ARN (AWS)
-	ARN string `json:"arn,omitempty"`
-
-	// Resource tags
+	// Resource tags.
 	Tags map[string]string `json:"tags,omitempty"`
 }
 
-// ServiceTechnical contains service-specific technical details.
+// ServiceTechnical is the one shape of a network service: the technical
+// details of a service asset (value host:port/transport), linked from its
+// host or address by an exposes relationship.
 type ServiceTechnical struct {
-	// Service name
-	Name string `json:"name,omitempty"`
+	// Port number (required).
+	Port int `json:"port"`
 
-	// Service version
+	// Transport (required): tcp, udp, sctp.
+	Transport Transport `json:"transport"`
+
+	// Application protocol, an IANA service name (http, https, ssh, smtp,
+	// domain, ldap, microsoft-ds, mysql ...).
+	AppProtocol string `json:"app_protocol,omitempty"`
+
+	// Port state: open, closed, filtered.
+	State PortState `json:"state,omitempty"`
+
+	// Product and version ("OpenSSH" "9.6").
+	Product string `json:"product,omitempty"`
 	Version string `json:"version,omitempty"`
 
-	// Port
-	Port int `json:"port,omitempty"`
-
-	// Protocol (application-layer): http, https, ssh, smtp, ftp, dns, ldap, smb, rdp, mysql, postgresql, mongodb, redis, etc.
-	Protocol string `json:"protocol,omitempty"`
-
-	// Transport: tcp, udp
-	Transport string `json:"transport,omitempty"`
-
-	// SSL/TLS enabled
-	TLS bool `json:"tls,omitempty"`
-
-	// TLS version: tls1.0, tls1.1, tls1.2, tls1.3
-	TLSVersion string `json:"tls_version,omitempty"`
-
-	// TLS certificate info (for services with TLS)
-	TLSCertSubject string `json:"tls_cert_subject,omitempty"`
-	TLSCertIssuer  string `json:"tls_cert_issuer,omitempty"`
-	TLSCertExpiry  string `json:"tls_cert_expiry,omitempty"`
-
-	// Banner/fingerprint
-	Banner string `json:"banner,omitempty"`
-
-	// Product name (e.g., "OpenSSH", "nginx", "Apache", "Postfix")
-	Product string `json:"product,omitempty"`
-
-	// CPE (Common Platform Enumeration) identifier
+	// CPE 2.3 name.
 	CPE string `json:"cpe,omitempty"`
 
-	// Extra info
+	// Banner and extra information as the probe saw them (plain text).
+	Banner    string `json:"banner,omitempty"`
 	ExtraInfo string `json:"extra_info,omitempty"`
 
-	// Service state: open, filtered, closed
-	State string `json:"state,omitempty"`
+	// TLS.
+	IsTLS      bool       `json:"is_tls,omitempty"`
+	TLSVersion TLSVersion `json:"tls_version,omitempty"`
 
-	// Authentication required
-	AuthRequired bool `json:"auth_required,omitempty"`
+	// Authentication.
+	IsAuthRequired        bool     `json:"is_auth_required,omitempty"`
+	AuthMethods           []string `json:"auth_methods,omitempty"`
+	HasDefaultCredentials bool     `json:"has_default_credentials,omitempty"`
+	HasAnonymousAccess    bool     `json:"has_anonymous_access,omitempty"`
 
-	// Authentication methods supported (e.g., ["password", "publickey"] for SSH)
-	AuthMethods []string `json:"auth_methods,omitempty"`
-
-	// Default credentials detected
-	DefaultCredentials bool `json:"default_credentials,omitempty"`
-
-	// Anonymous access allowed (for FTP, SMB, etc.)
-	AnonymousAccess bool `json:"anonymous_access,omitempty"`
-
-	// Response time in milliseconds
+	// Response time in milliseconds.
 	ResponseTimeMs int `json:"response_time_ms,omitempty"`
 
-	// Last seen timestamp
-	LastSeen string `json:"last_seen,omitempty"`
-
-	// Service-specific details (protocol-dependent)
-	// For HTTP: methods, headers, etc.
-	// For SMTP: EHLO response, supported extensions
-	// For SSH: supported algorithms, host keys
-	Details map[string]any `json:"details,omitempty"`
+	// Protocol-dependent details, as strings (SSH algorithms, SMTP
+	// extensions).
+	Details map[string]string `json:"details,omitempty"`
 }
 
-// =============================================================================
-// Web3 Technical Details
-// =============================================================================
+// Transport is a transport protocol.
+type Transport string
 
-// Web3Technical contains Web3-specific technical details for smart contracts,
-// wallets, tokens, and other blockchain assets.
-type Web3Technical struct {
-	// Blockchain network: ethereum, polygon, bsc, arbitrum, optimism, avalanche, solana, etc.
-	Chain string `json:"chain,omitempty"`
+// Transports.
+const (
+	TransportTCP  Transport = "tcp"
+	TransportUDP  Transport = "udp"
+	TransportSCTP Transport = "sctp"
+)
 
-	// Chain ID (EVM chains): 1 (mainnet), 137 (polygon), 56 (bsc), etc.
-	ChainID int64 `json:"chain_id,omitempty"`
+// AllTransports returns every transport.
+func AllTransports() []Transport { return []Transport{TransportTCP, TransportUDP, TransportSCTP} }
 
-	// Network type: mainnet, testnet, devnet
-	NetworkType string `json:"network_type,omitempty"`
+// IsValid reports whether t is a known transport.
+func (t Transport) IsValid() bool { return slices.Contains(AllTransports(), t) }
 
-	// Contract/wallet address
-	Address string `json:"address,omitempty"`
+// PortState is the state of a port.
+type PortState string
 
-	// For smart contracts
-	Contract *SmartContractDetails `json:"contract,omitempty"`
+// Port states.
+const (
+	PortOpen     PortState = "open"
+	PortClosed   PortState = "closed"
+	PortFiltered PortState = "filtered"
+)
 
-	// For wallets
-	Wallet *WalletDetails `json:"wallet,omitempty"`
+// AllPortStates returns every port state.
+func AllPortStates() []PortState { return []PortState{PortOpen, PortClosed, PortFiltered} }
 
-	// For tokens (ERC-20, ERC-721, etc.)
-	Token *TokenDetails `json:"token,omitempty"`
+// IsValid reports whether s is a known port state.
+func (s PortState) IsValid() bool { return slices.Contains(AllPortStates(), s) }
 
-	// For DeFi protocols
-	DeFi *DeFiDetails `json:"defi,omitempty"`
+// TLSVersion is a TLS or SSL protocol version.
+type TLSVersion string
 
-	// For NFT collections
-	NFT *NFTCollectionDetails `json:"nft,omitempty"`
+// TLS versions.
+const (
+	TLSVersionSSL3  TLSVersion = "ssl3"
+	TLSVersionTLS10 TLSVersion = "tls1.0"
+	TLSVersionTLS11 TLSVersion = "tls1.1"
+	TLSVersionTLS12 TLSVersion = "tls1.2"
+	TLSVersionTLS13 TLSVersion = "tls1.3"
+)
+
+// AllTLSVersions returns every TLS version.
+func AllTLSVersions() []TLSVersion {
+	return []TLSVersion{TLSVersionSSL3, TLSVersionTLS10, TLSVersionTLS11, TLSVersionTLS12, TLSVersionTLS13}
 }
 
-// SmartContractDetails contains smart contract-specific details.
-type SmartContractDetails struct {
-	// Contract name
-	Name string `json:"name,omitempty"`
+// IsValid reports whether v is a known TLS version.
+func (v TLSVersion) IsValid() bool { return slices.Contains(AllTLSVersions(), v) }
 
-	// Contract address
-	Address string `json:"address,omitempty"`
+// HTTPTechnical is what a probe saw on a web origin.
+type HTTPTechnical struct {
+	// Status code of the probe's response.
+	StatusCode int `json:"status_code,omitempty"`
 
-	// Deployer address
-	DeployerAddress string `json:"deployer_address,omitempty"`
+	// Page title and server header (plain text).
+	Title     string `json:"title,omitempty"`
+	WebServer string `json:"web_server,omitempty"`
 
-	// Deployment transaction hash
-	DeploymentTxHash string `json:"deployment_tx_hash,omitempty"`
+	// Content type of the response.
+	ContentType string `json:"content_type,omitempty"`
 
-	// Deployment block number
-	DeploymentBlock int64 `json:"deployment_block,omitempty"`
+	// TLS version the origin negotiated (https origins).
+	TLSVersion TLSVersion `json:"tls_version,omitempty"`
 
-	// Deployment timestamp
-	DeployedAt *time.Time `json:"deployed_at,omitempty"`
+	// Where the origin redirects to (http or https URL).
+	RedirectURL string `json:"redirect_url,omitempty"`
 
-	// Is verified on explorer (etherscan, etc.)
-	Verified bool `json:"verified,omitempty"`
+	// Content delivery network and web application firewall in front of
+	// the origin, as open tokens (cloudflare, akamai).
+	CDN string `json:"cdn,omitempty"`
+	WAF string `json:"waf,omitempty"`
 
-	// Compiler version
-	CompilerVersion string `json:"compiler_version,omitempty"`
+	// TLS server fingerprints (JARM) and the favicon hash (MurmurHash3 of
+	// the base64 body), as the probe computed them.
+	JARM        string `json:"jarm,omitempty"`
+	FaviconMMH3 string `json:"favicon_mmh3,omitempty"`
 
-	// EVM version
-	EVMVersion string `json:"evm_version,omitempty"`
-
-	// Optimization enabled
-	OptimizationEnabled bool `json:"optimization_enabled,omitempty"`
-
-	// Optimization runs
-	OptimizationRuns int `json:"optimization_runs,omitempty"`
-
-	// Contract type: erc20, erc721, erc1155, proxy, multisig, defi, custom
-	ContractType string `json:"contract_type,omitempty"`
-
-	// Is proxy contract
-	IsProxy bool `json:"is_proxy,omitempty"`
-
-	// Implementation address (for proxy contracts)
-	ImplementationAddress string `json:"implementation_address,omitempty"`
-
-	// Proxy type: transparent, uups, beacon, diamond
-	ProxyType string `json:"proxy_type,omitempty"`
-
-	// Is upgradeable
-	IsUpgradeable bool `json:"is_upgradeable,omitempty"`
-
-	// Owner/admin address
-	OwnerAddress string `json:"owner_address,omitempty"`
-
-	// Has renounced ownership
-	OwnershipRenounced bool `json:"ownership_renounced,omitempty"`
-
-	// Source code URL (GitHub, etc.)
-	SourceCodeURL string `json:"source_code_url,omitempty"`
-
-	// ABI (JSON string or base64 encoded)
-	ABI string `json:"abi,omitempty"`
-
-	// Bytecode hash (keccak256)
-	BytecodeHash string `json:"bytecode_hash,omitempty"`
-
-	// Source code hash
-	SourceCodeHash string `json:"source_code_hash,omitempty"`
-
-	// License type: MIT, GPL, UNLICENSED, etc.
-	License string `json:"license,omitempty"`
-
-	// External libraries used
-	Libraries []ContractLibrary `json:"libraries,omitempty"`
-
-	// Implemented interfaces: ERC20, ERC721, etc.
-	Interfaces []string `json:"interfaces,omitempty"`
-
-	// Contract balance (in wei)
-	Balance string `json:"balance,omitempty"`
-
-	// Total transactions
-	TxCount int64 `json:"tx_count,omitempty"`
+	// Security response headers the origin sets.
+	SecurityHeaders *SecurityHeaders `json:"security_headers,omitempty"`
 }
 
-// ContractLibrary represents an external library linked to a contract.
-type ContractLibrary struct {
-	Name    string `json:"name"`
-	Address string `json:"address"`
+// SecurityHeaders is the security posture of a web origin's response
+// headers. Each value is the header as received (bounded), absent when the
+// origin does not send it.
+type SecurityHeaders struct {
+	StrictTransportSecurity string `json:"strict_transport_security,omitempty"`
+	ContentSecurityPolicy   string `json:"content_security_policy,omitempty"`
+	XFrameOptions           string `json:"x_frame_options,omitempty"`
+	XContentTypeOptions     string `json:"x_content_type_options,omitempty"`
+	ReferrerPolicy          string `json:"referrer_policy,omitempty"`
+	PermissionsPolicy       string `json:"permissions_policy,omitempty"`
+
+	// CORS response headers.
+	AccessControlAllowOrigin      string `json:"access_control_allow_origin,omitempty"`
+	AccessControlAllowCredentials string `json:"access_control_allow_credentials,omitempty"`
+
+	// The cookies the origin sets: names and flags, never values.
+	Cookies []CookieFlags `json:"cookies,omitempty"`
 }
 
-// WalletDetails contains wallet-specific details.
-type WalletDetails struct {
-	// Wallet type: eoa, multisig, smart_wallet, mpc
-	WalletType string `json:"wallet_type,omitempty"`
+// CookieFlags is what a Set-Cookie header says about a cookie, without its
+// value.
+type CookieFlags struct {
+	Name         string `json:"name"`
+	IsSecure     bool   `json:"is_secure,omitempty"`
+	IsHTTPOnly   bool   `json:"is_http_only,omitempty"`
+	IsPersistent bool   `json:"is_persistent,omitempty"`
+	// SameSite: strict, lax, none.
+	SameSite string `json:"same_site,omitempty"`
+}
 
-	// For multisig: required signatures
-	RequiredSignatures int `json:"required_signatures,omitempty"`
+// IdentityTechnical describes an identity asset.
+type IdentityTechnical struct {
+	// Kind (required): user, service_account, role, group, workload.
+	Kind IdentityKind `json:"kind"`
 
-	// For multisig: total owners
-	TotalOwners int `json:"total_owners,omitempty"`
-
-	// Owner addresses (for multisig)
-	Owners []string `json:"owners,omitempty"`
-
-	// Wallet provider: metamask, ledger, safe, argent, etc.
+	// Identity provider: an open token (aws, azure, gcp, okta, ldap).
 	Provider string `json:"provider,omitempty"`
-
-	// Balance (native token, in wei)
-	Balance string `json:"balance,omitempty"`
-
-	// Token balances
-	TokenBalances []TokenBalance `json:"token_balances,omitempty"`
-
-	// NFT count
-	NFTCount int `json:"nft_count,omitempty"`
-
-	// First transaction timestamp
-	FirstTxAt *time.Time `json:"first_tx_at,omitempty"`
-
-	// Last transaction timestamp
-	LastTxAt *time.Time `json:"last_tx_at,omitempty"`
-
-	// Total transactions
-	TxCount int64 `json:"tx_count,omitempty"`
-
-	// ENS name (if applicable)
-	ENSName string `json:"ens_name,omitempty"`
-
-	// Labels (exchange, whale, hacker, etc.)
-	Labels []string `json:"labels,omitempty"`
 }
 
-// TokenBalance represents a token balance for a wallet.
-type TokenBalance struct {
-	// Token contract address
-	ContractAddress string `json:"contract_address"`
+// IdentityKind is the kind of an identity.
+type IdentityKind string
 
-	// Token symbol
-	Symbol string `json:"symbol,omitempty"`
+// Identity kinds.
+const (
+	IdentityUser           IdentityKind = "user"
+	IdentityServiceAccount IdentityKind = "service_account"
+	IdentityRole           IdentityKind = "role"
+	IdentityGroup          IdentityKind = "group"
+	IdentityWorkload       IdentityKind = "workload"
+)
 
-	// Token name
-	Name string `json:"name,omitempty"`
-
-	// Token decimals
-	Decimals int `json:"decimals,omitempty"`
-
-	// Balance (raw value)
-	Balance string `json:"balance"`
-
-	// Balance formatted (human readable)
-	BalanceFormatted string `json:"balance_formatted,omitempty"`
-
-	// USD value
-	USDValue float64 `json:"usd_value,omitempty"`
+// AllIdentityKinds returns every identity kind.
+func AllIdentityKinds() []IdentityKind {
+	return []IdentityKind{IdentityUser, IdentityServiceAccount, IdentityRole, IdentityGroup, IdentityWorkload}
 }
 
-// TokenDetails contains token-specific details (ERC-20, etc.).
-type TokenDetails struct {
-	// Token standard: erc20, erc721, erc1155, bep20, spl
-	Standard string `json:"standard,omitempty"`
-
-	// Token symbol
-	Symbol string `json:"symbol,omitempty"`
-
-	// Token name
-	Name string `json:"name,omitempty"`
-
-	// Token decimals
-	Decimals int `json:"decimals,omitempty"`
-
-	// Total supply (raw value)
-	TotalSupply string `json:"total_supply,omitempty"`
-
-	// Max supply (if applicable)
-	MaxSupply string `json:"max_supply,omitempty"`
-
-	// Is mintable
-	Mintable bool `json:"mintable,omitempty"`
-
-	// Is burnable
-	Burnable bool `json:"burnable,omitempty"`
-
-	// Is pausable
-	Pausable bool `json:"pausable,omitempty"`
-
-	// Has blacklist/whitelist
-	HasBlacklist bool `json:"has_blacklist,omitempty"`
-
-	// Has transfer fee/tax
-	HasTransferFee bool `json:"has_transfer_fee,omitempty"`
-
-	// Transfer fee percentage
-	TransferFeePercent float64 `json:"transfer_fee_percent,omitempty"`
-
-	// Holder count
-	HolderCount int64 `json:"holder_count,omitempty"`
-
-	// Market cap USD
-	MarketCapUSD float64 `json:"market_cap_usd,omitempty"`
-
-	// Price USD
-	PriceUSD float64 `json:"price_usd,omitempty"`
-
-	// Liquidity USD
-	LiquidityUSD float64 `json:"liquidity_usd,omitempty"`
-
-	// Trading pairs
-	TradingPairs []TradingPair `json:"trading_pairs,omitempty"`
-
-	// Is honeypot
-	IsHoneypot bool `json:"is_honeypot,omitempty"`
-
-	// Honeypot reason
-	HoneypotReason string `json:"honeypot_reason,omitempty"`
-}
-
-// TradingPair represents a trading pair for a token.
-type TradingPair struct {
-	// DEX name: uniswap, sushiswap, pancakeswap, etc.
-	DEX string `json:"dex"`
-
-	// Pair address
-	PairAddress string `json:"pair_address"`
-
-	// Quote token symbol (WETH, USDT, etc.)
-	QuoteToken string `json:"quote_token"`
-
-	// Liquidity USD
-	LiquidityUSD float64 `json:"liquidity_usd,omitempty"`
-}
-
-// DeFiDetails contains DeFi protocol-specific details.
-type DeFiDetails struct {
-	// Protocol name: uniswap, aave, compound, etc.
-	ProtocolName string `json:"protocol_name,omitempty"`
-
-	// Protocol type: dex, lending, yield, bridge, derivatives, etc.
-	ProtocolType string `json:"protocol_type,omitempty"`
-
-	// Protocol version
-	Version string `json:"version,omitempty"`
-
-	// Total Value Locked (TVL) in USD
-	TVLUSD float64 `json:"tvl_usd,omitempty"`
-
-	// Supported chains
-	SupportedChains []string `json:"supported_chains,omitempty"`
-
-	// Core contracts
-	CoreContracts []CoreContract `json:"core_contracts,omitempty"`
-
-	// Governance token address
-	GovernanceToken string `json:"governance_token,omitempty"`
-
-	// Is audited
-	Audited bool `json:"audited,omitempty"`
-
-	// Audit reports
-	AuditReports []AuditReport `json:"audit_reports,omitempty"`
-
-	// Has bug bounty
-	HasBugBounty bool `json:"has_bug_bounty,omitempty"`
-
-	// Bug bounty platform: immunefi, hackerone, etc.
-	BugBountyPlatform string `json:"bug_bounty_platform,omitempty"`
-
-	// Max bug bounty payout
-	MaxBountyUSD float64 `json:"max_bounty_usd,omitempty"`
-
-	// Timelock duration (for governance)
-	TimelockDuration int `json:"timelock_duration,omitempty"`
-
-	// Is paused
-	Paused bool `json:"paused,omitempty"`
-}
-
-// CoreContract represents a core contract of a DeFi protocol.
-type CoreContract struct {
-	Name    string `json:"name"`
-	Address string `json:"address"`
-	Role    string `json:"role,omitempty"` // router, factory, vault, etc.
-}
-
-// AuditReport represents a security audit report.
-type AuditReport struct {
-	Auditor       string     `json:"auditor"`
-	ReportURL     string     `json:"report_url,omitempty"`
-	Date          *time.Time `json:"date,omitempty"`
-	Scope         string     `json:"scope,omitempty"`
-	CriticalCount int        `json:"critical_count,omitempty"`
-	HighCount     int        `json:"high_count,omitempty"`
-	MediumCount   int        `json:"medium_count,omitempty"`
-	LowCount      int        `json:"low_count,omitempty"`
-}
-
-// NFTCollectionDetails contains NFT collection-specific details.
-type NFTCollectionDetails struct {
-	// Collection name
-	Name string `json:"name,omitempty"`
-
-	// Collection symbol
-	Symbol string `json:"symbol,omitempty"`
-
-	// Token standard: erc721, erc1155
-	Standard string `json:"standard,omitempty"`
-
-	// Total supply
-	TotalSupply int64 `json:"total_supply,omitempty"`
-
-	// Max supply
-	MaxSupply int64 `json:"max_supply,omitempty"`
-
-	// Unique holders
-	HolderCount int64 `json:"holder_count,omitempty"`
-
-	// Floor price (in native token)
-	FloorPrice string `json:"floor_price,omitempty"`
-
-	// Floor price USD
-	FloorPriceUSD float64 `json:"floor_price_usd,omitempty"`
-
-	// Total volume (in native token)
-	TotalVolume string `json:"total_volume,omitempty"`
-
-	// Total volume USD
-	TotalVolumeUSD float64 `json:"total_volume_usd,omitempty"`
-
-	// Royalty percentage
-	RoyaltyPercent float64 `json:"royalty_percent,omitempty"`
-
-	// Royalty recipient
-	RoyaltyRecipient string `json:"royalty_recipient,omitempty"`
-
-	// Marketplace URLs
-	Marketplaces []string `json:"marketplaces,omitempty"`
-
-	// Is revealed
-	Revealed bool `json:"revealed,omitempty"`
-
-	// Base URI
-	BaseURI string `json:"base_uri,omitempty"`
-
-	// Metadata storage: ipfs, arweave, centralized
-	MetadataStorage string `json:"metadata_storage,omitempty"`
-
-	// Creator address
-	Creator string `json:"creator,omitempty"`
-}
+// IsValid reports whether k is a known identity kind.
+func (k IdentityKind) IsValid() bool { return slices.Contains(AllIdentityKinds(), k) }
 
 // =============================================================================
-// Finding Types
+// Findings
 // =============================================================================
 
-// Finding represents a security finding.
+// Finding is a security finding on one asset of the report.
 type Finding struct {
-	// Unique identifier for this finding within the report
+	// Document-local reference. Never UUID-shaped, never a receiver's key.
 	ID string `json:"id,omitempty"`
 
-	// Finding type (required): vulnerability, secret, misconfiguration, compliance
+	// Finding type (required).
 	Type FindingType `json:"type"`
 
-	// Short title (required)
+	// Short title (required, plain text).
 	Title string `json:"title"`
 
-	// Detailed description
+	// Detailed description (plain text).
 	Description string `json:"description,omitempty"`
 
-	// Primary message to display (the main human-readable finding message)
-	// This is distinct from Title (short) and Description (detailed)
-	// If not set, Title will be used as the message
+	// Primary message (plain text), distinct from title and description.
 	Message string `json:"message,omitempty"`
 
-	// Severity (required): critical, high, medium, low, info
+	// Severity (required).
 	Severity Severity `json:"severity"`
 
-	// Confidence score 0-100
+	// How sure the producer is, 0-100.
 	Confidence int `json:"confidence,omitempty"`
 
-	// Impact level: critical, high, medium, low (for risk assessment)
-	Impact string `json:"impact,omitempty"`
-
-	// Likelihood level: high, medium, low (for risk assessment)
-	Likelihood string `json:"likelihood,omitempty"`
-
-	// Finding category/class
+	// Finding category.
 	Category string `json:"category,omitempty"`
 
-	// Vulnerability class(es): SQL Injection, XSS, Command Injection, etc.
-	VulnerabilityClass []string `json:"vulnerability_class,omitempty"`
+	// Vulnerability classes ("SQL Injection", "XSS").
+	VulnerabilityClasses []string `json:"vulnerability_classes,omitempty"`
 
-	// Subcategory: audit, vuln, secure default, etc.
-	Subcategory []string `json:"subcategory,omitempty"`
+	// Subcategories ("audit", "vuln", "secure default").
+	Subcategories []string `json:"subcategories,omitempty"`
 
-	// Rule/check ID that detected this finding
-	RuleID string `json:"rule_id,omitempty"`
-
-	// Rule name
+	// Rule or check that detected the finding.
+	RuleID   string `json:"rule_id,omitempty"`
 	RuleName string `json:"rule_name,omitempty"`
 
-	// Reference to asset ID within this report
-	AssetRef string `json:"asset_ref,omitempty"`
+	// The asset of this report the finding is on (required).
+	AssetRef string `json:"asset_ref"`
 
-	// Direct asset value (if not using AssetRef)
-	AssetValue string `json:"asset_value,omitempty"`
-
-	// Asset type (if using AssetValue)
-	AssetType AssetType `json:"asset_type,omitempty"`
-
-	// Location information (for code-based findings)
+	// Code location.
 	Location *FindingLocation `json:"location,omitempty"`
 
-	// Network location (for network/host findings, e.g. Nessus/Tenable): the
-	// port/protocol/service the finding was observed on. Distinct from the
-	// code-centric Location above.
+	// Network location: the host, port and protocol the finding was
+	// observed on.
 	Network *NetworkLocation `json:"network,omitempty"`
 
-	// Evidence is the scanner's raw proof/output for this finding (e.g. a Nessus
-	// plugin_output, a probe response). Free text; redact secrets before display.
-	Evidence string `json:"evidence,omitempty"`
+	// Where on a web origin the finding was observed.
+	Web *WebLocation `json:"web,omitempty"`
 
-	// Vulnerability-specific details
-	Vulnerability *VulnerabilityDetails `json:"vulnerability,omitempty"`
-
-	// Secret-specific details
-	Secret *SecretDetails `json:"secret,omitempty"`
-
-	// Misconfiguration-specific details
+	// Type-specific details.
+	Vulnerability    *VulnerabilityDetails    `json:"vulnerability,omitempty"`
+	Secret           *SecretDetails           `json:"secret,omitempty"`
 	Misconfiguration *MisconfigurationDetails `json:"misconfiguration,omitempty"`
+	Compliance       *ComplianceDetails       `json:"compliance,omitempty"`
 
-	// Compliance-specific details
-	Compliance *ComplianceDetails `json:"compliance,omitempty"`
-
-	// Web3-specific details (smart contract vulnerabilities)
+	// Web3 details (web3 profile) on a vulnerability or weakness finding.
 	Web3 *Web3VulnerabilityDetails `json:"web3,omitempty"`
 
-	// Remediation guidance
+	// Remediation guidance.
 	Remediation *Remediation `json:"remediation,omitempty"`
 
-	// References (URLs)
+	// References (http or https URLs). Receivers never fetch them.
 	References []string `json:"references,omitempty"`
 
-	// Tags
+	// Tags.
 	Tags []string `json:"tags,omitempty"`
 
-	// Fingerprint for deduplication
+	// The producer's fingerprint (recipe ctis-fp/2). Receivers recompute
+	// it and never trust it as a key.
 	Fingerprint string `json:"fingerprint,omitempty"`
 
-	// Partial fingerprints - contributing identity components (SARIF partialFingerprints)
+	// Contributing identity components (SARIF partialFingerprints).
 	PartialFingerprints map[string]string `json:"partial_fingerprints,omitempty"`
 
-	// Correlation ID - groups logically identical results across runs (SARIF correlationGuid)
+	// Groups logically identical results across runs (SARIF
+	// correlationGuid), the producer's own.
 	CorrelationID string `json:"correlation_id,omitempty"`
 
-	// Baseline state - status relative to previous scan (SARIF baselineState)
-	// Values: new, unchanged, updated, absent
+	// Status relative to the producer's previous run (SARIF baselineState):
+	// new, unchanged, updated, absent.
 	BaselineState string `json:"baseline_state,omitempty"`
 
-	// Kind - evaluation state of the finding (SARIF kind)
-	// Values: not_applicable, pass, fail, review, open, informational
+	// Evaluation state (SARIF kind): not_applicable, pass, fail, review,
+	// open, informational. A compliance result is a kind.
 	Kind string `json:"kind,omitempty"`
 
-	// Rank - priority/importance score 0-100 (SARIF rank)
+	// Priority 0-100 (SARIF rank).
 	Rank float64 `json:"rank,omitempty"`
 
-	// Occurrence count - number of times this result was observed (SARIF occurrenceCount)
+	// How often the result was observed (SARIF occurrenceCount).
 	OccurrenceCount int `json:"occurrence_count,omitempty"`
 
-	// Related locations - additional locations related to this finding (SARIF relatedLocations)
+	// SARIF relatedLocations, stacks, attachments, workItemUris,
+	// hostedViewerUri.
 	RelatedLocations []*FindingLocation `json:"related_locations,omitempty"`
+	Stacks           []*StackTrace      `json:"stacks,omitempty"`
+	Attachments      []*Attachment      `json:"attachments,omitempty"`
+	WorkItemURIs     []string           `json:"work_item_uris,omitempty"`
+	HostedViewerURI  string             `json:"hosted_viewer_uri,omitempty"`
 
-	// Stacks - call stacks relevant to the finding (SARIF stacks)
-	Stacks []*StackTrace `json:"stacks,omitempty"`
-
-	// Attachments - relevant artifacts or evidence (SARIF attachments)
-	Attachments []*Attachment `json:"attachments,omitempty"`
-
-	// Work item URIs - URIs of associated issues/tickets (SARIF workItemUris)
-	WorkItemURIs []string `json:"work_item_uris,omitempty"`
-
-	// Hosted viewer URI - URI to view in hosted viewer (SARIF hostedViewerUri)
-	HostedViewerURI string `json:"hosted_viewer_uri,omitempty"`
-
-	// First seen timestamp
+	// When the producer first and last observed the finding.
 	FirstSeenAt *time.Time `json:"first_seen_at,omitempty"`
+	LastSeenAt  *time.Time `json:"last_seen_at,omitempty"`
 
-	// Last seen timestamp
-	LastSeenAt *time.Time `json:"last_seen_at,omitempty"`
-
-	// Finding status: open, resolved, false_positive, accepted_risk, in_progress
+	// Status hint from the producer.
 	Status FindingStatus `json:"status,omitempty"`
 
-	// Data flow trace for taint analysis (source -> intermediate -> sink)
+	// Taint trace (source to sink).
 	DataFlow *DataFlow `json:"data_flow,omitempty"`
 
-	// Git author who introduced the finding
-	Author string `json:"author,omitempty"`
-
-	// Author email
-	AuthorEmail string `json:"author_email,omitempty"`
-
-	// Commit date when the finding was introduced
-	CommitDate *time.Time `json:"commit_date,omitempty"`
-
-	// Suppression information (if finding is suppressed)
+	// Suppression (SARIF suppressions).
 	Suppression *Suppression `json:"suppression,omitempty"`
 
-	// CTEM: Exposure information
+	// Exposure of the finding.
 	Exposure *FindingExposure `json:"exposure,omitempty"`
 
-	// CTEM: Remediation context
-	RemediationContext *RemediationContext `json:"remediation_context,omitempty"`
-
-	// CTEM: Business impact assessment
-	BusinessImpact *BusinessImpact `json:"business_impact,omitempty"`
-
-	// The finding as the source tool names it: native id, severity, status,
-	// detection type, credentialed flag, raw record reference.
+	// The finding as the source tool names it.
 	Native *NativeIdentity `json:"native,omitempty"`
 
-	// Every score of the finding with its source and date (CVSS v3.1 and
-	// v4.0 together, vendor scores, EPSS, SSVC). The vulnerability.cvss_*
-	// members stay the primary CVSS score.
+	// Every score of the finding with its source and date: CVSS (each
+	// version), EPSS, SSVC, vendor ratings.
 	Scores []Score `json:"scores,omitempty"`
 
-	// Exploitability statement (VEX) about this finding's vulnerability.
+	// Exploitability statement (VEX).
 	VEX *VEX `json:"vex,omitempty"`
 
 	// The finding's history as the source tracks it.
 	SourceLifecycle *SourceLifecycle `json:"source_lifecycle,omitempty"`
 
-	// Source fields no CTIS member holds, as strings, so an importer drops
-	// nothing silently. Bounded: at most 64 entries, keys of 128 and values
-	// of 4096 bytes, 32 KiB in all. Use SetSourceExtra to stay within it.
+	// Source fields no CTIS member holds, as strings. Bounded: at most 64
+	// entries, keys of 128 and values of 4096 bytes, 32 KiB in all. Use
+	// SetSourceExtra.
 	SourceExtra map[string]string `json:"source_extra,omitempty"`
 
-	// MITRE ATT&CK techniques the finding enables an adversary to use
-	// ("T1190"), at most 20 (1.5). A producer hint; receivers validate the
-	// id format and never trust it for prioritization alone.
-	Attack []string `json:"attack,omitempty"`
+	// MITRE ATT&CK technique ids the finding enables ("T1190"), at most 20.
+	AttackTechniqueIDs []string `json:"attack_technique_ids,omitempty"`
 
-	// Web is where on a web origin the finding was observed: the redacted
-	// URL, the method and the parameter (1.6).
-	Web *WebLocation `json:"web,omitempty"`
+	// CAPEC attack pattern ids ("CAPEC-66").
+	CAPECIDs []string `json:"capec_ids,omitempty"`
 
-	// EvidenceItems are typed evidence of the finding (1.6, at most 20):
-	// HTTP exchanges, raw text, command output, file excerpts, screenshots.
-	// They MAY carry sensitive values only inside spans marked in their
-	// sensitive list; receivers mask those before display or forwarding.
+	// Typed evidence (at most 20): HTTP exchanges, raw text, command
+	// output, file excerpts, artifacts. Sensitive values only inside spans
+	// marked in their sensitive list.
 	EvidenceItems []EvidenceItem `json:"evidence_items,omitempty"`
 
-	// Tool overrides the report's tool for this finding, in merged or
-	// imported reports (2.0).
+	// Overrides the report's tool for this finding.
 	Tool *Tool `json:"tool,omitempty"`
 
-	// Validation is whether and how the finding was shown to be
-	// exploitable (2.0): pentest, attack simulation, retest.
+	// Overrides the tool's techniques for this finding.
+	Technique Technique `json:"technique,omitempty"`
+
+	// Whether and how the finding was shown to be exploitable.
 	Validation *FindingValidation `json:"validation,omitempty"`
 
-	// DependencyRef names the dependency of this report the finding
-	// affects (2.0).
+	// The dependency of this report the finding affects.
 	DependencyRef string `json:"dependency_ref,omitempty"`
 
-	// Custom properties
+	// The producer's own identifiers of the finding in its own systems.
+	SourceRefs []SourceRef `json:"source_refs,omitempty"`
+
+	// Opaque bag; no meaning.
 	Properties Properties `json:"properties,omitempty"`
 
-	// Namespaced producer data (2.0).
+	// Namespaced producer data.
 	Extensions Extensions `json:"extensions,omitempty"`
 }
 
-// FindingExposure contains CTEM exposure information for a finding.
+// FindingExposure contains exposure information for a finding.
 type FindingExposure struct {
-	// Exposure vector: network, local, physical, adjacent_net
-	Vector string `json:"vector,omitempty"`
+	// Attack vector (CVSS AV vocabulary): network, adjacent, local,
+	// physical.
+	Vector ExposureVector `json:"vector,omitempty"`
 
-	// Is the finding reachable from the network
-	IsNetworkAccessible bool `json:"is_network_accessible,omitempty"`
+	// Reachability. Absent means unknown; false means verified not
+	// reachable.
+	IsNetworkAccessible  *bool `json:"is_network_accessible,omitempty"`
+	IsInternetAccessible *bool `json:"is_internet_accessible,omitempty"`
 
-	// Is the finding directly reachable from the internet
-	IsInternetAccessible bool `json:"is_internet_accessible,omitempty"`
-
-	// Prerequisites for exploitation: auth_required, mfa_required, local_access, etc.
+	// Prerequisites for exploitation (plain text).
 	AttackPrerequisites string `json:"attack_prerequisites,omitempty"`
 }
 
-// RemediationContext contains CTEM remediation context for a finding.
-type RemediationContext struct {
-	// Remediation type: patch, upgrade, workaround, config_change, mitigate, accept_risk
-	Type string `json:"type,omitempty"`
+// ExposureVector is an attack vector in the CVSS AV vocabulary.
+type ExposureVector string
 
-	// Estimated time to fix in minutes
-	EstimatedMinutes int `json:"estimated_minutes,omitempty"`
+// Exposure vectors.
+const (
+	VectorNetwork  ExposureVector = "network"
+	VectorAdjacent ExposureVector = "adjacent"
+	VectorLocal    ExposureVector = "local"
+	VectorPhysical ExposureVector = "physical"
+)
 
-	// Fix complexity: simple, moderate, complex
-	Complexity string `json:"complexity,omitempty"`
-
-	// Is a remedy (patch/fix) available
-	RemedyAvailable bool `json:"remedy_available,omitempty"`
+// AllExposureVectors returns every exposure vector.
+func AllExposureVectors() []ExposureVector {
+	return []ExposureVector{VectorNetwork, VectorAdjacent, VectorLocal, VectorPhysical}
 }
 
-// BusinessImpact contains CTEM business impact assessment for a finding.
-type BusinessImpact struct {
-	// Data exposure risk: none, low, medium, high, critical
-	DataExposureRisk string `json:"data_exposure_risk,omitempty"`
-
-	// Has potential reputational impact
-	ReputationalImpact bool `json:"reputational_impact,omitempty"`
-
-	// Compliance frameworks impacted: PCI-DSS, HIPAA, SOC2, GDPR, ISO27001
-	ComplianceImpact []string `json:"compliance_impact,omitempty"`
-}
+// IsValid reports whether v is a known exposure vector.
+func (v ExposureVector) IsValid() bool { return slices.Contains(AllExposureVectors(), v) }
 
 // FindingStatus represents the status of a finding.
 type FindingStatus string
 
+// Finding statuses.
 const (
 	FindingStatusOpen          FindingStatus = "open"
 	FindingStatusResolved      FindingStatus = "resolved"
@@ -1270,8 +948,7 @@ const (
 	FindingStatusInProgress    FindingStatus = "in_progress"
 )
 
-// AllFindingStatuses returns every valid finding status. Kept in sync with the
-// FindingStatus enum in schemas/v1/finding.json.
+// AllFindingStatuses returns every valid finding status.
 func AllFindingStatuses() []FindingStatus {
 	return []FindingStatus{
 		FindingStatusOpen,
@@ -1284,872 +961,303 @@ func AllFindingStatuses() []FindingStatus {
 }
 
 // IsValid reports whether s is a recognized finding status.
-func (s FindingStatus) IsValid() bool {
-	switch s {
-	case FindingStatusOpen, FindingStatusResolved, FindingStatusSuppressed,
-		FindingStatusFalsePositive, FindingStatusAcceptedRisk, FindingStatusInProgress:
-		return true
-	default:
-		return false
-	}
-}
-
-// DataFlow represents taint analysis data flow trace.
-// This structure captures the complete path from source to sink,
-// including all intermediate steps and transformations.
-type DataFlow struct {
-	// Taint source locations (where untrusted data enters)
-	Sources []DataFlowLocation `json:"sources,omitempty"`
-
-	// Intermediate variable locations (propagation path)
-	Intermediates []DataFlowLocation `json:"intermediates,omitempty"`
-
-	// Taint sink location (where data reaches dangerous function)
-	Sinks []DataFlowLocation `json:"sinks,omitempty"`
-
-	// Sanitizers applied (functions that clean/escape data)
-	Sanitizers []DataFlowLocation `json:"sanitizers,omitempty"`
-
-	// Whether the data is still tainted at the sink
-	// (false if properly sanitized before reaching sink)
-	Tainted bool `json:"tainted"`
-
-	// Type of taint: user_input, file_read, env_var, network, database
-	TaintType string `json:"taint_type,omitempty"`
-
-	// Vulnerability type this flow leads to: sqli, xss, ssrf, command_injection, etc.
-	VulnerabilityType string `json:"vulnerability_type,omitempty"`
-
-	// Flow confidence score (0-100)
-	Confidence int `json:"confidence,omitempty"`
-
-	// Is interprocedural (crosses function boundaries)
-	Interprocedural bool `json:"interprocedural,omitempty"`
-
-	// Is cross-file (data flows across multiple files)
-	CrossFile bool `json:"cross_file,omitempty"`
-
-	// Call graph path (function names in order)
-	CallPath []string `json:"call_path,omitempty"`
-
-	// Summary of the flow for human readability
-	Summary string `json:"summary,omitempty"`
-}
-
-// DataFlowLocation represents a location in a data flow trace.
-type DataFlowLocation struct {
-	// File path
-	Path string `json:"path,omitempty"`
-
-	// Line number (1-indexed)
-	Line int `json:"line,omitempty"`
-
-	// End line (for multi-line spans)
-	EndLine int `json:"end_line,omitempty"`
-
-	// Column number (1-indexed)
-	Column int `json:"column,omitempty"`
-
-	// End column
-	EndColumn int `json:"end_column,omitempty"`
-
-	// Code content at this location
-	Content string `json:"content,omitempty"`
-
-	// Variable or expression name
-	Label string `json:"label,omitempty"`
-
-	// Step index in the flow (for ordering, 0-indexed)
-	Index int `json:"index,omitempty"`
-
-	// Location type: source, sink, propagator, sanitizer, transform
-	Type DataFlowLocationType `json:"type,omitempty"`
-
-	// Function/method name containing this location
-	Function string `json:"function,omitempty"`
-
-	// Class/struct name (if applicable)
-	Class string `json:"class,omitempty"`
-
-	// Module/namespace
-	Module string `json:"module,omitempty"`
-
-	// The operation performed: assignment, call, return, parameter, concat, etc.
-	Operation string `json:"operation,omitempty"`
-
-	// For function calls: the function being called
-	CalledFunction string `json:"called_function,omitempty"`
-
-	// For parameters: the parameter index (0-indexed)
-	ParameterIndex int `json:"parameter_index,omitempty"`
-
-	// Taint state at this location: tainted, sanitized, unknown
-	TaintState string `json:"taint_state,omitempty"`
-
-	// Transformation applied: encode, decode, escape, hash, encrypt, etc.
-	Transformation string `json:"transformation,omitempty"`
-
-	// Notes for human understanding
-	Notes string `json:"notes,omitempty"`
-}
-
-// DataFlowLocationType represents the type of a location in dataflow.
-type DataFlowLocationType string
-
-const (
-	// DataFlowLocationSource is where untrusted data enters the system
-	DataFlowLocationSource DataFlowLocationType = "source"
-
-	// DataFlowLocationSink is where data reaches a dangerous function
-	DataFlowLocationSink DataFlowLocationType = "sink"
-
-	// DataFlowLocationPropagator is where data is passed/assigned
-	DataFlowLocationPropagator DataFlowLocationType = "propagator"
-
-	// DataFlowLocationSanitizer is where data is cleaned/escaped
-	DataFlowLocationSanitizer DataFlowLocationType = "sanitizer"
-
-	// DataFlowLocationTransform is where data is transformed (not sanitized)
-	DataFlowLocationTransform DataFlowLocationType = "transform"
-)
-
-// AllDataFlowLocationTypes returns every valid data flow location type.
-func AllDataFlowLocationTypes() []DataFlowLocationType {
-	return []DataFlowLocationType{
-		DataFlowLocationSource,
-		DataFlowLocationSink,
-		DataFlowLocationPropagator,
-		DataFlowLocationSanitizer,
-		DataFlowLocationTransform,
-	}
-}
+func (s FindingStatus) IsValid() bool { return slices.Contains(AllFindingStatuses(), s) }
 
 // StackTrace represents a call stack trace (SARIF stack).
 type StackTrace struct {
-	// Stack description/message
-	Message string `json:"message,omitempty"`
-
-	// Stack frames from innermost to outermost
-	Frames []*StackFrame `json:"frames,omitempty"`
+	Message string        `json:"message,omitempty"`
+	Frames  []*StackFrame `json:"frames,omitempty"`
 }
 
 // StackFrame represents a single frame in a call stack.
 type StackFrame struct {
-	// Location of this frame
-	Location *FindingLocation `json:"location,omitempty"`
-
-	// Module/library name
-	Module string `json:"module,omitempty"`
-
-	// Thread ID
-	ThreadID int `json:"thread_id,omitempty"`
-
-	// Function parameters
-	Parameters []string `json:"parameters,omitempty"`
+	Location   *FindingLocation `json:"location,omitempty"`
+	Module     string           `json:"module,omitempty"`
+	ThreadID   int              `json:"thread_id,omitempty"`
+	Parameters []string         `json:"parameters,omitempty"`
 }
 
-// Attachment represents an artifact or evidence attachment (SARIF attachment).
+// Attachment represents an artifact or evidence attachment (SARIF
+// attachment).
 type Attachment struct {
-	// Description of the attachment
-	Description string `json:"description,omitempty"`
-
-	// Artifact location
-	ArtifactLocation *ArtifactLocation `json:"artifact_location,omitempty"`
-
-	// Relevant regions within the artifact
-	Regions []*FindingLocation `json:"regions,omitempty"`
+	Description      string             `json:"description,omitempty"`
+	ArtifactLocation *ArtifactLocation  `json:"artifact_location,omitempty"`
+	Regions          []*FindingLocation `json:"regions,omitempty"`
 }
 
 // ArtifactLocation represents the location of an artifact.
 type ArtifactLocation struct {
-	// URI of the artifact
-	URI string `json:"uri,omitempty"`
-
-	// Base URI ID for resolution
+	URI       string `json:"uri,omitempty"`
 	URIBaseID string `json:"uri_base_id,omitempty"`
-
-	// Index within the artifacts array
-	Index int `json:"index,omitempty"`
+	Index     int    `json:"index,omitempty"`
 }
 
-// Suppression contains information about finding suppression.
+// Suppression contains information about finding suppression (SARIF).
 type Suppression struct {
-	// Suppression kind: in_source, external
+	// Suppression kind: in_source, external.
 	Kind string `json:"kind,omitempty"`
 
-	// Suppression status: accepted, under_review, rejected
+	// Suppression status: accepted, under_review, rejected.
 	Status string `json:"status,omitempty"`
 
-	// Short reason code or phrase, e.g. "false_positive", "test_code",
-	// "risk_accepted".
+	// Short reason code ("false_positive", "test_code", "risk_accepted").
 	Reason string `json:"reason,omitempty"`
 
-	// Justification for suppression
+	// Justification (plain text).
 	Justification string `json:"justification,omitempty"`
 
-	// Who suppressed the finding
+	// Who suppressed the finding (personal data).
 	SuppressedBy string `json:"suppressed_by,omitempty"`
 
-	// When the finding was suppressed
 	SuppressedAt *time.Time `json:"suppressed_at,omitempty"`
-
-	// When the suppression stops applying. Empty means it does not expire.
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	ExpiresAt    *time.Time `json:"expires_at,omitempty"`
 }
 
 // FindingLocation contains location information for code-based findings.
 type FindingLocation struct {
-	// File path
+	// File path, case kept.
 	Path string `json:"path,omitempty"`
 
-	// Start line number (1-indexed)
-	StartLine int `json:"start_line,omitempty"`
-
-	// End line number
-	EndLine int `json:"end_line,omitempty"`
-
-	// Start column
+	StartLine   int `json:"start_line,omitempty"`
+	EndLine     int `json:"end_line,omitempty"`
 	StartColumn int `json:"start_column,omitempty"`
+	EndColumn   int `json:"end_column,omitempty"`
 
-	// End column
-	EndColumn int `json:"end_column,omitempty"`
-
-	// Code snippet
+	// Code snippet.
 	Snippet string `json:"snippet,omitempty"`
 
-	// Branch name (for repository findings)
+	// Branch name.
 	Branch string `json:"branch,omitempty"`
 
-	// Commit SHA
-	CommitSHA string `json:"commit_sha,omitempty"`
+	// The commit that introduced the finding. Author fields are personal
+	// data.
+	Commit *CommitInfo `json:"commit,omitempty"`
 
-	// Logical location (function, class, method name)
+	// Logical location (function, class, method).
 	LogicalLocation *LogicalLocation `json:"logical_location,omitempty"`
 
-	// Context region (surrounding code for better understanding)
-	ContextSnippet string `json:"context_snippet,omitempty"`
-
-	// Context start line (for context_snippet)
-	ContextStartLine int `json:"context_start_line,omitempty"`
+	// Surrounding code and the line it starts at.
+	ContextSnippet   string `json:"context_snippet,omitempty"`
+	ContextStartLine int    `json:"context_start_line,omitempty"`
 }
 
-// NetworkLocation describes where a network/host finding was observed. Used by
-// network vulnerability scanners (Nessus/Tenable, etc.) where a finding is tied
-// to a port/service rather than a file/line.
+// CommitInfo is a commit of a repository. Author and AuthorEmail are
+// personal data; producers SHOULD omit AuthorEmail unless asked to send it.
+type CommitInfo struct {
+	SHA         string     `json:"sha,omitempty"`
+	Author      string     `json:"author,omitempty"`
+	AuthorEmail string     `json:"author_email,omitempty"`
+	CommittedAt *time.Time `json:"committed_at,omitempty"`
+}
+
+// NetworkLocation describes where a network finding was observed.
 type NetworkLocation struct {
-	// Host the finding was observed on (IP or hostname). Optional when the
-	// finding already references its host asset via AssetRef/AssetValue.
+	// Host (canonical IP or domain name). Optional when the finding's
+	// asset already is the host.
 	Host string `json:"host,omitempty"`
 
-	// Port number (0 = not port-specific / general host finding).
+	// Port (0: not port-specific).
 	Port int `json:"port,omitempty"`
 
-	// Transport protocol: tcp, udp.
-	Protocol string `json:"protocol,omitempty"`
+	// Transport: tcp, udp, sctp.
+	Transport Transport `json:"transport,omitempty"`
 
-	// Service / application protocol on the port: https, ssh, smb, mysql, etc.
-	Service string `json:"service,omitempty"`
+	// Application protocol, an IANA service name.
+	AppProtocol string `json:"app_protocol,omitempty"`
 }
 
-// LogicalLocation represents a logical code location (function, class, method).
+// LogicalLocation represents a logical code location.
 type LogicalLocation struct {
-	// Fully qualified name (e.g., "pkg.MyClass.myMethod")
 	FullyQualifiedName string `json:"fully_qualified_name,omitempty"`
-
-	// Function/method name
-	Name string `json:"name,omitempty"`
-
-	// Kind: function, method, class, module, namespace
-	Kind string `json:"kind,omitempty"`
-
-	// Parent logical location index (for nested locations)
-	ParentIndex int `json:"parent_index,omitempty"`
+	Name               string `json:"name,omitempty"`
+	// Kind: function, method, class, module, namespace.
+	Kind        string `json:"kind,omitempty"`
+	ParentIndex int    `json:"parent_index,omitempty"`
 }
 
 // VulnerabilityDetails contains vulnerability-specific details.
 type VulnerabilityDetails struct {
-	// CVE ID (primary, for single-CVE findings and backward compatibility)
-	CVEID string `json:"cve_id,omitempty"`
-
-	// CVE IDs (a finding may map to multiple CVEs — common for network
-	// vulnerability scanners like Nessus/Tenable that group CVEs per plugin).
-	CVEIDs []string `json:"cve_ids,omitempty"`
-
-	// CWE IDs (can have multiple)
-	CWEIDs []string `json:"cwe_ids,omitempty"`
-
-	// CWE ID (single, for backward compatibility)
-	CWEID string `json:"cwe_id,omitempty"`
-
-	// OWASP IDs (e.g., "A01:2021", "A03:2021")
-	OWASPIDs []string `json:"owasp_ids,omitempty"`
-
-	// ASVS (Application Security Verification Standard) compliance info
-	ASVS *ASVSInfo `json:"asvs,omitempty"`
-
-	// CVSS version (2.0, 3.0, 3.1, 4.0)
-	CVSSVersion string `json:"cvss_version,omitempty"`
-
-	// CVSS score
-	CVSSScore float64 `json:"cvss_score,omitempty"`
-
-	// CVSS vector
-	CVSSVector string `json:"cvss_vector,omitempty"`
-
-	// CVSS data source: nvd, ghsa, redhat, bitnami
-	CVSSSource string `json:"cvss_source,omitempty"`
-
-	// Affected package
-	Package string `json:"package,omitempty"`
-
-	// Package URL (PURL spec) e.g., pkg:npm/lodash@4.17.20
-	PURL string `json:"purl,omitempty"`
-
-	// Affected version
-	AffectedVersion string `json:"affected_version,omitempty"`
-
-	// Affected version range (semver format)
-	AffectedVersionRange string `json:"affected_version_range,omitempty"`
-
-	// Fixed version
-	FixedVersion string `json:"fixed_version,omitempty"`
-
-	// All available fixed versions
-	FixedVersions []string `json:"fixed_versions,omitempty"`
-
-	// Ecosystem: npm, pip, maven, cargo, go, nuget, etc.
-	Ecosystem string `json:"ecosystem,omitempty"`
-
-	// Vulnerability published date
-	PublishedAt *time.Time `json:"published_at,omitempty"`
-
-	// Last modified date
-	ModifiedAt *time.Time `json:"modified_at,omitempty"`
-
-	// Exploit available
-	ExploitAvailable bool `json:"exploit_available,omitempty"`
-
-	// Exploit maturity: none, poc, functional, weaponized
-	ExploitMaturity string `json:"exploit_maturity,omitempty"`
-
-	// In CISA KEV (Known Exploited Vulnerabilities)
-	InCISAKEV bool `json:"in_cisa_kev,omitempty"`
-
-	// EPSS score (Exploit Prediction Scoring System)
-	EPSSScore float64 `json:"epss_score,omitempty"`
-
-	// EPSS percentile
-	EPSSPercentile float64 `json:"epss_percentile,omitempty"`
-
-	// VPR (Tenable Vulnerability Priority Rating), 0.0–10.0. Tenable's own
-	// dynamic priority score, distinct from CVSS/EPSS; carried through so
-	// prioritisation can use the source scanner's rating when present.
-	VPRScore float64 `json:"vpr_score,omitempty"`
-
-	// Affected CPE
-	CPE string `json:"cpe,omitempty"`
-
-	// Advisory URLs
-	Advisories []string `json:"advisories,omitempty"`
-
-	// Is direct dependency (vs transitive)
-	IsDirect bool `json:"is_direct,omitempty"`
-
-	// Dependency path for transitive vulnerabilities
-	DependencyPath []string `json:"dependency_path,omitempty"`
-
-	// Data source information (vulnerability database)
-	DataSource *VulnDataSource `json:"data_source,omitempty"`
-
-	// Severity source (who assigned the severity: nvd, ghsa, redhat, etc.)
-	SeveritySource string `json:"severity_source,omitempty"`
-
-	// Vendor-specific severity mapping (vendor -> severity level 1-5)
-	VendorSeverity map[string]int `json:"vendor_severity,omitempty"`
-
-	// Container layer information (for image scans)
-	Layer *ContainerLayer `json:"layer,omitempty"`
-
-	// Aqua Vulnerability Database ID (e.g., AVD-AWS-0001)
-	AVDID string `json:"avd_id,omitempty"`
-
-	// Vulnerability status: affected, fixed, under_investigation, will_not_fix
-	VulnStatus string `json:"vuln_status,omitempty"`
-
-	// Every id of the vulnerability with its namespace (CVE, GHSA, OSV,
-	// vendor). cve_id and cve_ids stay as they are; producers that send
-	// both keep them consistent.
+	// Every id of the vulnerability with its namespace: CVE, GHSA, OSV,
+	// vendor (with source).
 	IDs []VulnerabilityID `json:"ids,omitempty"`
 
-	// CAPEC attack pattern ids ("CAPEC-66") (2.0).
-	CAPECIDs []string `json:"capec_ids,omitempty"`
+	// CWE ids ("CWE-79").
+	CWEIDs []string `json:"cwe_ids,omitempty"`
 
-	// Threat signals asserted by a named source at a date (2.0): KEV
-	// listing, exploitation in the wild, public exploit. Receivers SHOULD
-	// prefer their own intelligence.
+	// OWASP Top 10 ids ("A01:2021").
+	OWASPIDs []string `json:"owasp_ids,omitempty"`
+
+	// Affected package name, its purl and the installed version.
+	PackageName      string `json:"package_name,omitempty"`
+	PURL             string `json:"purl,omitempty"`
+	InstalledVersion string `json:"installed_version,omitempty"`
+
+	// Affected version range as the source states it.
+	AffectedVersionRange string `json:"affected_version_range,omitempty"`
+
+	// Versions that fix the vulnerability.
+	FixedVersions []string `json:"fixed_versions,omitempty"`
+
+	// Advisory publication and last modification.
+	PublishedAt *time.Time `json:"published_at,omitempty"`
+	ModifiedAt  *time.Time `json:"modified_at,omitempty"`
+
+	// Affected CPE.
+	CPE string `json:"cpe,omitempty"`
+
+	// Direct dependency (not transitive), and the path for a transitive
+	// one.
+	IsDirect       bool     `json:"is_direct,omitempty"`
+	DependencyPath []string `json:"dependency_path,omitempty"`
+
+	// Vulnerability database the producer matched against.
+	DataSource *VulnDataSource `json:"data_source,omitempty"`
+
+	// Container layer where the package was found.
+	Layer *ContainerLayer `json:"layer,omitempty"`
+
+	// Threat assertions made by a named source at a date: KEV listing,
+	// exploitation in the wild, public exploit. Receivers SHOULD prefer
+	// their own intelligence.
 	ThreatSignals []ThreatSignal `json:"threat_signals,omitempty"`
 }
 
 // VulnDataSource contains information about the vulnerability data source.
 type VulnDataSource struct {
-	// Data source ID (e.g., "nvd", "ghsa", "osv")
-	ID string `json:"id,omitempty"`
-
-	// Data source name
+	// Open token ("nvd", "ghsa", "osv").
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
-
-	// Data source URL
+	// http or https URL.
 	URL string `json:"url,omitempty"`
 }
 
-// ASVSInfo contains OWASP ASVS (Application Security Verification Standard) compliance info.
-// ASVS provides a basis for testing application security controls.
-type ASVSInfo struct {
-	// ASVS section (e.g., "V2: Authentication")
-	Section string `json:"section,omitempty"`
-
-	// Control ID (e.g., "2.1.1")
-	ControlID string `json:"control_id,omitempty"`
-
-	// Control URL (link to ASVS documentation)
-	ControlURL string `json:"control_url,omitempty"`
-
-	// ASVS level (1, 2, or 3)
-	Level int `json:"level,omitempty"`
-}
-
-// ContainerLayer contains information about the container layer where a vulnerability was found.
+// ContainerLayer identifies a container image layer.
 type ContainerLayer struct {
-	// Layer digest (e.g., "sha256:abc123...")
 	Digest string `json:"digest,omitempty"`
-
-	// Layer diff ID
 	DiffID string `json:"diff_id,omitempty"`
 }
 
-// SecretDetails contains secret-specific details.
+// SecretDetails contains secret-specific details. No usable secret value is
+// ever carried: masked_value only.
 type SecretDetails struct {
-	// Secret type: api_key, password, token, certificate, private_key, etc.
-	SecretType string `json:"secret_type,omitempty"`
+	// Secret type: api_key, password, token, certificate, private_key ...
+	Type string `json:"type,omitempty"`
 
-	// Service associated with the secret: aws, github, stripe, gcp, azure, etc.
+	// Service the secret belongs to: an open token (aws, github, stripe).
 	Service string `json:"service,omitempty"`
 
-	// Masked value (first and last few chars)
+	// Masked value (first and last few characters at most).
 	MaskedValue string `json:"masked_value,omitempty"`
 
-	// Length of the secret
-	Length int `json:"length,omitempty"`
-
-	// Entropy score
+	// Length and entropy of the secret.
+	Length  int     `json:"length,omitempty"`
 	Entropy float64 `json:"entropy,omitempty"`
 
-	// Is valid (if verification was performed)
-	Valid *bool `json:"valid,omitempty"`
-
-	// Verification timestamp
+	// Verification result. Absent means not verified.
+	IsValid    *bool      `json:"is_valid,omitempty"`
 	VerifiedAt *time.Time `json:"verified_at,omitempty"`
 
-	// Is revoked
-	Revoked bool `json:"revoked,omitempty"`
-
-	// When the secret was revoked
+	IsRevoked bool       `json:"is_revoked,omitempty"`
 	RevokedAt *time.Time `json:"revoked_at,omitempty"`
 
-	// Secret scope/permissions (e.g., "read:org", "repo", "admin")
+	// Scopes or permissions of the secret.
 	Scopes []string `json:"scopes,omitempty"`
 
-	// Expiration date (if known)
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
-
-	// Secret age (how long since creation, if known)
-	AgeInDays int `json:"age_in_days,omitempty"`
-
-	// Rotation recommended by date
+	ExpiresAt     *time.Time `json:"expires_at,omitempty"`
+	AgeDays       int        `json:"age_days,omitempty"`
 	RotationDueAt *time.Time `json:"rotation_due_at,omitempty"`
 
-	// Is the secret in git history only (not in current HEAD)
-	InHistoryOnly bool `json:"in_history_only,omitempty"`
-
-	// Commit count where this secret appears
-	CommitCount int `json:"commit_count,omitempty"`
+	// The secret is only in history, not at HEAD, and the number of commits
+	// it appears in.
+	IsHistoryOnly bool `json:"is_history_only,omitempty"`
+	CommitCount   int  `json:"commit_count,omitempty"`
 }
 
 // MisconfigurationDetails contains misconfiguration-specific details.
 type MisconfigurationDetails struct {
-	// Policy/check ID
-	PolicyID string `json:"policy_id,omitempty"`
-
-	// Policy name
-	PolicyName string `json:"policy_name,omitempty"`
-
-	// Aqua Vulnerability Database ID (e.g., AVD-AWS-0001)
-	AVDID string `json:"avd_id,omitempty"`
-
-	// Resource type
+	PolicyID     string `json:"policy_id,omitempty"`
+	PolicyName   string `json:"policy_name,omitempty"`
 	ResourceType string `json:"resource_type,omitempty"`
-
-	// Resource name
 	ResourceName string `json:"resource_name,omitempty"`
-
-	// Cloud provider (e.g., AWS, GCP, Azure)
-	Provider string `json:"provider,omitempty"`
-
-	// Service (e.g., S3, EC2, IAM)
-	Service string `json:"service,omitempty"`
-
-	// Namespace (e.g., builtin.aws.s3)
+	// Provider: an open token (aws, azure, gcp, kubernetes).
+	Provider  string `json:"provider,omitempty"`
+	Service   string `json:"service,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
-
-	// Rego query path
-	Query string `json:"query,omitempty"`
-
-	// Expected value
-	Expected string `json:"expected,omitempty"`
-
-	// Actual value
-	Actual string `json:"actual,omitempty"`
-
-	// Cause description
-	Cause string `json:"cause,omitempty"`
+	Query     string `json:"query,omitempty"`
+	Expected  string `json:"expected,omitempty"`
+	Actual    string `json:"actual,omitempty"`
+	Cause     string `json:"cause,omitempty"`
 }
 
-// ComplianceDetails contains compliance-specific details.
+// ComplianceDetails names the control a compliance finding evaluates. The
+// result is the finding's kind (pass, fail, review, not_applicable).
 type ComplianceDetails struct {
-	// Framework: pci-dss, hipaa, soc2, cis, etc.
-	Framework string `json:"framework,omitempty"`
+	// Framework from the registry (ComplianceFramework).
+	Framework        ComplianceFramework `json:"framework,omitempty"`
+	FrameworkVersion string              `json:"framework_version,omitempty"`
 
-	// Framework version
-	FrameworkVersion string `json:"framework_version,omitempty"`
-
-	// Control ID
-	ControlID string `json:"control_id,omitempty"`
-
-	// Control name
-	ControlName string `json:"control_name,omitempty"`
-
-	// Control description
+	ControlID          string `json:"control_id,omitempty"`
+	ControlName        string `json:"control_name,omitempty"`
 	ControlDescription string `json:"control_description,omitempty"`
-
-	// Result: pass, fail, manual, not_applicable
-	Result string `json:"result,omitempty"`
 }
 
-// =============================================================================
-// Web3 Vulnerability Details
-// =============================================================================
+// ComplianceFramework is a compliance framework, an open token with a
+// registry of known values (the constants).
+type ComplianceFramework string
 
-// Web3VulnerabilityDetails contains Web3/smart contract vulnerability-specific details.
-type Web3VulnerabilityDetails struct {
-	// Vulnerability class/category (SWC ID or custom)
-	// Common: reentrancy, overflow, access_control, front_running, etc.
-	VulnerabilityClass string `json:"vulnerability_class,omitempty"`
-
-	// SWC Registry ID (e.g., SWC-107 for reentrancy)
-	SWCID string `json:"swc_id,omitempty"`
-
-	// Contract address affected
-	ContractAddress string `json:"contract_address,omitempty"`
-
-	// Chain ID
-	ChainID int64 `json:"chain_id,omitempty"`
-
-	// Chain name
-	Chain string `json:"chain,omitempty"`
-
-	// Affected function signature
-	FunctionSignature string `json:"function_signature,omitempty"`
-
-	// Affected function selector (4 bytes)
-	FunctionSelector string `json:"function_selector,omitempty"`
-
-	// Vulnerable code pattern
-	VulnerablePattern string `json:"vulnerable_pattern,omitempty"`
-
-	// Bytecode offset (if found in bytecode analysis)
-	BytecodeOffset int `json:"bytecode_offset,omitempty"`
-
-	// Is exploitable on mainnet
-	ExploitableOnMainnet bool `json:"exploitable_on_mainnet,omitempty"`
-
-	// Estimated impact in USD (if quantifiable)
-	EstimatedImpactUSD float64 `json:"estimated_impact_usd,omitempty"`
-
-	// Affected assets value in USD
-	AffectedValueUSD float64 `json:"affected_value_usd,omitempty"`
-
-	// Attack vector description
-	AttackVector string `json:"attack_vector,omitempty"`
-
-	// Proof of concept (if available)
-	POC *Web3POC `json:"poc,omitempty"`
-
-	// Related transaction hashes (if exploit occurred)
-	RelatedTxHashes []string `json:"related_tx_hashes,omitempty"`
-
-	// Attacker addresses (if known)
-	AttackerAddresses []string `json:"attacker_addresses,omitempty"`
-
-	// Tool that found this: slither, mythril, securify, manticore, etc.
-	DetectionTool string `json:"detection_tool,omitempty"`
-
-	// Detection confidence: high, medium, low
-	DetectionConfidence string `json:"detection_confidence,omitempty"`
-
-	// Is false positive
-	IsFalsePositive bool `json:"is_false_positive,omitempty"`
-
-	// Gas optimization issues (for gas-related findings)
-	GasIssue *GasIssue `json:"gas_issue,omitempty"`
-
-	// Access control details
-	AccessControl *AccessControlIssue `json:"access_control,omitempty"`
-
-	// Reentrancy details
-	Reentrancy *ReentrancyIssue `json:"reentrancy,omitempty"`
-
-	// Oracle manipulation details
-	OracleManipulation *OracleManipulationIssue `json:"oracle_manipulation,omitempty"`
-
-	// Flash loan attack details
-	FlashLoan *FlashLoanIssue `json:"flash_loan,omitempty"`
-}
-
-// Web3POC contains proof of concept details for Web3 vulnerabilities.
-type Web3POC struct {
-	// POC type: transaction, script, foundry_test, hardhat_test
-	Type string `json:"type,omitempty"`
-
-	// POC code or script
-	Code string `json:"code,omitempty"`
-
-	// POC transaction data
-	TxData string `json:"tx_data,omitempty"`
-
-	// Expected outcome
-	ExpectedOutcome string `json:"expected_outcome,omitempty"`
-
-	// Tested on: mainnet_fork, testnet, local
-	TestedOn string `json:"tested_on,omitempty"`
-
-	// Fork block number (for mainnet fork tests)
-	ForkBlockNumber int64 `json:"fork_block_number,omitempty"`
-}
-
-// GasIssue contains details about gas optimization issues.
-type GasIssue struct {
-	// Current gas cost
-	CurrentGas int64 `json:"current_gas,omitempty"`
-
-	// Optimized gas cost
-	OptimizedGas int64 `json:"optimized_gas,omitempty"`
-
-	// Gas savings percentage
-	SavingsPercent float64 `json:"savings_percent,omitempty"`
-
-	// Optimization suggestion
-	Suggestion string `json:"suggestion,omitempty"`
-}
-
-// AccessControlIssue contains details about access control vulnerabilities.
-type AccessControlIssue struct {
-	// Missing modifier
-	MissingModifier string `json:"missing_modifier,omitempty"`
-
-	// Unprotected function
-	UnprotectedFunction string `json:"unprotected_function,omitempty"`
-
-	// Can be called by
-	CallableBy string `json:"callable_by,omitempty"` // anyone, owner_only, etc.
-
-	// Privilege escalation path
-	EscalationPath string `json:"escalation_path,omitempty"`
-
-	// Missing role check
-	MissingRoleCheck string `json:"missing_role_check,omitempty"`
-}
-
-// ReentrancyIssue contains details about reentrancy vulnerabilities.
-type ReentrancyIssue struct {
-	// Reentrancy type: cross_function, cross_contract, read_only
-	Type string `json:"type,omitempty"`
-
-	// Vulnerable external call
-	ExternalCall string `json:"external_call,omitempty"`
-
-	// State variable modified after call
-	StateModifiedAfterCall string `json:"state_modified_after_call,omitempty"`
-
-	// Entry point function
-	EntryPoint string `json:"entry_point,omitempty"`
-
-	// Callback function
-	Callback string `json:"callback,omitempty"`
-
-	// Max reentrancy depth possible
-	MaxDepth int `json:"max_depth,omitempty"`
-}
-
-// OracleManipulationIssue contains details about oracle manipulation vulnerabilities.
-type OracleManipulationIssue struct {
-	// Oracle type: chainlink, uniswap_twap, custom
-	OracleType string `json:"oracle_type,omitempty"`
-
-	// Oracle address
-	OracleAddress string `json:"oracle_address,omitempty"`
-
-	// Manipulation method: flash_loan, sandwich, time_manipulation
-	ManipulationMethod string `json:"manipulation_method,omitempty"`
-
-	// Price impact possible
-	PriceImpactPercent float64 `json:"price_impact_percent,omitempty"`
-
-	// Missing checks
-	MissingChecks []string `json:"missing_checks,omitempty"`
-}
-
-// FlashLoanIssue contains details about flash loan attack vulnerabilities.
-type FlashLoanIssue struct {
-	// Flash loan provider: aave, dydx, uniswap, balancer
-	Provider string `json:"provider,omitempty"`
-
-	// Attack type: price_manipulation, governance_attack, collateral_theft
-	AttackType string `json:"attack_type,omitempty"`
-
-	// Required capital for attack
-	RequiredCapitalUSD float64 `json:"required_capital_usd,omitempty"`
-
-	// Potential profit
-	PotentialProfitUSD float64 `json:"potential_profit_usd,omitempty"`
-
-	// Attack steps
-	AttackSteps []string `json:"attack_steps,omitempty"`
-}
-
-// Web3VulnerabilityClass represents common Web3 vulnerability classes.
-type Web3VulnerabilityClass string
-
+// Registered compliance frameworks.
 const (
-	// SWC-100 series - Basic
-	Web3VulnReentrancy          Web3VulnerabilityClass = "reentrancy"           // SWC-107
-	Web3VulnIntegerOverflow     Web3VulnerabilityClass = "integer_overflow"     // SWC-101
-	Web3VulnIntegerUnderflow    Web3VulnerabilityClass = "integer_underflow"    // SWC-101
-	Web3VulnAccessControl       Web3VulnerabilityClass = "access_control"       // SWC-105
-	Web3VulnUncheckedCall       Web3VulnerabilityClass = "unchecked_call"       // SWC-104
-	Web3VulnDelegateCall        Web3VulnerabilityClass = "delegate_call"        // SWC-112
-	Web3VulnSelfDestruct        Web3VulnerabilityClass = "self_destruct"        // SWC-106
-	Web3VulnTxOrigin            Web3VulnerabilityClass = "tx_origin"            // SWC-115
-	Web3VulnTimestampDependence Web3VulnerabilityClass = "timestamp_dependence" // SWC-116
-	Web3VulnBlockHashDependence Web3VulnerabilityClass = "blockhash_dependence" // SWC-120
-
-	// DeFi-specific
-	Web3VulnFlashLoan          Web3VulnerabilityClass = "flash_loan_attack"
-	Web3VulnOracleManipulation Web3VulnerabilityClass = "oracle_manipulation"
-	Web3VulnFrontRunning       Web3VulnerabilityClass = "front_running"
-	Web3VulnSandwichAttack     Web3VulnerabilityClass = "sandwich_attack"
-	Web3VulnSlippage           Web3VulnerabilityClass = "slippage_attack"
-	Web3VulnPriceManipulation  Web3VulnerabilityClass = "price_manipulation"
-	Web3VulnGovernanceAttack   Web3VulnerabilityClass = "governance_attack"
-	Web3VulnLiquidityDrain     Web3VulnerabilityClass = "liquidity_drain"
-	Web3VulnMEV                Web3VulnerabilityClass = "mev_vulnerability"
-
-	// Token-specific
-	Web3VulnHoneypot          Web3VulnerabilityClass = "honeypot"
-	Web3VulnHiddenMint        Web3VulnerabilityClass = "hidden_mint"
-	Web3VulnHiddenFee         Web3VulnerabilityClass = "hidden_fee"
-	Web3VulnBlacklistAbuse    Web3VulnerabilityClass = "blacklist_abuse"
-	Web3VulnRenounceOwnership Web3VulnerabilityClass = "fake_renounce"
-
-	// Proxy & Upgrade
-	Web3VulnStorageCollision   Web3VulnerabilityClass = "storage_collision"
-	Web3VulnUninitializedProxy Web3VulnerabilityClass = "uninitialized_proxy"
-	Web3VulnUpgradeVuln        Web3VulnerabilityClass = "upgrade_vulnerability"
-
-	// Cryptographic
-	Web3VulnWeakRandomness        Web3VulnerabilityClass = "weak_randomness" // SWC-120
-	Web3VulnSignatureMalleability Web3VulnerabilityClass = "signature_malleability"
-	Web3VulnReplayAttack          Web3VulnerabilityClass = "replay_attack"
-
-	// Gas & DoS
-	Web3VulnDosGasLimit      Web3VulnerabilityClass = "dos_gas_limit"
-	Web3VulnUnboundedLoop    Web3VulnerabilityClass = "unbounded_loop"
-	Web3VulnDosBlockStuffing Web3VulnerabilityClass = "dos_block_stuffing"
-
-	// Logic
-	Web3VulnBusinessLogic      Web3VulnerabilityClass = "business_logic"
-	Web3VulnInvariantViolation Web3VulnerabilityClass = "invariant_violation"
+	FrameworkPCIDSS    ComplianceFramework = "pci_dss"
+	FrameworkHIPAA     ComplianceFramework = "hipaa"
+	FrameworkSOC2      ComplianceFramework = "soc2"
+	FrameworkISO27001  ComplianceFramework = "iso27001"
+	FrameworkNISTCSF   ComplianceFramework = "nist_csf"
+	FrameworkNIST80053 ComplianceFramework = "nist_800_53"
+	FrameworkCIS       ComplianceFramework = "cis"
+	FrameworkGDPR      ComplianceFramework = "gdpr"
+	FrameworkFedRAMP   ComplianceFramework = "fedramp"
+	FrameworkOWASPASVS ComplianceFramework = "owasp_asvs"
 )
 
-// AllWeb3VulnerabilityClasses returns all Web3 vulnerability classes.
-func AllWeb3VulnerabilityClasses() []Web3VulnerabilityClass {
-	return []Web3VulnerabilityClass{
-		Web3VulnReentrancy,
-		Web3VulnIntegerOverflow,
-		Web3VulnIntegerUnderflow,
-		Web3VulnAccessControl,
-		Web3VulnUncheckedCall,
-		Web3VulnDelegateCall,
-		Web3VulnSelfDestruct,
-		Web3VulnTxOrigin,
-		Web3VulnTimestampDependence,
-		Web3VulnBlockHashDependence,
-		Web3VulnFlashLoan,
-		Web3VulnOracleManipulation,
-		Web3VulnFrontRunning,
-		Web3VulnSandwichAttack,
-		Web3VulnSlippage,
-		Web3VulnPriceManipulation,
-		Web3VulnGovernanceAttack,
-		Web3VulnLiquidityDrain,
-		Web3VulnMEV,
-		Web3VulnHoneypot,
-		Web3VulnHiddenMint,
-		Web3VulnHiddenFee,
-		Web3VulnBlacklistAbuse,
-		Web3VulnRenounceOwnership,
-		Web3VulnStorageCollision,
-		Web3VulnUninitializedProxy,
-		Web3VulnUpgradeVuln,
-		Web3VulnWeakRandomness,
-		Web3VulnSignatureMalleability,
-		Web3VulnReplayAttack,
-		Web3VulnDosGasLimit,
-		Web3VulnUnboundedLoop,
-		Web3VulnDosBlockStuffing,
-		Web3VulnBusinessLogic,
-		Web3VulnInvariantViolation,
+// AllComplianceFrameworks returns the registered frameworks.
+func AllComplianceFrameworks() []ComplianceFramework {
+	return []ComplianceFramework{
+		FrameworkPCIDSS, FrameworkHIPAA, FrameworkSOC2, FrameworkISO27001, FrameworkNISTCSF,
+		FrameworkNIST80053, FrameworkCIS, FrameworkGDPR, FrameworkFedRAMP, FrameworkOWASPASVS,
 	}
 }
 
-// Remediation provides remediation guidance for a finding.
+// IsValid reports whether f is a registered framework. Validate accepts any
+// open token.
+func (f ComplianceFramework) IsValid() bool { return slices.Contains(AllComplianceFrameworks(), f) }
+
+// Remediation is the one remediation object of a finding.
 type Remediation struct {
-	// Short recommendation
+	// Short recommendation (plain text).
 	Recommendation string `json:"recommendation,omitempty"`
 
-	// Detailed fix steps
+	// Fix steps.
 	Steps []string `json:"steps,omitempty"`
 
-	// Effort estimate: trivial, low, medium, high
-	Effort string `json:"effort,omitempty"`
-
-	// Fix available
-	FixAvailable bool `json:"fix_available,omitempty"`
-
-	// Auto-fixable
-	AutoFixable bool `json:"auto_fixable,omitempty"`
-
-	// Suggested fix code - the actual code to replace the vulnerable code
-	// For SAST tools like Semgrep that provide auto-fix suggestions
-	FixCode string `json:"fix_code,omitempty"`
-
-	// Regex-based fix pattern (for tools that provide regex replacements)
-	FixRegex *FixRegex `json:"fix_regex,omitempty"`
-
-	// Reference URLs
-	References []string `json:"references,omitempty"`
-
-	// Kind of fix: patch, upgrade, config, workaround, mitigation, no_fix.
+	// Kind of fix (CSAF remediation categories plus config_change and
+	// upgrade).
 	SolutionType SolutionType `json:"solution_type,omitempty"`
+
+	// Effort: trivial, low, medium, high.
+	Effort Effort `json:"effort,omitempty"`
+
+	// Estimated time to fix in minutes.
+	EstimatedMinutes int `json:"estimated_minutes,omitempty"`
+
+	// A fix exists. Absent means unknown; false means verified no fix.
+	IsFixAvailable *bool `json:"is_fix_available,omitempty"`
+
+	// The tool can apply the fix itself.
+	IsAutoFixable bool `json:"is_auto_fixable,omitempty"`
+
+	// Replacement code, and a regex fix.
+	FixCode  string    `json:"fix_code,omitempty"`
+	FixRegex *FixRegex `json:"fix_regex,omitempty"`
 
 	// When the vendor published the patch.
 	PatchPublishedAt *time.Time `json:"patch_published_at,omitempty"`
@@ -2158,95 +1266,91 @@ type Remediation struct {
 	Advisories []Advisory `json:"advisories,omitempty"`
 }
 
+// Effort is the effort of a fix.
+type Effort string
+
+// Efforts.
+const (
+	EffortTrivial Effort = "trivial"
+	EffortLow     Effort = "low"
+	EffortMedium  Effort = "medium"
+	EffortHigh    Effort = "high"
+)
+
+// AllEfforts returns every effort.
+func AllEfforts() []Effort { return []Effort{EffortTrivial, EffortLow, EffortMedium, EffortHigh} }
+
+// IsValid reports whether e is a known effort.
+func (e Effort) IsValid() bool { return slices.Contains(AllEfforts(), e) }
+
 // FixRegex contains regex-based auto-fix information.
-// Used by tools like Semgrep that can provide regex replacement patterns.
 type FixRegex struct {
-	// Regular expression pattern to match
-	Regex string `json:"regex,omitempty"`
-
-	// Replacement string (may contain capture group references like $1, $2)
+	Regex       string `json:"regex,omitempty"`
 	Replacement string `json:"replacement,omitempty"`
-
-	// Number of replacements to make (0 = all)
+	// Number of replacements (0: all).
 	Count int `json:"count,omitempty"`
 }
 
 // =============================================================================
-// Enums and Value Objects
+// Enums and value objects
 // =============================================================================
 
-// AssetType represents the type of an asset.
+// AssetType is the type of an asset. Each type has one canonical value form
+// (spec section "Assets").
 type AssetType string
 
+// Asset types.
 const (
-	// ==========================================================================
-	// Discovery / External Attack Surface
-	// ==========================================================================
-	AssetTypeDomain      AssetType = "domain"
-	AssetTypeSubdomain   AssetType = "subdomain"
-	AssetTypeIPAddress   AssetType = "ip_address"
-	AssetTypeCertificate AssetType = "certificate"
+	// Discovery / external attack surface.
+	AssetTypeDomainName       AssetType = "domain_name"       // DNS name; the apex is derived
+	AssetTypeIPAddress        AssetType = "ip_address"        // IPv4 or IPv6 address
+	AssetTypeIPRange          AssetType = "ip_range"          // CIDR block
+	AssetTypeCertificate      AssetType = "certificate"       // X.509 certificate (SHA-256 of DER)
+	AssetTypeAutonomousSystem AssetType = "autonomous_system" // BGP autonomous system ("AS64500")
 
-	// ==========================================================================
-	// Applications
-	// ==========================================================================
-	AssetTypeWebsite        AssetType = "website"         // Public-facing website
-	AssetTypeWebApplication AssetType = "web_application" // Web application (SaaS, internal apps)
-	AssetTypeAPI            AssetType = "api"             // API endpoint (REST, GraphQL, gRPC)
-	AssetTypeMobileApp      AssetType = "mobile_app"      // Mobile application (iOS, Android)
-	AssetTypeService        AssetType = "service"         // Network service (SSH, SMTP, FTP, DNS, etc.)
+	// Applications and services.
+	AssetTypeWebOrigin       AssetType = "web_origin"       // scheme://host[:port]
+	AssetTypeWebApplication  AssetType = "web_application"  // a web application behind one or more origins
+	AssetTypeAPI             AssetType = "api"              // an API (REST, GraphQL, gRPC)
+	AssetTypeMobileApp       AssetType = "mobile_app"       // mobile application (bundle id)
+	AssetTypeSaaSApplication AssetType = "saas_application" // SaaS application tenant
+	AssetTypeService         AssetType = "service"          // host:port/transport
 
-	// ==========================================================================
-	// Code / Repository
-	// ==========================================================================
-	AssetTypeRepository AssetType = "repository"
+	// Code and artifacts.
+	AssetTypeRepository     AssetType = "repository"      // host/owner/name
+	AssetTypePackage        AssetType = "package"         // versionless purl
+	AssetTypeContainerImage AssetType = "container_image" // registry/repository@sha256:digest
+	AssetTypeAIModel        AssetType = "ai_model"        // machine learning model
 
-	// ==========================================================================
-	// Cloud
-	// ==========================================================================
-	AssetTypeCloudAccount      AssetType = "cloud_account"      // AWS Account, GCP Project, Azure Subscription
-	AssetTypeCompute           AssetType = "compute"            // EC2, GCE, Azure VM
-	AssetTypeStorage           AssetType = "storage"            // S3, GCS, Azure Blob
-	AssetTypeDatabase          AssetType = "database"           // RDS, Cloud SQL, Cosmos DB
-	AssetTypeServerless        AssetType = "serverless"         // Lambda, Cloud Functions, Azure Functions
-	AssetTypeContainerRegistry AssetType = "container_registry" // ECR, GCR, ACR
+	// Cloud.
+	AssetTypeCloudAccount      AssetType = "cloud_account"      // account, subscription, project
+	AssetTypeCloudResource     AssetType = "cloud_resource"     // resource by provider id
+	AssetTypeStorage           AssetType = "storage"            // object storage bucket or container
+	AssetTypeDatabase          AssetType = "database"           // managed database
+	AssetTypeServerless        AssetType = "serverless"         // function
+	AssetTypeContainerRegistry AssetType = "container_registry" // registry
 
-	// ==========================================================================
-	// Infrastructure
-	// ==========================================================================
-	AssetTypeHost                AssetType = "host"                 // Physical or virtual host
-	AssetTypeServer              AssetType = "server"               // Server machine
-	AssetTypeContainer           AssetType = "container"            // Docker container
-	AssetTypeKubernetes          AssetType = "kubernetes"           // Kubernetes cluster (generic)
-	AssetTypeKubernetesCluster   AssetType = "kubernetes_cluster"   // Kubernetes cluster
-	AssetTypeKubernetesNamespace AssetType = "kubernetes_namespace" // Kubernetes namespace
+	// Infrastructure and devices.
+	AssetTypeHost                AssetType = "host"                 // physical or virtual machine
+	AssetTypeContainer           AssetType = "container"            // running container
+	AssetTypeKubernetesCluster   AssetType = "kubernetes_cluster"   // cluster
+	AssetTypeKubernetesNamespace AssetType = "kubernetes_namespace" // namespace
+	AssetTypeKubernetesWorkload  AssetType = "kubernetes_workload"  // Deployment, StatefulSet, Job, Pod
+	AssetTypeEndpointDevice      AssetType = "endpoint_device"      // laptop, desktop, phone
+	AssetTypeIoTDevice           AssetType = "iot_device"           // IoT device
+	AssetTypeOTDevice            AssetType = "ot_device"            // operational technology device
+	AssetTypeNetworkDevice       AssetType = "network_device"       // router, switch, access point
 
-	// ==========================================================================
-	// Network
-	// ==========================================================================
-	AssetTypeNetwork      AssetType = "network"       // Network segment
-	AssetTypeVPC          AssetType = "vpc"           // Virtual Private Cloud
-	AssetTypeSubnet       AssetType = "subnet"        // Network subnet
-	AssetTypeLoadBalancer AssetType = "load_balancer" // Load balancer (ALB, NLB, etc.)
-	AssetTypeFirewall     AssetType = "firewall"      // Firewall / Security Group
+	// Network.
+	AssetTypeVPC          AssetType = "vpc"
+	AssetTypeSubnet       AssetType = "subnet"
+	AssetTypeLoadBalancer AssetType = "load_balancer"
+	AssetTypeFirewall     AssetType = "firewall"
 
-	// ==========================================================================
-	// Identity / IAM
-	// ==========================================================================
-	AssetTypeIAMUser        AssetType = "iam_user"        // IAM user
-	AssetTypeIAMRole        AssetType = "iam_role"        // IAM role
-	AssetTypeServiceAccount AssetType = "service_account" // Service account
+	// Identity.
+	AssetTypeIdentity AssetType = "identity" // with technical.identity.kind
 
-	// ==========================================================================
-	// Recon-discovered Asset Types
-	// ==========================================================================
-	AssetTypeHTTPService   AssetType = "http_service"   // HTTP/HTTPS services from HTTPX
-	AssetTypeOpenPort      AssetType = "open_port"      // Individual open ports from Naabu
-	AssetTypeDiscoveredURL AssetType = "discovered_url" // URLs/endpoints from Katana
-
-	// ==========================================================================
-	// Web3 Asset Types
-	// ==========================================================================
+	// Web3 profile.
 	AssetTypeSmartContract AssetType = "smart_contract"
 	AssetTypeWallet        AssetType = "wallet"
 	AssetTypeNFTCollection AssetType = "nft_collection"
@@ -2254,477 +1358,153 @@ const (
 	AssetTypeToken         AssetType = "token"
 	AssetTypeBlockchain    AssetType = "blockchain"
 
-	// ==========================================================================
-	// CTIS 2.0: types with no equivalent before
-	// ==========================================================================
-	AssetTypePackage            AssetType = "package"             // Software package (identity: versionless purl)
-	AssetTypeContainerImage     AssetType = "container_image"     // Container image (identity: digest)
-	AssetTypeIdentity           AssetType = "identity"            // Human or machine identity
-	AssetTypeSaaSApplication    AssetType = "saas_application"    // SaaS application tenant
-	AssetTypeEndpointDevice     AssetType = "endpoint_device"     // Laptop, desktop, phone
-	AssetTypeIoTDevice          AssetType = "iot_device"          // IoT device
-	AssetTypeOTDevice           AssetType = "ot_device"           // Operational technology device
-	AssetTypeNetworkDevice      AssetType = "network_device"      // Router, switch, access point
-	AssetTypeAutonomousSystem   AssetType = "autonomous_system"   // BGP autonomous system
-	AssetTypeCloudResource      AssetType = "cloud_resource"      // Cloud resource by provider id
-	AssetTypeKubernetesWorkload AssetType = "kubernetes_workload" // Deployment, StatefulSet, Job, Pod
-	AssetTypeAIModel            AssetType = "ai_model"            // Machine learning model
-
-	// ==========================================================================
-	// Unclassified Assets
-	// ==========================================================================
-	AssetTypeUnclassified AssetType = "unclassified" // Assets that have not been classified yet
+	// Not yet classified.
+	AssetTypeUnclassified AssetType = "unclassified"
 )
 
 // AllAssetTypes returns all valid asset types.
 func AllAssetTypes() []AssetType {
 	return []AssetType{
-		// Discovery / External Attack Surface
-		AssetTypeDomain,
-		AssetTypeSubdomain,
-		AssetTypeIPAddress,
-		AssetTypeCertificate,
-		// Applications
-		AssetTypeWebsite,
-		AssetTypeWebApplication,
-		AssetTypeAPI,
-		AssetTypeMobileApp,
-		AssetTypeService,
-		// Code / Repository
-		AssetTypeRepository,
-		// Cloud
-		AssetTypeCloudAccount,
-		AssetTypeCompute,
-		AssetTypeStorage,
-		AssetTypeDatabase,
-		AssetTypeServerless,
-		AssetTypeContainerRegistry,
-		// Infrastructure
-		AssetTypeHost,
-		AssetTypeServer,
-		AssetTypeContainer,
-		AssetTypeKubernetes,
-		AssetTypeKubernetesCluster,
-		AssetTypeKubernetesNamespace,
-		// Network
-		AssetTypeNetwork,
-		AssetTypeVPC,
-		AssetTypeSubnet,
-		AssetTypeLoadBalancer,
-		AssetTypeFirewall,
-		// Identity / IAM
-		AssetTypeIAMUser,
-		AssetTypeIAMRole,
-		AssetTypeServiceAccount,
-		// Recon-discovered
-		AssetTypeHTTPService,
-		AssetTypeOpenPort,
-		AssetTypeDiscoveredURL,
-		// Web3
-		AssetTypeSmartContract,
-		AssetTypeWallet,
-		AssetTypeNFTCollection,
-		AssetTypeDeFiProtocol,
-		AssetTypeToken,
-		AssetTypeBlockchain,
-		// CTIS 2.0
-		AssetTypePackage,
-		AssetTypeContainerImage,
+		AssetTypeDomainName, AssetTypeIPAddress, AssetTypeIPRange, AssetTypeCertificate, AssetTypeAutonomousSystem,
+		AssetTypeWebOrigin, AssetTypeWebApplication, AssetTypeAPI, AssetTypeMobileApp, AssetTypeSaaSApplication, AssetTypeService,
+		AssetTypeRepository, AssetTypePackage, AssetTypeContainerImage, AssetTypeAIModel,
+		AssetTypeCloudAccount, AssetTypeCloudResource, AssetTypeStorage, AssetTypeDatabase, AssetTypeServerless, AssetTypeContainerRegistry,
+		AssetTypeHost, AssetTypeContainer, AssetTypeKubernetesCluster, AssetTypeKubernetesNamespace, AssetTypeKubernetesWorkload,
+		AssetTypeEndpointDevice, AssetTypeIoTDevice, AssetTypeOTDevice, AssetTypeNetworkDevice,
+		AssetTypeVPC, AssetTypeSubnet, AssetTypeLoadBalancer, AssetTypeFirewall,
 		AssetTypeIdentity,
-		AssetTypeSaaSApplication,
-		AssetTypeEndpointDevice,
-		AssetTypeIoTDevice,
-		AssetTypeOTDevice,
-		AssetTypeNetworkDevice,
-		AssetTypeAutonomousSystem,
-		AssetTypeCloudResource,
-		AssetTypeKubernetesWorkload,
-		AssetTypeAIModel,
-		// Unclassified
+		AssetTypeSmartContract, AssetTypeWallet, AssetTypeNFTCollection, AssetTypeDeFiProtocol, AssetTypeToken, AssetTypeBlockchain,
 		AssetTypeUnclassified,
 	}
 }
 
 // IsValid checks if the asset type is valid.
-func (t AssetType) IsValid() bool {
-	return slices.Contains(AllAssetTypes(), t)
-}
+func (t AssetType) IsValid() bool { return slices.Contains(AllAssetTypes(), t) }
 
 // String returns the string representation.
-func (t AssetType) String() string {
-	return string(t)
-}
+func (t AssetType) String() string { return string(t) }
 
 // FindingType represents the type of a finding.
 type FindingType string
 
+// Finding types.
 const (
-	FindingTypeVulnerability    FindingType = "vulnerability"
-	FindingTypeSecret           FindingType = "secret"
-	FindingTypeMisconfiguration FindingType = "misconfiguration"
-	FindingTypeCompliance       FindingType = "compliance"
-	FindingTypeWeb3             FindingType = "web3" // Smart contract vulnerabilities
-
-	// CTIS 2.0.
-	FindingTypeExposure FindingType = "exposure" // Something reachable that should not be
-	FindingTypeWeakness FindingType = "weakness" // Code or design weakness without an advisory id
-	FindingTypeMalware  FindingType = "malware"  // Malicious code or package
-	FindingTypeLicense  FindingType = "license"  // License policy violation
+	FindingTypeVulnerability    FindingType = "vulnerability"    // a known vulnerability (advisory id)
+	FindingTypeWeakness         FindingType = "weakness"         // a code or design weakness without an advisory id
+	FindingTypeSecret           FindingType = "secret"           // an exposed credential
+	FindingTypeMisconfiguration FindingType = "misconfiguration" // a setting that weakens security
+	FindingTypeCompliance       FindingType = "compliance"       // a control evaluation
+	FindingTypeExposure         FindingType = "exposure"         // something reachable that should not be
+	FindingTypeMalware          FindingType = "malware"          // malicious code or package
+	FindingTypeLicense          FindingType = "license"          // license policy violation
 )
 
 // AllFindingTypes returns all valid finding types.
 func AllFindingTypes() []FindingType {
 	return []FindingType{
-		FindingTypeVulnerability,
-		FindingTypeSecret,
-		FindingTypeMisconfiguration,
-		FindingTypeCompliance,
-		FindingTypeWeb3,
-		FindingTypeExposure,
-		FindingTypeWeakness,
-		FindingTypeMalware,
-		FindingTypeLicense,
+		FindingTypeVulnerability, FindingTypeWeakness, FindingTypeSecret, FindingTypeMisconfiguration,
+		FindingTypeCompliance, FindingTypeExposure, FindingTypeMalware, FindingTypeLicense,
 	}
 }
 
 // IsValid checks if the finding type is valid.
-func (t FindingType) IsValid() bool {
-	return slices.Contains(AllFindingTypes(), t)
-}
+func (t FindingType) IsValid() bool { return slices.Contains(AllFindingTypes(), t) }
 
 // String returns the string representation.
-func (t FindingType) String() string {
-	return string(t)
-}
+func (t FindingType) String() string { return string(t) }
 
 // Severity represents the severity level.
 type Severity string
 
+// Severities.
 const (
 	SeverityCritical Severity = "critical"
 	SeverityHigh     Severity = "high"
 	SeverityMedium   Severity = "medium"
 	SeverityLow      Severity = "low"
 	SeverityInfo     Severity = "info"
-	// SeverityUnknown: the source gave no severity, or one that maps to
-	// none of the others (2.0). Also the fallback for a severity a receiver
-	// does not know in a newer-minor document.
+	// SeverityUnknown: the source gave no severity, or one that maps to none
+	// of the others. Also the fallback for a severity a receiver does not
+	// know in a newer-minor document.
 	SeverityUnknown Severity = "unknown"
 )
 
 // AllSeverities returns all valid severities.
 func AllSeverities() []Severity {
-	return []Severity{
-		SeverityCritical,
-		SeverityHigh,
-		SeverityMedium,
-		SeverityLow,
-		SeverityInfo,
-		SeverityUnknown,
-	}
+	return []Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo, SeverityUnknown}
 }
 
 // IsValid checks if the severity is valid.
-func (s Severity) IsValid() bool {
-	return slices.Contains(AllSeverities(), s)
-}
+func (s Severity) IsValid() bool { return slices.Contains(AllSeverities(), s) }
 
 // String returns the string representation.
-func (s Severity) String() string {
-	return string(s)
-}
+func (s Severity) String() string { return string(s) }
 
 // Score returns a numeric score for the severity (0-10).
 //
-// An unrecognized/empty severity intentionally scores 5.0 (Medium), NOT 0.
-// This is a fail-safe for a security tool: a finding whose severity string the
-// producer got wrong (enum drift, typo) must still SURFACE in score-based
-// triage rather than silently sink to the bottom and be missed. Callers that
-// want to reject unknown severities outright should use Report.Validate /
-// Severity.IsValid instead of relying on the score. Do not change this default
-// to 0 without that explicit reject path — it would hide findings.
+// An unrecognized, empty or unknown severity intentionally scores 5.0
+// (Medium), not 0: a finding whose severity the producer got wrong must
+// still surface in score-based triage rather than sink and be missed.
+// Callers that want to reject unknown severities use Validate.
 func (s Severity) Score() float64 {
 	switch s {
 	case SeverityCritical:
 		return 10.0
 	case SeverityHigh:
 		return 7.5
-	case SeverityMedium:
-		return 5.0
 	case SeverityLow:
 		return 2.5
 	case SeverityInfo:
 		return 0.0
-	case SeverityUnknown:
-		// Same fail-safe as an unrecognized value: surface it.
-		return 5.0
 	default:
 		return 5.0
 	}
 }
 
-// Criticality represents asset criticality level.
+// Criticality is the business criticality of an asset.
 type Criticality string
 
+// Criticalities.
 const (
 	CriticalityCritical Criticality = "critical"
 	CriticalityHigh     Criticality = "high"
 	CriticalityMedium   Criticality = "medium"
 	CriticalityLow      Criticality = "low"
-	CriticalityInfo     Criticality = "info"
 )
 
 // AllCriticalities returns all valid criticalities.
 func AllCriticalities() []Criticality {
-	return []Criticality{
-		CriticalityCritical,
-		CriticalityHigh,
-		CriticalityMedium,
-		CriticalityLow,
-		CriticalityInfo,
-	}
+	return []Criticality{CriticalityCritical, CriticalityHigh, CriticalityMedium, CriticalityLow}
 }
 
-// IsValid checks if the criticality is valid.
-func (c Criticality) IsValid() bool {
-	// Empty is also valid (defaults to medium)
-	if c == "" {
-		return true
-	}
-	return slices.Contains(AllCriticalities(), c)
-}
+// IsValid checks if the criticality is valid. Empty is valid (not stated).
+func (c Criticality) IsValid() bool { return c == "" || slices.Contains(AllCriticalities(), c) }
 
 // String returns the string representation.
-func (c Criticality) String() string {
-	return string(c)
-}
+func (c Criticality) String() string { return string(c) }
 
-// Properties is a property bag for custom properties.
+// Properties is an opaque bag. Receivers MUST NOT give meaning to its keys.
 type Properties map[string]any
 
 // =============================================================================
-// Factory Functions
+// Factory functions
 // =============================================================================
 
-// NewReport creates a new empty CTIS report stamped with the current
-// specification version and the published schema URL.
+// NewReport creates a new empty CTIS report stamped with the specification
+// version, the schema URL, a fresh UUIDv7 metadata.id and the current time.
 func NewReport() *Report {
 	return &Report{
 		Version: SchemaVersion,
 		Schema:  SchemaURL,
 		Metadata: ReportMetadata{
-			Timestamp:  time.Now(),
-			SourceType: "scanner",
+			ID:          NewReportID(),
+			GeneratedAt: time.Now().UTC(),
+			Channel:     ChannelScanner,
 		},
 		Assets:   make([]Asset, 0),
 		Findings: make([]Finding, 0),
 	}
 }
 
-// =============================================================================
-// DataFlow Helper Functions
-// =============================================================================
-
-// NewDataFlow creates a new DataFlow with the given source and sink.
-func NewDataFlow(source, sink DataFlowLocation) *DataFlow {
-	source.Type = DataFlowLocationSource
-	source.Index = 0
-	sink.Type = DataFlowLocationSink
-	sink.Index = 1
-
-	return &DataFlow{
-		Sources: []DataFlowLocation{source},
-		Sinks:   []DataFlowLocation{sink},
-		Tainted: true,
-	}
-}
-
-// AddIntermediate adds an intermediate step to the dataflow path.
-func (df *DataFlow) AddIntermediate(loc DataFlowLocation) {
-	loc.Type = DataFlowLocationPropagator
-	loc.Index = len(df.Sources) + len(df.Intermediates)
-	df.Intermediates = append(df.Intermediates, loc)
-
-	// Update sink indices
-	for i := range df.Sinks {
-		df.Sinks[i].Index = loc.Index + 1 + i
-	}
-
-	// Check if flow crosses files
-	if len(df.Intermediates) > 0 && len(df.Sources) > 0 {
-		if loc.Path != df.Sources[0].Path {
-			df.CrossFile = true
-		}
-	}
-}
-
-// AddSanitizer adds a sanitizer location that cleans the tainted data.
-func (df *DataFlow) AddSanitizer(loc DataFlowLocation) {
-	loc.Type = DataFlowLocationSanitizer
-	loc.TaintState = "sanitized"
-	df.Sanitizers = append(df.Sanitizers, loc)
-}
-
-// MarkAsSanitized marks the dataflow as no longer tainted.
-func (df *DataFlow) MarkAsSanitized() {
-	df.Tainted = false
-}
-
-// GetFullPath returns all locations in order from source to sink.
-func (df *DataFlow) GetFullPath() []DataFlowLocation {
-	path := make([]DataFlowLocation, 0, len(df.Sources)+len(df.Intermediates)+len(df.Sinks))
-	path = append(path, df.Sources...)
-	path = append(path, df.Intermediates...)
-	path = append(path, df.Sinks...)
-	return path
-}
-
-// GetPathLength returns the number of steps in the dataflow.
-func (df *DataFlow) GetPathLength() int {
-	return len(df.Sources) + len(df.Intermediates) + len(df.Sinks)
-}
-
-// IsCrossFunction checks if the dataflow crosses function boundaries.
-func (df *DataFlow) IsCrossFunction() bool {
-	if df.Interprocedural {
-		return true
-	}
-
-	functions := make(map[string]bool)
-	for _, loc := range df.GetFullPath() {
-		if loc.Function != "" {
-			functions[loc.Function] = true
-		}
-	}
-	return len(functions) > 1
-}
-
-// BuildSummary generates a human-readable summary of the dataflow.
-func (df *DataFlow) BuildSummary() string {
-	if len(df.Sources) == 0 || len(df.Sinks) == 0 {
-		return ""
-	}
-
-	source := df.Sources[0]
-	sink := df.Sinks[len(df.Sinks)-1]
-
-	summary := ""
-	if source.Label != "" {
-		summary = source.Label
-	} else {
-		summary = "tainted data"
-	}
-
-	if df.TaintType != "" {
-		summary += " (" + df.TaintType + ")"
-	}
-
-	summary += " flows from "
-	if source.Path != "" {
-		summary += source.Path
-		if source.Line > 0 {
-			summary += ":" + itoa(source.Line)
-		}
-	}
-
-	if len(df.Intermediates) > 0 {
-		summary += " through " + itoa(len(df.Intermediates)) + " step(s)"
-	}
-
-	summary += " to "
-	switch {
-	case sink.CalledFunction != "":
-		summary += sink.CalledFunction + "()"
-	case sink.Label != "":
-		summary += sink.Label
-	default:
-		summary += "sink"
-	}
-
-	if sink.Path != "" && sink.Path != source.Path {
-		summary += " in " + sink.Path
-		if sink.Line > 0 {
-			summary += ":" + itoa(sink.Line)
-		}
-	} else if sink.Line > 0 {
-		summary += " at line " + itoa(sink.Line)
-	}
-
-	if !df.Tainted {
-		summary += " (sanitized)"
-	}
-
-	df.Summary = summary
-	return summary
-}
-
-// itoa converts int to string without importing strconv.
-func itoa(i int) string {
-	if i == 0 {
-		return "0"
-	}
-	neg := i < 0
-	// Work in unsigned to avoid overflow when negating math.MinInt
-	// (-MinInt is not representable as int; unsigned negation is well-defined).
-	u := uint(i)
-	if neg {
-		u = -u
-	}
-	digits := ""
-	for u > 0 {
-		digits = string(rune('0'+u%10)) + digits
-		u /= 10
-	}
-	if neg {
-		return "-" + digits
-	}
-	return digits
-}
-
-// NewDataFlowLocation creates a new DataFlowLocation.
-func NewDataFlowLocation(path string, line, column int, content string) DataFlowLocation {
-	return DataFlowLocation{
-		Path:    path,
-		Line:    line,
-		Column:  column,
-		Content: content,
-	}
-}
-
-// WithLabel sets the label for the location.
-func (loc DataFlowLocation) WithLabel(label string) DataFlowLocation {
-	loc.Label = label
-	return loc
-}
-
-// WithFunction sets the function context for the location.
-func (loc DataFlowLocation) WithFunction(fn string) DataFlowLocation {
-	loc.Function = fn
-	return loc
-}
-
-// WithOperation sets the operation type for the location.
-func (loc DataFlowLocation) WithOperation(op string) DataFlowLocation {
-	loc.Operation = op
-	return loc
-}
-
-// AsSource marks this location as a taint source.
-func (loc DataFlowLocation) AsSource() DataFlowLocation {
-	loc.Type = DataFlowLocationSource
-	loc.TaintState = "tainted"
-	return loc
-}
-
-// AsSink marks this location as a taint sink.
-func (loc DataFlowLocation) AsSink() DataFlowLocation {
-	loc.Type = DataFlowLocationSink
-	return loc
-}
-
-// AsSanitizer marks this location as a sanitizer.
-func (loc DataFlowLocation) AsSanitizer() DataFlowLocation {
-	loc.Type = DataFlowLocationSanitizer
-	loc.TaintState = "sanitized"
-	return loc
-}
+// Bool returns a pointer to b, for the tri-state boolean members.
+func Bool(b bool) *bool { return &b }

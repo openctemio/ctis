@@ -12,7 +12,7 @@ func ptrF(v float64) *float64 { return &v }
 
 func interopReport(f Finding) *Report {
 	r := NewReport()
-	r.Metadata.Timestamp = time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC)
+	r.Metadata.GeneratedAt = time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC)
 	if f.Type == "" {
 		f.Type = FindingTypeVulnerability
 	}
@@ -22,6 +22,10 @@ func interopReport(f Finding) *Report {
 	if f.Severity == "" {
 		f.Severity = SeverityHigh
 	}
+	if f.AssetRef == "" {
+		f.AssetRef = "a"
+	}
+	r.Assets = []Asset{{ID: "a", Type: AssetTypeHost, Value: "h"}}
 	r.Findings = []Finding{f}
 	return r
 }
@@ -189,9 +193,9 @@ func TestNormalizeVulnerabilityID(t *testing.T) {
 
 func TestVulnerabilityIDsAndPreferred(t *testing.T) {
 	v := &VulnerabilityDetails{
-		CVEID:  "cve-2024-9999",
-		CVEIDs: []string{"CVE-2024-0001", "CVE-2024-9999", "junk"},
 		IDs: []VulnerabilityID{
+			{Type: VulnerabilityIDCVE, ID: "cve-2024-9999"},
+			{Type: VulnerabilityIDCVE, ID: "junk"}, // not a CVE: dropped
 			{Type: VulnerabilityIDGHSA, ID: "GHSA-jfh8-c2jp-5v3q"},
 			{Type: VulnerabilityIDCVE, ID: "CVE-2024-0001"},
 			{Type: VulnerabilityIDCVE, ID: "GHSA-jfh8-c2jp-5v3q"}, // wrong type: dropped
@@ -199,7 +203,7 @@ func TestVulnerabilityIDsAndPreferred(t *testing.T) {
 		},
 	}
 	ids := VulnerabilityIDs(v)
-	want := []string{"cve:CVE-2024-9999", "cve:CVE-2024-0001", "ghsa:GHSA-jfh8-c2jp-5v3q", "vendor:RHSA-2024:1"}
+	want := []string{"cve:CVE-2024-9999", "ghsa:GHSA-jfh8-c2jp-5v3q", "cve:CVE-2024-0001", "vendor:RHSA-2024:1"}
 	if len(ids) != len(want) {
 		t.Fatalf("ids = %+v", ids)
 	}
@@ -238,14 +242,13 @@ func TestLocationKey(t *testing.T) {
 		f    Finding
 		want string
 	}{
-		{"purl without version", Finding{Vulnerability: &VulnerabilityDetails{PURL: "pkg:NPM/%40babel/core@7.0.0?arch=x#sub", Package: "x"}}, "pkg:npm/%40babel/core"},
-		{"package by name", Finding{Vulnerability: &VulnerabilityDetails{Package: "lodash", Ecosystem: "NPM"}}, "pkg:npm/lodash"},
+		{"purl without version", Finding{Vulnerability: &VulnerabilityDetails{PURL: "pkg:NPM/%40babel/core@7.0.0?arch=x#sub", PackageName: "x"}}, "pkg:npm/%40babel/core"},
 		{"url", Finding{Location: &FindingLocation{Path: "HTTPS://user:pw@Example.COM:443/a/b?q=1#frag"}}, "url:https://example.com/a/b"},
 		{"url port", Finding{Location: &FindingLocation{Path: "http://example.com:8080"}}, "url:http://example.com:8080/"},
 		{"ipv6", Finding{Location: &FindingLocation{Path: "http://[::1]:80/x"}}, "url:http://[::1]/x"},
 		{"file", Finding{Location: &FindingLocation{Path: `.\src\..\src\app.py`, StartLine: 9}}, "file:src/app.py"},
 		{"network port", Finding{Network: &NetworkLocation{Port: 22}}, "net:22/tcp"},
-		{"network udp", Finding{Network: &NetworkLocation{Port: 161, Protocol: "UDP"}}, "net:161/udp"},
+		{"network udp", Finding{Network: &NetworkLocation{Port: 161, Transport: "UDP"}}, "net:161/udp"},
 		{"host level", Finding{Network: &NetworkLocation{}}, "net:host"},
 		{"resource", Finding{Misconfiguration: &MisconfigurationDetails{ResourceType: "aws_s3_bucket", ResourceName: "logs"}}, "resource:aws_s3_bucket/logs"},
 		{"none", Finding{}, ""},
@@ -312,36 +315,40 @@ func TestSetSourceExtra(t *testing.T) {
 	}
 }
 
-func TestAllScores(t *testing.T) {
-	f := &Finding{
-		Scores: []Score{{System: ScoreSystemCVSS, Version: "4.0", Vector: "CVSS:4.0/AV:N", Value: ptrF(9.2), Source: "vendor"}},
-		Vulnerability: &VulnerabilityDetails{
-			CVSSScore: 8.1, CVSSVector: "CVSS:3.1/AV:N/AC:H", CVSSSource: "nvd",
-			EPSSScore: 0.4, EPSSPercentile: 0.97, VPRScore: 7.4,
-		},
+func TestPrimaryCVSS(t *testing.T) {
+	f := &Finding{Scores: []Score{
+		{System: ScoreSystemEPSS, Value: ptrF(0.4)},
+		{System: ScoreSystemCVSS, Version: "3.1", Vector: "CVSS:3.1/AV:N/AC:H"},
+		{System: ScoreSystemCVSS, Version: "3.1", Value: ptrF(8.1), Source: "nvd"},
+		{System: ScoreSystemCVSS, Version: "4.0", Value: ptrF(9.2)},
+		{System: ScoreSystemCVSS, Version: "2.0", Value: ptrF(7.5)},
+	}}
+	got, ok := PrimaryCVSS(f)
+	if !ok || got.Version != "4.0" || *got.Value != 9.2 {
+		t.Errorf("primary = %+v", got)
 	}
-	got := AllScores(f)
-	if len(got) != 5 {
-		t.Fatalf("scores = %+v", got)
+	if _, ok := PrimaryCVSS(&Finding{}); ok {
+		t.Error("no cvss")
 	}
-	if got[1].System != ScoreSystemCVSS || got[1].Version != "3.1" || got[1].Source != "nvd" || *got[1].Value != 8.1 {
-		t.Errorf("legacy cvss = %+v", got[1])
-	}
-	// A legacy score already present in scores is not repeated.
-	f.Scores = append(f.Scores, Score{System: ScoreSystemCVSS, Version: "3.1", Source: "NVD", Value: ptrF(8.1)})
-	if n := len(AllScores(f)); n != 5 {
-		t.Errorf("duplicate legacy cvss: %d", n)
-	}
-	for _, s := range AllScores(f) {
-		if p := scoreProblem(s); p != "" {
-			t.Errorf("AllScores produced an invalid score %+v: %s", s, p)
-		}
-	}
-	if AllScores(nil) != nil {
+	if _, ok := PrimaryCVSS(nil); ok {
 		t.Error("nil finding")
 	}
-	if n := len(AllScores(&Finding{Scores: f.Scores})); n != 2 {
-		t.Errorf("no vulnerability block: %d", n)
+	only := &Finding{Scores: []Score{{System: ScoreSystemCVSS, Version: "3.1", Vector: "CVSS:3.1/AV:N"}}}
+	if got, ok := PrimaryCVSS(only); !ok || got.Value != nil {
+		t.Errorf("vector-only = %+v", got)
+	}
+	v := &VulnerabilityDetails{ThreatSignals: []ThreatSignal{{Type: ThreatSignalKEV, Source: "kev"}}}
+	if !HasThreatSignal(v, ThreatSignalPublicExploit, ThreatSignalKEV) || HasThreatSignal(v, ThreatSignalWeaponized) || HasThreatSignal(nil, ThreatSignalKEV) {
+		t.Error("HasThreatSignal")
+	}
+	if !v.AddID("CVE-2024-1234", "") || !v.AddID("cve-2024-1234", "") || len(v.IDs) != 1 {
+		t.Errorf("AddID duplicate: %+v", v.IDs)
+	}
+	if !v.AddID("not an id", "redhat") || v.IDs[1].Type != VulnerabilityIDVendor || v.AddID("other text", "") {
+		t.Errorf("AddID vendor: %+v", v.IDs)
+	}
+	if got := CVEs(v); len(got) != 1 || got[0] != "CVE-2024-1234" {
+		t.Errorf("CVEs = %v", got)
 	}
 }
 
@@ -366,7 +373,7 @@ func TestValidateInterop(t *testing.T) {
 		{VEX: &VEX{Status: VEXStatusNotAffected, Statement: "not loaded"}},
 		{VEX: &VEX{Status: VEXStatusAffected}},
 		{SourceLifecycle: &SourceLifecycle{TimesFound: 3, State: SourceStateActive}},
-		{Remediation: &Remediation{SolutionType: SolutionTypePatch, Advisories: []Advisory{{ID: "MS24-001"}}}},
+		{Remediation: &Remediation{SolutionType: SolutionTypeVendorFix, Advisories: []Advisory{{ID: "MS24-001"}}}},
 	}
 	for i, f := range ok {
 		if err := interopReport(f).Validate(); err != nil {
@@ -388,7 +395,7 @@ func TestValidateInterop(t *testing.T) {
 		"cvss v2 with v3 prefix":   {Scores: []Score{{System: ScoreSystemCVSS, Version: "2.0", Vector: "CVSS:3.1/AV:N"}}},
 		"cvss empty":               {Scores: []Score{{System: ScoreSystemCVSS, Version: "3.1"}}},
 		"epss above 1":             {Scores: []Score{{System: ScoreSystemEPSS, Value: ptrF(97)}}},
-		"vpr negative":             {Scores: []Score{{System: ScoreSystemVPR, Value: ptrF(-1)}}},
+		"vpr system":               {Scores: []Score{{System: "vpr", Value: ptrF(1)}}},
 		"nan":                      {Scores: []Score{{System: ScoreSystemVendor, Value: ptrF(math.NaN())}}},
 		"inf":                      {Scores: []Score{{System: ScoreSystemVendor, Value: ptrF(math.Inf(1))}}},
 		"vendor huge":              {Scores: []Score{{System: ScoreSystemVendor, Value: ptrF(1e9)}}},
@@ -449,8 +456,8 @@ func bigExtra() map[string]string {
 
 func TestValidateIdentityHints(t *testing.T) {
 	r := NewReport()
-	r.Metadata.Timestamp = time.Now()
-	r.Assets = []Asset{{Type: AssetTypeHost, Value: "10.0.0.1", IdentityHints: &IdentityHints{FQDN: "a.example.com", MACAddresses: []string{"00:11:22:33:44:55"}}}}
+	r.Metadata.GeneratedAt = time.Now()
+	r.Assets = []Asset{{ID: "h", Type: AssetTypeHost, Value: "10.0.0.1", IdentityHints: &IdentityHints{FQDN: "a.example.com", MACAddresses: []string{"00:11:22:33:44:55"}}}}
 	if err := r.Validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -467,20 +474,12 @@ func TestValidateIdentityHints(t *testing.T) {
 	}
 }
 
-// A 1.3 report (no interop members) decodes strictly and validates under 1.4,
-// and a 1.4 report round-trips through JSON unchanged.
-func TestInteropBackwardCompatibleAndRoundTrip(t *testing.T) {
-	old := []byte(`{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"vulnerability","title":"t","severity":"high","vulnerability":{"cve_id":"CVE-2021-23017","cvss_version":"3.1","cvss_score":7.7}}]}`)
-	r, err := decodeStrict(old)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := r.Validate(); err != nil {
-		t.Fatal(err)
-	}
+// A report with the interoperability members round-trips through JSON
+// unchanged.
+func TestInteropRoundTrip(t *testing.T) {
 	cred := false
 	f := Finding{
-		Native:          &NativeIdentity{Scheme: NativeSchemeNessus, VulnID: "201194", Severity: "3", Credentialed: &cred},
+		Native:          &NativeIdentity{Scheme: NativeSchemeNessus, VulnID: "201194", Severity: "3", IsCredentialed: &cred},
 		Scores:          []Score{{System: ScoreSystemCVSS, Version: "4.0", Vector: "CVSS:4.0/AV:N", Value: ptrF(0)}},
 		VEX:             &VEX{Status: VEXStatusNotAffected, Justification: VEXJustificationComponentNotPresent},
 		SourceLifecycle: &SourceLifecycle{TimesFound: 2, State: SourceStateReopened},
@@ -492,7 +491,7 @@ func TestInteropBackwardCompatibleAndRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Explicit false and zero survive: they are pointers.
-	if !strings.Contains(string(raw), `"credentialed":false`) || !strings.Contains(string(raw), `"value":0`) {
+	if !strings.Contains(string(raw), `"is_credentialed":false`) || !strings.Contains(string(raw), `"value":0`) {
 		t.Errorf("explicit zero values lost: %s", raw)
 	}
 	back, err := decodeStrict(raw)
@@ -507,13 +506,13 @@ func TestInteropBackwardCompatibleAndRoundTrip(t *testing.T) {
 		t.Errorf("round trip changed the report:\n%s\n%s", raw, raw2)
 	}
 	if errs := loadSchemaSet(t).validateJSON(raw, "report.json"); len(errs) > 0 {
-		t.Errorf("schema rejects a valid 1.4 report: %v", errs)
+		t.Errorf("schema rejects a valid report: %v", errs)
 	}
 }
 
 func TestSupportedSchemaVersions(t *testing.T) {
 	got := SupportedSchemaVersions()
-	want := []string{"1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"}
+	want := []string{"2.0"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("SupportedSchemaVersions = %v, want %v", got, want)
 	}
@@ -525,7 +524,7 @@ func TestSupportedSchemaVersions(t *testing.T) {
 			t.Errorf("%s not supported", v)
 		}
 		// Every supported version still decodes strictly and validates.
-		raw := []byte(`{"version":"` + v + `","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"vulnerability","title":"t","severity":"high"}]}`)
+		raw := []byte(`{"version":"` + v + `","metadata":{"id":"` + testReportID + `","generated_at":"2026-10-02T00:00:00Z"},"assets":[{"id":"a","type":"host","value":"h"}],"findings":[{"type":"vulnerability","title":"t","severity":"high","asset_ref":"a"}]}`)
 		r, err := decodeStrict(raw)
 		if err != nil {
 			t.Fatalf("%s: %v", v, err)
@@ -534,7 +533,7 @@ func TestSupportedSchemaVersions(t *testing.T) {
 			t.Errorf("%s: %v", v, err)
 		}
 	}
-	for _, v := range []string{"1.7", "2.0", "0.9", "", "1.03"} {
+	for _, v := range []string{"1.6", "2.1", "0.9", "", "2.03", "3.0"} {
 		if IsSupportedVersion(v) {
 			t.Errorf("%q reported supported", v)
 		}

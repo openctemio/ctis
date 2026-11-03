@@ -72,20 +72,16 @@ func reconFixtures() map[string]*ReconToCTISInput {
 func TestReconConverterOutputIsSchemaValid(t *testing.T) {
 	s := loadSchemaSet(t)
 	for name, in := range reconFixtures() {
-		for _, group := range []bool{true, false} {
-			opts := DefaultReconConverterOptions()
-			opts.GroupByIP = group
-			r, err := ConvertReconToCTIS(in, opts)
-			if err != nil {
-				t.Fatalf("%s: %v", name, err)
-			}
-			assertReportValid(t, s, r)
-			if err := r.Validate(); err != nil {
-				t.Errorf("%s (group=%v): %v", name, group, err)
-			}
-			if r.Version != SchemaVersion || r.Schema != SchemaURL {
-				t.Errorf("%s: version %q schema %q", name, r.Version, r.Schema)
-			}
+		r, err := ConvertReconToCTIS(in, DefaultReconConverterOptions())
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		assertReportValid(t, s, r)
+		if err := r.Validate(); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+		if r.Version != SchemaVersion || r.Schema != SchemaURL {
+			t.Errorf("%s: version %q schema %q", name, r.Version, r.Schema)
 		}
 	}
 	// The merged pipeline report too.
@@ -109,23 +105,21 @@ func assetsByValue(r *Report) map[string]Asset {
 	return out
 }
 
-func TestReconScopeCapabilityVendor(t *testing.T) {
-	want := map[string]struct{ scope, capability, vendor string }{
-		"subdomain":  {"domain", "subdomain", "projectdiscovery"},
-		"dns":        {"domain", "dns", "projectdiscovery"},
-		"port":       {"network", "portscan", "projectdiscovery"},
-		"http_probe": {"domain", "http_probe", "projectdiscovery"},
-		"url_crawl":  {"domain", "crawler", "projectdiscovery"},
-		"mixed":      {"domain", "easm", ""},
-	}
+func TestReconTechniqueVendor(t *testing.T) {
 	for name, in := range reconFixtures() {
 		r, err := ConvertReconToCTIS(in, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w := want[name]
-		if r.Metadata.Scope.Type != w.scope || r.Tool.Capabilities[0] != w.capability || r.Tool.Vendor != w.vendor {
-			t.Errorf("%s: scope %q capability %v vendor %q, want %+v", name, r.Metadata.Scope.Type, r.Tool.Capabilities, r.Tool.Vendor, w)
+		wantVendor := "projectdiscovery"
+		if name == "mixed" {
+			wantVendor = ""
+		}
+		if !reflect.DeepEqual(r.Tool.Techniques, []Technique{TechniqueEASM}) || r.Tool.Vendor != wantVendor {
+			t.Errorf("%s: techniques %v vendor %q", name, r.Tool.Techniques, r.Tool.Vendor)
+		}
+		if r.Metadata.Channel != ChannelScanner || !IsReportID(r.Metadata.ID) {
+			t.Errorf("%s: metadata %+v", name, r.Metadata)
 		}
 	}
 }
@@ -135,8 +129,10 @@ func TestReconSubdomains(t *testing.T) {
 	if len(r.Assets) != 3 {
 		t.Fatalf("want 3 assets (duplicate and empty dropped), got %d", len(r.Assets))
 	}
-	if r.Assets[0].Type != AssetTypeDomain || r.Assets[1].Type != AssetTypeSubdomain {
-		t.Errorf("types %s %s", r.Assets[0].Type, r.Assets[1].Type)
+	for _, a := range r.Assets {
+		if a.Type != AssetTypeDomainName {
+			t.Errorf("%s: type %s", a.Value, a.Type)
+		}
 	}
 	recs := r.Assets[1].Technical.Domain.DNSRecords
 	if len(recs) != 2 || recs[0].Type != "A" || recs[1].Type != "AAAA" {
@@ -154,24 +150,42 @@ func TestReconDNS(t *testing.T) {
 	}
 	d := r.Assets[0].Technical.Domain
 	var a []string
+	hinfo := false
 	for _, rec := range d.DNSRecords {
-		if rec.Type == "A" {
+		switch rec.Type {
+		case "A":
 			a = append(a, rec.Value)
+		case "HINFO":
+			hinfo = true
 		}
 	}
 	if strings.Join(a, ",") != "1.1.1.1,2.2.2.2" {
 		t.Errorf("A records must be upper-cased and split per value: %+v", d.DNSRecords)
 	}
+	if !hinfo {
+		t.Error("every RR type is kept verbatim")
+	}
 	if len(d.Nameservers) != 1 || d.Nameservers[0] != "ns1.example.net" {
 		t.Errorf("nameservers %v", d.Nameservers)
-	}
-	if _, ok := r.Assets[0].Properties["other_dns_records"]; !ok {
-		t.Error("HINFO must be kept in other_dns_records")
 	}
 	mx := r.Assets[1].Technical.Domain.DNSRecords
 	if len(mx) != 1 || mx[0].TTL != 0 {
 		t.Errorf("mx: %+v", mx)
 	}
+}
+
+func relationshipsOf(r *Report, typ RelationshipType) map[string]string {
+	idValue := map[string]string{}
+	for _, a := range r.Assets {
+		idValue[a.ID] = a.Value
+	}
+	out := map[string]string{}
+	for _, rel := range r.Relationships {
+		if rel.Type == typ {
+			out[idValue[rel.ToRef]] = idValue[rel.FromRef]
+		}
+	}
+	return out
 }
 
 func TestReconPorts(t *testing.T) {
@@ -181,49 +195,60 @@ func TestReconPorts(t *testing.T) {
 	if ip.Type != AssetTypeIPAddress || ip.Technical.IPAddress.Version != 4 || ip.Technical.IPAddress.Hostname != "web.internal" {
 		t.Errorf("ip asset: %+v %+v", ip, ip.Technical.IPAddress)
 	}
-	if p := ip.Technical.IPAddress.Ports; len(p) != 2 || p[0].Protocol != "tcp" {
-		t.Errorf("ports %+v", p)
+	https := by["10.0.0.1:443/tcp"]
+	if https.Type != AssetTypeService || https.Technical.Service.AppProtocol != "https" || https.Technical.Service.Transport != TransportTCP || https.Technical.Service.State != PortOpen {
+		t.Errorf("service: %+v", https.Technical)
+	}
+	if _, ok := by["10.0.0.1:22/tcp"]; !ok {
+		t.Error("ssh service missing")
 	}
 	host := by["example.com"]
-	if host.Type != AssetTypeHost || host.Technical.IPAddress.Version != 0 || host.Technical.IPAddress.Hostname != "example.com" {
-		t.Errorf("a hostname must be a host asset without an IP version: %+v %+v", host, host.Technical.IPAddress)
+	if host.Type != AssetTypeHost {
+		t.Errorf("a hostname must be a host asset: %+v", host)
 	}
-	v6 := by["2001:db8::1"]
-	if v6.Technical.IPAddress.Version != 6 || v6.Technical.IPAddress.Ports[0].Protocol != "" {
-		t.Errorf("v6: %+v", v6.Technical.IPAddress)
+	if _, ok := by["example.com:80/tcp"]; !ok {
+		t.Error("a port without a protocol is tcp")
+	}
+	if _, ok := by["[2001:db8::1]:8443/sctp"]; !ok {
+		t.Errorf("IPv6 service must be bracketed: %v", keys(by))
 	}
 	if _, ok := by["10.0.0.2"]; ok {
 		t.Error("port 0 must be dropped")
 	}
-
-	opts := DefaultReconConverterOptions()
-	opts.GroupByIP = false
-	r, _ = ConvertReconToCTIS(reconFixtures()["port"], opts)
-	by = assetsByValue(r)
-	if _, ok := by["[2001:db8::1]:8443"]; !ok {
-		t.Errorf("IPv6 host:port must be bracketed: %v", by)
+	exposes := relationshipsOf(r, RelExposes)
+	for svc, h := range map[string]string{"10.0.0.1:443/tcp": "10.0.0.1", "10.0.0.1:22/tcp": "10.0.0.1", "example.com:80/tcp": "example.com", "[2001:db8::1]:8443/sctp": "2001:db8::1"} {
+		if exposes[svc] != h {
+			t.Errorf("%s exposed by %q, want %q", svc, exposes[svc], h)
+		}
 	}
 }
 
-func TestReconHTTPProbeTypeDoesNotDependOnStatus(t *testing.T) {
+func TestReconHTTPProbe(t *testing.T) {
 	r, _ := ConvertReconToCTIS(reconFixtures()["http_probe"], nil)
-	for _, a := range r.Assets {
-		if a.Type != AssetTypeHTTPService {
-			t.Errorf("%s: type %s, want http_service for every status", a.Value, a.Type)
-		}
+	by := assetsByValue(r)
+	ex := by["https://example.com"]
+	if ex.Type != AssetTypeWebOrigin || ex.Technical.HTTP.StatusCode != 200 || ex.Technical.HTTP.Title != "Example" || ex.Technical.HTTP.TLSVersion != TLSVersionTLS13 {
+		t.Errorf("origin: %+v", ex.Technical)
 	}
-	if svc := r.Assets[0].Technical.Service; !svc.TLS || svc.Port != 443 || svc.Transport != "tcp" {
-		t.Errorf("service: %+v", svc)
+	if len(ex.Technologies) != 1 || ex.Technologies[0].Name != "nginx" {
+		t.Errorf("technologies: %+v", ex.Technologies)
+	}
+	admin := by["http://admin.example.com"]
+	if admin.Type != AssetTypeWebOrigin || admin.Technical.HTTP.StatusCode != 503 || admin.Technical.HTTP.CDN != "cloudflare" || admin.Technical.HTTP.RedirectURL != "https://admin.example.com/login" {
+		t.Errorf("an origin is a web_origin whatever its status: %+v", admin.Technical.HTTP)
+	}
+	if relationshipsOf(r, RelResolvesTo)["93.184.216.34"] != "example.com" {
+		t.Errorf("resolves_to: %+v", r.Relationships)
 	}
 }
 
 func TestReconURLs(t *testing.T) {
 	r, _ := ConvertReconToCTIS(reconFixtures()["url_crawl"], nil)
-	if len(r.Assets) != 2 || r.Assets[0].Properties["host"] != "example.com" {
+	if len(r.Assets) != 1 || r.Assets[0].Type != AssetTypeWebOrigin || r.Assets[0].Value != "https://example.com" {
 		t.Fatalf("assets %+v", r.Assets)
 	}
-	if n := len(r.Assets[1].Name); n != 255 || !strings.HasSuffix(r.Assets[1].Name, "...") {
-		t.Errorf("long URL name must be truncated to 255, got %d", n)
+	if len(r.Endpoints) != 2 || r.Endpoints[0].OriginRef != r.Assets[0].ID {
+		t.Fatalf("endpoints %+v", r.Endpoints)
 	}
 }
 
@@ -231,16 +256,19 @@ func TestReconNilAndOptions(t *testing.T) {
 	if _, err := ConvertReconToCTIS(nil, nil); err == nil {
 		t.Error("nil input must fail")
 	}
-	opts := &ReconConverterOptions{DefaultCriticality: CriticalityLow, GroupByIP: true}
+	opts := &ReconConverterOptions{DefaultCriticality: CriticalityLow}
 	if _, err := ConvertReconToCTIS(reconFixtures()["port"], opts); err != nil {
 		t.Fatal(err)
 	}
 	if opts.DiscoveryTool != "" {
 		t.Error("the converter must not write to the caller's options")
 	}
-	r, _ := ConvertReconToCTIS(&ReconToCTISInput{ScannerName: "x", DurationMs: -1}, nil)
+	r, _ := ConvertReconToCTIS(&ReconToCTISInput{ScannerName: "x", DurationMs: -1, StartedAt: 1700000000, FinishedAt: 1700000060}, nil)
 	if r.Metadata.DurationMs != 0 {
 		t.Error("negative duration must clamp to 0")
+	}
+	if r.Metadata.StartedAt == nil || r.Metadata.EndedAt == nil || r.Metadata.EndedAt.Sub(*r.Metadata.StartedAt).Seconds() != 60 {
+		t.Errorf("started/ended: %v %v", r.Metadata.StartedAt, r.Metadata.EndedAt)
 	}
 }
 
@@ -252,41 +280,49 @@ func TestMergeReconReports(t *testing.T) {
 	sub, _ := ConvertReconToCTIS(fx["subdomain"], nil)
 	dns, _ := ConvertReconToCTIS(fx["dns"], nil)
 	port, _ := ConvertReconToCTIS(fx["port"], nil)
-	before, _ := json.Marshal([]*Report{sub, dns, port})
+	probe, _ := ConvertReconToCTIS(fx["http_probe"], nil)
+	before, _ := json.Marshal([]*Report{sub, dns, port, probe})
 
-	m := MergeReconReports([]*Report{sub, nil, dns, port})
-	after, _ := json.Marshal([]*Report{sub, dns, port})
+	m := MergeReconReports([]*Report{sub, nil, dns, port, probe})
+	after, _ := json.Marshal([]*Report{sub, dns, port, probe})
 	if string(before) != string(after) {
 		t.Error("MergeReconReports modified its input")
 	}
-
-	// example.com is in the subdomain and the dns report (and the port
-	// report as a host): one asset, records combined.
-	by := assetsByValue(m)
-	ex := by["example.com"]
-	if ex.Technical.Domain == nil || len(ex.Technical.Domain.DNSRecords) < 3 {
-		t.Errorf("records not merged: %+v", ex.Technical.Domain)
+	if err := m.Validate(); err != nil {
+		t.Fatal(err)
 	}
-	if ex.Technical.IPAddress == nil || len(ex.Technical.IPAddress.Ports) != 1 {
-		t.Errorf("ports not merged: %+v", ex.Technical.IPAddress)
+
+	// example.com is a domain_name in the subdomain, dns and probe reports:
+	// one asset, records combined. The port report's host example.com is
+	// another type, so another asset.
+	n := 0
+	for _, a := range m.Assets {
+		if a.Value == "example.com" {
+			n++
+			if a.Type == AssetTypeDomainName && len(a.Technical.Domain.DNSRecords) < 3 {
+				t.Errorf("records not merged: %+v", a.Technical.Domain)
+			}
+		}
+	}
+	if n != 2 {
+		t.Errorf("example.com assets: %d, want domain_name and host", n)
 	}
 	if m.Assets[0].Value != sub.Assets[0].Value {
 		t.Error("merged assets must keep first-seen order")
 	}
-	wantCaps := []string{"subdomain", "dns", "portscan"}
-	if !reflect.DeepEqual(m.Tool.Capabilities, wantCaps) {
-		t.Errorf("capabilities %v, want %v", m.Tool.Capabilities, wantCaps)
-	}
-	if tools := m.Properties["tools_used"].([]string); len(tools) != 3 {
-		t.Errorf("tools_used %v", tools)
+	if !reflect.DeepEqual(m.Tool.Techniques, []Technique{TechniqueEASM}) {
+		t.Errorf("techniques %v", m.Tool.Techniques)
 	}
 	if m.Metadata.DurationMs != 1200 {
 		t.Errorf("duration %d", m.Metadata.DurationMs)
 	}
+	if len(relationshipsOf(m, RelExposes)) != 4 || relationshipsOf(m, RelResolvesTo)["93.184.216.34"] != "example.com" {
+		t.Errorf("relationships not re-pointed: %+v", m.Relationships)
+	}
 
-	// Deterministic: same input, same asset order.
+	// Deterministic: same input, same asset order and ids.
 	for i := 0; i < 20; i++ {
-		again := MergeReconReports([]*Report{sub, dns, port})
+		again := MergeReconReports([]*Report{sub, dns, port, probe})
 		for j := range again.Assets {
 			if again.Assets[j].Value != m.Assets[j].Value || again.Assets[j].ID != m.Assets[j].ID {
 				t.Fatalf("order differs at %d", j)

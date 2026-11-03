@@ -1,8 +1,8 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/evidence-item.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.openctem.io/ctis/2.0/evidence-item.json",
   "title": "CTIS Evidence Item",
-  "description": "One piece of typed evidence of a finding (1.6). Known kinds are validated whole; another kind is validated by its envelope and carries its own fields in data. Sensitive values may appear only inside the spans listed in sensitive, which receivers mask before display or forwarding.",
+  "description": "One piece of typed evidence of a finding. Known kinds are validated whole; another kind is validated by its envelope and carries its own fields in data. Sensitive values may appear only inside the spans listed in sensitive, which receivers mask before display or forwarding.",
   "type": "object",
   "required": [
     "kind"
@@ -25,7 +25,8 @@
     },
     "captured_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "maxLength": 64
     },
     "content_sha256": {
       "type": "string",
@@ -74,7 +75,8 @@
     "data": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Fields of a kind this version of the schema does not know"
+      "description": "Fields of a kind this version of the schema does not know",
+      "maxProperties": 64
     },
     "sensitive": {
       "type": "array",
@@ -103,7 +105,8 @@
       "properties": {
         "method": {
           "type": "string",
-          "pattern": "^([A-Za-z][A-Za-z0-9-]{0,31})?$"
+          "pattern": "^([A-Za-z][A-Za-z0-9-]{0,31})?$",
+          "maxLength": 1024
         },
         "url": {
           "type": "string",
@@ -111,7 +114,8 @@
         },
         "http_version": {
           "type": "string",
-          "pattern": "^(HTTP/[0-9](\\.[0-9])?)?$"
+          "pattern": "^(HTTP/[0-9](\\.[0-9])?)?$",
+          "maxLength": 1024
         },
         "headers": {
           "type": "array",
@@ -156,7 +160,8 @@
         },
         "http_version": {
           "type": "string",
-          "pattern": "^(HTTP/[0-9](\\.[0-9])?)?$"
+          "pattern": "^(HTTP/[0-9](\\.[0-9])?)?$",
+          "maxLength": 1024
         },
         "time_ms": {
           "type": "integer",
