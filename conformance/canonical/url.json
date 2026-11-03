@@ -1,0 +1,39 @@
+{
+  "function": "CanonicalURL",
+  "description": "URLs: origin + path (case kept, percent-encoding uppercased, unreserved decoded, dot segments removed) + sorted unique query names; no user info, fragment or query values.",
+  "vectors": [
+    {
+      "input": "https://user:pass@Example.com/A/b/../C?z=1&a=2&z=3#frag",
+      "output": "https://example.com/A/C?a&z"
+    },
+    {
+      "input": "http://example.com",
+      "output": "http://example.com/"
+    },
+    {
+      "input": "https://example.com/%7euser/%2fx/%41",
+      "output": "https://example.com/~user/%2Fx/A"
+    },
+    {
+      "input": "https://example.com/a/./b/.",
+      "output": "https://example.com/a/b/"
+    },
+    {
+      "input": "https://example.com/../../a",
+      "output": "https://example.com/a"
+    },
+    {
+      "input": "https://example.com/p?token=secret",
+      "output": "https://example.com/p?token",
+      "note": "query values never survive"
+    },
+    {
+      "input": "https://example.com:443/",
+      "output": "https://example.com/"
+    },
+    {
+      "input": "file:///etc/passwd",
+      "error": true
+    }
+  ]
+}

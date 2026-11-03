@@ -1,0 +1,27 @@
+{
+  "function": "CanonicalCIDR",
+  "description": "IP ranges: CIDR with the network address; IPv6 per RFC 5952; IPv4-mapped ranges of /96 or longer as IPv4.",
+  "vectors": [
+    {
+      "input": "10.1.2.3/8",
+      "output": "10.0.0.0/8"
+    },
+    {
+      "input": "2001:DB8::1/32",
+      "output": "2001:db8::/32"
+    },
+    {
+      "input": "::ffff:10.0.0.0/104",
+      "output": "10.0.0.0/8"
+    },
+    {
+      "input": "10.0.0.0",
+      "error": true,
+      "note": "a range needs a prefix length"
+    },
+    {
+      "input": "10.0.0.0/33",
+      "error": true
+    }
+  ]
+}

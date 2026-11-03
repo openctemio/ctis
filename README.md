@@ -64,6 +64,10 @@ if err != nil { /* reject */ }
 if err := in.Validate(); err != nil { /* reject */ }
 _ = unknown.Entries // log what was ignored
 
+// Key assets on their canonical value (receivers never trust a producer's key).
+host, _ := ctis.CanonicalDomain("Bücher.Example.")    // "xn--bcher-kva.example"
+key := ctis.AssetKey(ctis.AssetTypeDomain, host)
+
 
 // Convert SARIF (Semgrep, CodeQL, Trivy, ...)
 report, err := ctis.FromSARIF(sarifBytes, nil)
@@ -174,6 +178,16 @@ res, err := importer.Parse(ctx, file, importer.Options{})
 ```
 
 Each format has a mapping spec: every source field, the CTIS member that keeps it or why it is ignored on purpose ([docs/importers](docs/importers/README.md), generated from the code). The tests fail when a fixture holds a field its spec does not list, or a spec maps a field no fixture holds. Inputs are treated as hostile: size, depth, element, text and record limits; no XML internal subsets, entities or external resources; UTF-8, US-ASCII or ISO-8859-1 only; `OpenZip` refuses traversal, links, nested archives and decompression bombs. Scan credentials and account names are never copied into a report.
+
+## Exporters
+
+`ToSARIF`, `ToCycloneDX` and `ToOCSF` write a report out as SARIF 2.1.0, a CycloneDX 1.6 BOM with its vulnerabilities (VDR/VEX), and OCSF 1.3.0 Vulnerability Finding (2002) and Compliance Finding (2003) events. Output is deterministic, needs no network and never carries a raw secret. Each exporter has round-trip tests against the importers; the mapping and the accepted losses per format are in [docs/exporters.md](docs/exporters.md).
+
+```go
+sarif, err := ctis.ToSARIF(report)
+bom, err := ctis.ToCycloneDX(report, nil)
+events, err := ctis.ToOCSF(report, nil)
+```
 
 ## Web URLs
 

@@ -73,6 +73,8 @@ Normative rule:
 
 ## P6. Canonical forms and keys (1.7, text and test vectors)
 
+**Status: canonical forms and asset key done** (spec section 5.3, `ctis.Canonical*`, `ctis.AssetKey`, `conformance/canonical`). The correlation key (asset key, preferred id or rule, location key with the web branch) is open.
+
 The canonical value of each asset type becomes normative, with test vectors every implementation runs:
 
 - domain names: lowercase, IDNA A-label, no trailing dot;

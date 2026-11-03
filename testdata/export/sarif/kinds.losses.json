@@ -1,0 +1,5 @@
+{
+  "fixture": "testdata/sarif/kinds.sarif",
+  "note": "Accepted losses of the round trip fixture -> FromSARIF -> ToSARIF -> FromSARIF. Every member FromSARIF produces from this fixture comes back equal, so the list is empty; members SARIF cannot carry from a CTIS-native report are listed in docs/exporters.md (SARIF, accepted losses).",
+  "losses": []
+}

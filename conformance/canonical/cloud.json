@@ -1,0 +1,41 @@
+{
+  "function": "Canonical cloud resource ids",
+  "description": "ARN: partition, service and region lowercase, the rest as issued. Azure: lowercase. GCP: //<service>.googleapis.com/<path>, host lowercase.",
+  "vectors": [
+    {
+      "function": "CanonicalARN",
+      "input": "ARN:AWS:S3:::Example-Bucket",
+      "output": "arn:aws:s3:::Example-Bucket"
+    },
+    {
+      "function": "CanonicalARN",
+      "input": "arn:aws:ec2:US-EAST-1:123456789012:instance/i-0ABC",
+      "output": "arn:aws:ec2:us-east-1:123456789012:instance/i-0ABC"
+    },
+    {
+      "function": "CanonicalARN",
+      "input": "arn:aws:s3",
+      "error": true
+    },
+    {
+      "function": "CanonicalAzureResourceID",
+      "input": "/subscriptions/0000-1111/resourceGroups/RG-Prod/providers/Microsoft.Compute/virtualMachines/VM1/",
+      "output": "/subscriptions/0000-1111/resourcegroups/rg-prod/providers/microsoft.compute/virtualmachines/vm1"
+    },
+    {
+      "function": "CanonicalAzureResourceID",
+      "input": "subscriptions/x",
+      "error": true
+    },
+    {
+      "function": "CanonicalGCPResourceName",
+      "input": "//Compute.GoogleAPIs.com/projects/p1/zones/us-central1-a/instances/VM-1",
+      "output": "//compute.googleapis.com/projects/p1/zones/us-central1-a/instances/VM-1"
+    },
+    {
+      "function": "CanonicalGCPResourceName",
+      "input": "https://compute.googleapis.com/projects/p1",
+      "error": true
+    }
+  ]
+}

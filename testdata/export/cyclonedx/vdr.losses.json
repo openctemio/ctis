@@ -1,0 +1,14 @@
+{
+  "fixture": "testdata/export/cyclonedx/vdr.cdx.json",
+  "note": "Accepted losses of fixture -> importer -> ToCycloneDX -> importer. Report, findings, dependencies and the kept VEX statements come back equal.",
+  "losses": [
+    {
+      "member": "vex[vex.status=not_affected]",
+      "reason": "The importer turns a not_affected (or resolved) analysis into a VEX statement and drops the finding; the statement is in importer.Result.VEX, not in the report, so ToCycloneDX, which sees only the report, cannot write it again."
+    },
+    {
+      "member": "vex[vex.status=fixed]",
+      "reason": "As not_affected: a resolved analysis leaves no finding in the report."
+    }
+  ]
+}

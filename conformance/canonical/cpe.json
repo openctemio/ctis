@@ -1,0 +1,32 @@
+{
+  "function": "CanonicalCPE",
+  "description": "CPE 2.3 formatted string binding, lowercase; simple CPE 2.2 URIs are bound to it.",
+  "vectors": [
+    {
+      "input": "cpe:2.3:a:Apache:HTTP_Server:2.4.57:*:*:*:*:*:*:*",
+      "output": "cpe:2.3:a:apache:http_server:2.4.57:*:*:*:*:*:*:*"
+    },
+    {
+      "input": "cpe:/a:nginx:nginx:1.25.3",
+      "output": "cpe:2.3:a:nginx:nginx:1.25.3:*:*:*:*:*:*:*"
+    },
+    {
+      "input": "cpe:2.3:a:vendor:prod\\:uct:1:*:*:*:*:*:*:*",
+      "output": "cpe:2.3:a:vendor:prod\\:uct:1:*:*:*:*:*:*:*",
+      "note": "an escaped colon is part of a component"
+    },
+    {
+      "input": "cpe:2.3:x:vendor:product:1:*:*:*:*:*:*:*",
+      "error": true
+    },
+    {
+      "input": "cpe:2.3:a:vendor:product",
+      "error": true
+    },
+    {
+      "input": "cpe:/a:vendor:product%21",
+      "error": true,
+      "note": "encoded 2.2 URIs are out of scope"
+    }
+  ]
+}

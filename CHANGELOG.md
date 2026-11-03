@@ -4,6 +4,14 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added: exporters to SARIF, CycloneDX and OCSF
+
+- `ToSARIF` writes a SARIF 2.1.0 log: severity as level and `security-severity`, the fingerprint as `fingerprints`, a `rules[]` catalog built from the findings, suppressions, locations, code flows and the HTTP exchange of web findings.
+- `ToCycloneDX` writes a CycloneDX 1.6 BOM: dependencies as components with the dependency graph, vulnerability findings as `vulnerabilities[]` with ratings from `scores`, `analysis` from `vex` and every affected component in `affects`.
+- `ToOCSF` writes OCSF 1.3.0 events: Vulnerability Finding (2002) for vulnerability, secret and web3 findings, Compliance Finding (2003) for compliance and misconfiguration findings.
+- Output is deterministic (no clock, sorted catalogs), needs no network and is bounded (`MaxExportBytes`). Secret findings are redacted before export and HTTP evidence marked sensitive is masked.
+- Round-trip tests (SARIF and CycloneDX fixtures through the importers and back, OCSF through a test reverse mapper) and golden files under `testdata/export/`; each fixture lists its accepted losses. Mapping and losses: `docs/exporters.md`.
+
 
 ### Added: the additive half of CTIS 2.0 (ships in 2.0)
 
@@ -19,6 +27,7 @@ Every member is optional, so a report without them is unchanged. `SchemaVersion`
 - `vulnerability.capec_ids` and `vulnerability.threat_signals[]` (`ctis.ThreatSignal`, with `due_on`).
 - Schema annotation `"x-ctis-pii": true` on personal-data members (`author`, `author_email`, `suppression.suppressed_by`, `compliance.regulatory_owner`, `owners[].ref`, `validation.validator`).
 - Example `examples/ctem-coverage.json` and invalid examples for a malformed extension namespace, a date-time `due_on` and an unknown target class.
+- Canonical forms and asset keys (spec section 5.3): `CanonicalDomain` (IDNA-lite with a Punycode encoder), `CanonicalIP`, `CanonicalCIDR`, `CanonicalService`, `CanonicalOrigin`, `CanonicalURL`, `CanonicalPurl`, `CanonicalCPE`, `CanonicalARN`, `CanonicalAzureResourceID`, `CanonicalGCPResourceName`, `CanonicalImage`, `CanonicalCertificateFingerprint`, `AssetKey` and `AssetKeyNamespace`; vectors in `conformance/canonical`.
 
 ### Changed: open vocabularies and naming (ships in 2.0)
 
