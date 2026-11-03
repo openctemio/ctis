@@ -2,13 +2,13 @@ package ctis
 
 import "time"
 
-// Interoperability members (CTIS 1.4).
+// Interoperability members.
 //
 // These members carry what a source scanner or importer knows about a finding
 // in the source's own terms, next to the normalized CTIS values, so a report
 // converted from Nessus, Qualys, DefectDojo, SARIF, CycloneDX, OSV, CSAF or
 // OpenVEX loses nothing a receiver needs for deduplication, correlation or a
-// round trip. Every member is optional; a 1.3 report is a valid 1.4 report.
+// round trip. Every member is optional;
 //
 // The rule throughout: the normalized value goes in the existing CTIS member
 // (severity, status, cve_ids, ...), and the source's own value is kept beside
@@ -74,7 +74,7 @@ type NativeIdentity struct {
 
 	// Whether the scan that found it was authenticated on the target. Absent
 	// means unknown; false means the scan ran without credentials.
-	Credentialed *bool `json:"credentialed,omitempty"`
+	IsCredentialed *bool `json:"is_credentialed,omitempty"`
 
 	// Where the raw record can be found again: a URL into the source, or a
 	// locator inside the imported file. Informational; receivers never fetch
@@ -162,16 +162,14 @@ const (
 	ScoreSystemEPSS           ScoreSystem = "epss"
 	ScoreSystemEPSSPercentile ScoreSystem = "epss_percentile"
 	ScoreSystemSSVC           ScoreSystem = "ssvc"
-	// Tenable Vulnerability Priority Rating, 0-10.
-	ScoreSystemVPR ScoreSystem = "vpr"
-	// Any other vendor score (a Qualys detection score, a risk score);
-	// source names the vendor.
+	// A vendor's own score or rating (a priority rating, a detection
+	// score); source names the vendor as an open token.
 	ScoreSystemVendor ScoreSystem = "vendor"
 )
 
 // AllScoreSystems returns every valid score system.
 func AllScoreSystems() []ScoreSystem {
-	return []ScoreSystem{ScoreSystemCVSS, ScoreSystemEPSS, ScoreSystemEPSSPercentile, ScoreSystemSSVC, ScoreSystemVPR, ScoreSystemVendor}
+	return []ScoreSystem{ScoreSystemCVSS, ScoreSystemEPSS, ScoreSystemEPSSPercentile, ScoreSystemSSVC, ScoreSystemVendor}
 }
 
 // IsValid reports whether s is a recognized score system.
@@ -250,13 +248,13 @@ func (j VEXJustification) IsValid() bool { return inEnum(j, AllVEXJustifications
 // scanner may call a finding fixed that a receiver keeps open until verified.
 type SourceLifecycle struct {
 	// When the source first found it.
-	FirstFound *time.Time `json:"first_found,omitempty"`
+	FirstFoundAt *time.Time `json:"first_found_at,omitempty"`
 
 	// When the source last found it.
-	LastFound *time.Time `json:"last_found,omitempty"`
+	LastFoundAt *time.Time `json:"last_found_at,omitempty"`
 
 	// When the source last saw it fixed.
-	LastFixed *time.Time `json:"last_fixed,omitempty"`
+	LastFixedAt *time.Time `json:"last_fixed_at,omitempty"`
 
 	// How many times the source has found it.
 	TimesFound int `json:"times_found,omitempty"`
@@ -319,18 +317,25 @@ func (t VulnerabilityIDType) IsValid() bool { return inEnum(t, AllVulnerabilityI
 // SolutionType is the kind of fix a remediation is.
 type SolutionType string
 
+// The first five are the CSAF 2.0 remediation categories; config_change and
+// upgrade are CTIS refinements a CSAF export writes as mitigation and
+// vendor_fix.
 const (
-	SolutionTypePatch      SolutionType = "patch"
-	SolutionTypeUpgrade    SolutionType = "upgrade"
-	SolutionTypeConfig     SolutionType = "config"
-	SolutionTypeWorkaround SolutionType = "workaround"
-	SolutionTypeMitigation SolutionType = "mitigation"
-	SolutionTypeNoFix      SolutionType = "no_fix"
+	SolutionTypeVendorFix     SolutionType = "vendor_fix"
+	SolutionTypeWorkaround    SolutionType = "workaround"
+	SolutionTypeMitigation    SolutionType = "mitigation"
+	SolutionTypeNoFixPlanned  SolutionType = "no_fix_planned"
+	SolutionTypeNoneAvailable SolutionType = "none_available"
+	SolutionTypeConfigChange  SolutionType = "config_change"
+	SolutionTypeUpgrade       SolutionType = "upgrade"
 )
 
 // AllSolutionTypes returns every valid solution type.
 func AllSolutionTypes() []SolutionType {
-	return []SolutionType{SolutionTypePatch, SolutionTypeUpgrade, SolutionTypeConfig, SolutionTypeWorkaround, SolutionTypeMitigation, SolutionTypeNoFix}
+	return []SolutionType{
+		SolutionTypeVendorFix, SolutionTypeWorkaround, SolutionTypeMitigation, SolutionTypeNoFixPlanned,
+		SolutionTypeNoneAvailable, SolutionTypeConfigChange, SolutionTypeUpgrade,
+	}
 }
 
 // IsValid reports whether s is a recognized solution type.

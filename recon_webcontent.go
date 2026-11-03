@@ -5,18 +5,18 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
-// WebContentProperty is the reserved asset property that carries the
-// captures of a web content fetch (capability monitor.web_content@1): a list
-// of objects with the keys url, final_url, status_code, content_type, size,
-// sha256, truncated, body, body_truncated and fetched_at. A receiver takes it
-// only for assets the report may change and never stores it on the asset.
+// WebContentKey is the key under extensions["io.openctem"] of a web_origin
+// asset that carries the captures of a web content fetch: a list of objects
+// with the keys url, final_url, status_code, content_type, size, sha256,
+// truncated, body, body_truncated and fetched_at. A receiver that does not
+// know the namespace ignores it.
 //
 // It is an explicit input (LiveHostInput.WebContent), not part of the httpx
 // line allow-list: ParseHTTPXLine never keeps a response body.
-const WebContentProperty = "web_content"
+const WebContentKey = "web_content"
 
 // Bounds of a web content capture. A scanned server chooses every value, so
 // the converter applies them again whatever the producer claims.

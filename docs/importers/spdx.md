@@ -9,7 +9,7 @@ Generated from `importer/spec_spdx.go`; do not edit. Regenerate with `go test ./
 ## Rules
 
 - SPDX holds packages, not vulnerabilities: the result is one asset and its dependencies, no findings.
-- The asset is the described package (documentDescribes, else the DESCRIBES / DESCRIBED_BY relationship of the document): value is its purl, else name@version; type container for a CONTAINER purpose, host for OPERATING-SYSTEM, DEVICE, FIRMWARE, else repository. Without one, a repository asset named after the document holds the dependencies, and an issue says so. A document without packages creates no asset.
+- The asset is the described package (documentDescribes, else the DESCRIBES / DESCRIBED_BY relationship of the document): value is its purl, else name@version; a CONTAINER with an image reference is a container_image, a package with a purl is a package, anything else is unclassified. Without one, an unclassified asset named after the document holds the dependencies, and an issue says so. A document without packages creates no asset.
 - Every other package is a dependency: id is its SPDXID (a second package with a used SPDXID is skipped with an issue); licenses are licenseConcluded, else licenseDeclared, never NOASSERTION or NONE.
 - DEPENDS_ON and CONTAINS (and their inverses DEPENDENCY_OF, CONTAINED_BY) between packages become depends_on; from the described package they make the target a direct dependency. Other relationship types are ignored.
 - Suppliers and originators are kept only as organization names: a "Person:" value, and every e-mail address, is never read. Document creators are kept only when they are tools.

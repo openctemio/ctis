@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "generated": "Tue, 7 Oct 2026 10:00:00"
     }
@@ -12,21 +12,16 @@
   "tool": {
     "name": "zap",
     "version": "2.16.0",
-    "capabilities": [
+    "techniques": [
       "dast"
     ]
   },
   "assets": [
     {
-      "id": "site-https://shop.example.com",
-      "type": "website",
+      "id": "web_origin-https://shop.example.com",
+      "type": "web_origin",
       "value": "https://shop.example.com",
-      "name": "https://shop.example.com",
-      "properties": {
-        "host": "shop.example.com",
-        "port": "443",
-        "scheme": "https"
-      }
+      "name": "https://shop.example.com"
     }
   ],
   "findings": [
@@ -39,19 +34,24 @@
       "confidence": 60,
       "rule_id": "40018",
       "rule_name": "SQL Injection",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "GET https://shop.example.com/products/42?id=&sid= param=id attack=42' evidence=SQL syntax\nGET https://shop.example.com/products/77?id=&sid= param=id attack=77' evidence=SQL syntax",
+      "web": {
+        "url": "https://shop.example.com/products/42?id=&sid=",
+        "method": "GET",
+        "parameter": {
+          "location": "query",
+          "name": "id"
+        }
+      },
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "remediation": {
         "recommendation": "Use parameterised queries."
@@ -72,14 +72,14 @@
         "sourceid": "7",
         "wascid": "19"
       },
-      "web": {
-        "url": "https://shop.example.com/products/42?id=&sid=",
-        "method": "GET",
-        "parameter": {
-          "location": "query",
-          "name": "id"
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "GET https://shop.example.com/products/42?id=&sid= param=id attack=42' evidence=SQL syntax\nGET https://shop.example.com/products/77?id=&sid= param=id attack=77' evidence=SQL syntax"
         }
-      }
+      ]
     },
     {
       "type": "vulnerability",
@@ -90,19 +90,24 @@
       "confidence": 60,
       "rule_id": "40018",
       "rule_name": "SQL Injection",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "GET https://shop.example.com/products/42?sort= param=sort attack=name' evidence=SQL syntax",
+      "web": {
+        "url": "https://shop.example.com/products/42?sort=",
+        "method": "GET",
+        "parameter": {
+          "location": "query",
+          "name": "sort"
+        }
+      },
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "remediation": {
         "recommendation": "Use parameterised queries."
@@ -123,14 +128,14 @@
         "sourceid": "7",
         "wascid": "19"
       },
-      "web": {
-        "url": "https://shop.example.com/products/42?sort=",
-        "method": "GET",
-        "parameter": {
-          "location": "query",
-          "name": "sort"
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "GET https://shop.example.com/products/42?sort= param=sort attack=name' evidence=SQL syntax"
         }
-      }
+      ]
     },
     {
       "type": "vulnerability",
@@ -141,19 +146,24 @@
       "confidence": 60,
       "rule_id": "40018",
       "rule_name": "SQL Injection",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "POST https://shop.example.com/cart param=qty attack=1 OR 1=1 evidence=SQL syntax\nPOST https://shop.example.com/cart param=qty attack=1 AND 1=2 evidence=SQL syntax",
+      "web": {
+        "url": "https://shop.example.com/cart",
+        "method": "POST",
+        "parameter": {
+          "location": "form",
+          "name": "qty"
+        }
+      },
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "remediation": {
         "recommendation": "Use parameterised queries."
@@ -174,14 +184,14 @@
         "sourceid": "7",
         "wascid": "19"
       },
-      "web": {
-        "url": "https://shop.example.com/cart",
-        "method": "POST",
-        "parameter": {
-          "location": "form",
-          "name": "qty"
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "POST https://shop.example.com/cart param=qty attack=1 OR 1=1 evidence=SQL syntax\nPOST https://shop.example.com/cart param=qty attack=1 AND 1=2 evidence=SQL syntax"
         }
-      }
+      ]
     }
   ]
 }

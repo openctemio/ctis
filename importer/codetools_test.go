@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 func TestDetect_CodeFormats(t *testing.T) {
@@ -251,18 +251,20 @@ func TestNuclei_LinesAreIsolated(t *testing.T) {
 }
 
 func TestLeaks_Helpers(t *testing.T) {
-	if fingerprintMask("short") != "****" || fingerprintMask("fake_tok_0123456789abcdefghijklmn") != "fake****klmn" {
-		t.Fatalf("fingerprintMask = %q", fingerprintMask("fake_tok_0123456789abcdefghijklmn"))
-	}
 	if got := maskIn("key=SECRETSECRETSECRET1 end", "SECRETSECRETSECRET1"); strings.Contains(got, "SECRETSECRETSECRET1") {
 		t.Fatalf("maskIn = %q", got)
 	}
 	// A source fingerprint that holds the secret is not used.
-	f, ok := leakFinding(&leakRecord{RuleID: "generic-api-key", File: "a", Secret: "abcdefghijklmnopqrstuvwxyz", Fingerprint: "x:abcdefghijklmnopqrstuvwxyz"}, "betterleaks")
-	if !ok || strings.Contains(f.Fingerprint, "abcdefghijklmnopqrstuvwxyz") {
-		t.Fatalf("fingerprint = %q", f.Fingerprint)
+	f, ok := leakFinding(&leakRecord{RuleID: "generic-api-key", File: "a", Secret: "abcdefghijklmnopqrstuvwxyz", Fingerprint: "x:abcdefghijklmnopqrstuvwxyz"}, "betterleaks", nil)
+	if !ok || f.Fingerprint != "" {
+		t.Fatalf("fingerprint = %q, want none without a key", f.Fingerprint)
 	}
-	if _, ok := leakFinding(&leakRecord{RuleID: "x"}, "betterleaks"); ok {
+	for k, v := range f.PartialFingerprints {
+		if strings.Contains(v, "abcdefghijklmnopqrstuvwxyz") {
+			t.Fatalf("partial fingerprint %s holds the secret", k)
+		}
+	}
+	if _, ok := leakFinding(&leakRecord{RuleID: "x"}, "betterleaks", nil); ok {
 		t.Fatal("record without File accepted")
 	}
 	for rule, want := range map[string]string{"private-key": "private_key", "ssh-rsa": "ssh_key", "jwt-token": "jwt", "aws-x": "aws_key", "gcp-x": "gcp_key", "azure-x": "azure_key", "db-password": "password", "slack-token": "token", "generic-api-key": "api_key", "tls-cert": "certificate", "other": "generic_secret"} {

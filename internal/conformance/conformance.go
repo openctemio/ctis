@@ -1,19 +1,22 @@
-// Package conformance runs the CTIS conformance vectors (the conformance/
-// directory) against this implementation. The same vectors let any other
-// implementation check itself: they are plain JSON, see conformance/README.md.
+// Package conformance runs the CTIS conformance vectors (conformance/v2)
+// against this implementation. The same vectors let any other implementation
+// check itself: they are plain JSON, see conformance/README.md.
 package conformance
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
-	"github.com/openctemio/ctis/internal/validatedoc"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
+	"github.com/openctemio/ctis/v2/internal/validatedoc"
 )
 
 // Result is the outcome of one vector.
@@ -23,8 +26,9 @@ type Result struct {
 	Err   string // empty when the vector passed
 }
 
-// Run executes every vector under dir and returns one Result per vector. It
-// returns an error only when dir cannot be read at all.
+// Run executes every vector under dir (a conformance/v2 directory) and
+// returns one Result per vector. It returns an error only when dir cannot be
+// read at all.
 func Run(dir string) ([]Result, error) {
 	if _, err := os.Stat(dir); err != nil {
 		return nil, err
@@ -49,6 +53,8 @@ func Run(dir string) ([]Result, error) {
 	runLocationKey(dir, add)
 	runPreferredID(dir, add)
 	runFingerprint(dir, add)
+	runSecretDigest(dir, add)
+	runCorrelation(dir, add)
 	runDocuments(dir, add)
 	return out, nil
 }
@@ -71,33 +77,147 @@ func load(path string, v any) error {
 	return json.Unmarshal(raw, v)
 }
 
+// strict decodes raw into v with unknown members refused, so a vector that
+// uses a member name the implementation does not know fails loudly.
+func strict(raw json.RawMessage, v any) error {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	return dec.Decode(v)
+}
+
 func mismatch(got, want string) error {
 	return fmt.Errorf("got %q, want %q", got, want)
 }
 
+// Canonical applies a canonical-form function named by a vector file to the
+// vector's input and returns the result (a string, or an object for
+// CanonicalPurl).
+func Canonical(fn string, in json.RawMessage) (any, error) {
+	var s string
+	str := func() (string, error) {
+		if err := json.Unmarshal(in, &s); err != nil {
+			return "", fmt.Errorf("%s: input is not a string: %s", fn, in)
+		}
+		return s, nil
+	}
+	one := func(f func(string) (string, error)) (any, error) {
+		v, err := str()
+		if err != nil {
+			return nil, err
+		}
+		return f(v)
+	}
+	switch fn {
+	case "CanonicalDomain":
+		return one(ctis.CanonicalDomain)
+	case "CanonicalIP":
+		return one(ctis.CanonicalIP)
+	case "CanonicalCIDR":
+		return one(ctis.CanonicalCIDR)
+	case "CanonicalOrigin":
+		return one(ctis.CanonicalOrigin)
+	case "CanonicalURL":
+		return one(ctis.CanonicalURL)
+	case "CanonicalCPE":
+		return one(ctis.CanonicalCPE)
+	case "CanonicalARN":
+		return one(ctis.CanonicalARN)
+	case "CanonicalAzureResourceID":
+		return one(ctis.CanonicalAzureResourceID)
+	case "CanonicalGCPResourceName":
+		return one(ctis.CanonicalGCPResourceName)
+	case "CanonicalImage":
+		return one(ctis.CanonicalImage)
+	case "CanonicalCertificateFingerprint":
+		return one(ctis.CanonicalCertificateFingerprint)
+	case "CanonicalRepository":
+		return one(ctis.CanonicalRepository)
+	case "CanonicalPurl":
+		v, err := str()
+		if err != nil {
+			return nil, err
+		}
+		id, ver, err := ctis.CanonicalPurl(v)
+		return map[string]string{"identity": id, "version": ver}, err
+	case "CanonicalService":
+		var v struct {
+			Host      string `json:"host"`
+			Port      int    `json:"port"`
+			Transport string `json:"transport"`
+		}
+		if err := strict(in, &v); err != nil {
+			return nil, err
+		}
+		return ctis.CanonicalService(v.Host, v.Port, v.Transport)
+	case "CanonicalAssetValue":
+		var v struct {
+			Type  ctis.AssetType `json:"type"`
+			Value string         `json:"value"`
+		}
+		if err := strict(in, &v); err != nil {
+			return nil, err
+		}
+		return ctis.CanonicalAssetValue(v.Type, v.Value)
+	case "AssetKey":
+		var v struct {
+			Type  ctis.AssetType `json:"type"`
+			Value string         `json:"value"`
+		}
+		if err := strict(in, &v); err != nil {
+			return nil, err
+		}
+		return ctis.AssetKey(v.Type, v.Value), nil
+	}
+	return nil, fmt.Errorf("unknown function %q", fn)
+}
+
+// errNoError is the failure of a vector that expects an error.
+var errNoError = errors.New("expected an error")
+
 func runCanonical(dir, file string, add adder) {
 	suite := rel(dir, file)
 	var f struct {
-		Cases []struct {
-			Type     string `json:"type"`
-			Input    string `json:"input"`
-			Expected string `json:"expected"`
-		} `json:"cases"`
+		Function string `json:"function"`
+		Vectors  []struct {
+			Function string          `json:"function"`
+			Input    json.RawMessage `json:"input"`
+			Output   json.RawMessage `json:"output"`
+			Error    bool            `json:"error"`
+		} `json:"vectors"`
 	}
 	if err := load(file, &f); err != nil {
 		add(suite, "load", err)
 		return
 	}
-	if len(f.Cases) == 0 {
-		add(suite, "cases", fmt.Errorf("no cases"))
+	if len(f.Vectors) == 0 {
+		add(suite, "vectors", fmt.Errorf("no vectors"))
 	}
-	for _, c := range f.Cases {
-		got := ctis.NormalizeAssetName(ctis.AssetType(c.Type), c.Input)
-		var err error
-		if got != c.Expected {
-			err = mismatch(got, c.Expected)
+	for i, v := range f.Vectors {
+		fn := v.Function
+		if fn == "" {
+			fn = f.Function
 		}
-		add(suite, c.Type+" "+c.Input, err)
+		name := fmt.Sprintf("%d %s %s", i, fn, v.Input)
+		got, err := Canonical(fn, v.Input)
+		switch {
+		case v.Error:
+			if err == nil {
+				err = fmt.Errorf("%w, got %v", errNoError, got)
+			} else {
+				err = nil
+			}
+		case err == nil:
+			gotJSON, _ := json.Marshal(got)
+			var a, b any
+			_ = json.Unmarshal(gotJSON, &a)
+			_ = json.Unmarshal(v.Output, &b)
+			ga, _ := json.Marshal(a)
+			gb, _ := json.Marshal(b)
+			if !bytes.Equal(ga, gb) {
+				err = mismatch(string(ga), string(gb))
+			}
+		}
+		add(suite, name, err)
 	}
 }
 
@@ -105,20 +225,22 @@ func runLocationKey(dir string, add adder) {
 	const suite = "location-key.json"
 	var f struct {
 		Cases []struct {
-			Name     string       `json:"name"`
-			Finding  ctis.Finding `json:"finding"`
-			Expected string       `json:"expected"`
+			Name     string          `json:"name"`
+			Finding  json.RawMessage `json:"finding"`
+			Expected string          `json:"expected"`
 		} `json:"cases"`
 	}
 	if err := load(filepath.Join(dir, suite), &f); err != nil {
 		add(suite, "load", err)
 		return
 	}
-	for i := range f.Cases {
-		c := &f.Cases[i]
-		var err error
-		if got := ctis.LocationKey(&c.Finding); got != c.Expected {
-			err = mismatch(got, c.Expected)
+	for _, c := range f.Cases {
+		var fi ctis.Finding
+		err := strict(c.Finding, &fi)
+		if err == nil {
+			if got := ctis.LocationKey(&fi); got != c.Expected {
+				err = mismatch(got, c.Expected)
+			}
 		}
 		add(suite, c.Name, err)
 	}
@@ -128,8 +250,8 @@ func runPreferredID(dir string, add adder) {
 	const suite = "preferred-id.json"
 	var f struct {
 		Cases []struct {
-			Name          string                    `json:"name"`
-			Vulnerability ctis.VulnerabilityDetails `json:"vulnerability"`
+			Name          string          `json:"name"`
+			Vulnerability json.RawMessage `json:"vulnerability"`
 			Expected      *struct {
 				Type string `json:"type"`
 				ID   string `json:"id"`
@@ -142,7 +264,12 @@ func runPreferredID(dir string, add adder) {
 	}
 	for i := range f.Cases {
 		c := &f.Cases[i]
-		got, ok := ctis.PreferredVulnerabilityID(&c.Vulnerability)
+		var v ctis.VulnerabilityDetails
+		if err := strict(c.Vulnerability, &v); err != nil {
+			add(suite, c.Name, err)
+			continue
+		}
+		got, ok := ctis.PreferredVulnerabilityID(&v)
 		var err error
 		switch {
 		case c.Expected == nil && ok:
@@ -157,56 +284,100 @@ func runPreferredID(dir string, add adder) {
 }
 
 func runFingerprint(dir string, add adder) {
-	const suite = "fingerprint.json"
+	const suite = "fingerprint/fingerprint.json"
 	var f struct {
-		Cases []struct {
-			Name  string `json:"name"`
-			Type  string `json:"type"`
-			Input struct {
-				RuleID            string `json:"rule_id"`
-				FilePath          string `json:"file_path"`
-				Message           string `json:"message"`
-				StartLine         int    `json:"start_line"`
-				EndLine           int    `json:"end_line"`
-				PackageName       string `json:"package_name"`
-				PackageVersion    string `json:"package_version"`
-				VulnerabilityID   string `json:"vulnerability_id"`
-				Snippet           string `json:"snippet"`
-				LogicalLocation   string `json:"logical_location"`
-				SecretValue       string `json:"secret_value"`
-				ResourceType      string `json:"resource_type"`
-				ResourceName      string `json:"resource_name"`
-				TargetHost        string `json:"target_host"`
-				TargetPath        string `json:"target_path"`
-				Parameter         string `json:"parameter"`
-				ImageTarget       string `json:"image_target"`
-				ContractAddress   string `json:"contract_address"`
-				ChainID           int    `json:"chain_id"`
-				SWCID             string `json:"swc_id"`
-				FunctionSignature string `json:"function_signature"`
-			} `json:"input"`
-			Expected string `json:"expected"`
+		Recipe string `json:"recipe"`
+		Cases  []struct {
+			Name     string          `json:"name"`
+			Type     string          `json:"type"`
+			Input    json.RawMessage `json:"input"`
+			Parts    []string        `json:"parts"`
+			Expected string          `json:"expected"`
+			Error    bool            `json:"error"`
 		} `json:"cases"`
 	}
-	if err := load(filepath.Join(dir, suite), &f); err != nil {
+	if err := load(filepath.Join(dir, filepath.FromSlash(suite)), &f); err != nil {
 		add(suite, "load", err)
 		return
 	}
 	for _, c := range f.Cases {
-		in := fingerprint.Input{
-			Type: fingerprint.Type(c.Type), RuleID: c.Input.RuleID, FilePath: c.Input.FilePath,
-			Message: c.Input.Message, StartLine: c.Input.StartLine, EndLine: c.Input.EndLine,
-			PackageName: c.Input.PackageName, PackageVersion: c.Input.PackageVersion,
-			VulnerabilityID: c.Input.VulnerabilityID, Snippet: c.Input.Snippet,
-			LogicalLocation: c.Input.LogicalLocation, SecretValue: c.Input.SecretValue,
-			ResourceType: c.Input.ResourceType, ResourceName: c.Input.ResourceName,
-			TargetHost: c.Input.TargetHost, TargetPath: c.Input.TargetPath, Parameter: c.Input.Parameter,
-			ImageTarget: c.Input.ImageTarget, ContractAddress: c.Input.ContractAddress,
-			ChainID: c.Input.ChainID, SWCID: c.Input.SWCID, FunctionSignature: c.Input.FunctionSignature,
+		var in fingerprint.V2Input
+		if err := strict(c.Input, &in); err != nil {
+			add(suite, c.Name, err)
+			continue
 		}
+		recipe, parts, perr := fingerprint.V2Parts(in)
+		got, gerr := fingerprint.V2Generate(in)
 		var err error
-		if got := fingerprint.Generate(in); got != c.Expected {
+		switch {
+		case c.Error:
+			if perr == nil || gerr == nil {
+				err = errNoError
+			}
+		case perr != nil || gerr != nil:
+			err = errors.Join(perr, gerr)
+		case recipe != c.Type || strings.Join(parts, "\x00") != strings.Join(c.Parts, "\x00") || len(parts) != len(c.Parts):
+			err = fmt.Errorf("parts %q, want %q", parts, c.Parts)
+		case got != c.Expected:
 			err = mismatch(got, c.Expected)
+		}
+		add(suite, c.Name, err)
+	}
+}
+
+func runSecretDigest(dir string, add adder) {
+	const suite = "fingerprint/secret-digest.json"
+	var f struct {
+		KeyHex string `json:"key_hex"`
+		Cases  []struct {
+			Secret   string `json:"secret"`
+			Expected string `json:"expected"`
+		} `json:"cases"`
+	}
+	if err := load(filepath.Join(dir, filepath.FromSlash(suite)), &f); err != nil {
+		add(suite, "load", err)
+		return
+	}
+	key, err := hex.DecodeString(f.KeyHex)
+	if err != nil {
+		add(suite, "key", err)
+		return
+	}
+	for i, c := range f.Cases {
+		d, err := fingerprint.NewSecretDigest(key, []byte(c.Secret))
+		if err == nil && d.String() != c.Expected {
+			err = mismatch(d.String(), c.Expected)
+		}
+		add(suite, fmt.Sprintf("%d", i), err)
+	}
+}
+
+func runCorrelation(dir string, add adder) {
+	const suite = "correlation/correlation.json"
+	var f struct {
+		Cases []struct {
+			Name        string          `json:"name"`
+			AssetKey    string          `json:"asset_key"`
+			Tool        string          `json:"tool"`
+			Finding     json.RawMessage `json:"finding"`
+			LocationKey string          `json:"location_key"`
+			Expected    string          `json:"expected"`
+		} `json:"cases"`
+	}
+	if err := load(filepath.Join(dir, filepath.FromSlash(suite)), &f); err != nil {
+		add(suite, "load", err)
+		return
+	}
+	for _, c := range f.Cases {
+		var fi ctis.Finding
+		err := strict(c.Finding, &fi)
+		if err == nil {
+			switch {
+			case ctis.LocationKey(&fi) != c.LocationKey:
+				err = fmt.Errorf("location key %q, want %q", ctis.LocationKey(&fi), c.LocationKey)
+			case ctis.CorrelationKeyForTool(c.AssetKey, c.Tool, &fi) != c.Expected:
+				err = mismatch(ctis.CorrelationKeyForTool(c.AssetKey, c.Tool, &fi), c.Expected)
+			}
 		}
 		add(suite, c.Name, err)
 	}
@@ -221,7 +392,7 @@ type manifestEntry struct {
 	Category string `json:"category,omitempty"`
 	Error    string `json:"error,omitempty"`
 	// SchemaLevel is false when only semantic validation (Report.Validate)
-	// refuses the document and schemas/v1 alone accepts it.
+	// refuses the document and schemas/v2 alone accepts it.
 	SchemaLevel *bool `json:"schema_level,omitempty"`
 }
 

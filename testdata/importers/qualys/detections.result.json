@@ -2,7 +2,7 @@
   "format": "qualys",
   "stats": {
     "records": 5,
-    "assets": 2,
+    "assets": 5,
     "findings": 5,
     "components": 0,
     "statements": 0,

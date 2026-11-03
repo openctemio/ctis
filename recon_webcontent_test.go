@@ -20,11 +20,12 @@ func convertCapture(t *testing.T, caps ...WebCaptureInput) any {
 		t.Fatal(err)
 	}
 	for _, a := range r.Assets {
-		if a.Type == AssetTypeHTTPService {
-			return a.Properties[WebContentProperty]
+		if a.Type == AssetTypeWebOrigin {
+			v, _ := a.Extensions.Get(OpenCTEMNamespace, WebContentKey)
+			return v
 		}
 	}
-	t.Fatal("no http_service asset")
+	t.Fatal("no web_origin asset")
 	return nil
 }
 

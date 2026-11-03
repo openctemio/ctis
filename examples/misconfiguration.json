@@ -1,7 +1,18 @@
 {
-  "version": "1.3",
-  "metadata": {"timestamp": "2026-10-02T10:00:00Z", "source_type": "collector", "scope": {"name": "prod", "type": "cloud_account", "includes": ["123456789012"]}},
-  "tool": {"name": "prowler", "version": "4.5.0", "capabilities": ["cspm", "misconfiguration"]},
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7883-bbd4-25155d67706d",
+    "generated_at": "2026-10-02T10:00:00Z",
+    "channel": "collector"
+  },
+  "tool": {
+    "name": "prowler",
+    "version": "4.5.0",
+    "techniques": [
+      "cspm",
+      "iac"
+    ]
+  },
   "assets": [
     {
       "id": "bucket",
@@ -9,9 +20,29 @@
       "value": "arn:aws:s3:::example-shop-uploads",
       "name": "example-shop-uploads",
       "is_internet_accessible": true,
-      "identifiers": {"cloud_resource_id": "arn:aws:s3:::example-shop-uploads"},
-      "technical": {"cloud": {"provider": "aws", "account_id": "123456789012", "region": "eu-west-1", "resource_type": "s3", "resource_id": "example-shop-uploads", "arn": "arn:aws:s3:::example-shop-uploads", "tags": {"team": "shop"}}},
-      "compliance": {"frameworks": ["PCI-DSS"], "data_classification": "confidential", "pii_exposed": true}
+      "identifiers": {
+        "cloud_resource_id": "arn:aws:s3:::example-shop-uploads"
+      },
+      "technical": {
+        "cloud": {
+          "provider": "aws",
+          "account_id": "123456789012",
+          "region": "eu-west-1",
+          "resource_type": "s3",
+          "resource_id": "example-shop-uploads",
+          "arn": "arn:aws:s3:::example-shop-uploads",
+          "tags": {
+            "team": "shop"
+          }
+        }
+      },
+      "compliance": {
+        "frameworks": [
+          "pci_dss"
+        ],
+        "data_classification": "confidential",
+        "has_pii": true
+      }
     }
   ],
   "findings": [
@@ -32,9 +63,16 @@
         "expected": "BlockPublicAcls=true",
         "actual": "BlockPublicAcls=false"
       },
-      "exposure": {"vector": "network", "is_network_accessible": true, "is_internet_accessible": true},
-      "business_impact": {"data_exposure_risk": "high", "compliance_impact": ["PCI-DSS"]},
-      "remediation_context": {"type": "config_change", "estimated_minutes": 15, "complexity": "simple", "remedy_available": true}
+      "exposure": {
+        "vector": "network",
+        "is_network_accessible": true,
+        "is_internet_accessible": true
+      },
+      "remediation": {
+        "estimated_minutes": 15,
+        "effort": "low",
+        "is_fix_available": true
+      }
     }
   ]
 }

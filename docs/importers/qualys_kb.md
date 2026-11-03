@@ -10,8 +10,8 @@ Generated from `importer/spec_qualys_kb.go`; do not edit. Regenerate with `go te
 
 - Read only as the companion of a detection file. Each VULN enriches every finding of its QID; entries of other QIDs are skipped without being kept.
 - DIAGNOSIS, CONSEQUENCE and SOLUTION are light HTML: line-break and paragraph tags become newlines and every other tag is dropped, so the text is plain text.
-- CVSS v3 and v2 go to finding.scores with their source attribute (service, nvd, ...); the legacy vulnerability.cvss_* members take v3, else v2.
-- THREAT_INTELLIGENCE labels become tags; exploit-related ones (Exploit_Public, Easy_Exploit, Active_Attacks, Malware, Exploit_Kit, Wormable, Ransomware, Cisa_Known_Exploited_Vulns) set exploit_available, and Cisa_Known_Exploited_Vulns sets in_cisa_kev.
+- CVSS v3 and v2 go to finding.scores with their source attribute (service, nvd, ...).
+- THREAT_INTELLIGENCE labels become tags; exploit-related ones (Exploit_Public, Easy_Exploit, Active_Attacks, Malware, Exploit_Kit, Wormable, Ransomware, Cisa_Known_Exploited_Vulns) become vulnerability.threat_signals (public_exploit, exploited_in_wild, weaponized, ransomware_use, kev).
 
 ## Fields
 
@@ -38,7 +38,7 @@ Generated from `importer/spec_qualys_kb.go`; do not edit. Regenerate with `go te
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/BUGTRAQ_LIST/BUGTRAQ` | (container) |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/BUGTRAQ_LIST/BUGTRAQ/ID` | `findings[].vulnerability.ids[] (vendor, source bid)` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/BUGTRAQ_LIST/BUGTRAQ/URL` | `findings[].references` |  |
-| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/PATCHABLE` | `findings[].remediation.fix_available, solution_type patch, source_extra.patchable` |  |
+| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/PATCHABLE` | `findings[].remediation.is_fix_available, solution_type vendor_fix, source_extra.patchable` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/PATCH_PUBLISHED_DATE` | `findings[].remediation.patch_published_at` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/SOFTWARE_LIST` | (container) |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/SOFTWARE_LIST/SOFTWARE` | (container) |  |
@@ -50,7 +50,7 @@ Generated from `importer/spec_qualys_kb.go`; do not edit. Regenerate with `go te
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/VENDOR_REFERENCE_LIST/VENDOR_REFERENCE/URL` | `findings[].remediation.advisories[].url` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVE_LIST` | (container) |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVE_LIST/CVE` | (container) |  |
-| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVE_LIST/CVE/ID` | `findings[].vulnerability.cve_id, cve_ids, ids[]` |  |
+| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVE_LIST/CVE/ID` | `findings[].vulnerability.ids[] (cve)` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVE_LIST/CVE/URL` | `findings[].references` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/DIAGNOSIS` | `findings[].description` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/DIAGNOSIS_COMMENT` | `findings[].source_extra.diagnosis_comment` |  |
@@ -68,7 +68,7 @@ Generated from `importer/spec_qualys_kb.go`; do not edit. Regenerate with `go te
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC` | (container) |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC/SRC_NAME` | `findings[].source_extra.exploits` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC/EXPLT_LIST` | (container) |  |
-| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC/EXPLT_LIST/EXPLT` | `findings[].vulnerability.exploit_available` |  |
+| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC/EXPLT_LIST/EXPLT` | `findings[].vulnerability.threat_signals[]` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC/EXPLT_LIST/EXPLT/REF` | `findings[].source_extra.exploits` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC/EXPLT_LIST/EXPLT/DESC` | `findings[].source_extra.exploits (when no REF)` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/EXPLOITS/EXPLT_SRC/EXPLT_LIST/EXPLT/LINK` | `findings[].references` |  |
@@ -84,7 +84,7 @@ Generated from `importer/spec_qualys_kb.go`; do not edit. Regenerate with `go te
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/MALWARE/MW_SRC/MW_LIST/MW_INFO/MW_ALIAS` |  | malware aliases; the id is kept |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CORRELATION/MALWARE/MW_SRC/MW_LIST/MW_INFO/MW_LINK` |  | link to a malware encyclopedia page |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS` | (container) |  |
-| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS/BASE` | `findings[].scores[] (cvss 2.0), vulnerability.cvss_score (when no v3)` |  |
+| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS/BASE` | `findings[].scores[] (cvss 2.0), scores[] (cvss)` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS/BASE/@source` | `findings[].scores[].source` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS/TEMPORAL` | `findings[].source_extra.cvss2_temporal` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS/VECTOR_STRING` | `findings[].scores[].vector (cvss 2.0)` |  |
@@ -97,7 +97,7 @@ Generated from `importer/spec_qualys_kb.go`; do not edit. Regenerate with `go te
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS/REMEDIATION_LEVEL` |  | temporal component, kept in the temporal score |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS/REPORT_CONFIDENCE` |  | temporal component, kept in the temporal score |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS_V3` | (container) |  |
-| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS_V3/BASE` | `findings[].scores[] (cvss 3.x), vulnerability.cvss_score` |  |
+| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS_V3/BASE` | `findings[].scores[] (cvss 3.x), scores[] (cvss)` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS_V3/BASE/@source` | `findings[].scores[].source` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS_V3/TEMPORAL` | `findings[].source_extra.cvss3_temporal` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/CVSS_V3/VECTOR_STRING` | `findings[].scores[].vector (cvss 3.x), the version` |  |
@@ -116,7 +116,7 @@ Generated from `importer/spec_qualys_kb.go`; do not edit. Regenerate with `go te
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/PCI_REASONS` | (container) |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/PCI_REASONS/PCI_REASON` | `findings[].source_extra.pci_reasons` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/THREAT_INTELLIGENCE` | (container) |  |
-| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/THREAT_INTELLIGENCE/THREAT_INTEL[*]` | `findings[].tags, vulnerability.exploit_available, in_cisa_kev` |  |
+| `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/THREAT_INTELLIGENCE/THREAT_INTEL[*]` | `findings[].tags, vulnerability.threat_signals[]` |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/THREAT_INTELLIGENCE/THREAT_INTEL[*]/@id` | (container) |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/DISCOVERY` | (container) |  |
 | `/KNOWLEDGE_BASE_VULN_LIST_OUTPUT/RESPONSE/VULN_LIST/VULN/DISCOVERY/REMOTE` | `findings[].source_extra.discovery_remote` |  |

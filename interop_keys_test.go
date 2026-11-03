@@ -19,7 +19,7 @@ func TestLocationKeyWeb(t *testing.T) {
 		}, "url:https://example.com/a"},
 		{"package wins over web", Finding{
 			Web:           &WebLocation{URL: "https://example.com/a"},
-			Vulnerability: &VulnerabilityDetails{Package: "lodash", Ecosystem: "npm"},
+			Vulnerability: &VulnerabilityDetails{PackageName: "lodash", PURL: "pkg:npm/lodash@4.17.20"},
 		}, "pkg:npm/lodash"},
 		{"unusable web url falls back to location", Finding{
 			Web:      &WebLocation{URL: "ftp://example.com/a"},
@@ -38,7 +38,13 @@ func TestLocationKeyWeb(t *testing.T) {
 }
 
 func TestPreferredVulnerabilityIDNumeric(t *testing.T) {
-	cve := func(ids ...string) *VulnerabilityDetails { return &VulnerabilityDetails{CVEIDs: ids} }
+	cve := func(ids ...string) *VulnerabilityDetails {
+		v := &VulnerabilityDetails{}
+		for _, id := range ids {
+			v.IDs = append(v.IDs, VulnerabilityID{Type: VulnerabilityIDCVE, ID: id})
+		}
+		return v
+	}
 	cases := []struct {
 		name string
 		v    *VulnerabilityDetails
@@ -71,29 +77,13 @@ func TestCVELessMalformed(t *testing.T) {
 	}
 }
 
-func TestLocationKeyEcosystemToPURLType(t *testing.T) {
-	cases := map[string]string{
-		"pip": "pypi", "PyPI": "pypi", "python": "pypi",
-		"go": "golang", "golang": "golang",
-		"npm": "npm", "node": "npm",
-		"maven": "maven", "java": "maven",
-		"nuget": "nuget", "gem": "gem", "rubygems": "gem",
-		"cargo": "cargo", "crates.io": "cargo", "rust": "cargo",
-		"composer": "composer", "packagist": "composer",
-		"HEX":        "hex",
-		"unheard-of": "unheard-of",
+func TestLocationKeyNeedsPURL(t *testing.T) {
+	// The ecosystem is the purl type; a package name alone has no key.
+	if got := LocationKey(&Finding{Vulnerability: &VulnerabilityDetails{PackageName: "requests"}}); got != "" {
+		t.Errorf("name only: %q", got)
 	}
-	for eco, typ := range cases {
-		f := &Finding{Vulnerability: &VulnerabilityDetails{Package: "p", Ecosystem: eco}}
-		if got, want := LocationKey(f), "pkg:"+typ+"/p"; got != want {
-			t.Errorf("ecosystem %q: %q, want %q", eco, got, want)
-		}
-	}
-	// One package, one key, whichever way it is named.
-	a := LocationKey(&Finding{Vulnerability: &VulnerabilityDetails{Package: "requests", Ecosystem: "pip"}})
-	b := LocationKey(&Finding{Vulnerability: &VulnerabilityDetails{Package: "requests", PURL: "pkg:pypi/requests@2.0"}})
-	if a != b {
-		t.Errorf("pip and purl keys differ: %q vs %q", a, b)
+	if got := LocationKey(&Finding{Vulnerability: &VulnerabilityDetails{PackageName: "requests", PURL: "pkg:pypi/requests@2.0"}}); got != "pkg:pypi/requests" {
+		t.Errorf("purl: %q", got)
 	}
 }
 
@@ -103,13 +93,18 @@ func TestNormalizeAssetNameURLCase(t *testing.T) {
 		in   string
 		want string
 	}{
-		{AssetTypeHTTPService, "HTTPS://Example.COM:8443/", "https://example.com:8443"},
-		{AssetTypeHTTPService, "https://Example.com", "https://example.com"},
-		{AssetTypeDiscoveredURL, "https://Example.COM/Admin/Login?Next=/Home", "https://example.com/Admin/Login?Next=/Home"},
-		{AssetTypeDiscoveredURL, "https://Example.com?A=B", "https://example.com?A=B"},
-		{AssetTypeDiscoveredURL, "https://User:Pw@Example.com/P", "https://User:Pw@example.com/P"},
-		{AssetTypeDiscoveredURL, "https://[2001:DB8::1]:8080/X", "https://[2001:db8::1]:8080/X"},
-		{AssetTypeDiscoveredURL, "Example.com/Path/", "example.com/Path"},
+		{AssetTypeWebOrigin, "HTTPS://Example.COM:8443/", "https://example.com:8443"},
+		{AssetTypeWebOrigin, "https://Example.com", "https://example.com"},
+		{AssetTypeWebOrigin, "https://User:Pw@Example.com/P?x=1", "https://example.com"},
+		{AssetTypeWebOrigin, "https://[2001:DB8::1]:8080/X", "https://[2001:db8::1]:8080"},
+		{AssetTypeWebOrigin, "http://example.com:80/", "http://example.com"},
+		{AssetTypeRepository, "https://GitHub.com/Org/Repo.git", "github.com/org/repo"},
+		{AssetTypeRepository, "git@gitlab.com:Group/Sub/Proj.git", "gitlab.com/group/sub/proj"},
+		{AssetTypeRepository, "https://git.example.com/Team/App/", "git.example.com/Team/App"},
+		{AssetTypeService, "192.0.2.1:443/TCP", "192.0.2.1:443/tcp"},
+		{AssetTypeService, "[2001:DB8::1]:53/udp", "[2001:db8::1]:53/udp"},
+		{AssetTypeAutonomousSystem, "as64500", "AS64500"},
+		{AssetTypeHost, "WEB01.Example.com.", "web01.example.com"},
 	}
 	for _, c := range cases {
 		got := NormalizeAssetName(c.t, c.in)

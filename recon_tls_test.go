@@ -60,39 +60,29 @@ func TestLiveHostLeafCertificate(t *testing.T) {
 		t.Fatalf("want 1 certificate asset, got %d", len(certs))
 	}
 	c := certs[0]
-	if c.Value != testFPHex || c.Name != testFPHex || c.Properties["fingerprint"] != testFPHex {
-		t.Errorf("certificate identity = %q/%q/%v, want %s", c.Value, c.Name, c.Properties["fingerprint"], testFPHex)
-	}
 	ct := c.Technical.Certificate
+	if c.Value != testFPHex || ct == nil || ct.SHA256Fingerprint != testFPHex {
+		t.Errorf("certificate identity = %q/%+v, want %s", c.Value, ct, testFPHex)
+	}
 	if ct == nil || ct.NotAfter == nil || ct.NotBefore == nil || ct.SubjectCN != "example.com" || ct.IssuerOrg != "Let's Encrypt" {
 		t.Fatalf("certificate technical = %+v", ct)
 	}
-	if want := []string{"example.com", "www.example.com"}; strings.Join(ct.SANs, ",") != strings.Join(want, ",") {
-		t.Errorf("SANs = %v, want %v (lower-cased, de-duplicated)", ct.SANs, want)
-	}
-	if ct.Expired {
-		t.Error("a certificate valid for 60 more days is not expired")
+	if want := []string{"example.com", "www.example.com"}; strings.Join(ct.SubjectAltNames, ",") != strings.Join(want, ",") {
+		t.Errorf("SANs = %v, want %v (lower-cased, de-duplicated)", ct.SubjectAltNames, want)
 	}
 
-	var svc Asset
+	var origin Asset
 	for _, a := range r.Assets {
-		if a.Type == AssetTypeHTTPService {
-			svc = a
+		if a.Type == AssetTypeWebOrigin {
+			origin = a
 		}
 	}
-	if len(svc.RelatedAssets) != 1 || svc.RelatedAssets[0] != c.ID || svc.Properties["tls_fingerprint"] != testFPHex {
-		t.Errorf("service not linked to its certificate: related %v, tls_fingerprint %v", svc.RelatedAssets, svc.Properties["tls_fingerprint"])
+	if relationshipsOf(r, RelServesCertificate)[testFPHex] != origin.Value {
+		t.Errorf("origin not linked to its certificate: %+v", r.Relationships)
 	}
-	for k, want := range map[string]any{
-		"favicon_mmh3": "-1840324437", "asn": "AS13335", "asn_org": "CLOUDFLARENET", "asn_country": "US",
-		"cdn": "cloudflare", "cdn_type": "waf", "waf": "cloudflare", "hosted_by": "cloudflare",
-	} {
-		if svc.Properties[k] != want {
-			t.Errorf("service %s = %v, want %v", k, svc.Properties[k], want)
-		}
-	}
-	if j, _ := svc.Properties["jarm"].(string); len(j) != 62 {
-		t.Errorf("jarm = %v", svc.Properties["jarm"])
+	h := origin.Technical.HTTP
+	if h.FaviconMMH3 != "-1840324437" || h.WAF != "cloudflare" || h.CDN != "" || len(h.JARM) != 62 {
+		t.Errorf("http = %+v", h)
 	}
 }
 
@@ -108,13 +98,13 @@ func TestLiveHostSharedCertificateOnce(t *testing.T) {
 		t.Fatalf("want 1 certificate asset, got %d", len(certs))
 	}
 	n := 0
-	for _, a := range r.Assets {
-		if a.Type == AssetTypeHTTPService && len(a.RelatedAssets) == 1 && a.RelatedAssets[0] == certs[0].ID {
+	for _, rel := range r.Relationships {
+		if rel.Type == RelServesCertificate && rel.ToRef == certs[0].ID {
 			n++
 		}
 	}
 	if n != 2 {
-		t.Errorf("%d services link the certificate, want 2", n)
+		t.Errorf("%d origins link the certificate, want 2", n)
 	}
 }
 
@@ -128,8 +118,8 @@ func TestLiveHostLeafWithoutFingerprint(t *testing.T) {
 		if n := len(certAssets(r)); n != 0 {
 			t.Errorf("fingerprint %q: %d certificate assets, want 0", fp, n)
 		}
-		if len(r.Assets[0].RelatedAssets) != 0 {
-			t.Errorf("fingerprint %q: service links %v", fp, r.Assets[0].RelatedAssets)
+		if len(r.Relationships) != 0 {
+			t.Errorf("fingerprint %q: relationships %v", fp, r.Relationships)
 		}
 	}
 }
@@ -163,14 +153,8 @@ func TestLiveHostLeafHostile(t *testing.T) {
 	if len(ct.SubjectCN) > maxCertNameLen || len(ct.SerialNumber) > maxSerialLen {
 		t.Errorf("unbounded names: cn %d bytes, serial %d bytes", len(ct.SubjectCN), len(ct.SerialNumber))
 	}
-	if len(ct.SANs) != maxCertSANs {
-		t.Errorf("SANs = %d, want capped at %d", len(ct.SANs), maxCertSANs)
-	}
-	if c.Properties["sans_truncated"] != 10_000-maxCertSANs {
-		t.Errorf("sans_truncated = %v, want %d", c.Properties["sans_truncated"], 10_000-maxCertSANs)
-	}
-	if !ct.Expired {
-		t.Error("a certificate past not_after is expired")
+	if len(ct.SubjectAltNames) != maxCertSANs {
+		t.Errorf("SANs = %d, want capped at %d", len(ct.SubjectAltNames), maxCertSANs)
 	}
 	out, _ := json.Marshal(r)
 	for _, bad := range []string{`\u001b`, `\u0000`, `\u0007`, `\n`} {
@@ -178,14 +162,9 @@ func TestLiveHostLeafHostile(t *testing.T) {
 			t.Errorf("control character %s in the report", bad)
 		}
 	}
-	svc := r.Assets[0]
-	for _, k := range []string{"favicon_mmh3", "jarm", "asn", "cdn_type", "waf"} {
-		if v, ok := svc.Properties[k]; ok {
-			t.Errorf("invalid %s kept: %v", k, v)
-		}
-	}
-	if cdn, _ := svc.Properties["cdn"].(string); len(cdn) > maxProviderLen {
-		t.Errorf("cdn %d bytes, want at most %d", len(cdn), maxProviderLen)
+	h := r.Assets[0].Technical.HTTP
+	if h.FaviconMMH3 != "" || h.JARM != "" || h.CDN != "" || h.WAF != "" {
+		t.Errorf("invalid values kept: %+v", h)
 	}
 }
 
@@ -201,25 +180,13 @@ func TestMergeKeepsCertificateLink(t *testing.T) {
 	if err := m.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	byID := map[string]Asset{}
-	for _, x := range m.Assets {
-		byID[x.ID] = x
-	}
-	for _, x := range m.Assets {
-		if x.Type != AssetTypeHTTPService {
-			continue
-		}
-		if len(x.RelatedAssets) != 1 {
-			t.Fatalf("%s: related %v", x.Value, x.RelatedAssets)
-		}
-		cert := byID[x.RelatedAssets[0]]
-		if cert.Type != AssetTypeCertificate || cert.Value != x.Properties["tls_fingerprint"] {
-			t.Errorf("%s links %q (%s), want its own certificate %v", x.Value, cert.Value, cert.Type, x.Properties["tls_fingerprint"])
-		}
+	serves := relationshipsOf(m, RelServesCertificate)
+	if serves[testFPHex] != "https://example.com" || serves[strings.Repeat("1", 64)] != "https://other.example.com" {
+		t.Errorf("certificate links: %v", serves)
 	}
 }
 
-// A live host's technologies are properties, never tags.
+// A live host's technologies are typed asset technologies, never tags.
 func TestLiveHostTechnologiesAreNotTags(t *testing.T) {
 	r, err := ConvertReconToCTIS(probeWithLeaf(LiveHostInput{
 		URL: "https://example.com", Host: "example.com", Scheme: "https", Port: 443, StatusCode: 200,
@@ -228,21 +195,13 @@ func TestLiveHostTechnologiesAreNotTags(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	found := false
 	for _, a := range r.Assets {
 		for _, tag := range a.Tags {
-			if tag == "HSTS" || tag == "Vercel" || tag == "Next.js:13.4.1" {
-				t.Fatalf("technology %q copied into tags of %s", tag, a.Value)
-			}
-		}
-		if v, ok := a.Properties["technologies"]; ok {
-			found = true
-			if fmt.Sprint(v) != "[HSTS Vercel Next.js:13.4.1]" {
-				t.Fatalf("technologies = %v", v)
-			}
+			t.Fatalf("tag %q on %s", tag, a.Value)
 		}
 	}
-	if !found {
-		t.Fatal("technologies property lost")
+	got := fmt.Sprint(r.Assets[0].Technologies)
+	if got != "[{HSTS   [] 0} {Vercel   [] 0} {Next.js 13.4.1  [] 0}]" {
+		t.Fatalf("technologies = %s", got)
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis/importer"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 // csvDoc is a CSV mapping with one finding rule over the columns title,
@@ -17,7 +17,7 @@ func csvDoc(csv string) string {
 	if csv != "" {
 		c = `"csv": ` + csv + `,`
 	}
-	return `{"apiVersion": "openctem.io/mapping/v1", "source": "csv", ` + c + `
+	return `{"apiVersion": "openctem.io/mapping/v2", "source": "csv", ` + c + `
 	  "records": [{"kind": "finding", "set": {"title": "/title", "severity": {"path": "/severity", "default": "low"}, "asset_value": "/asset", "description": "/note"}}]}`
 }
 
@@ -82,7 +82,7 @@ func TestCSVRefusals(t *testing.T) {
 }
 
 func TestCSVColumns(t *testing.T) {
-	m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v1", "source": "csv", "records": [{"kind": "finding", "set": {
+	m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v2", "source": "csv", "records": [{"kind": "finding", "set": {
 	  "title": "/title_2", "severity": {"const": "low"}, "description": "/column_2", "rule_id": "/a~1b"}}]}`)
 	r, st := apply(t, m, "title,,title,a/b,  \nfirst,second,third,ab,x\n", Options{Observe: true})
 	if len(r.Findings) != 1 {
@@ -189,7 +189,7 @@ func TestCSVHostile(t *testing.T) {
 	})
 
 	t.Run("extra cells and empty cells", func(t *testing.T) {
-		m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v1", "source": "csv", "records": [
+		m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v2", "source": "csv", "records": [
 		  {"when": {"path": "/asset", "exists": false}, "kind": "finding", "set": {"title": "/title", "severity": {"const": "low"}}}]}`)
 		r, st := apply(t, m, "title,asset\nA,   \nB,host,extra\n", Options{})
 		if len(r.Findings) != 1 || r.Findings[0].Title != "A" {
@@ -210,7 +210,7 @@ func TestCSVHostile(t *testing.T) {
 
 // xmlDoc is an XML mapping over <item> elements.
 func xmlDoc(each string) string {
-	return `{"apiVersion": "openctem.io/mapping/v1", "source": "xml", "each": "` + each + `",
+	return `{"apiVersion": "openctem.io/mapping/v2", "source": "xml", "each": "` + each + `",
 	  "records": [{"kind": "finding", "set": {"title": "/@name", "severity": {"path": "/sev", "first": true, "default": "low"}, "rule_id": "/rule/#text", "description": "/note"}}]}`
 }
 
@@ -319,7 +319,7 @@ func TestXMLRecords(t *testing.T) {
 		}
 	})
 	t.Run("index and list forms", func(t *testing.T) {
-		m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v1", "source": "xml", "each": "//item", "records": [{"kind": "finding", "set": {
+		m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v2", "source": "xml", "each": "//item", "records": [{"kind": "finding", "set": {
 		  "title": "/@name", "severity": {"const": "low"}, "rule_id": "/ref[0]", "tags": "/tag", "description": {"path": "/tag", "join": ","}}}]}`)
 		r, _ := apply(t, m, `<r><item name="a"><ref>only</ref><tag>x</tag><tag>y</tag></item><item name="b"><ref>r1</ref><ref>r2</ref><tag>z</tag></item></r>`, Options{})
 		if len(r.Findings) != 2 {
@@ -337,7 +337,7 @@ func TestXMLRecords(t *testing.T) {
 
 // JSON paths stay strict: the XML leniency does not leak into JSON records.
 func TestJSONPathsStayStrict(t *testing.T) {
-	m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": [{"kind": "finding", "set": {
+	m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "records": [{"kind": "finding", "set": {
 	  "title": {"path": "/name/#text", "default": "none"}, "severity": {"const": "low"}, "rule_id": {"path": "/obj/0", "default": "none"}, "description": {"path": "/list/x", "default": "none"}}}]}`)
 	r, _ := apply(t, m, `{"name": "a", "obj": {"k": "v"}, "list": [{"x": "1"}]}`, Options{})
 	f := r.Findings[0]
@@ -348,7 +348,7 @@ func TestJSONPathsStayStrict(t *testing.T) {
 
 func TestIdentity(t *testing.T) {
 	base := func(identity, set string) string {
-		return `{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "identity": ` + identity + `,
+		return `{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "identity": ` + identity + `,
 		  "records": [{"kind": "finding", "set": {"title": "/t", "severity": {"const": "low"}` + set + `}}]}`
 	}
 	refused := map[string][2]string{
@@ -371,11 +371,11 @@ func TestIdentity(t *testing.T) {
 		t.Fatalf("identity %v", m.Identity())
 	}
 	// An identity on an asset-only mapping is refused.
-	if _, err := Load([]byte(`{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "identity": ["title"], "records": [` + assetRule + `]}`)); err == nil {
+	if _, err := Load([]byte(`{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "identity": ["title"], "records": [` + assetRule + `]}`)); err == nil {
 		t.Error("identity without a finding rule loaded")
 	}
 	// A finding whose identity members are all empty is skipped.
-	m = mustLoad(t, `{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "identity": ["rule_id", "location.path"],
+	m = mustLoad(t, `{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "identity": ["rule_id", "location.path"],
 	  "records": [{"kind": "finding", "set": {"title": {"const": "T"}, "severity": {"const": "low"}, "rule_id": "/r", "location.path": "/p"}}]}`)
 	r, st := apply(t, m, "{\"r\": \"a\"}\n{\"r\": \"\"}\n{\"p\": \"x\"}\n", Options{})
 	if len(r.Findings) != 2 || st.Skipped != 1 || !strings.Contains(st.Issues[0].Message, "identity") {
@@ -384,7 +384,7 @@ func TestIdentity(t *testing.T) {
 }
 
 func TestRulesSummary(t *testing.T) {
-	m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": [{"kind": "finding", "set": {"title": "/t", "severity": {"const": "low"}}}]}`)
+	m := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "records": [{"kind": "finding", "set": {"title": "/t", "severity": {"const": "low"}}}]}`)
 	rs := m.Rules()
 	if len(rs) != 1 || rs[0].Kind != "finding" || fmt.Sprint(rs[0].Targets) != "[severity title]" {
 		t.Fatalf("rules %+v", rs)

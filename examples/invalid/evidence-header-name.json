@@ -1,1 +1,37 @@
-{"version": "1.6", "metadata": {"timestamp": "2026-10-07T00:00:00Z"}, "findings": [{"type": "vulnerability", "title": "t", "severity": "high", "evidence_items": [{"kind": "http_exchange", "http": {"request": {"headers": [{"name": "Bad Name", "value": "v"}]}}}]}]}
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7584-91b4-f7d14040338e",
+    "generated_at": "2026-10-07T00:00:00Z"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "t",
+      "severity": "high",
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "http": {
+            "request": {
+              "headers": [
+                {
+                  "name": "Bad Name",
+                  "value": "v"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "asset_ref": "a"
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ]
+}

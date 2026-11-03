@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // SARIF 2.1.0. The conversion is the module's FromSARIF; this file adds the
@@ -89,6 +89,9 @@ func parseSARIF(b *builder, r io.Reader) error {
 		}
 	}
 	asset := b.codeAsset(sarifProvenance(&view))
+	if c, err := ctis.CanonicalAssetValue(asset.Type, asset.Value); err == nil {
+		asset.Value = c
+	}
 	opts := ctis.DefaultConvertOptions()
 	opts.AssetType, opts.AssetValue, opts.AssetID = asset.Type, asset.Value, asset.ID
 	switch b.opts.ToolType {
@@ -108,13 +111,25 @@ func parseSARIF(b *builder, r io.Reader) error {
 	if rep.Tool != nil && rep.Tool.Name != "" && b.opts.ToolName == "" {
 		b.res.Report.Tool = rep.Tool
 	} else if opts.ToolType != "" && rep.Tool != nil && b.res.Report.Tool != nil {
-		// A named tool keeps the capabilities its type states.
-		b.res.Report.Tool.Capabilities = rep.Tool.Capabilities
+		// A named tool keeps the techniques its type states.
+		b.res.Report.Tool.Techniques = rep.Tool.Techniques
 	}
 	b.res.Report.Metadata.Branch = rep.Metadata.Branch
-	if _, err := b.asset(asset); err != nil {
+	assetID, err := b.asset(asset)
+	if err != nil {
 		return err
 	}
+	if assetID == "" && asset.Type == ctis.AssetTypeRepository {
+		asset.Type, asset.ID = ctis.AssetTypeUnclassified, ""
+		if assetID, err = b.asset(asset); err != nil {
+			return err
+		}
+	}
+	if assetID == "" {
+		b.res.Stats.Skipped += results
+		return nil
+	}
+	asset.ID = assetID
 	for i := range rep.Findings {
 		if err := b.tick(); err != nil {
 			return err

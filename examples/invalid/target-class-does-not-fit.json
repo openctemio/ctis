@@ -1,7 +1,14 @@
 {
-  "version": "1.6",
+  "version": "2.0",
   "metadata": {
-    "timestamp": "2026-11-03T00:00:00Z",
-    "targets": [{"target": "example.com", "state": "done", "class": "teleported"}]
+    "id": "019a2b3c-4d5e-72f4-83c6-271ceda1a9f0",
+    "generated_at": "2026-11-03T00:00:00Z",
+    "targets": [
+      {
+        "target": "example.com",
+        "state": "done",
+        "class": "teleported"
+      }
+    ]
   }
 }

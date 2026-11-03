@@ -1,6 +1,8 @@
-# Proposals for CTIS 1.7 and 2.0
+# Proposals for CTIS 2.0
 
-Status: design record, not part of the specification. It comes from a review of CTIS 1.6 against what continuous threat exposure management needs, and against what CTIS needs to be a format that many tools and platforms share.
+**Status: implemented in CTIS 2.0.** Every item below ships in 2.0 (the items once planned for a 1.7 minor included); [spec.md](spec.md) is the normative text and [migration-2.0.md](migration-2.0.md) lists every rename. The declarative interoperability engine (P9) and a top-level `rules[]` catalog are follow-up work. This page stays as the design record; it is not part of the specification.
+
+Design record, not part of the specification. It comes from a review of CTIS 1.6 against what continuous threat exposure management needs, and against what CTIS needs to be a format that many tools and platforms share.
 
 The record has two parts. Items marked **1.7** are additive, so they fit a minor release under the rule in [spec.md section 2.2](spec.md#22-compatibility-rule). Items marked **2.0** rename or remove members. They ship as one cleanup in a new major version (`schemas/v2`, module `github.com/openctemio/ctis/v2`), never as aliases.
 

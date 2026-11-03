@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // trivy JSON (trivy image|fs|repo|config --format json). The mapping is
@@ -14,7 +14,7 @@ import (
 
 func init() {
 	parsers[FormatTrivy] = parseTrivy
-	tools[FormatTrivy] = ctis.Tool{Name: "trivy", Vendor: "Aqua Security", Capabilities: []string{"sca", "misconfiguration", "secret"}}
+	tools[FormatTrivy] = ctis.Tool{Name: "trivy", Vendor: "Aqua Security", Techniques: []ctis.Technique{ctis.TechniqueSCA, ctis.TechniqueIaC, ctis.TechniqueContainer, ctis.TechniqueSecret}}
 }
 
 type trivyCVSS struct {
@@ -166,7 +166,7 @@ func parseTrivy(b *builder, r io.Reader) error {
 		}
 		g := newTrivyGraph(res.Packages)
 		for i := range res.Vulnerabilities {
-			f, ok := trivyVulnFinding(&res.Vulnerabilities[i], target)
+			f, ok := trivyVulnFinding(&res.Vulnerabilities[i], target, res.Type)
 			if ok && file != "" {
 				g.place(&f, &res.Vulnerabilities[i], file)
 			}
@@ -210,17 +210,23 @@ func (b *builder) trivyPackage(p *trivyPackage, file string) error {
 	if name == "" {
 		return nil
 	}
-	d := ctis.Dependency{Name: name, Version: line(p.Version, 128), ID: line(p.ID, capShort), Relationship: trivyRelationship(p), Path: file}
+	d := ctis.Dependency{Name: name, Version: line(p.Version, 128), Type: ctis.DependencyTypeLibrary, Relationship: depRelationship(trivyRelationship(p))}
+	if id := line(p.ID, capShort); id != "" {
+		d.ID = refOr("dep", id)
+		d.SourceID = id
+	}
 	if file != "" {
 		for _, l := range p.Locations {
 			if l.StartLine > 0 && len(d.Locations) < 20 {
 				d.Locations = append(d.Locations, ctis.DependencyLocation{Path: file, StartLine: l.StartLine, EndLine: nonNeg(l.EndLine)})
 			}
 		}
+		if len(d.Locations) == 0 {
+			d.Locations = []ctis.DependencyLocation{{Path: file}}
+		}
 	}
 	if p.Identifier != nil {
 		d.PURL = sanePURL(p.Identifier.PURL)
-		d.UID = line(p.Identifier.UID, capShort)
 	}
 	for _, l := range p.Licenses {
 		if len(d.Licenses) < 20 {
@@ -229,7 +235,7 @@ func (b *builder) trivyPackage(p *trivyPackage, file string) error {
 	}
 	for _, on := range p.DependsOn {
 		if len(d.DependsOn) < 500 {
-			d.DependsOn = append(d.DependsOn, line(on, capShort))
+			d.DependsOn = append(d.DependsOn, refOr("dep", line(on, capShort)))
 		}
 	}
 	return b.dependency(d)
@@ -239,6 +245,9 @@ func (b *builder) trivyPackage(p *trivyPackage, file string) error {
 func sanePURL(p string) string {
 	p = strings.TrimSpace(p)
 	if !strings.HasPrefix(p, "pkg:") || len(p) > 2048 || strings.ContainsFunc(p, func(r rune) bool { return r <= ' ' || r == 0x7f }) {
+		return ""
+	}
+	if _, _, err := ctis.CanonicalPurl(p); err != nil {
 		return ""
 	}
 	return p
@@ -254,16 +263,21 @@ func trivyArtifact(rep *trivyReport) *ctis.Asset {
 	}
 	switch rep.ArtifactType {
 	case "container_image":
-		a := ctis.Asset{ID: codeAssetID, Type: ctis.AssetTypeContainer, Value: name, Name: name, Properties: ctis.Properties{"source": "trivy_artifact"}}
+		a := ctis.Asset{ID: codeAssetID, Type: ctis.AssetTypeContainerImage, Value: name, Name: name, Properties: ctis.Properties{"source": "trivy_artifact"}}
 		if m := rep.Metadata; m != nil {
+			// A repo digest names the image itself; the artifact name may
+			// only name its repository and tag.
+			for _, d := range m.RepoDigests {
+				if c, err := ctis.CanonicalImage(d); err == nil && strings.Contains(c, "@sha256:") {
+					a.Value = c
+					break
+				}
+			}
 			if m.ImageID != "" {
 				a.Properties["image_id"] = line(m.ImageID, capShort)
 			}
 			if m.OS != nil && m.OS.Family != "" {
-				a.Properties["os"] = line(strings.TrimSpace(m.OS.Family+" "+m.OS.Name), capShort)
-			}
-			if len(m.RepoDigests) > 0 {
-				a.Properties["repo_digest"] = line(m.RepoDigests[0], capShort)
+				a.Technologies = []ctis.Technology{{Name: line(strings.TrimSpace(m.OS.Family+" "+m.OS.Name), capShort), Categories: []string{"operating-system"}}}
 			}
 		}
 		return &a
@@ -290,7 +304,7 @@ func trivySeverity(s string) ctis.Severity {
 	return ctis.SeverityMedium
 }
 
-func trivyVulnFinding(v *trivyVuln, target string) (ctis.Finding, bool) {
+func trivyVulnFinding(v *trivyVuln, target, pkgType string) (ctis.Finding, bool) {
 	id := line(v.VulnerabilityID, capShort)
 	if id == "" {
 		return ctis.Finding{}, false
@@ -306,46 +320,42 @@ func trivyVulnFinding(v *trivyVuln, target string) (ctis.Finding, bool) {
 		Description: text(v.Description, capDescription),
 		Severity:    trivySeverity(v.Severity),
 		RuleID:      id,
-		Native:      &ctis.NativeIdentity{Scheme: ctis.NativeSchemeOther, VulnID: id, Severity: line(v.Severity, ctis.MaxNativeValueLen)},
+		Native:      &ctis.NativeIdentity{Scheme: ctis.NativeSchemeOther, VulnID: id, Severity: line(v.Severity, ctis.MaxNativeValueLen), Status: line(v.Status, ctis.MaxNativeValueLen)},
 	}
 	vd := &ctis.VulnerabilityDetails{
-		Package:         pkg,
-		AffectedVersion: line(v.InstalledVersion, 128),
-		FixedVersion:    line(v.FixedVersion, 256),
-		VulnStatus:      line(v.Status, 32),
-		SeveritySource:  line(v.SeveritySource, 64),
-		PublishedAt:     parseTime(v.PublishedDate),
-		ModifiedAt:      parseTime(v.LastModifiedDate),
+		PackageName:      pkg,
+		InstalledVersion: line(v.InstalledVersion, 128),
+		PublishedAt:      parseTime(v.PublishedDate),
+		ModifiedAt:       parseTime(v.LastModifiedDate),
 	}
-	addVulnID(vd, id)
+	if fv := line(v.FixedVersion, 256); fv != "" {
+		vd.FixedVersions = []string{fv}
+	}
+	if n, ok := ctis.NormalizeVulnerabilityID(id); ok && n.Type != ctis.VulnerabilityIDVendor {
+		addVulnID(vd, id)
+	} else {
+		// An Aqua id (AVD-...) or another vendor's own.
+		addVendorID(vd, id, "aqua")
+	}
 	for _, vid := range v.VendorIDs {
-		addVendorID(vd, vid, "")
+		addVendorID(vd, vid, "trivy")
 	}
 	for _, c := range v.CweIDs {
 		if cw := cweID(c); cw != "" {
 			vd.CWEIDs = appendUnique(vd.CWEIDs, cw)
 		}
 	}
-	if len(vd.CWEIDs) > 0 {
-		vd.CWEID = vd.CWEIDs[0]
-	}
 	if v.PkgIdentifier != nil {
 		vd.PURL = sanePURL(v.PkgIdentifier.PURL)
 	}
 	if v.DataSource != nil {
-		vd.DataSource = &ctis.VulnDataSource{ID: line(v.DataSource.ID, 64), Name: line(v.DataSource.Name, capShort), URL: line(v.DataSource.URL, capReference)}
+		vd.DataSource = &ctis.VulnDataSource{ID: line(v.DataSource.ID, 64), Name: line(v.DataSource.Name, capShort), URL: webURL(line(v.DataSource.URL, capReference))}
 	}
-	if len(v.VendorSeverity) > 0 {
-		vd.VendorSeverity = map[string]int{}
-		for _, k := range sortedKeysOf(v.VendorSeverity) {
-			if len(vd.VendorSeverity) < 32 {
-				vd.VendorSeverity[line(k, 64)] = v.VendorSeverity[k]
-			}
-		}
+	if st, ok := trivyVEXStatus(v.Status); ok {
+		f.VEX = &ctis.VEX{Status: st, Source: "trivy"}
 	}
-	// Every source's CVSS goes to scores; the legacy members take the
-	// highest v3 score (nvd first on a tie), else v2.
-	var bestScore float64
+	// Every source's CVSS goes to scores, then each vendor's rating of the
+	// severity.
 	for _, src := range sortedKeysOf(v.CVSS) {
 		c := v.CVSS[src]
 		for _, s := range []struct {
@@ -369,48 +379,66 @@ func trivyVulnFinding(v *trivyVuln, target string) (ctis.Finding, bool) {
 			}
 			addScore(&f, sc)
 		}
-		if c.V3Score <= 10 && (c.V3Score > bestScore || (c.V3Score == bestScore && src == "nvd" && c.V3Score > 0)) {
-			bestScore = c.V3Score
-			vd.CVSSScore, vd.CVSSVector, vd.CVSSVersion, vd.CVSSSource = c.V3Score, line(c.V3Vector, ctis.MaxScoreVectorLen), "3.1", trivyCVSSSource(src)
-			if ver := ctis.CVSSVersionOfVector(c.V3Vector); ver != "" {
-				vd.CVSSVersion = ver
-			}
-		}
 	}
-	if bestScore == 0 {
-		for _, src := range sortedKeysOf(v.CVSS) {
-			if c := v.CVSS[src]; c.V2Score > 0 && c.V2Score <= 10 {
-				vd.CVSSScore, vd.CVSSVector, vd.CVSSVersion, vd.CVSSSource = c.V2Score, line(c.V2Vector, ctis.MaxScoreVectorLen), "2.0", trivyCVSSSource(src)
-				break
-			}
+	for _, src := range sortedKeysOf(v.VendorSeverity) {
+		if label := trivyVendorLabel(v.VendorSeverity[src]); label != "" {
+			addScore(&f, ctis.Score{System: ctis.ScoreSystemVendor, Label: label, Source: line(src, ctis.MaxScoreSourceLen)})
 		}
 	}
 	if v.Layer != nil && (v.Layer.Digest != "" || v.Layer.DiffID != "") {
 		vd.Layer = &ctis.ContainerLayer{Digest: line(v.Layer.Digest, capShort), DiffID: line(v.Layer.DiffID, capShort)}
 	}
 	f.Vulnerability = vd
-	f.References = addRefs(f.References, v.PrimaryURL)
-	f.References = addRefs(f.References, v.References...)
+	f.References = addWebRefs(f.References, v.PrimaryURL)
+	f.References = addWebRefs(f.References, v.References...)
 	if p := line(v.PkgPath, 1024); p != "" {
 		f.Location = &ctis.FindingLocation{Path: p}
 	}
-	f.Fingerprint = fingerprint.GenerateSCA(v.PkgName, v.InstalledVersion, v.VulnerabilityID)
-	f.Tags = addTags(nil, "trivy", target)
-	if vd.FixedVersion != "" {
-		f.Remediation = &ctis.Remediation{FixAvailable: true, SolutionType: ctis.SolutionTypeUpgrade, Recommendation: line("Upgrade "+pkg+" to "+vd.FixedVersion, capRemediation)}
+	pkgRef := vd.PURL
+	if pkgRef == "" && pkg != "" {
+		pkgRef = line(pkgType, 64) + "/" + pkg
+		if pkgType == "" {
+			pkgRef = "generic/" + pkg
+		}
 	}
-	extras(&f, "pkg_id", v.PkgID, "target", target)
+	if pkgRef != "" {
+		f.Fingerprint = fingerprint.V2SCA(pkgRef, id)
+	}
+	f.Tags = addTags(nil, "trivy", target)
+	if len(vd.FixedVersions) > 0 {
+		f.Remediation = &ctis.Remediation{IsFixAvailable: ctis.Bool(true), SolutionType: ctis.SolutionTypeUpgrade, Recommendation: line("Upgrade "+pkg+" to "+vd.FixedVersions[0], capRemediation)}
+	}
+	extras(&f, "pkg_id", v.PkgID, "target", target, "severity_source", v.SeveritySource)
 	return f, true
 }
 
-// trivyCVSSSource keeps the CTIS cvss_source words and calls every other
-// source vendor.
-func trivyCVSSSource(src string) string {
-	switch src {
-	case "nvd", "ghsa", "redhat", "bitnami":
-		return src
+// trivyVEXStatus maps the status trivy gives a vulnerability. will_not_fix,
+// fix_deferred and end_of_life leave the package affected.
+func trivyVEXStatus(s string) (ctis.VEXStatus, bool) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "fixed":
+		return ctis.VEXStatusFixed, true
+	case "affected", "will_not_fix", "fix_deferred", "end_of_life":
+		return ctis.VEXStatusAffected, true
+	case "under_investigation":
+		return ctis.VEXStatusUnderInvestigation, true
 	}
-	return "vendor"
+	return "", false
+}
+
+// trivyVendorLabel names a trivy vendor severity (0 to 4).
+func trivyVendorLabel(n int) string {
+	switch n {
+	case 1:
+		return "low"
+	case 2:
+		return "medium"
+	case 3:
+		return "high"
+	case 4:
+		return "critical"
+	}
+	return ""
 }
 
 func trivyMisconfFinding(m *trivyMisconf, target string) (ctis.Finding, bool) {
@@ -433,32 +461,30 @@ func trivyMisconfFinding(m *trivyMisconf, target string) (ctis.Finding, bool) {
 		Severity:    trivySeverity(m.Severity),
 		RuleID:      id,
 		Misconfiguration: &ctis.MisconfigurationDetails{
-			PolicyID:   id,
-			PolicyName: title,
-			AVDID:      line(m.AVDID, 64),
-			Namespace:  line(m.Namespace, capShort),
-			Query:      line(m.Query, 1024),
+			PolicyID:     firstNonEmpty(line(m.AVDID, 64), id),
+			PolicyName:   title,
+			ResourceType: line(m.Type, capShort),
+			Namespace:    line(m.Namespace, capShort),
+			Query:        line(m.Query, 1024),
 		},
 		Native: &ctis.NativeIdentity{Scheme: ctis.NativeSchemeOther, VulnID: id, Severity: line(m.Severity, ctis.MaxNativeValueLen), Status: line(m.Status, ctis.MaxNativeValueLen)},
 	}
-	start := 0
 	if c := m.CauseMetadata; c != nil {
 		f.Misconfiguration.Provider = line(c.Provider, capShort)
 		f.Misconfiguration.Service = line(c.Service, capShort)
 		f.Misconfiguration.ResourceName = line(c.Resource, capShort)
 		if c.StartLine > 0 {
-			start = c.StartLine
 			f.Location = &ctis.FindingLocation{Path: target, StartLine: c.StartLine, EndLine: nonNeg(c.EndLine)}
 		}
 	}
 	if r := text(m.Resolution, capRemediation); r != "" {
-		f.Remediation = &ctis.Remediation{Recommendation: r, SolutionType: ctis.SolutionTypeConfig}
+		f.Remediation = &ctis.Remediation{Recommendation: r, SolutionType: ctis.SolutionTypeConfigChange}
 	}
-	f.References = addRefs(f.References, m.PrimaryURL)
-	f.References = addRefs(f.References, m.References...)
-	f.Fingerprint = fingerprint.GenerateSAST(target, m.ID, start, 0)
+	f.References = addWebRefs(f.References, m.PrimaryURL)
+	f.References = addWebRefs(f.References, m.References...)
+	f.Fingerprint = fingerprint.V2Misconfiguration(m.Type, f.Misconfiguration.ResourceName, id, target)
 	f.Tags = addTags(nil, "trivy", "misconfiguration", target)
-	extras(&f, "misconfig_type", m.Type, "target", target)
+	extras(&f, "target", target)
 	return f, true
 }
 
@@ -476,7 +502,7 @@ func trivySecretFinding(s *trivySecret, target string) (ctis.Finding, bool) {
 		Title:    title,
 		Severity: trivySeverity(s.Severity),
 		RuleID:   rule,
-		Secret:   &ctis.SecretDetails{SecretType: trivySecretType(s.Category, rule)},
+		Secret:   &ctis.SecretDetails{Type: trivySecretType(s.Category, rule)},
 		Native:   &ctis.NativeIdentity{Scheme: ctis.NativeSchemeOther, VulnID: rule, Severity: line(s.Severity, ctis.MaxNativeValueLen)},
 	}
 	if s.StartLine > 0 {
@@ -489,7 +515,8 @@ func trivySecretFinding(s *trivySecret, target string) (ctis.Finding, bool) {
 			f.Location.Snippet = line(s.Match, 16<<10)
 		}
 	}
-	f.Fingerprint = fingerprint.GenerateSecret(target, s.RuleID, s.StartLine, fingerprintMask(s.Match))
+	// trivy masks the secret itself, so there is nothing to digest: the
+	// receiver computes the fingerprint.
 	f.Tags = addTags(nil, "trivy", "secret", target)
 	extra(&f, "category", s.Category)
 	ctis.RedactSecretFinding(&f, s.Match)

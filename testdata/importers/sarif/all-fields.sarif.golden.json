@@ -1,25 +1,22 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "ExampleAnalyzer",
     "version": "2.0.0",
-    "info_url": "https://www.example.com/analyzer",
-    "capabilities": [
-      "vulnerability"
-    ]
+    "info_url": "https://www.example.com/analyzer"
   },
   "assets": [
     {
       "id": "asset-1",
       "type": "repository",
-      "value": "https://git.example.com/team/app.git",
-      "name": "https://git.example.com/team/app.git",
+      "value": "git.example.com/team/app",
+      "name": "git.example.com/team/app",
       "properties": {
         "branch": "main",
         "commit_sha": "0123456789abcdef0123456789abcdef01234567",
@@ -48,7 +45,6 @@
         "cwe_ids": [
           "CWE-798"
         ],
-        "cwe_id": "CWE-798",
         "owasp_ids": [
           "A07:2021"
         ]

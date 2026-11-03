@@ -24,7 +24,7 @@ func sarifRoundTrip(t *testing.T, data []byte, opts *ConvertOptions) (first, sec
 	if err != nil {
 		t.Fatal(err)
 	}
-	second.Metadata.Timestamp = first.Metadata.Timestamp
+	second.Metadata.GeneratedAt = first.Metadata.GeneratedAt
 	return first, second, out
 }
 
@@ -88,7 +88,7 @@ func TestExportSARIFNeverWritesRawSecret(t *testing.T) {
 	r := &Report{Version: SchemaVersion, Tool: &Tool{Name: "custom"}, Findings: []Finding{{
 		Type: FindingTypeSecret, Title: "Leaked key " + secrets[0], Severity: SeverityHigh, RuleID: "generic-key",
 		Location: &FindingLocation{Path: "config.env", StartLine: 1, Snippet: secrets[0]},
-		Secret:   &SecretDetails{SecretType: "api_key", MaskedValue: secrets[0]},
+		Secret:   &SecretDetails{Type: "api_key", MaskedValue: secrets[0]},
 	}}}
 	out, err := ToSARIF(r)
 	if err != nil {
@@ -107,10 +107,10 @@ func TestExportSARIFNativeReport(t *testing.T) {
 	score := 9.8
 	r := &Report{
 		Version:  SchemaVersion,
-		Metadata: ReportMetadata{Timestamp: ts, Branch: &BranchInfo{Name: "main", CommitSHA: "abc", RepositoryURL: "https://git.example.com/app"}},
+		Metadata: ReportMetadata{ID: testReportID, GeneratedAt: ts, Branch: &BranchInfo{Name: "main", CommitSHA: "abc", RepositoryURL: "https://git.example.com/app"}},
 		Findings: []Finding{
 			{Type: FindingTypeVulnerability, Title: "Critical CVE", Severity: SeverityCritical, RuleID: "CVE-2024-3094",
-				Vulnerability: &VulnerabilityDetails{CVSSScore: score, CWEID: "CWE-506"}, Status: FindingStatusFalsePositive},
+				Vulnerability: &VulnerabilityDetails{CWEIDs: []string{"CWE-506"}}, Scores: []Score{{System: ScoreSystemCVSS, Version: "3.1", Value: &score}}, Status: FindingStatusFalsePositive},
 			{Type: FindingTypeCompliance, Title: "No rule", Severity: SeverityInfo, Kind: "pass", Confidence: 50,
 				Location: &FindingLocation{LogicalLocation: &LogicalLocation{Name: "main"}}},
 			{Type: FindingTypeMisconfiguration, Title: "", Message: "from message", Severity: "bogus",

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Hostile and edge-case input for the CycloneDX, SPDX and OSV importers.
@@ -78,7 +78,7 @@ func TestCycloneDX_CyclesAndCollisions(t *testing.T) {
 	if strings.Join(deps[0].DependsOn, ",") != "b" || strings.Join(deps[1].DependsOn, ",") != "a" {
 		t.Fatalf("depends_on = %v / %v", deps[0].DependsOn, deps[1].DependsOn)
 	}
-	if deps[0].Relationship != "direct" || deps[1].Relationship != "indirect" {
+	if deps[0].Relationship != ctis.DependencyDirect || deps[1].Relationship != ctis.DependencyTransitive {
 		t.Fatalf("relationships = %s / %s", deps[0].Relationship, deps[1].Relationship)
 	}
 	if len(res.Issues) != 1 || !strings.Contains(res.Issues[0].Message, "used twice") {
@@ -232,8 +232,14 @@ func TestSBOMHelpers(t *testing.T) {
 	if _, ok := severityWord("x"); ok {
 		t.Error("severityWord(x)")
 	}
-	if assetTypeOfPurpose("OPERATING_SYSTEM") != ctis.AssetTypeHost || assetTypeOfPurpose("library") != ctis.AssetTypeRepository {
-		t.Error("assetTypeOfPurpose")
+	if typ, v := subjectAssetOf("container", "", "alpine", "sha256:"+strings.Repeat("a", 64), "x"); typ != ctis.AssetTypeContainerImage || v != "docker.io/library/alpine@sha256:"+strings.Repeat("a", 64) {
+		t.Errorf("subjectAssetOf container = %s %s", typ, v)
+	}
+	if typ, v := subjectAssetOf("library", "pkg:npm/Foo@1.0", "foo", "1.0", "x"); typ != ctis.AssetTypePackage || v != "pkg:npm/Foo@1.0" {
+		t.Errorf("subjectAssetOf purl = %s %s", typ, v)
+	}
+	if typ, v := subjectAssetOf("operating-system", "", "Ubuntu", "22.04", "x"); typ != ctis.AssetTypeUnclassified || v != "Ubuntu@22.04" {
+		t.Errorf("subjectAssetOf other = %s %s", typ, v)
 	}
 	if floatString(7.5) != "7.5" {
 		t.Error("floatString")

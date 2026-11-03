@@ -8,11 +8,11 @@ The Go module writes a CTIS report out in three standard formats:
 | `ToCycloneDX(r *Report, opts *CycloneDXOptions) ([]byte, error)` | BOM with vulnerabilities (VDR/VEX), JSON | CycloneDX 1.6 |
 | `ToOCSF(r *Report, opts *OCSFOptions) ([]OCSFEvent, error)` | one event per finding | OCSF 1.3.0 (`OCSFVersion`), classes Vulnerability Finding (2002) and Compliance Finding (2003) |
 
-The mapping is based on the CTIS 1.6 types. The code is in `export.go` (shared rules), `export_sarif.go`, `export_cyclonedx.go` and `export_ocsf.go`. Each CTIS object is mapped by its own function (`sarifRuleOf`, `sarifResultOf`, `sarifLocationOf`, `sarifSuppressionsOf`, `sarifCodeFlowOf`, `sarifWebOf`; `cdxComponentOf`, `cdxSubjectOf`, `cdxVulnOf`, `cdxVersionsOf`; `ocsfEventOf`, `ocsfResourceOf`, `ocsfComplianceOf`, `ocsfVulnerabilitiesOf`, `ocsfScoresOf`, `ocsfCodeOf`), so a rename of CTIS members changes one function per object.
+The mapping is based on the CTIS 2.0 types. The code is in `export.go` (shared rules), `export_sarif.go`, `export_cyclonedx.go` and `export_ocsf.go`. Each CTIS object is mapped by its own function (`sarifRuleOf`, `sarifResultOf`, `sarifLocationOf`, `sarifSuppressionsOf`, `sarifCodeFlowOf`, `sarifWebOf`; `cdxComponentOf`, `cdxSubjectOf`, `cdxVulnOf`, `cdxVersionsOf`; `ocsfEventOf`, `ocsfResourceOf`, `ocsfComplianceOf`, `ocsfVulnerabilitiesOf`, `ocsfScoresOf`, `ocsfCodeOf`), so a rename of CTIS members changes one function per object.
 
 ## Rules common to every exporter
 
-- **Deterministic.** The same report gives the same bytes. Findings keep the report's order. The SARIF rules catalog is sorted by rule id. CycloneDX components and vulnerabilities are in first-seen order. Maps are written with sorted keys. No exporter reads the clock: a time the output needs and the report lacks comes from the options, else from `metadata.timestamp`. The CycloneDX serial number, when neither the options nor the report give one, is a UUID derived from the report's content.
+- **Deterministic.** The same report gives the same bytes. Findings keep the report's order. The SARIF rules catalog is sorted by rule id. CycloneDX components and vulnerabilities are in first-seen order. Maps are written with sorted keys. No exporter reads the clock: a time the output needs and the report lacks comes from the options, else from `metadata.generated_at`. The CycloneDX serial number, when neither the options nor the report give one, is a UUID derived from the report's content.
 - **No network.** URL members (`info_url`, `references`, advisory URLs, `repository_url`) are written as given and never fetched.
 - **Secrets stay masked.** Every finding is copied and a finding of type `secret` goes through `RedactSecretFinding` before any of it is written. A raw match in the snippet, `secret.masked_value`, the title, the description or a property is masked the way the importers mask it. In HTTP evidence (SARIF `webRequest`/`webResponse`), values under a sensitive span and the values of sensitive headers (`IsSensitiveHeader`) are masked. The caller's report is never modified.
 - **Bounded.** The encoded output is refused above `MaxExportBytes` (256 MiB, the importer's default input limit) with `ErrExportTooLarge`. The per-member limits of CTIS (`MaxScores`, `MaxVulnerabilityIDs`, `MaxAdvisories`, `MaxDataFlowSteps`) also bound what is written.
@@ -20,7 +20,7 @@ The mapping is based on the CTIS 1.6 types. The code is in `export.go` (shared r
 
 ## SARIF 2.1.0
 
-One report is one run. When `FromSARIF` read a multi-run log, it recorded each finding's tool in `properties["sarif_tool"]`, and the exporter writes one run per tool again.
+One report is one run per tool: findings that carry their own `tool` (as `FromSARIF` records for a multi-run log) are written in a run of that tool, with its version.
 
 | CTIS | SARIF |
 |---|---|
@@ -33,13 +33,13 @@ One report is one run. When `FromSARIF` read a multi-run log, it recorded each f
 | `remediation.recommendation` | `rule.help.text` |
 | `severity` | `result.level` (critical, high: error; medium: warning; low, info: note) and `properties["security-severity"]`. The value is the finding's CVSS score when it bands to the same severity, else 9.5, 8.0, 5.5, 2.0 or 0.0. The rule carries the same values as `defaultConfiguration.level` and `security-severity` |
 | `confidence` 95, 85, 70, 50 | `rule.properties.precision` very-high, high, medium, low |
-| `vulnerability.cwe_ids` (or `cwe_id`) | `rule.properties.cwe` |
+| `vulnerability.cwe_ids` | `rule.properties.cwe` |
 | `vulnerability.owasp_ids` | `rule.properties.owasp` |
-| `type` | `rule.properties.tags` holds `vulnerability`, `misconfiguration` or `secret` only when the rule id and tool name would not give the type back |
+| `type` | `rule.properties.tags` holds `vulnerability`, `weakness`, `misconfiguration` or `secret` only when the rule id and tool name would not give the type back |
 | `title` (else `message`) | `result.message.text` |
 | `tags` | `result.properties.tags` |
 | `location` (path, lines, columns, snippet, logical location) | `result.locations[0]` |
-| `fingerprint` | `result.fingerprints["ctis/v1"]` |
+| `fingerprint` | `result.fingerprints["ctis/v2"]` |
 | `partial_fingerprints` | `result.partialFingerprints` |
 | `correlation_id` | `result.correlationGuid` |
 | `baseline_state` | `result.baselineState` |
@@ -50,16 +50,17 @@ One report is one run. When `FromSARIF` read a multi-run log, it recorded each f
 
 Accepted losses (members SARIF cannot carry, or that `FromSARIF` does not read back):
 
-- `id` (FromSARIF numbers findings `finding-N`), `asset_ref` and the location's `branch`/`commit_sha`: these come from `ConvertOptions` on import.
+- `metadata.id`: a converted document is a new document with its own UUIDv7.
+- `id` (FromSARIF numbers findings `finding-N`), `asset_ref` and the location's `branch`/`commit`: these come from `ConvertOptions` on import.
 - `references` after the first. Message arguments and markdown are not written.
 - `confidence` other than 95, 85, 70 and 50. It reads back as `ConvertOptions.DefaultConfidence`.
 - `message`, when the finding also has a title: `result.message` carries the title.
 - `remediation`: the recommendation is written as `rule.help`, which FromSARIF does not read. Steps, fix code and advisories are not written.
 - `status` other than the suppressed states. Also `suppression.reason`, `suppressed_by`, `suppressed_at` and `expires_at`.
-- `category`, `vulnerability_class`, `author`, `author_email`, `commit_date`, `secret` details, `scores`, `vex`, `native`, `source_extra`, `properties`, and the vulnerability details other than CWE, OWASP and a CVE rule id.
+- `category`, `vulnerability_classes`, `location.commit` authors, `secret` details, `scores`, `vex`, `native`, `source_extra`, `properties`, and the vulnerability details other than CWE, OWASP and a CVE or GHSA rule id.
 - Data flow members beyond location, function, label and role (`summary`, `taint_type`, `called_function`, `taint_state`, ...).
 - Findings of several rules that share an id: the rule's description, CWE and help come from the first one.
-- The `compliance` and `web3` types have no SARIF tag. They come back from the tool name only.
+- The `compliance`, `exposure`, `malware` and `license` types have no SARIF tag. They come back from the tool name only.
 
 Round-trip fixtures: `testdata/export/sarif/features.sarif` and the SARIF fixtures of `testdata/sarif/`. Each goes fixture → `FromSARIF` → `ToSARIF` → `FromSARIF` and must give the same report. No member that `FromSARIF` produces is lost; the sidecars `testdata/export/sarif/<fixture>.losses.json` are empty. `examples/sast.json` and `examples/secret.json` go CTIS → `ToSARIF` → `FromSARIF`, and the losses above are listed in `ctis-sast.losses.json` and `ctis-secret.losses.json`. The golden output is `testdata/export/sarif/features.golden.sarif`.
 
@@ -73,32 +74,32 @@ Round-trip fixtures: `testdata/export/sarif/features.sarif` and the SARIF fixtur
 | `dependencies[]` | `components[]`: bom-ref = `id` (else purl, else name@version), `name`, `version`, `type` (default library), `purl`, `licenses` (an SPDX-shaped value as `expression`, anything else as `license.name`) |
 | dependency properties `group`, `cpe`, `scope`, `publisher`, `supplier`, `description`, `hash_<alg>`, `property:<name>` | the CycloneDX members of that name, `hashes[]`, `properties[]`. Other string properties are written as `ctis:<key>` |
 | `relationship`, `depends_on` | `dependencies[]`: the subject's `dependsOn` lists the direct dependencies; each component lists what it depends on |
-| vulnerability findings (type vulnerability) | `vulnerabilities[]`: one per vulnerability id (a CVE, GHSA or OSV `rule_id`, else `vulnerability.ids[0]`, else `cve_id`), with every affected component in `affects[]` |
+| vulnerability findings (type vulnerability) | `vulnerabilities[]`: one per vulnerability id (a CVE, GHSA or OSV `rule_id`, else `vulnerability.ids[0]`), with every affected component in `affects[]` |
 | `native.instance_id` | `vulnerabilities[].bom-ref` |
 | `vulnerability.data_source` | `source` |
-| `vulnerability.ids`, `cve_ids` other than the id | `references[]` (with the issuer as `source.name`) |
-| `scores` (cvss, ssvc, vendor) | `ratings[]`: method CVSSv2, CVSSv3, CVSSv31, CVSSv4, SSVC or other, `score`, `vector`, `source.name`, the label as `severity` when it is a CycloneDX severity. Without scores: the legacy `cvss_*` members, else the finding's severity |
-| `scores` (epss, epss_percentile, vpr) | `properties[]` `ctis:score:<system>` (CycloneDX has no rating method for them) |
+| `vulnerability.ids` other than the id | `references[]` (with the issuer as `source.name`) |
+| `scores` (cvss, ssvc, vendor) | `ratings[]`: method CVSSv2, CVSSv3, CVSSv31, CVSSv4, SSVC or other, `score`, `vector`, `source.name`, the label as `severity` when it is a CycloneDX severity. Without scores: the finding's severity |
+| `scores` (epss, epss_percentile) | `properties[]` `ctis:score:<system>` (CycloneDX has no rating method for them) |
 | `vulnerability.cwe_ids` | `cwes` |
 | `message`, `description` | `description`, `detail` (the importer joins them again) |
 | `remediation.recommendation`, a `Workaround: ` step, `remediation.advisories` | `recommendation`, `workaround`, `advisories[]` |
 | `vulnerability.published_at`, `modified_at` | `published`, `updated` |
 | `vex` | `analysis`: status → state (not_affected, exploitable, resolved, in_triage), justification → the source's CycloneDX word when it has one, else the inverse of `NormalizeVEXJustification` (component_not_present and vulnerable_code_not_present → code_not_present, not_in_execute_path → code_not_reachable, cannot_be_controlled_by_adversary → requires_environment, inline_mitigations_already_exist → protected_by_mitigating_control), statement → detail, as_of → lastUpdated |
 | `status` false_positive without `vex` | `analysis.state` false_positive |
-| `vulnerability.package`, `affected_version`, `purl` | the affected component: matched to a dependency by purl, else by name@version, else a component is added for it |
+| `vulnerability.package_name`, `installed_version`, `purl` | the affected component: matched to a dependency by purl, else by name@version, else a component is added for it |
 | `source_extra` written by the importer (`affects_versions`, `analysis_response`, `rating_justification:*`, `created`, `rejected`, `property:*`) | `affects[].versions[]`, `analysis.response`, `ratings[].justification`, `created`, `rejected`, `properties[]` |
 | `references` not derived from the source or advisories | `properties[]` `ctis:references` |
 
-Findings of type secret, misconfiguration, compliance and web3 are not part of a BOM and are not written.
+Only findings of type vulnerability are part of a BOM; the other types are not written.
 
 Accepted losses:
 
 - A not_affected or resolved analysis: the importer turns it into a VEX statement (`importer.Result.VEX`) and drops the finding. The exporter only sees the report, so it cannot write that statement again (sidecar `vdr.losses.json`).
 - `id`, `title`, `fingerprint`, `confidence`, `location`, `asset_ref`. The importer builds the title and asset itself.
-- `exploit_available`, `exploit_maturity`, `in_cisa_kev`, `is_direct`, `fixed_version(s)`, the legacy `epss_*` members, `advisories` (plain URLs), and `remediation.fix_available`.
+- `threat_signals`, `is_direct`, `fixed_versions` and `remediation.is_fix_available`.
 - `affected_version_range`: it is written as `affects[].versions[].range` and comes back in `source_extra`.
-- `dependencies[].path`, `locations`, `uid`.
-- `relationship` values `root` and `transit`. On import they read as indirect.
+- `dependencies[].locations`, `source_id`.
+- `relationship` value `root`: on import it reads as direct.
 - VEX `source`: on import it becomes the BOM serial number.
 - The justification component_not_present comes back as vulnerable_code_not_present, with native_justification code_not_present.
 - The CVSS v3 method: a `CVSSv3` rating with a 3.1 vector comes back as `CVSSv31`.
@@ -107,7 +108,7 @@ Round-trip fixture: `testdata/export/cyclonedx/vdr.cdx.json` goes through the im
 
 ## OCSF 1.3.0
 
-Every finding is one event of the Findings category (`category_uid` 2). Vulnerability, secret and web3 findings are Vulnerability Finding events (2002). Compliance and misconfiguration findings are Compliance Finding events (2003). `type_uid` = `class_uid` × 100 + `activity_id`.
+Every finding is one event of the Findings category (`category_uid` 2). Vulnerability, weakness, secret, exposure, malware and license findings are Vulnerability Finding events (2002). Compliance and misconfiguration findings are Compliance Finding events (2003). `type_uid` = `class_uid` × 100 + `activity_id`.
 
 | CTIS | OCSF |
 |---|---|
@@ -116,29 +117,29 @@ Every finding is one event of the Findings category (`category_uid` 2). Vulnerab
 | `category` | `finding_info.types[0]` |
 | `rule_id`, `rule_name` | `finding_info.analytic` (`uid`, `name`, type Rule) |
 | `first_seen_at`, `last_seen_at` | `finding_info.first_seen_time`, `last_seen_time` (epoch milliseconds) |
-| `last_seen_at`, else `first_seen_at`, else `OCSFOptions.Time`, else `metadata.timestamp` | `time` |
+| `last_seen_at`, else `first_seen_at`, else `OCSFOptions.Time`, else `metadata.generated_at` | `time` |
 | `severity` | `severity_id` (critical 5, high 4, medium 3, low 2, info 1, else 0 Unknown) and `severity` |
 | `status` | `status_id` (open 1 New, in_progress 2, suppressed 3, resolved 4, false_positive and accepted_risk 99 with the status name) and `status` |
 | `status` resolved | `activity_id` 3 (Close), else 1 (Create) |
 | `confidence`, `message` | `confidence_score`, `message` |
 | `tool` | `metadata.product` (`name`, `vendor_name`, `version`, `url_string`); `metadata.version` = 1.3.0 |
-| the finding's asset (`asset_ref` resolved in the report, else `asset_value`/`asset_type`) | `resources[0]` (`uid`, `name`, `type`) |
-| `vulnerability.cve_id`, `cve_ids`, CVE `ids` | `vulnerabilities[i].cve.uid`: one vulnerability object per CVE. The first object carries title, description, packages, code, references and remediation |
-| `vulnerability.cwe_ids` (or `cwe_id`) | `vulnerabilities[i].cwe.uid` |
-| `scores` cvss (else the legacy `cvss_*`) | `vulnerabilities[0].cve.cvss[]` (`version`, `base_score`, `vector_string`) |
+| the finding's asset (`asset_ref` resolved in the report) | `resources[0]` (`uid`, `name`, `type`) |
+| CVE `vulnerability.ids` | `vulnerabilities[i].cve.uid`: one vulnerability object per CVE. The first object carries title, description, packages, code, references and remediation |
+| `vulnerability.cwe_ids` | `vulnerabilities[i].cwe.uid` |
+| `scores` cvss | `vulnerabilities[0].cve.cvss[]` (`version`, `base_score`, `vector_string`) |
 | `scores` epss, epss_percentile | `vulnerabilities[0].cve.epss` (`score`, `percentile`) |
-| `vulnerability.package`, `affected_version`, `purl`, `fixed_version` | `vulnerabilities[0].affected_packages[0]` |
+| `vulnerability.package_name`, `installed_version`, `purl`, first of `fixed_versions` | `vulnerabilities[0].affected_packages[0]` |
 | `location` (path, start and end line) | `vulnerabilities[0].affected_code[0]` |
 | `references` | `vulnerabilities[0].references` |
-| `vulnerability.exploit_available` | `vulnerabilities[0].is_exploit_available` |
-| `remediation.recommendation`, `remediation.references` | `remediation` (in the vulnerability for 2002, on the event for 2003) |
-| `compliance.framework`, `control_id`, `result` | `compliance.standards[0]`, `control`, `status_id` (pass 1, fail 3, else 99 with the result) |
+| a `kev`, `exploited_in_wild`, `public_exploit` or `weaponized` threat signal | `vulnerabilities[0].is_exploit_available` |
+| `remediation.recommendation`, `references` | `remediation` (in the vulnerability for 2002, on the event for 2003) |
+| `compliance.framework`, `control_id`, `kind` | `compliance.standards[0]`, `control`, `status_id` (pass 1, fail 3, else 99 with the kind) |
 | `compliance.framework_version` | `unmapped["compliance_framework_version"]` |
 | `misconfiguration.provider`, `policy_id` | `compliance.standards[0]`, `control`, status Fail |
 | `type` | `unmapped["ctis_type"]` |
-| `secret.secret_type`, `service`, `masked_value` | `unmapped["secret_type"]`, `secret_service`, `secret_masked_value` (masked) |
+| `secret.type`, `service`, `masked_value` | `unmapped["secret_type"]`, `secret_service`, `secret_masked_value` (masked) |
 
-Accepted losses: everything not in the table. The full list, with reasons, is in `testdata/export/ocsf/*.losses.json`. In short: identity and lifecycle members (`id`, `native`, `source_lifecycle`, `source_extra`, `partial_fingerprints`, suppression details, `vex`), the code context (`data_flow`, columns, snippet, logical location, commit), `evidence`, exposure and business impact, most misconfiguration, secret and remediation details, non-CVE vulnerability ids, `exploit_maturity`, `in_cisa_kev`, `is_direct`, `owasp_ids`, `fixed_versions`, `affected_version_range`, and the CVSS source. Scores of a finding without a CVE have no OCSF place.
+Accepted losses: everything not in the table. The full list, with reasons, is in `testdata/export/ocsf/*.losses.json`. In short: identity and lifecycle members (`id`, `native`, `source_lifecycle`, `source_extra`, `partial_fingerprints`, suppression details, `vex`), the code context (`data_flow`, columns, snippet, logical location, commit), `evidence_items`, exposure, most misconfiguration, secret and remediation details, non-CVE vulnerability ids, threat signal details, `is_direct`, `owasp_ids`, `fixed_versions` beyond the first, `affected_version_range`, and the CVSS source. Scores of a finding without a CVE have no OCSF place.
 
 OCSF has no importer in this module. The round-trip test reads the events back with a test-only reverse mapper (`ocsfToCTIS` in `export_ocsf_test.go`). The mapped members of the examples `vulnerability-sca`, `network-vulnerability-interop`, `sast`, `secret`, `compliance` and `misconfiguration` must come back equal. Golden files: `testdata/export/ocsf/<example>.golden.ocsf.json` (not `*.golden.json`, which the schema check validates as CTIS reports).
 
@@ -167,9 +168,9 @@ Most of the mapping is field to field with a named transform. It can move to dec
 | OCSF vulnerabilities fan-out (one object per CVE, CWE zip) | engine feature: zip of lists |  |
 | Shared rules (copy, secret redaction, size bound, no clock) | stays in the engine |  |
 
-## Follow-ups for CTIS 1.7 members
+## Follow-ups
 
-Once the 1.7 members land, the exporters need these mappings:
+The 2.0 members not yet mapped by the exporters:
 
 - `finding.rule_ref` and a `rules[]` catalog in the report: SARIF `rules[]` comes from the catalog instead of being built from the findings, and `ruleIndex` follows the catalog. CycloneDX and OCSF use the rule name and help from it.
 - `finding.dependency_ref`: CycloneDX `affects[].ref` from the reference instead of the purl or name match. OCSF `affected_packages` from the referenced dependency. SPDX export, when it is added.
@@ -178,4 +179,4 @@ Once the 1.7 members land, the exporters need these mappings:
 - `relationships` (dependency DEPENDS_ON / CONTAINS types): the CycloneDX `dependencies[]` graph and nested components from the relationships instead of `depends_on`.
 - `threat_signals`: OCSF `vulnerabilities[].cve.epss`, `kb_article_list` and an exploit indicator. A CycloneDX property, or a rating where one fits.
 - `extensions`: written unchanged under a CTIS namespace (SARIF `properties["ctis/extensions"]`, CycloneDX `ctis:ext:*` properties, OCSF `unmapped`), and read back by the importers for a lossless pass-through.
-- The `unknown` severity: SARIF level `none` with no security-severity, CycloneDX rating severity `unknown`, OCSF `severity_id` 0.
+- The `unknown` severity is written as SARIF level `none` without security-severity, CycloneDX rating severity `unknown` and OCSF `severity_id` 0 (done).

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // CycloneDX 1.4-1.6 JSON: an SBOM (components, dependencies), a VDR
@@ -16,7 +16,7 @@ import (
 
 func init() {
 	parsers[FormatCycloneDX] = parseCycloneDX
-	tools[FormatCycloneDX] = ctis.Tool{Name: "cyclonedx", Capabilities: []string{"sca"}}
+	tools[FormatCycloneDX] = ctis.Tool{Name: "cyclonedx", Techniques: []ctis.Technique{ctis.TechniqueSCA}}
 }
 
 type cdxDoc struct {
@@ -31,7 +31,7 @@ type cdxDoc struct {
 }
 
 type cdxMetadata struct {
-	Timestamp string        `json:"timestamp"`
+	TS        string        `json:"timestamp"`
 	Component *cdxComponent `json:"component"`
 }
 
@@ -177,7 +177,7 @@ func parseCycloneDX(b *builder, r io.Reader) error {
 		props["cyclonedx_spec_version"] = s
 	}
 	if d.Metadata != nil {
-		if t := parseTime(d.Metadata.Timestamp); t != nil {
+		if t := parseTime(d.Metadata.TS); t != nil {
 			props["bom_timestamp"] = t.Format("2006-01-02T15:04:05Z07:00")
 		}
 	}
@@ -297,10 +297,11 @@ func parseCycloneDX(b *builder, r io.Reader) error {
 		ref := strings.TrimSpace(cc.c.BOMRef)
 		switch {
 		case direct[ref] && ref != "":
-			cc.dep.Relationship = "direct"
+			cc.dep.Relationship = ctis.DependencyDirect
 		case hasGraph:
-			cc.dep.Relationship = "indirect"
+			cc.dep.Relationship = ctis.DependencyTransitive
 		}
+		cc.dep.AssetRef = assetID
 		if err := b.dependency(*cc.dep); err != nil {
 			return err
 		}
@@ -326,6 +327,9 @@ func cdxToDependency(c *cdxComponent) (ctis.Dependency, bool) {
 	}
 	purl := cleanPURL(c.PURL)
 	version := line(c.Version, capShort)
+	if _, _, err := ctis.CanonicalPurl(purl); err != nil {
+		purl = ""
+	}
 	id := line(c.BOMRef, capShort)
 	if id == "" {
 		id = purl
@@ -334,16 +338,18 @@ func cdxToDependency(c *cdxComponent) (ctis.Dependency, bool) {
 		id = nameVersion(name, version)
 	}
 	d := ctis.Dependency{
-		ID:      id,
-		Name:    name,
-		Version: version,
-		Type:    line(c.Type, 32),
-		PURL:    purl,
+		ID:       refOr("dep", id),
+		SourceID: line(c.BOMRef, capShort),
+		Name:     name,
+		Version:  version,
+		PURL:     purl,
+	}
+	if t := ctis.DependencyType(strings.ToLower(strings.TrimSpace(c.Type))); t.IsValid() {
+		d.Type = t
 	}
 	if g := line(c.Group, capShort); g != "" {
 		addDepProperty(&d, "group", g)
 	}
-	d.Ecosystem = purlType(purl)
 	for _, l := range c.Licenses {
 		switch {
 		case l.Expression != "":
@@ -386,26 +392,20 @@ func cdxSubjectAsset(c *cdxComponent, serial string) ctis.Asset {
 		if v == "" {
 			v = "cyclonedx-bom"
 		}
-		return ctis.Asset{ID: "sbom-" + v, Type: ctis.AssetTypeUnclassified, Value: v, Name: v}
+		return ctis.Asset{Type: ctis.AssetTypeUnclassified, Value: v, Name: v}
 	}
 	name := line(c.Name, capShort)
 	if g := line(c.Group, capShort); g != "" && name != "" {
 		name = g + "/" + name
 	}
-	value := cleanPURL(c.PURL)
-	if value == "" {
-		value = nameVersion(name, line(c.Version, capShort))
-	}
-	if value == "" {
-		value = line(serial, capShort)
-	}
+	typ, value := subjectAssetOf(c.Type, c.PURL, name, line(c.Version, capShort), line(serial, capShort))
 	if value == "" {
 		value = "cyclonedx-bom"
 	}
 	if name == "" {
 		name = value
 	}
-	a := ctis.Asset{ID: "sbom-" + value, Type: assetTypeOfPurpose(c.Type), Value: value, Name: line(name, capShort)}
+	a := ctis.Asset{Type: typ, Value: value, Name: line(name, capShort)}
 	p := ctis.Properties{}
 	if v := line(c.Version, capShort); v != "" {
 		p["version"] = v
@@ -475,7 +475,7 @@ func (b *builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*c
 		if ref.Source != nil {
 			src = ref.Source.Name
 		}
-		addVendorID(ids, ref.ID, strings.ToLower(src))
+		addVendorID(ids, ref.ID, tokenOf(src))
 	}
 
 	// The affected products.
@@ -588,30 +588,24 @@ func (b *builder) cdxFinding(v *cdxVuln, vid string, ids *ctis.VulnerabilityDeta
 		},
 	}
 	vuln := &ctis.VulnerabilityDetails{
-		CVEID:           ids.CVEID,
-		CVEIDs:          append([]string(nil), ids.CVEIDs...),
-		IDs:             append([]ctis.VulnerabilityID(nil), ids.IDs...),
-		Package:         name,
-		PURL:            purl,
-		AffectedVersion: version,
-		Ecosystem:       vulnEcosystem(purlType(purl)),
-		PublishedAt:     parseTime(v.Published),
-		ModifiedAt:      parseTime(v.Updated),
+		IDs:              append([]ctis.VulnerabilityID(nil), ids.IDs...),
+		PackageName:      name,
+		PURL:             goodPURL(purl),
+		InstalledVersion: version,
+		PublishedAt:      parseTime(v.Published),
+		ModifiedAt:       parseTime(v.Updated),
 	}
 	for _, cwe := range v.CWEs {
 		if cwe > 0 && len(vuln.CWEIDs) < 50 {
 			vuln.CWEIDs = appendUnique(vuln.CWEIDs, "CWE-"+strconv.Itoa(cwe))
 		}
 	}
-	if len(vuln.CWEIDs) > 0 {
-		vuln.CWEID = vuln.CWEIDs[0]
-	}
 	if cpe := line(c.CPE, capShort); cpe != "" {
 		vuln.CPE = cpe
 	}
 	if v.Source != nil {
-		vuln.DataSource = &ctis.VulnDataSource{Name: line(v.Source.Name, capShort), URL: line(v.Source.URL, capReference)}
-		f.References = addRefs(f.References, v.Source.URL)
+		vuln.DataSource = &ctis.VulnDataSource{Name: line(v.Source.Name, capShort), URL: webURL(line(v.Source.URL, capReference))}
+		f.References = addWebRefs(f.References, v.Source.URL)
 	}
 	f.Vulnerability = vuln
 
@@ -661,7 +655,6 @@ func (b *builder) cdxFinding(v *cdxVuln, vid string, ids *ctis.VulnerabilityDeta
 	}
 	f.Severity = sev
 	f.Native.Severity = line(nativeSev, ctis.MaxNativeValueLen)
-	setLegacyCVSS(&f)
 
 	desc := text(v.Description, capDescription)
 	if det := text(v.Detail, capDescription); det != "" && det != desc {
@@ -689,11 +682,12 @@ func (b *builder) cdxFinding(v *cdxVuln, vid string, ids *ctis.VulnerabilityDeta
 		for _, a := range v.Advisories {
 			u := line(a.URL, ctis.MaxAdvisoryURLLen)
 			id := line(a.Title, ctis.MaxVulnerabilityIDLen)
+			u = webURL(u)
 			if (u == "" && id == "") || len(f.Remediation.Advisories) >= ctis.MaxAdvisories {
 				continue
 			}
 			f.Remediation.Advisories = append(f.Remediation.Advisories, ctis.Advisory{ID: id, URL: u})
-			f.References = addRefs(f.References, u)
+			f.References = addWebRefs(f.References, u)
 		}
 	}
 

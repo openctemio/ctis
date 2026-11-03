@@ -65,7 +65,7 @@ func TestExportCycloneDXNativeReport(t *testing.T) {
 	epss := 0.4
 	r := &Report{
 		Version:  SchemaVersion,
-		Metadata: ReportMetadata{Timestamp: ts, Properties: Properties{"bom_version": float64(7)}},
+		Metadata: ReportMetadata{ID: testReportID, GeneratedAt: ts, Properties: Properties{"bom_version": float64(7)}},
 		Assets:   []Asset{{ID: "img", Type: AssetTypeContainer, Value: "registry.example/app:1"}, {Type: AssetTypeHost, Value: "h"}},
 		Dependencies: []Dependency{
 			{ID: "a", Name: "a", Version: "1", Relationship: "direct", DependsOn: []string{"b", "a", "missing"},
@@ -76,16 +76,16 @@ func TestExportCycloneDXNativeReport(t *testing.T) {
 		},
 		Findings: []Finding{
 			{Type: FindingTypeVulnerability, Title: "x", Severity: SeverityHigh, RuleID: "rule-1",
-				Vulnerability: &VulnerabilityDetails{CVEIDs: []string{"CVE-2024-0001", "CVE-2024-0002"}, Package: "c", AffectedVersion: "3", CWEID: "CWE-20", AffectedVersionRange: "<4"},
+				Vulnerability: &VulnerabilityDetails{IDs: []VulnerabilityID{{Type: VulnerabilityIDCVE, ID: "CVE-2024-0001"}, {Type: VulnerabilityIDCVE, ID: "CVE-2024-0002"}}, PackageName: "c", InstalledVersion: "3", CWEIDs: []string{"CWE-20"}, AffectedVersionRange: "<4"},
 				Scores:        []Score{{System: ScoreSystemEPSS, Value: &epss}, {System: ScoreSystemSSVC, Label: "Act", Vector: "SSVCv2/E:A"}},
 				Status:        FindingStatusFalsePositive, References: []string{"https://example.com/r"}},
 			{Type: FindingTypeVulnerability, Title: "y", Severity: SeverityLow, RuleID: "CVE-2024-0003",
-				Vulnerability: &VulnerabilityDetails{PURL: "pkg:npm/b@2", Package: "b", AffectedVersion: "2"},
+				Vulnerability: &VulnerabilityDetails{PURL: "pkg:npm/b@2", PackageName: "b", InstalledVersion: "2"},
 				VEX:           &VEX{Status: VEXStatusFixed, AsOf: &ts}},
 			{Type: FindingTypeVulnerability, Title: "z", Severity: SeverityMedium,
-				Vulnerability: &VulnerabilityDetails{IDs: []VulnerabilityID{{Type: VulnerabilityIDGHSA, ID: "GHSA-aaaa-bbbb-cccc"}}, Package: "a", AffectedVersion: "1"}},
+				Vulnerability: &VulnerabilityDetails{IDs: []VulnerabilityID{{Type: VulnerabilityIDGHSA, ID: "GHSA-aaaa-bbbb-cccc"}}, PackageName: "a", InstalledVersion: "1"}},
 			{Type: FindingTypeVulnerability, Title: "no id", Severity: SeverityMedium},
-			{Type: FindingTypeSecret, Title: "s", Severity: SeverityHigh, Vulnerability: &VulnerabilityDetails{CVEID: "CVE-2024-9"}},
+			{Type: FindingTypeSecret, Title: "s", Severity: SeverityHigh, Vulnerability: &VulnerabilityDetails{IDs: []VulnerabilityID{{Type: VulnerabilityIDCVE, ID: "CVE-2024-9"}}}},
 		},
 	}
 	out, err := ToCycloneDX(r, &CycloneDXOptions{SubjectAssetID: "img"})
@@ -119,7 +119,7 @@ func TestExportCycloneDXNativeReport(t *testing.T) {
 		t.Error("serial")
 	}
 	// No assets, no graph, no options.
-	out, err = ToCycloneDX(&Report{Findings: []Finding{{Type: FindingTypeVulnerability, Severity: SeverityInfo, RuleID: "OSV-1", Vulnerability: &VulnerabilityDetails{Package: "p"}}}}, nil)
+	out, err = ToCycloneDX(&Report{Findings: []Finding{{Type: FindingTypeVulnerability, Severity: SeverityInfo, RuleID: "OSV-1", Vulnerability: &VulnerabilityDetails{PackageName: "p"}}}}, nil)
 	if err != nil || !strings.Contains(string(out), `"severity": "info"`) {
 		t.Errorf("minimal: %v\n%s", err, out)
 	}
@@ -138,24 +138,26 @@ func TestExportOCSFNativeReport(t *testing.T) {
 	ts := time.Date(2026, 5, 6, 7, 8, 9, 0, time.UTC)
 	r := &Report{
 		Version:  SchemaVersion,
-		Metadata: ReportMetadata{Timestamp: ts},
+		Metadata: ReportMetadata{ID: testReportID, GeneratedAt: ts},
 		Tool:     &Tool{Name: "scanner", Vendor: "Example", Version: "1"},
+		Assets:   []Asset{{ID: "ip", Type: AssetTypeIPAddress, Value: "10.0.0.1"}},
 	}
 	statuses := append(AllFindingStatuses(), "")
 	for i, st := range statuses {
-		f := Finding{ID: "f" + itoa(i), Type: FindingTypeVulnerability, Title: "t", Severity: AllSeverities()[i%5], Status: st, AssetValue: "10.0.0.1", AssetType: AssetTypeIPAddress}
+		f := Finding{ID: "f" + itoa(i), Type: FindingTypeVulnerability, Title: "t", Severity: AllSeverities()[i%5], Status: st, AssetRef: "ip"}
 		if i == 0 {
 			f.FirstSeenAt = &ts
 		}
 		r.Findings = append(r.Findings, f)
 	}
 	r.Findings = append(r.Findings,
-		Finding{Type: FindingTypeCompliance, Title: "c", Severity: "bogus", Compliance: &ComplianceDetails{Framework: "cis", ControlID: "1.1", Result: "manual"}},
-		Finding{Type: FindingTypeCompliance, Title: "c2", Severity: SeverityLow, Compliance: &ComplianceDetails{Result: "pass"}},
+		Finding{Type: FindingTypeCompliance, Title: "c", Severity: "bogus", Kind: "review", Compliance: &ComplianceDetails{Framework: "cis", ControlID: "1.1"}},
+		Finding{Type: FindingTypeCompliance, Title: "c2", Severity: SeverityLow, Kind: "pass", Compliance: &ComplianceDetails{}},
 		Finding{Type: FindingTypeMisconfiguration, Title: "", RuleID: "CKV_1", Severity: SeverityLow, Misconfiguration: &MisconfigurationDetails{PolicyID: "CKV_1", Provider: "aws"},
 			Remediation: &Remediation{Recommendation: "fix it"}},
 		Finding{Type: FindingTypeVulnerability, Title: "legacy", Severity: SeverityHigh, Location: &FindingLocation{Path: "src/a.go", StartLine: 2},
-			Vulnerability: &VulnerabilityDetails{CVEID: "cve-2024-1", CVSSVector: "CVSS:3.1/AV:N", CWEIDs: []string{"CWE-1", "CWE-2", "CWE-3"}}},
+			Vulnerability: &VulnerabilityDetails{IDs: []VulnerabilityID{{Type: VulnerabilityIDCVE, ID: "cve-2024-1"}}, CWEIDs: []string{"CWE-1", "CWE-2", "CWE-3"}},
+			Scores:        []Score{{System: ScoreSystemCVSS, Version: "3.1", Vector: "CVSS:3.1/AV:N"}}},
 	)
 	events, err := ToOCSF(r, &OCSFOptions{Time: ts.Add(time.Hour)})
 	if err != nil {
@@ -180,7 +182,7 @@ func TestExportOCSFNativeReport(t *testing.T) {
 		t.Errorf("resolved -> %d", events[1].ActivityID)
 	}
 	n := len(statuses)
-	if c := events[n].Compliance; c.StatusID != 99 || c.Status != "manual" || events[n].SeverityID != 0 {
+	if c := events[n].Compliance; c.StatusID != 99 || c.Status != "review" || events[n].SeverityID != 0 {
 		t.Errorf("manual: %+v", events[n])
 	}
 	if c := events[n+1].Compliance; c.StatusID != 1 || len(c.Standards) != 0 {
@@ -205,7 +207,7 @@ func TestExportOCSFNativeReport(t *testing.T) {
 func TestExportOCSFSecretMasked(t *testing.T) {
 	raw := "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789"
 	r := &Report{Findings: []Finding{{Type: FindingTypeSecret, Title: "Access token " + raw, Description: "found " + raw, Severity: SeverityHigh,
-		Location: &FindingLocation{Path: ".env", Snippet: raw}, Secret: &SecretDetails{SecretType: "token", Service: "scm", MaskedValue: raw}}}}
+		Location: &FindingLocation{Path: ".env", Snippet: raw}, Secret: &SecretDetails{Type: "token", Service: "scm", MaskedValue: raw}}}}
 	events, err := ToOCSF(r, nil)
 	if err != nil {
 		t.Fatal(err)

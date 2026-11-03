@@ -1,20 +1,18 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
-    "scope": {
-      "name": "github.com/example/shop"
-    }
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "trivy",
     "vendor": "Aqua Security",
-    "capabilities": [
+    "techniques": [
       "sca",
-      "misconfiguration",
+      "iac",
+      "container",
       "secret"
     ]
   },
@@ -40,24 +38,22 @@
       "rule_id": "CVE-2024-45337",
       "asset_ref": "asset-1",
       "vulnerability": {
-        "cve_id": "CVE-2024-45337",
-        "cve_ids": [
-          "CVE-2024-45337"
-        ],
-        "package": "golang.org/x/crypto",
-        "affected_version": "v0.30.0",
-        "fixed_version": "0.31.0",
         "ids": [
           {
             "type": "cve",
             "id": "CVE-2024-45337"
           }
+        ],
+        "package_name": "golang.org/x/crypto",
+        "installed_version": "v0.30.0",
+        "fixed_versions": [
+          "0.31.0"
         ]
       },
       "remediation": {
         "recommendation": "Upgrade golang.org/x/crypto to 0.31.0",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-45337"
@@ -66,7 +62,7 @@
         "trivy",
         "go.mod"
       ],
-      "fingerprint": "9e6a6997907f3f9292cad0f4beda5b459f22b5f030f81277a016800d8d1af88a",
+      "fingerprint": "ctis-fp/2:cc885a57415aeaa6f41116077b10c25e97f009360aa22ce8b33cedf77c89722b",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-45337",
@@ -89,14 +85,13 @@
         "snippet": "AWS_ACCESS_KEY_ID=********************"
       },
       "secret": {
-        "secret_type": "aws_key"
+        "type": "aws_key"
       },
       "tags": [
         "trivy",
         "secret",
         "deploy/config.env"
       ],
-      "fingerprint": "66c64296cec604b03406bae377b3b01ec0636e6d64c0f65b5da4d4255745c054",
       "native": {
         "scheme": "other",
         "vuln_id": "aws-access-key-id",

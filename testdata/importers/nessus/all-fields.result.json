@@ -2,7 +2,7 @@
   "format": "nessus",
   "stats": {
     "records": 2,
-    "assets": 2,
+    "assets": 3,
     "findings": 2,
     "components": 0,
     "statements": 0,

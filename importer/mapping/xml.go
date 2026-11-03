@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/openctemio/ctis/importer"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
 // Bounds of an XML input. The reader is importer.SafeXMLTokenReader: no

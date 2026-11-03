@@ -44,7 +44,7 @@ jobs:
         run: go build -v ./...
 
       # Includes the schema <-> Go parity tests, the examples and the
-      # converter outputs validated against schemas/v1.
+      # converter outputs validated against schemas/v2.
       - name: Run tests
         run: go test -race -coverprofile=coverage.out ./...
 
@@ -120,7 +120,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Meta-validates every schema (draft-07), resolves every $ref through
+      # Meta-validates every schema (2020-12), resolves every $ref through
       # the $id registry, validates examples/ and the converter golden files
       # with format checks, and requires examples/invalid/ to be rejected.
       - name: Validate schemas and examples
@@ -155,7 +155,7 @@ jobs:
           echo "all invalid examples refused"
 
       - name: Conformance vectors
-        run: '"$RUNNER_TEMP/ctis" conformance conformance/v1'
+        run: '"$RUNNER_TEMP/ctis" conformance conformance/v2'
 
   fuzz:
     name: Fuzz (smoke)
@@ -186,8 +186,6 @@ jobs:
           done
           # Web URLs: hostile URLs from crawlers, specs and scanners.
           go test -run '^$' -fuzz '^FuzzWebURL$' -fuzztime 20s -fuzzminimizetime 1x ./weburl
-          # Tool settings schemas come from sensors (untrusted on the platform).
-          go test -run '^$' -fuzz '^FuzzParseSettingsSchema$' -fuzztime 20s -fuzzminimizetime 1x ./settings
 
   build-compat:
     name: Cross-platform build
@@ -209,41 +207,3 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-
-  # transfer/ is its own module (it needs the Prometheus client; the root
-  # module keeps zero external dependencies), so the root jobs do not see it.
-  transfer:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: transfer
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: 1.27
-          cache: true
-          cache-dependency-path: transfer/go.sum
-
-      - name: Only the Prometheus client outside the standard library
-        run: |
-          EXTRA=$(go list -deps -f "{{if not .Standard}}{{.Module.Path}}{{end}}" ./... | sort -u | grep -v -e "^$" -e "^github.com/openctemio/ctis/transfer$" -e "^github.com/prometheus/" -e "^github.com/beorn7/perks$" -e "^github.com/cespare/xxhash/v2$" -e "^github.com/munnerz/goautoneg$" -e "^golang.org/x/sys$" -e "^google.golang.org/protobuf$" || true)
-          if [ -n "$EXTRA" ]; then
-            echo "ERROR: transfer depends on more than the Prometheus client:"
-            echo "$EXTRA"
-            exit 1
-          fi
-
-      - name: Vet
-        run: go vet ./...
-
-      - name: Test (includes the golden bytes of the v0.1.0 format)
-        run: go test -race ./...
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-        with:
-          version: ${{ env.GOLANGCI_LINT_VERSION }}
-          working-directory: transfer
-          args: --config=../.golangci.yml

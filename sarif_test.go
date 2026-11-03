@@ -61,7 +61,8 @@ func TestFromSARIFGolden(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			report.Metadata.Timestamp = fixedTime
+			report.Metadata.GeneratedAt = fixedTime
+			report.Metadata.ID = testReportID
 			assertReportValid(t, s, report)
 			if err := report.Validate(); err != nil {
 				t.Fatalf("converter output fails Validate: %v", err)
@@ -76,11 +77,11 @@ func TestFromSARIFSemgrep(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := r.Tool.Capabilities; len(got) != 1 || got[0] != "sast" {
-		t.Errorf("semgrep capabilities = %v, want [sast]", got)
+	if got := r.Tool.Techniques; len(got) != 1 || got[0] != TechniqueSAST {
+		t.Errorf("semgrep techniques = %v, want [sast]", got)
 	}
 	sqli := r.Findings[0]
-	if sqli.Vulnerability == nil || sqli.Vulnerability.CWEID != "CWE-89" {
+	if sqli.Vulnerability == nil || len(sqli.Vulnerability.CWEIDs) == 0 || sqli.Vulnerability.CWEIDs[0] != "CWE-89" {
 		t.Fatalf("semgrep CWE tag not read: %+v", sqli.Vulnerability)
 	}
 	if got := strings.Join(sqli.Vulnerability.OWASPIDs, ","); got != "A01:2017,A03:2021" {
@@ -92,8 +93,11 @@ func TestFromSARIFSemgrep(t *testing.T) {
 	if len(sqli.Fingerprint) != 64 {
 		t.Errorf("long fingerprint should be hashed to 64 hex chars, got %q", sqli.Fingerprint)
 	}
-	if len(r.Assets) != 0 {
-		t.Errorf("no asset was configured, got %v", r.Assets)
+	if len(r.Assets) != 1 || r.Assets[0].Type != AssetTypeUnclassified || sqli.AssetRef != r.Assets[0].ID {
+		t.Errorf("without a configured asset the findings go on an unclassified one: %v", r.Assets)
+	}
+	if sqli.Type != FindingTypeWeakness {
+		t.Errorf("a SAST result without an advisory id is a weakness, got %s", sqli.Type)
 	}
 }
 
@@ -156,8 +160,8 @@ func TestFromSARIFTrivy(t *testing.T) {
 			t.Errorf("finding %d (%s): %s/%s, want %s/%s", i, f.RuleID, f.Type, f.Severity, w.typ, w.sev)
 		}
 		cve := ""
-		if f.Vulnerability != nil {
-			cve = f.Vulnerability.CVEID
+		if c := CVEs(f.Vulnerability); len(c) > 0 {
+			cve = c[0]
 		}
 		if cve != w.cve {
 			t.Errorf("finding %d: cve %q, want %q", i, cve, w.cve)
@@ -174,8 +178,8 @@ func TestFromSARIFTrivy(t *testing.T) {
 			t.Errorf("ToolType sca: %s typed %s", f.RuleID, f.Type)
 		}
 	}
-	if r.Tool.Capabilities[0] != "sca" {
-		t.Errorf("ToolType sca capabilities = %v", r.Tool.Capabilities)
+	if r.Tool.Techniques[0] != TechniqueSCA {
+		t.Errorf("ToolType sca techniques = %v", r.Tool.Techniques)
 	}
 }
 
@@ -215,11 +219,11 @@ func TestFromSARIFAllRuns(t *testing.T) {
 		}
 		ids[f.ID] = true
 	}
-	if r.Findings[0].Type != FindingTypeSecret || r.Findings[1].Type != FindingTypeVulnerability {
+	if r.Findings[0].Type != FindingTypeSecret || r.Findings[1].Type != FindingTypeWeakness {
 		t.Errorf("type per run: %s, %s", r.Findings[0].Type, r.Findings[1].Type)
 	}
-	if r.Findings[2].Properties["sarif_tool"] != "semgrep" {
-		t.Errorf("multi-run finding does not name its tool: %v", r.Findings[2].Properties)
+	if r.Findings[2].Tool == nil || r.Findings[2].Tool.Name != "semgrep" {
+		t.Errorf("multi-run finding does not name its tool: %+v", r.Findings[2].Tool)
 	}
 	if err := r.Validate(); err != nil {
 		t.Fatal(err)
@@ -253,15 +257,15 @@ func TestFromSARIFEdgeCases(t *testing.T) {
 	if r.Findings[2].Severity != SeverityLow || r.Findings[2].Title != "r" {
 		t.Errorf("result security-severity 3.1: %+v", r.Findings[2])
 	}
-	if got := detectCapabilities("unknown-tool", ""); len(got) != 1 || got[0] != "vulnerability" {
-		t.Errorf("unknown tool capabilities = %v", got)
+	if got := detectTechniques("unknown-tool", ""); len(got) != 0 {
+		t.Errorf("unknown tool techniques = %v", got)
 	}
 }
 
 // opengrep SARIF (driver "Opengrep OSS") is code analysis, as semgrep's is.
-func TestDetectCapabilities_Opengrep(t *testing.T) {
-	got := detectCapabilities("Opengrep OSS", "")
-	if len(got) == 0 || got[0] != "sast" {
-		t.Errorf("opengrep capabilities = %v", got)
+func TestDetectTechniques_Opengrep(t *testing.T) {
+	got := detectTechniques("Opengrep OSS", "")
+	if len(got) == 0 || got[0] != TechniqueSAST {
+		t.Errorf("opengrep techniques = %v", got)
 	}
 }

@@ -2,7 +2,6 @@ package ctis
 
 import (
 	"fmt"
-	"net"
 	"net/url"
 	"slices"
 	"strconv"
@@ -10,7 +9,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // ReconConverterOptions configures the conversion from ReconResult to CTIS Report.
@@ -25,10 +24,6 @@ type ReconConverterOptions struct {
 	DefaultCriticality Criticality
 	DefaultConfidence  int // 0-100
 
-	// Asset grouping
-	GroupByDomain bool // Group subdomains under root domain asset
-	GroupByIP     bool // Group ports under IP asset
-
 	// Filtering
 	MinConfidence int // Minimum confidence to include
 }
@@ -38,8 +33,6 @@ func DefaultReconConverterOptions() *ReconConverterOptions {
 	return &ReconConverterOptions{
 		DiscoverySource:   "agent",
 		DefaultConfidence: 80,
-		GroupByDomain:     true,
-		GroupByIP:         true,
 		MinConfidence:     0,
 	}
 }
@@ -134,7 +127,7 @@ type LiveHostInput struct {
 	// CNAMEs is the DNS alias chain of the host.
 	CNAMEs []string
 	// WebContent is the result of a web content fetch of this host's URLs
-	// (see WebContentProperty). It is an explicit input: ParseHTTPXLine
+	// (see WebContentKey). It is an explicit input: ParseHTTPXLine
 	// never fills it.
 	WebContent []WebCaptureInput
 }
@@ -210,21 +203,23 @@ type TechnologyInput struct {
 	Website    string
 }
 
-// ConvertReconToCTIS converts reconnaissance results to a CTIS Report.
+// ConvertReconToCTIS converts reconnaissance results to a CTIS report.
 //
-// The output validates against schemas/v1:
-//   - scope.type is domain for subdomain, dns, http_probe and url_crawl
-//     scans and network for port scans;
-//   - tool.capabilities uses the capability vocabulary (subdomain, dns,
-//     portscan, http_probe, crawler, easm);
-//   - DNS record types are upper-cased, each value is its own record, and
-//     record types outside the schema enum are kept in the asset's
-//     properties["other_dns_records"] instead;
-//   - a port-scan target is an ip_address asset only when it is an IP
-//     address; a hostname becomes a host asset;
-//   - every HTTP probe result is an http_service asset, whatever its status.
+// The output follows the CTIS 2.0 asset model:
+//   - names are domain_name assets (canonical form), with their DNS records
+//     in technical.domain; a name that has no canonical form is skipped;
+//   - a port-scan target is an ip_address asset when it is an address and a
+//     host asset otherwise; each open port is a service asset
+//     ("host:port/transport") linked from it by an exposes relationship;
+//   - every HTTP probe result is a web_origin asset (its canonical origin)
+//     with technical.http (status, title, server, TLS version, CDN, WAF,
+//     JARM, favicon hash, security headers) and typed technologies; the
+//     leaf certificate is a certificate asset linked by serves_certificate;
+//     the address the origin answered on is an ip_address asset that the
+//     origin's name resolves_to;
+//   - crawled URLs are endpoints of their web_origin asset.
 //
-// Asset IDs are unique within the report, and assets keep the input order.
+// Asset ids are unique within the report and assets keep the input order.
 func ConvertReconToCTIS(input *ReconToCTISInput, opts *ReconConverterOptions) (*Report, error) {
 	if input == nil {
 		return nil, fmt.Errorf("recon input is nil")
@@ -238,61 +233,44 @@ func ConvertReconToCTIS(input *ReconToCTISInput, opts *ReconConverterOptions) (*
 		o.DiscoveryTool = input.ScannerName
 	}
 
-	now := time.Now()
-	report := &Report{
-		Version: SchemaVersion,
-		Schema:  SchemaURL,
-		Metadata: ReportMetadata{
-			ID:         fmt.Sprintf("recon-%s-%d", input.ScannerName, now.UnixNano()),
-			Timestamp:  now,
-			DurationMs: nonNegative(input.DurationMs),
-			SourceType: "scanner",
-			SourceRef:  input.Target,
-			Scope: &Scope{
-				Name: input.Target,
-				Type: getTargetScopeType(input.ReconType),
-			},
-		},
-		Tool: &Tool{
-			Name:         input.ScannerName,
-			Version:      input.ScannerVersion,
-			Vendor:       reconVendor(input.ScannerName),
-			Capabilities: []string{reconCapability(input.ReconType)},
-		},
-		Assets:     make([]Asset, 0),
-		Findings:   make([]Finding, 0),
-		Properties: make(Properties),
+	report := NewReport()
+	report.Metadata.DurationMs = nonNegative(input.DurationMs)
+	report.Metadata.Channel = ChannelScanner
+	if input.StartedAt > 0 {
+		t := time.Unix(input.StartedAt, 0).UTC()
+		report.Metadata.StartedAt = &t
 	}
-	ids := newAssetIDs()
+	if input.FinishedAt > 0 && input.FinishedAt >= input.StartedAt {
+		t := time.Unix(input.FinishedAt, 0).UTC()
+		report.Metadata.EndedAt = &t
+	}
+	report.Metadata.Profiles = []Profile{ProfileDiscovery}
+	report.Tool = &Tool{
+		Name:       input.ScannerName,
+		Version:    input.ScannerVersion,
+		Vendor:     reconVendor(input.ScannerName),
+		Techniques: []Technique{TechniqueEASM},
+	}
+	g := newReconGraph(report, o)
 
-	// Convert based on recon type
 	switch input.ReconType {
 	case "subdomain":
-		convertSubdomains(report, ids, input.Subdomains, o)
+		g.subdomains(input.Subdomains)
 	case "dns":
-		convertDNSRecords(report, ids, input.DNSRecords, o)
+		g.dnsRecords(input.DNSRecords)
 	case "port":
-		convertOpenPorts(report, ids, input.OpenPorts, o)
+		g.openPorts(input.OpenPorts)
 	case "http_probe":
-		convertLiveHosts(report, ids, input.LiveHosts, o)
+		g.liveHosts(input.LiveHosts)
 	case "url_crawl":
-		convertDiscoveredURLs(report, ids, input.URLs, o)
-		convertCrawlEndpoints(report, input.URLs)
+		g.crawl(input.URLs)
 	default:
-		// Try to convert all available data
-		convertSubdomains(report, ids, input.Subdomains, o)
-		convertDNSRecords(report, ids, input.DNSRecords, o)
-		convertOpenPorts(report, ids, input.OpenPorts, o)
-		convertLiveHosts(report, ids, input.LiveHosts, o)
-		convertDiscoveredURLs(report, ids, input.URLs, o)
-		convertCrawlEndpoints(report, input.URLs)
+		g.subdomains(input.Subdomains)
+		g.dnsRecords(input.DNSRecords)
+		g.openPorts(input.OpenPorts)
+		g.liveHosts(input.LiveHosts)
+		g.crawl(input.URLs)
 	}
-
-	// Add technologies if present
-	if len(input.Technologies) > 0 {
-		report.Properties["technologies"] = input.Technologies
-	}
-
 	return report, nil
 }
 
@@ -301,33 +279,6 @@ func nonNegative(v int64) int {
 		return 0
 	}
 	return int(v)
-}
-
-// getTargetScopeType maps a recon type to a scope type of report.json.
-func getTargetScopeType(reconType string) string {
-	if reconType == "port" {
-		return "network"
-	}
-	return "domain"
-}
-
-// reconCapability maps a recon type to the capability vocabulary of
-// report.json.
-func reconCapability(reconType string) string {
-	switch reconType {
-	case "subdomain":
-		return "subdomain"
-	case "dns":
-		return "dns"
-	case "port":
-		return "portscan"
-	case "http_probe":
-		return "http_probe"
-	case "url_crawl":
-		return "crawler"
-	default:
-		return "easm"
-	}
 }
 
 // projectDiscoveryTools are the scanners whose vendor is ProjectDiscovery.
@@ -359,239 +310,171 @@ func (a assetIDs) next(prefix, value string) string {
 	return id
 }
 
-// dnsRecordTypes are the record types report.json accepts.
-var dnsRecordTypes = map[string]bool{
-	"A": true, "AAAA": true, "CNAME": true, "MX": true, "TXT": true,
-	"NS": true, "SOA": true, "PTR": true, "SRV": true, "CAA": true,
+// reconGraph builds the assets and relationships of one report, one asset
+// per (type, canonical value) and one relationship per (type, from, to).
+type reconGraph struct {
+	r     *Report
+	o     *ReconConverterOptions
+	ids   assetIDs
+	index map[string]int  // type \x1f value -> asset index
+	rels  map[string]bool // type \x1f from \x1f to
+	now   time.Time
 }
 
-func baseProperties(o *ReconConverterOptions) Properties {
-	return Properties{
-		"discovery_source": o.DiscoverySource,
-		"discovery_tool":   o.DiscoveryTool,
+func newReconGraph(r *Report, o *ReconConverterOptions) *reconGraph {
+	g := &reconGraph{r: r, o: o, ids: newAssetIDs(), index: map[string]int{}, rels: map[string]bool{}, now: r.Metadata.GeneratedAt}
+	for i := range r.Assets {
+		g.ids[r.Assets[i].ID] = true
+		g.index[string(r.Assets[i].Type)+"\x1f"+r.Assets[i].Value] = i
+	}
+	return g
+}
+
+// asset returns the asset of type t and canonical value v, adding it when
+// the report does not have it yet. The id prefix is the type.
+func (g *reconGraph) asset(t AssetType, v string) *Asset {
+	k := string(t) + "\x1f" + v
+	if i, ok := g.index[k]; ok {
+		return &g.r.Assets[i]
+	}
+	now := g.now
+	g.r.Assets = append(g.r.Assets, Asset{
+		ID:          g.ids.next(string(t), v),
+		Type:        t,
+		Value:       v,
+		Criticality: g.o.DefaultCriticality,
+		Confidence:  g.o.DefaultConfidence,
+		LastSeenAt:  &now,
+	})
+	g.index[k] = len(g.r.Assets) - 1
+	return &g.r.Assets[len(g.r.Assets)-1]
+}
+
+// relate adds a relationship once.
+func (g *reconGraph) relate(t RelationshipType, from, to string) {
+	if from == "" || to == "" || from == to {
+		return
+	}
+	k := string(t) + "\x1f" + from + "\x1f" + to
+	if g.rels[k] || len(g.r.Relationships) >= MaxRelationships {
+		return
+	}
+	g.rels[k] = true
+	g.r.Relationships = append(g.r.Relationships, Relationship{Type: t, FromRef: from, ToRef: to})
+}
+
+// hostAsset returns the ip_address asset of an address or the domain_name
+// asset of a name, or nil when h is neither.
+func (g *reconGraph) hostAsset(h string) *Asset {
+	if ip, err := CanonicalIP(h); err == nil {
+		a := g.asset(AssetTypeIPAddress, ip)
+		if a.Technical == nil {
+			v := 4
+			if strings.Contains(ip, ":") {
+				v = 6
+			}
+			a.Technical = &AssetTechnical{IPAddress: &IPAddressTechnical{Version: v}}
+		}
+		return a
+	}
+	if d, err := CanonicalDomain(h); err == nil {
+		return g.asset(AssetTypeDomainName, d)
+	}
+	return nil
+}
+
+func domainTechnical(a *Asset) *DomainTechnical {
+	if a.Technical == nil {
+		a.Technical = &AssetTechnical{}
+	}
+	if a.Technical.Domain == nil {
+		a.Technical.Domain = &DomainTechnical{}
+	}
+	return a.Technical.Domain
+}
+
+func addDNSRecord(d *DomainTechnical, rec DNSRecord) {
+	for _, have := range d.DNSRecords {
+		if have.Type == rec.Type && have.Name == rec.Name && have.Value == rec.Value {
+			return
+		}
+	}
+	if len(d.DNSRecords) < MaxDNSRecords {
+		d.DNSRecords = append(d.DNSRecords, rec)
 	}
 }
 
-func convertSubdomains(report *Report, ids assetIDs, subdomains []SubdomainInput, opts *ReconConverterOptions) {
-	now := time.Now()
-	seen := make(map[string]bool)
+// MaxDNSRecords bounds the DNS records of one domain_name asset.
+const MaxDNSRecords = 500
 
+// dnsTypeRE is the form of a DNS RR type mnemonic.
+func validDNSType(t string) bool {
+	if t == "" || len(t) > 16 {
+		return false
+	}
+	for i := 0; i < len(t); i++ {
+		c := t[i]
+		if (c < 'A' || c > 'Z') && (c < '0' || c > '9') {
+			return false
+		}
+	}
+	return true
+}
+
+func (g *reconGraph) subdomains(subdomains []SubdomainInput) {
 	for _, sub := range subdomains {
-		if sub.Host == "" || seen[sub.Host] {
+		name, err := CanonicalDomain(sub.Host)
+		if err != nil {
 			continue
 		}
-		seen[sub.Host] = true
-
-		assetType := AssetTypeDomain
-		if sub.Domain != "" && sub.Host != sub.Domain {
-			assetType = AssetTypeSubdomain
-		}
-
-		asset := Asset{
-			ID:           ids.next("subdomain", sub.Host),
-			Type:         assetType,
-			Value:        sub.Host,
-			Name:         sub.Host,
-			Criticality:  opts.DefaultCriticality,
-			Confidence:   opts.DefaultConfidence,
-			DiscoveredAt: &now,
-			Properties:   baseProperties(opts),
-		}
-		if sub.Domain != "" {
-			asset.Properties["root_domain"] = sub.Domain
-		}
-		if sub.Source != "" {
-			asset.Properties["discovery_method"] = sub.Source
-		}
-
-		technical := &AssetTechnical{Domain: &DomainTechnical{}}
-		if len(sub.IPs) > 0 {
-			asset.Properties["resolved_ips"] = sub.IPs
-			seenIP := map[string]bool{}
-			for _, ip := range sub.IPs {
-				recType := "A"
-				parsed := net.ParseIP(ip)
-				if parsed == nil || seenIP[parsed.String()] {
-					continue
-				}
-				seenIP[parsed.String()] = true
-				ip = parsed.String()
-				if parsed.To4() == nil {
-					recType = "AAAA"
-				}
-				technical.Domain.DNSRecords = append(technical.Domain.DNSRecords, DNSRecord{
-					Type:  recType,
-					Name:  sub.Host,
-					Value: ip,
-				})
+		a := g.asset(AssetTypeDomainName, name)
+		d := domainTechnical(a)
+		for _, raw := range sub.IPs {
+			ip, err := CanonicalIP(raw)
+			if err != nil {
+				continue
 			}
+			typ := "A"
+			if strings.Contains(ip, ":") {
+				typ = "AAAA"
+			}
+			addDNSRecord(d, DNSRecord{Type: typ, Name: name, Value: ip})
 		}
-		asset.Technical = technical
-		report.Assets = append(report.Assets, asset)
 	}
 }
 
-func convertDNSRecords(report *Report, ids assetIDs, records []DNSRecordInput, opts *ReconConverterOptions) {
-	now := time.Now()
-
-	// Group records by host, keeping first-seen host order.
-	var hosts []string
-	hostRecords := make(map[string][]DNSRecord)
-	otherRecords := make(map[string][]map[string]any)
-
+func (g *reconGraph) dnsRecords(records []DNSRecordInput) {
 	for _, rec := range records {
-		if rec.Host == "" {
+		name, err := CanonicalDomain(rec.Host)
+		if err != nil {
 			continue
-		}
-		if _, ok := hostRecords[rec.Host]; !ok {
-			if _, ok := otherRecords[rec.Host]; !ok {
-				hosts = append(hosts, rec.Host)
-			}
 		}
 		recType := strings.ToUpper(strings.TrimSpace(rec.RecordType))
-		ttl := rec.TTL
-		if ttl < 0 {
-			ttl = 0
+		if !validDNSType(recType) {
+			continue
 		}
+		ttl := max(rec.TTL, 0)
+		a := g.asset(AssetTypeDomainName, name)
+		d := domainTechnical(a)
 		for _, v := range rec.Values {
-			v = strings.TrimSpace(v)
+			v = boundLine(v, MaxDNSValueLen)
 			if v == "" {
 				continue
 			}
-			if !dnsRecordTypes[recType] {
-				otherRecords[rec.Host] = append(otherRecords[rec.Host], map[string]any{
-					"type": recType, "value": v, "ttl": ttl,
-				})
-				continue
-			}
-			hostRecords[rec.Host] = append(hostRecords[rec.Host], DNSRecord{
-				Type:  recType,
-				Name:  rec.Host,
-				Value: v,
-				TTL:   ttl,
-			})
-		}
-	}
-
-	for _, host := range hosts {
-		dnsRecords := hostRecords[host]
-		asset := Asset{
-			ID:           ids.next("dns", host),
-			Type:         AssetTypeDomain,
-			Value:        host,
-			Name:         host,
-			Criticality:  opts.DefaultCriticality,
-			Confidence:   opts.DefaultConfidence,
-			DiscoveredAt: &now,
-			Technical: &AssetTechnical{
-				Domain: &DomainTechnical{
-					DNSRecords: dnsRecords,
-				},
-			},
-			Properties: baseProperties(opts),
-		}
-		asset.Properties["dns_record_count"] = len(dnsRecords)
-		if other := otherRecords[host]; len(other) > 0 {
-			asset.Properties["other_dns_records"] = other
-		}
-
-		// Extract nameservers from NS records
-		for _, rec := range dnsRecords {
-			if rec.Type == "NS" {
-				asset.Technical.Domain.Nameservers = append(asset.Technical.Domain.Nameservers, strings.TrimSuffix(rec.Value, "."))
+			addDNSRecord(d, DNSRecord{Type: recType, Name: name, Value: v, TTL: ttl})
+			if recType == "NS" {
+				if ns, err := CanonicalDomain(v); err == nil && !slices.Contains(d.Nameservers, ns) {
+					d.Nameservers = append(d.Nameservers, ns)
+				}
 			}
 		}
-
-		report.Assets = append(report.Assets, asset)
 	}
 }
 
-// portInfo converts a scanned port, dropping values outside the schema.
-func portInfo(p OpenPortInput) (PortInfo, bool) {
-	if p.Port < 1 || p.Port > 65535 {
-		return PortInfo{}, false
-	}
-	info := PortInfo{
-		Port:    p.Port,
-		State:   "open",
-		Service: cleanLine(p.Service),
-		Version: cleanLine(p.Version),
-		Banner:  cleanText(p.Banner),
-	}
-	switch proto := strings.ToLower(strings.TrimSpace(p.Protocol)); proto {
-	case "tcp", "udp":
-		info.Protocol = proto
-	}
-	return info, true
-}
+// MaxDNSValueLen bounds a DNS record value.
+const MaxDNSValueLen = 1024
 
-func convertOpenPorts(report *Report, ids assetIDs, ports []OpenPortInput, opts *ReconConverterOptions) {
-	now := time.Now()
-
-	if opts.GroupByIP {
-		// Group ports by IP/host, keeping first-seen order.
-		var keys []string
-		hostPorts := make(map[string][]PortInfo)
-		hostNames := make(map[string]string)
-
-		for _, p := range ports {
-			key := p.IP
-			if key == "" {
-				key = p.Host
-			}
-			if key == "" {
-				continue
-			}
-			info, ok := portInfo(p)
-			if !ok {
-				continue
-			}
-			if _, exists := hostPorts[key]; !exists {
-				keys = append(keys, key)
-				hostNames[key] = p.Host
-			}
-			hostPorts[key] = append(hostPorts[key], info)
-		}
-
-		for _, key := range keys {
-			portList := hostPorts[key]
-			technical := &IPAddressTechnical{Ports: portList}
-
-			assetType := AssetTypeIPAddress
-			idPrefix := "ip"
-			if ip := net.ParseIP(key); ip != nil {
-				technical.Version = 4
-				if ip.To4() == nil {
-					technical.Version = 6
-				}
-				if h := hostNames[key]; h != "" && h != key {
-					technical.Hostname = h
-				}
-			} else {
-				// Only a hostname is known: it is a host, not an IP address.
-				assetType = AssetTypeHost
-				idPrefix = "host"
-				technical.Hostname = key
-			}
-
-			asset := Asset{
-				ID:           ids.next(idPrefix, key),
-				Type:         assetType,
-				Value:        key,
-				Name:         key,
-				Criticality:  opts.DefaultCriticality,
-				Confidence:   opts.DefaultConfidence,
-				DiscoveredAt: &now,
-				Technical:    &AssetTechnical{IPAddress: technical},
-				Properties:   baseProperties(opts),
-			}
-			asset.Properties["open_port_count"] = len(portList)
-			report.Assets = append(report.Assets, asset)
-		}
-		return
-	}
-
-	// Create individual asset for each port
+func (g *reconGraph) openPorts(ports []OpenPortInput) {
 	for _, p := range ports {
 		key := p.IP
 		if key == "" {
@@ -600,141 +483,181 @@ func convertOpenPorts(report *Report, ids assetIDs, ports []OpenPortInput, opts 
 		if key == "" || p.Port < 1 || p.Port > 65535 {
 			continue
 		}
-		hostPort := net.JoinHostPort(key, strconv.Itoa(p.Port))
-		asset := Asset{
-			ID:           ids.next("port", hostPort),
-			Type:         AssetTypeOpenPort,
-			Value:        hostPort,
-			Name:         hostPort + "/" + strings.ToLower(p.Protocol),
-			Criticality:  opts.DefaultCriticality,
-			Confidence:   opts.DefaultConfidence,
-			DiscoveredAt: &now,
-			Properties:   baseProperties(opts),
+		var host *Asset
+		if ip, err := CanonicalIP(key); err == nil {
+			host = g.hostAsset(ip)
+			if h := strings.TrimSpace(p.Host); h != "" && h != key {
+				if host.Technical.IPAddress.Hostname == "" {
+					host.Technical.IPAddress.Hostname = boundLine(h, 253)
+				}
+			}
+		} else if name, err := CanonicalDomain(key); err == nil {
+			host = g.asset(AssetTypeHost, name)
+		} else {
+			continue
 		}
-		for k, v := range map[string]any{
-			"host": key, "port": p.Port, "protocol": strings.ToLower(p.Protocol),
-			"service": cleanLine(p.Service), "version": cleanLine(p.Version), "banner": cleanText(p.Banner),
-		} {
-			asset.Properties[k] = v
+		transport := Transport(strings.ToLower(strings.TrimSpace(p.Protocol)))
+		if !transport.IsValid() {
+			transport = TransportTCP
 		}
-		report.Assets = append(report.Assets, asset)
+		value, err := CanonicalService(host.Value, p.Port, string(transport))
+		if err != nil {
+			continue
+		}
+		hostID := host.ID
+		svc := g.asset(AssetTypeService, value)
+		if svc.Technical == nil {
+			st := &ServiceTechnical{
+				Port:      p.Port,
+				Transport: transport,
+				State:     PortOpen,
+				Version:   boundLine(p.Version, 128),
+				Banner:    truncateUTF8(cleanText(p.Banner), 4096),
+			}
+			if ap := ianaServiceName(p.Service); ap != "" {
+				st.AppProtocol = ap
+			}
+			svc.Technical = &AssetTechnical{Service: st}
+		}
+		g.relate(RelExposes, hostID, svc.ID)
 	}
 }
 
-func convertLiveHosts(report *Report, ids assetIDs, hosts []LiveHostInput, opts *ReconConverterOptions) {
-	now := time.Now()
-	seen := make(map[string]bool)
-	certIDs := make(map[string]string) // fingerprint -> certificate asset ID
+// ianaServiceName returns a scanner's service label as an IANA service name
+// ("http", "ssh", "microsoft-ds"), or "" when it is not one. Labels a scanner
+// suffixes with "?" (unsure) are kept without it.
+func ianaServiceName(s string) string {
+	s = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(s), "?"))
+	if !ianaServiceRE.MatchString(s) {
+		return ""
+	}
+	return s
+}
 
+// tlsVersionOf maps a probe's TLS version label ("tls13", "TLS 1.2",
+// "tls1.1", "SSLv3") to a TLSVersion, or "".
+func tlsVersionOf(s string) TLSVersion {
+	v := strings.ToLower(strings.NewReplacer(" ", "", "v", "", "_", "").Replace(strings.TrimSpace(s)))
+	switch v {
+	case "ssl3", "ssl3.0":
+		return TLSVersionSSL3
+	case "tls1", "tls10", "tls1.0":
+		return TLSVersionTLS10
+	case "tls11", "tls1.1":
+		return TLSVersionTLS11
+	case "tls12", "tls1.2":
+		return TLSVersionTLS12
+	case "tls13", "tls1.3":
+		return TLSVersionTLS13
+	}
+	return ""
+}
+
+// technologyOf parses a probe's technology label, "Name" or "Name:version".
+func technologyOf(s string) (Technology, bool) {
+	s = boundLine(s, MaxTechnologyNameLen+MaxTechnologyVerLen+1)
+	name, ver, _ := strings.Cut(s, ":")
+	name, ver = strings.TrimSpace(name), strings.TrimSpace(ver)
+	if name == "" || tooLong(name, MaxTechnologyNameLen) || tooLong(ver, MaxTechnologyVerLen) {
+		return Technology{}, false
+	}
+	return Technology{Name: name, Version: ver}, true
+}
+
+// providerToken returns a provider name as an open token ("Cloudflare" ->
+// "cloudflare"), or "".
+func providerToken(s string) string {
+	t := strings.ToLower(strings.TrimSpace(s))
+	t = strings.NewReplacer(" ", "-", "_", "-").Replace(t)
+	if !IsOpenToken(t) {
+		return ""
+	}
+	return t
+}
+
+func (g *reconGraph) liveHosts(hosts []LiveHostInput) {
 	for _, h := range hosts {
-		h.URL = stripURLUserinfo(h.URL)
-		if h.URL == "" || seen[h.URL] {
+		origin, err := CanonicalOrigin(stripURLUserinfo(h.URL))
+		if err != nil {
 			continue
 		}
-		seen[h.URL] = true
-		h.Redirect = stripURLUserinfo(h.Redirect)
-		h.Title = cleanLine(h.Title)
-		h.WebServer = cleanLine(h.WebServer)
+		a := g.asset(AssetTypeWebOrigin, origin)
+		if a.Technical != nil && a.Technical.HTTP != nil {
+			continue // first probe of an origin wins
+		}
+		ht := &HTTPTechnical{
+			Title:       boundLine(h.Title, 512),
+			WebServer:   boundLine(h.WebServer, 255),
+			ContentType: boundLine(h.ContentType, MaxContentTypeLen),
+			TLSVersion:  tlsVersionOf(h.TLSVersion),
+			JARM:        jarmHash(h.JARM),
+			FaviconMMH3: faviconMMH3(h.FaviconMMH3),
+		}
+		if validStatus(h.StatusCode) {
+			ht.StatusCode = h.StatusCode
+		}
+		if r := stripURLUserinfo(h.Redirect); r != "" && r != h.URL && IsWebURL(r) {
+			ht.RedirectURL = weburl.RedactURL(r)
+		}
+		if cdn := providerToken(h.CDN); cdn != "" {
+			switch strings.ToLower(strings.TrimSpace(h.CDNType)) {
+			case "waf":
+				ht.WAF = cdn
+			default:
+				ht.CDN = cdn
+			}
+		}
+		ht.SecurityHeaders = httpPosture(h.ResponseHeaders)
+		if a.Technical == nil {
+			a.Technical = &AssetTechnical{}
+		}
+		a.Technical.HTTP = ht
+		for _, raw := range h.Technologies {
+			if len(a.Technologies) >= MaxTechnologies {
+				break
+			}
+			if t, ok := technologyOf(raw); ok && !slices.ContainsFunc(a.Technologies, func(x Technology) bool { return x.Name == t.Name && x.Version == t.Version }) {
+				a.Technologies = append(a.Technologies, t)
+			}
+		}
+		if wc := webContent(h.WebContent, g.now); len(wc) > 0 {
+			a.Extensions.Set(OpenCTEMNamespace, WebContentKey, wc)
+		}
+		originID := a.ID
 
-		scheme := strings.ToLower(h.Scheme)
-		service := &ServiceTechnical{
-			Name:     h.WebServer,
-			Protocol: scheme,
-			TLS:      scheme == "https",
-		}
-		if h.Port >= 1 && h.Port <= 65535 {
-			service.Port = h.Port
-		}
-		if h.Port != 0 || scheme != "" {
-			service.Transport = "tcp"
-		}
-
-		asset := Asset{
-			ID:           ids.next("http", h.URL),
-			Type:         AssetTypeHTTPService,
-			Value:        h.URL,
-			Name:         h.Host,
-			Criticality:  opts.DefaultCriticality,
-			Confidence:   opts.DefaultConfidence,
-			DiscoveredAt: &now,
-			Technical:    &AssetTechnical{Service: service},
-			Properties:   baseProperties(opts),
-		}
-		for k, v := range map[string]any{
-			"status_code": h.StatusCode, "content_length": h.ContentLength,
-			"title": h.Title, "web_server": h.WebServer, "content_type": h.ContentType,
-			"response_time_ms": h.ResponseTime,
-		} {
-			asset.Properties[k] = v
-		}
-
-		// Technologies are facts about the host, not labels: receivers keep
-		// them as the asset's detected technologies. Copying them into
-		// tags made every fingerprint ("HSTS", "Vercel") a user label too.
-		if len(h.Technologies) > 0 {
-			asset.Properties["technologies"] = h.Technologies
-		}
-		if cdn := boundLine(h.CDN, maxProviderLen); cdn != "" {
-			asset.Properties["cdn"] = cdn
-			// The service is served through this provider's edge: the
-			// address it answered on is the provider's, not the tenant's.
-			asset.Properties["hosted_by"] = cdn
-			switch t := strings.ToLower(strings.TrimSpace(h.CDNType)); t {
-			case "cdn", "waf", "cloud":
-				asset.Properties["cdn_type"] = t
-				if t == "waf" {
-					asset.Properties["waf"] = cdn
+		// The origin's name, its aliases and the address it answered on.
+		var nameID string
+		if u, err := url.Parse(origin); err == nil {
+			if d, err := CanonicalDomain(u.Hostname()); err == nil {
+				name := g.asset(AssetTypeDomainName, d)
+				nameID = name.ID
+				dt := domainTechnical(name)
+				for _, c := range boundCNAMEs(h.CNAMEs) {
+					addDNSRecord(dt, DNSRecord{Type: "CNAME", Name: d, Value: c})
 				}
 			}
 		}
-		if h.TLSVersion != "" {
-			asset.Properties["tls_version"] = h.TLSVersion
-		}
-		if h.IP != "" {
-			asset.Properties["ip"] = h.IP
-		}
-		if h.Redirect != "" && h.Redirect != h.URL {
-			asset.Properties["redirect_url"] = h.Redirect
-		}
-		if v := faviconMMH3(h.FaviconMMH3); v != "" {
-			asset.Properties["favicon_mmh3"] = v
-		}
-		if v := jarmHash(h.JARM); v != "" {
-			asset.Properties["jarm"] = v
-		}
-		if asn := normalizeASN(h.ASN); asn != nil {
-			for k, v := range asn {
-				asset.Properties[k] = v
+		if ip, err := CanonicalIP(h.IP); err == nil {
+			ipa := g.hostAsset(ip)
+			if asn := normalizeASN(h.ASN); asn != nil {
+				t := ipa.Technical.IPAddress
+				if t.ASN == 0 {
+					t.ASN, t.ASNOrg, t.Country = asn.number, asn.org, asn.country
+				}
+			}
+			if nameID != "" {
+				g.relate(RelResolvesTo, nameID, ipa.ID)
 			}
 		}
-		if posture := httpPosture(h.ResponseHeaders); posture != nil {
-			asset.Properties[HTTPPostureProperty] = posture
-		}
-		if cn := boundCNAMEs(h.CNAMEs); len(cn) > 0 {
-			asset.Properties["cnames"] = cn
-		}
-		if wc := webContent(h.WebContent, now); len(wc) > 0 {
-			asset.Properties[WebContentProperty] = wc
-		}
-
-		var leaf *Asset
-		if cert, fp := certificateAsset(h.TLS, ids, certIDs, opts, now); fp != "" {
-			asset.Properties["tls_fingerprint"] = fp
-			asset.RelatedAssets = append(asset.RelatedAssets, certIDs[fp])
-			leaf = cert
-		}
-
-		report.Assets = append(report.Assets, asset)
-		if leaf != nil {
-			report.Assets = append(report.Assets, *leaf)
+		if cert := g.certificate(h.TLS); cert != "" {
+			g.relate(RelServesCertificate, originID, cert)
 		}
 	}
 }
 
-// Bounds on values a scanned server chooses (RFC-040 §5.4: sensor and target
-// output is hostile).
+// Bounds on values a scanned server chooses: sensor and target output is
+// hostile.
 const (
-	maxProviderLen = 64
 	maxCertNameLen = 255
 	maxSerialLen   = 128
 	maxCertSANs    = 100
@@ -747,33 +670,32 @@ func boundLine(s string, maxBytes int) string {
 	return strings.TrimSpace(truncateUTF8(cleanLine(s), maxBytes))
 }
 
-// certificateAsset converts the leaf certificate of an HTTP probe. It
-// returns the asset to add (nil when this report already has the
-// certificate: several services can serve one certificate) and the
-// certificate's fingerprint ("" when there is no usable leaf: no
-// certificate, or no valid SHA-256 fingerprint to identify it by).
-func certificateAsset(leaf *TLSLeafInput, ids assetIDs, certIDs map[string]string, opts *ReconConverterOptions, now time.Time) (*Asset, string) {
+// certificate adds the leaf certificate of an HTTP probe and returns its
+// asset id, or "" when there is no usable leaf (no certificate, or no valid
+// SHA-256 fingerprint to identify it by). Several origins can serve one
+// certificate; it is added once.
+func (g *reconGraph) certificate(leaf *TLSLeafInput) string {
 	if leaf == nil {
-		return nil, ""
+		return ""
 	}
-	fp := sha256Fingerprint(leaf.FingerprintSHA256)
-	if fp == "" {
-		return nil, ""
+	fp, err := CanonicalCertificateFingerprint(strings.TrimPrefix(strings.ToLower(strings.TrimSpace(leaf.FingerprintSHA256)), "sha256:"))
+	if err != nil {
+		return ""
 	}
-	if _, dup := certIDs[fp]; dup {
-		return nil, fp
+	a := g.asset(AssetTypeCertificate, fp)
+	if a.Technical != nil {
+		return a.ID
 	}
 	tech := &CertificateTechnical{
-		SerialNumber: boundLine(leaf.SerialNumber, maxSerialLen),
-		SubjectCN:    boundLine(leaf.SubjectCN, maxCertNameLen),
-		IssuerCN:     boundLine(leaf.IssuerCN, maxCertNameLen),
-		IssuerOrg:    boundLine(leaf.IssuerOrg, maxCertNameLen),
-		Fingerprint:  fp,
-		SelfSigned:   leaf.SelfSigned,
-		Wildcard:     leaf.Wildcard,
+		SerialNumber:      boundLine(leaf.SerialNumber, maxSerialLen),
+		SubjectCN:         boundLine(leaf.SubjectCN, maxCertNameLen),
+		IssuerCN:          boundLine(leaf.IssuerCN, maxCertNameLen),
+		IssuerOrg:         boundLine(leaf.IssuerOrg, maxCertNameLen),
+		SHA256Fingerprint: fp,
+		IsSelfSigned:      leaf.SelfSigned,
+		IsWildcard:        leaf.Wildcard,
 	}
-	sans, truncated := boundSANs(leaf.SANs)
-	tech.SANs = sans
+	tech.SubjectAltNames, _ = boundSANs(leaf.SANs)
 	if !leaf.NotBefore.IsZero() {
 		nb := leaf.NotBefore.UTC()
 		tech.NotBefore = &nb
@@ -782,45 +704,9 @@ func certificateAsset(leaf *TLSLeafInput, ids assetIDs, certIDs map[string]strin
 		na := leaf.NotAfter.UTC()
 		tech.NotAfter = &na
 	}
-	tech.Expired = leaf.Expired || (tech.NotAfter != nil && tech.NotAfter.Before(now))
-
-	id := ids.next("cert", fp)
-	certIDs[fp] = id
-	a := &Asset{
-		ID:           id,
-		Type:         AssetTypeCertificate,
-		Value:        fp,
-		Name:         fp,
-		Criticality:  opts.DefaultCriticality,
-		Confidence:   opts.DefaultConfidence,
-		DiscoveredAt: &now,
-		Technical:    &AssetTechnical{Certificate: tech},
-		Properties:   baseProperties(opts),
-	}
-	// The receiver correlates certificates by this top-level property.
-	a.Properties["fingerprint"] = fp
-	if tech.SubjectCN != "" {
-		a.Properties["subject_cn"] = tech.SubjectCN
-	}
-	if leaf.Mismatched {
-		a.Properties["host_mismatch"] = true
-	}
-	if truncated > 0 {
-		a.Properties["sans_truncated"] = truncated
-	}
-	return a, fp
-}
-
-// sha256Fingerprint returns a SHA-256 fingerprint as 64 lower-case hex
-// characters (colons, spaces and a "sha256:" prefix removed), or "".
-func sha256Fingerprint(s string) string {
-	s = strings.ToLower(strings.TrimSpace(s))
-	s = strings.TrimPrefix(s, "sha256:")
-	s = strings.NewReplacer(":", "", " ", "").Replace(s)
-	if len(s) != 64 || !isHex(s) {
-		return ""
-	}
-	return s
+	a.Name = tech.SubjectCN
+	a.Technical = &AssetTechnical{Certificate: tech}
+	return a.ID
 }
 
 func isHex(s string) bool {
@@ -883,9 +769,15 @@ func jarmHash(s string) string {
 	return s
 }
 
-// normalizeASN returns the properties of an autonomous system: asn
-// ("AS13335"), asn_org and asn_country. nil when the number is not one.
-func normalizeASN(a *ASNInput) map[string]any {
+type asnInfo struct {
+	number  int
+	org     string
+	country string
+}
+
+// normalizeASN returns an autonomous system's number, organization and
+// country, or nil when the number is not one.
+func normalizeASN(a *ASNInput) *asnInfo {
 	if a == nil {
 		return nil
 	}
@@ -893,69 +785,29 @@ func normalizeASN(a *ASNInput) map[string]any {
 	if len(num) > 2 && strings.EqualFold(num[:2], "as") {
 		num = num[2:]
 	}
-	n, err := strconv.ParseUint(num, 10, 32)
+	n, err := strconv.ParseUint(num, 10, 31)
 	if err != nil || n == 0 {
 		return nil
 	}
-	out := map[string]any{"asn": "AS" + strconv.FormatUint(n, 10)}
-	if org := boundLine(a.Org, maxASNOrgLen); org != "" {
-		out["asn_org"] = org
-	}
+	out := &asnInfo{number: int(n), org: boundLine(a.Org, maxASNOrgLen)}
 	if c := strings.ToUpper(strings.TrimSpace(a.Country)); len(c) == 2 && c[0] >= 'A' && c[0] <= 'Z' && c[1] >= 'A' && c[1] <= 'Z' {
-		out["asn_country"] = c
+		out.country = c
 	}
 	return out
 }
 
-func convertDiscoveredURLs(report *Report, ids assetIDs, urls []DiscoveredURLInput, opts *ReconConverterOptions) {
-	now := time.Now()
-	seen := make(map[string]bool)
-
-	for _, u := range urls {
-		// Query values, user info and fragments never leave the converter:
-		// a crawled URL can carry a session id or a reset token.
-		u.URL = weburl.RedactURL(u.URL)
-		if u.URL == "" || seen[u.URL] {
+// crawl adds the endpoints of crawled URLs and the web_origin asset of each
+// origin they belong to.
+func (g *reconGraph) crawl(urls []DiscoveredURLInput) {
+	start := len(g.r.Endpoints)
+	convertCrawlEndpoints(g.r, urls)
+	for i := start; i < len(g.r.Endpoints); i++ {
+		ep := &g.r.Endpoints[i]
+		origin, err := CanonicalOrigin(ep.Origin)
+		if err != nil {
 			continue
 		}
-		seen[u.URL] = true
-		if u.Parent != "" {
-			u.Parent = weburl.RedactURL(u.Parent)
-		}
-
-		// Parse URL to extract host
-		host := u.URL
-		if parsedURL, err := url.Parse(u.URL); err == nil && parsedURL.Host != "" {
-			host = parsedURL.Host
-		}
-
-		asset := Asset{
-			ID:           ids.next("url", u.URL),
-			Type:         AssetTypeDiscoveredURL,
-			Value:        u.URL,
-			Name:         truncateString(u.URL, 255),
-			Criticality:  opts.DefaultCriticality,
-			Confidence:   opts.DefaultConfidence,
-			DiscoveredAt: &now,
-			Properties:   baseProperties(opts),
-		}
-		for k, v := range map[string]any{
-			"host": host, "method": u.Method, "source": u.Source,
-			"depth": u.Depth, "type": u.Type, "extension": u.Extension,
-		} {
-			asset.Properties[k] = v
-		}
-		if u.Parent != "" {
-			asset.Properties["parent_url"] = u.Parent
-		}
-		if u.StatusCode > 0 {
-			asset.Properties["status_code"] = u.StatusCode
-		}
-		if u.Type != "" {
-			asset.Tags = append(asset.Tags, u.Type)
-		}
-
-		report.Assets = append(report.Assets, asset)
+		ep.OriginRef = g.asset(AssetTypeWebOrigin, origin).ID
 	}
 }
 
@@ -1044,114 +896,78 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
-// MergeReconReports merges multiple CTIS reports from different recon scanners.
-// This is useful when running a recon pipeline (subfinder -> dnsx -> naabu -> httpx).
+// MergeReconReports merges the CTIS reports of a recon pipeline (subfinder
+// -> dnsx -> naabu -> httpx) into one new report.
 //
-// Assets with the same value are merged into one (tags, properties, DNS
-// records, nameservers and ports are combined; the first report's other fields
-// win). Assets keep first-seen order and get report-unique IDs. The merged
-// tool's capabilities are the union of the inputs' capabilities; the tool
-// names are in properties["tools_used"]. The inputs are never modified, and
-// the result is always a new report.
+// Assets with the same type and value are merged into one: tags, DNS
+// records, nameservers and technologies are combined, and the first
+// report's other members win. Assets keep first-seen order and get
+// report-unique ids; relationships, findings and endpoints are re-pointed at
+// the merged ids, and relationships are de-duplicated. The merged tool's
+// techniques are the union of the inputs'. The inputs are never modified.
 func MergeReconReports(reports []*Report) *Report {
 	if len(reports) == 0 {
 		return nil
 	}
 
-	now := time.Now()
-	merged := &Report{
-		Version: SchemaVersion,
-		Schema:  SchemaURL,
-		Metadata: ReportMetadata{
-			ID:         fmt.Sprintf("merged-recon-%d", now.UnixNano()),
-			Timestamp:  now,
-			SourceType: "scanner",
-		},
-		Assets:     make([]Asset, 0),
-		Findings:   make([]Finding, 0),
-		Properties: make(Properties),
-	}
-
-	tools := make([]string, 0)
-	var capabilities []string
-	capSeen := map[string]bool{}
+	merged := NewReport()
+	merged.Metadata.Channel = ChannelScanner
+	merged.Metadata.Profiles = []Profile{ProfileDiscovery}
+	g := newReconGraph(merged, &ReconConverterOptions{})
+	var techniques []Technique
 	totalDuration := 0
-
-	var order []string
-	byValue := make(map[string]*Asset)
 	endpointIndex := map[string]int{}
-	relatedValues := make(map[string][]string) // asset value -> related asset values
 
 	for _, report := range reports {
 		if report == nil {
 			continue
 		}
 		if report.Tool != nil {
-			tools = append(tools, report.Tool.Name)
-			for _, c := range report.Tool.Capabilities {
-				if !capSeen[c] {
-					capSeen[c] = true
-					capabilities = append(capabilities, c)
+			for _, t := range report.Tool.Techniques {
+				if !slices.Contains(techniques, t) {
+					techniques = append(techniques, t)
 				}
 			}
 		}
 		totalDuration += report.Metadata.DurationMs
 
-		valueOf := make(map[string]string, len(report.Assets)) // ID in this report -> value
-		for i := range report.Assets {
-			valueOf[report.Assets[i].ID] = report.Assets[i].Value
-		}
+		idOf := make(map[string]string, len(report.Assets)) // id in this report -> merged id
 		for i := range report.Assets {
 			src := &report.Assets[i]
-			for _, rel := range src.RelatedAssets {
-				if v, ok := valueOf[rel]; ok && !slices.Contains(relatedValues[src.Value], v) {
-					relatedValues[src.Value] = append(relatedValues[src.Value], v)
-				}
-			}
-			if existing, ok := byValue[src.Value]; ok {
-				mergeAssetProperties(existing, src)
+			k := string(src.Type) + "\x1f" + src.Value
+			if j, ok := g.index[k]; ok {
+				mergeAsset(&merged.Assets[j], src)
+				idOf[src.ID] = merged.Assets[j].ID
 				continue
 			}
 			c := cloneAsset(src)
-			c.RelatedAssets = nil
-			byValue[src.Value] = &c
-			order = append(order, src.Value)
+			if c.ID == "" || g.ids[c.ID] {
+				c.ID = g.ids.next(string(c.Type), c.Value)
+			}
+			g.ids[c.ID] = true
+			merged.Assets = append(merged.Assets, c)
+			g.index[k] = len(merged.Assets) - 1
+			idOf[src.ID] = c.ID
 		}
-
-		merged.Findings = append(merged.Findings, report.Findings...)
+		for _, rel := range report.Relationships {
+			g.relate(rel.Type, idOf[rel.FromRef], idOf[rel.ToRef])
+		}
+		for _, f := range report.Findings {
+			f.AssetRef = idOf[f.AssetRef]
+			merged.Findings = append(merged.Findings, f)
+		}
+		start := len(merged.Endpoints)
 		merged.Endpoints = mergeEndpoints(merged.Endpoints, endpointIndex, report.Endpoints)
-	}
-
-	ids := newAssetIDs()
-	idOf := make(map[string]string, len(order))
-	for _, v := range order {
-		a := byValue[v]
-		if a.ID != "" && !ids[a.ID] {
-			ids[a.ID] = true
-		} else if a.ID != "" {
-			a.ID = ids.next("asset", a.Value)
-		}
-		idOf[v] = a.ID
-	}
-	// Related assets are IDs within one report: point them at the merged
-	// IDs (an asset's ID can change when two reports used the same one).
-	for _, v := range order {
-		a := *byValue[v]
-		for _, rv := range relatedValues[v] {
-			if id := idOf[rv]; id != "" && id != a.ID {
-				a.RelatedAssets = append(a.RelatedAssets, id)
+		for i := start; i < len(merged.Endpoints); i++ {
+			ep := &merged.Endpoints[i]
+			if origin, err := CanonicalOrigin(ep.Origin); err == nil {
+				ep.OriginRef = g.asset(AssetTypeWebOrigin, origin).ID
 			}
 		}
-		merged.Assets = append(merged.Assets, a)
 	}
 
 	merged.Metadata.DurationMs = totalDuration
-	merged.Properties["tools_used"] = tools
-	merged.Tool = &Tool{
-		Name:         "recon-pipeline",
-		Capabilities: capabilities,
-	}
-
+	merged.Tool = &Tool{Name: "recon-pipeline", Techniques: techniques}
 	return merged
 }
 
@@ -1160,12 +976,7 @@ func MergeReconReports(reports []*Report) *Report {
 func cloneAsset(src *Asset) Asset {
 	c := *src
 	c.Tags = append([]string(nil), src.Tags...)
-	if src.Properties != nil {
-		c.Properties = make(Properties, len(src.Properties))
-		for k, v := range src.Properties {
-			c.Properties[k] = v
-		}
-	}
+	c.Technologies = append([]Technology(nil), src.Technologies...)
 	if src.Technical != nil {
 		t := *src.Technical
 		if t.Domain != nil {
@@ -1176,7 +987,6 @@ func cloneAsset(src *Asset) Asset {
 		}
 		if t.IPAddress != nil {
 			ip := *t.IPAddress
-			ip.Ports = append([]PortInfo(nil), ip.Ports...)
 			t.IPAddress = &ip
 		}
 		c.Technical = &t
@@ -1184,89 +994,65 @@ func cloneAsset(src *Asset) Asset {
 	return c
 }
 
-// mergeAssetProperties merges properties from src into dst.
-func mergeAssetProperties(dst, src *Asset) {
-	// Merge tags
-	tagSet := make(map[string]bool)
-	for _, t := range dst.Tags {
-		tagSet[t] = true
-	}
+// mergeAsset merges src into dst (the same type and value).
+func mergeAsset(dst, src *Asset) {
 	for _, t := range src.Tags {
-		if !tagSet[t] {
+		if !slices.Contains(dst.Tags, t) {
 			dst.Tags = append(dst.Tags, t)
-			tagSet[t] = true
 		}
 	}
-
-	// Merge properties
-	if dst.Properties == nil {
-		dst.Properties = make(Properties)
-	}
-	for k, v := range src.Properties {
-		if _, exists := dst.Properties[k]; !exists {
-			dst.Properties[k] = v
+	for _, t := range src.Technologies {
+		if len(dst.Technologies) < MaxTechnologies && !slices.ContainsFunc(dst.Technologies, func(x Technology) bool { return x.Name == t.Name && x.Version == t.Version }) {
+			dst.Technologies = append(dst.Technologies, t)
 		}
 	}
-
-	// Merge technical details (domain)
-	if src.Technical != nil && src.Technical.Domain != nil {
+	if src.Technical != nil {
 		if dst.Technical == nil {
-			dst.Technical = &AssetTechnical{}
-		}
-		if dst.Technical.Domain == nil {
-			dst.Technical.Domain = &DomainTechnical{}
-		}
-
-		// Merge DNS records
-		existingRecords := make(map[string]bool)
-		for _, rec := range dst.Technical.Domain.DNSRecords {
-			key := rec.Type + ":" + rec.Name + ":" + rec.Value
-			existingRecords[key] = true
-		}
-		for _, rec := range src.Technical.Domain.DNSRecords {
-			key := rec.Type + ":" + rec.Name + ":" + rec.Value
-			if !existingRecords[key] {
-				dst.Technical.Domain.DNSRecords = append(dst.Technical.Domain.DNSRecords, rec)
+			t := *cloneAsset(src).Technical
+			dst.Technical = &t
+		} else {
+			if src.Technical.Domain != nil {
+				d := domainTechnical(dst)
+				for _, rec := range src.Technical.Domain.DNSRecords {
+					addDNSRecord(d, rec)
+				}
+				for _, ns := range src.Technical.Domain.Nameservers {
+					if !slices.Contains(d.Nameservers, ns) {
+						d.Nameservers = append(d.Nameservers, ns)
+					}
+				}
 			}
-		}
-
-		// Merge nameservers
-		nsSet := make(map[string]bool)
-		for _, ns := range dst.Technical.Domain.Nameservers {
-			nsSet[ns] = true
-		}
-		for _, ns := range src.Technical.Domain.Nameservers {
-			if !nsSet[ns] {
-				dst.Technical.Domain.Nameservers = append(dst.Technical.Domain.Nameservers, ns)
+			if dst.Technical.IPAddress == nil && src.Technical.IPAddress != nil {
+				ip := *src.Technical.IPAddress
+				dst.Technical.IPAddress = &ip
 			}
-		}
-	}
-
-	// Merge technical details (IP)
-	if src.Technical != nil && src.Technical.IPAddress != nil {
-		if dst.Technical == nil {
-			dst.Technical = &AssetTechnical{}
-		}
-		if dst.Technical.IPAddress == nil {
-			dst.Technical.IPAddress = &IPAddressTechnical{}
-		}
-
-		// Merge ports
-		existingPorts := make(map[string]bool)
-		for _, p := range dst.Technical.IPAddress.Ports {
-			key := strconv.Itoa(p.Port) + ":" + p.Protocol
-			existingPorts[key] = true
-		}
-		for _, p := range src.Technical.IPAddress.Ports {
-			key := strconv.Itoa(p.Port) + ":" + p.Protocol
-			if !existingPorts[key] {
-				dst.Technical.IPAddress.Ports = append(dst.Technical.IPAddress.Ports, p)
+			if dst.Technical.HTTP == nil {
+				dst.Technical.HTTP = src.Technical.HTTP
+			}
+			if dst.Technical.Service == nil {
+				dst.Technical.Service = src.Technical.Service
+			}
+			if dst.Technical.Certificate == nil {
+				dst.Technical.Certificate = src.Technical.Certificate
 			}
 		}
 	}
-
-	// Update confidence (take higher)
 	if src.Confidence > dst.Confidence {
 		dst.Confidence = src.Confidence
 	}
+}
+
+// maxProviderLen bounds a CDN or WAF provider name.
+const maxProviderLen = 64
+
+// sha256Fingerprint returns a SHA-256 fingerprint as 64 lower-case hex
+// characters (colons, spaces and a "sha256:" prefix removed), or "".
+func sha256Fingerprint(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	s = strings.TrimPrefix(s, "sha256:")
+	s = strings.NewReplacer(":", "", " ", "").Replace(s)
+	if len(s) != 64 || !isHex(s) {
+		return ""
+	}
+	return s
 }

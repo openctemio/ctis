@@ -35,7 +35,7 @@ var _ = registerSpec(Spec{
 		{Path: csDoc + "/publisher/contact_details", Ignored: "publisher contact (personal data)"},
 		{Path: csDoc + "/publisher/issuing_authority", Ignored: "publisher's authority statement (prose)"},
 		{Path: csDoc + "/tracking", Target: Container},
-		{Path: csDoc + "/tracking/id", Target: "metadata.source_ref, vex[].vex.source"},
+		{Path: csDoc + "/tracking/id", Target: "metadata.source_refs[], vex[].vex.source"},
 		{Path: csDoc + "/tracking/version", Target: "metadata.properties.document_version"},
 		{Path: csDoc + "/tracking/status", Target: "metadata.properties.document_status"},
 		{Path: csDoc + "/tracking/current_release_date", Target: "vex[].vex.as_of, metadata.properties.current_release_date"},

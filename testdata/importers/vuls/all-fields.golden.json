@@ -1,22 +1,22 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "vuls",
     "vendor": "future-architect",
     "info_url": "https://vuls.io",
-    "capabilities": [
+    "techniques": [
       "va"
     ]
   },
   "assets": [
     {
-      "id": "host-1",
+      "id": "ip_address-192.0.2.80",
       "type": "ip_address",
       "value": "192.0.2.80",
       "name": "web01.example.com",
@@ -55,36 +55,30 @@
       "severity": "critical",
       "confidence": 100,
       "rule_id": "CVE-2024-6387",
-      "asset_ref": "host-1",
+      "asset_ref": "ip_address-192.0.2.80",
       "vulnerability": {
-        "cve_id": "CVE-2024-6387",
-        "cve_ids": [
-          "CVE-2024-6387"
-        ],
-        "cwe_ids": [
-          "CWE-362"
-        ],
-        "cwe_id": "CWE-362",
-        "cvss_version": "4.0",
-        "cvss_score": 9.2,
-        "cvss_vector": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
-        "package": "openssh-server",
-        "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6?arch=amd64&distro=22.04",
-        "affected_version": "1:8.9p1-3ubuntu0.6",
-        "fixed_version": "1:8.9p1-3ubuntu0.10",
-        "published_at": "2024-07-01T13:15:00Z",
-        "modified_at": "2024-09-01T00:00:00Z",
         "ids": [
           {
             "type": "cve",
             "id": "CVE-2024-6387"
           }
-        ]
+        ],
+        "cwe_ids": [
+          "CWE-362"
+        ],
+        "package_name": "openssh-server",
+        "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6?arch=amd64&distro=22.04",
+        "installed_version": "1:8.9p1-3ubuntu0.6",
+        "fixed_versions": [
+          "1:8.9p1-3ubuntu0.10"
+        ],
+        "published_at": "2024-07-01T13:15:00Z",
+        "modified_at": "2024-09-01T00:00:00Z"
       },
       "remediation": {
         "recommendation": "Update openssh-server to version 1:8.9p1-3ubuntu0.10",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://nvd.nist.gov/vuln/detail/CVE-2024-6387",
@@ -94,7 +88,7 @@
         "vuls",
         "web01.example.com"
       ],
-      "fingerprint": "28cfa357a60fb04fd10fdbaf801697aacf087dfd64f8609ea76838c424d6e700",
+      "fingerprint": "ctis-fp/2:9b3172f061961f64a1e4d37aa894dc6e64b78a96f883a0dfb2624f2860b6f00e",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-6387"
@@ -132,9 +126,9 @@
     {
       "name": "openssh-server",
       "version": "1:8.9p1-3ubuntu0.6",
-      "type": "os",
-      "ecosystem": "deb",
-      "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6?arch=amd64&distro=22.04"
+      "type": "library",
+      "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6?arch=amd64&distro=22.04",
+      "asset_ref": "ip_address-192.0.2.80"
     }
   ]
 }

@@ -13,15 +13,15 @@ package importer
 
 const (
 	httpxFile    = "/webs/web_full_info*.txt"
-	reconTarget  = "assets[] (hostnames and addresses are candidates: properties.import_scope says whether they are inside the target)"
+	reconTarget  = "assets[] (hostnames and addresses are candidates: extensions[io.openctem].import_scope says whether they are inside the target)"
 	reconRuleSet = "A recon directory is read as one bundle (ParseBundle). Detection looks at the layout (report/report.json, subdomains/subdomains.txt, webs/webs.txt, hosts/ips.txt), never at a file name. Files may sit under one leading directory (the target name); two recon directories in one archive are refused."
 )
 
 var reconRules = []string{
 	reconRuleSet,
 	"Layout and version: tool.version is the `reconFTW version:` line of a file under .log/ (first 64 KiB), else `unknown-v4` or `unknown-v3`. A directory with report/report.json, or a log that names version 4 or later, is read with the v4 rows; any other directory with the v3 rows.",
-	"Candidates: every hostname and address is kept as an asset whether or not it belongs to the target. properties.import_scope is `in_target` (the host is the target domain or below it, or below one of Options.ScopeDomains), `outside_target`, or `unknown` (no target is known, or the asset is an address). A receiver decides scope; the importer never drops an outside host.",
-	"Takeovers, buckets and cloud assets are candidates, never findings: the host asset (or a storage asset) carries properties.candidate_exposure (`subdomain_takeover`, `storage_bucket`, `cloud_asset`) and candidate_unverified=true, so the receiver can verify before it alerts.",
+	"Candidates: every hostname and address is kept as an asset whether or not it belongs to the target. extensions[io.openctem].import_scope is `in_target` (the host is the target domain or below it, or below one of Options.ScopeDomains), `outside_target`, or `unknown` (no target is known, or the asset is an address). A receiver decides scope; the importer never drops an outside host.",
+	"Takeovers, buckets and cloud assets are candidates, never findings: the host asset (or a storage asset) carries extensions[io.openctem].candidate_exposure (`subdomain_takeover`, `storage_bucket`, `cloud_asset`) and candidate_unverified=true (both in extensions[io.openctem]), so the receiver can verify before it alerts.",
 	"People and credentials: everything under osint/ is never opened (emails, passwords, names, metadata, dorks). Screenshots are not read. Both are listed in Result.Skipped with the reason.",
 	"Every other file is listed in Result.Unmapped with its path; a field of a mapped httpx line that is not in this spec is listed as `<file>/<member>`.",
 	"Endpoints: one per origin, method and path template, source `import`, with the names of the query parameters and never their values. A URL that is not a plain http or https URL (javascript:, data:, user info, control characters, CR/LF/NUL) is refused and counted.",
@@ -36,9 +36,9 @@ func reconFields(v4 bool) []Field {
 	if v4 {
 		f = append(f,
 			Field{Path: "/report/report.json", Target: Container},
-			Field{Path: "/report/report.json/domain", Target: "metadata.scope.name, metadata.source_ref (the target domain)"},
+			Field{Path: "/report/report.json/domain", Target: "metadata.source_refs[] (the target domain)"},
 			Field{Path: "/report/report.json/mode", Target: "properties.reconftw_mode"},
-			Field{Path: "/report/report.json/generated_at", Target: "metadata.timestamp (clamped to the time of the import), assets[].discovered_at"},
+			Field{Path: "/report/report.json/generated_at", Target: "metadata.generated_at (clamped to the time of the import), assets[].first_seen_at"},
 			Field{Path: "/report/report.json/summary", Ignored: "counts reconFTW computed; never trusted, the importer recounts"},
 			Field{Path: "/report/report.json/summary/**", Ignored: "counts reconFTW computed; never trusted, the importer recounts"},
 			Field{Path: "/report/report.json/delta", Ignored: "change summary against an earlier reconFTW run; the receiver computes its own changes"},
@@ -47,10 +47,10 @@ func reconFields(v4 bool) []Field {
 	}
 	f = append(f,
 		Field{Path: "/.log/*.txt", Target: "tool.version (the `reconFTW version:` line, first 64 KiB)"},
-		Field{Path: "/subdomains/subdomains.txt", Target: reconTarget + " as domain or subdomain assets"},
+		Field{Path: "/subdomains/subdomains.txt", Target: reconTarget + " as domain_name assets"},
 		Field{Path: "/hosts/ips.txt", Target: reconTarget + " as ip_address assets"},
-		Field{Path: "/hosts/cdn_providers.txt", Target: "assets[ip_address].properties.cdn"},
-		Field{Path: "/hosts/naabu*.txt", Target: "assets[ip_address or host].technical.ip_address.ports (open, tcp)"},
+		Field{Path: "/hosts/cdn_providers.txt", Target: "assets[ip_address].extensions[io.openctem].cdn"},
+		Field{Path: "/hosts/naabu*.txt", Target: "assets[service] (host:port/tcp, exposed by the host), relationships[exposes]"},
 		Field{Path: httpxFile, Target: Container},
 	)
 	for _, m := range httpxMembers {
@@ -65,15 +65,15 @@ func reconFields(v4 bool) []Field {
 		}
 	}
 	f = append(f,
-		Field{Path: "/webs/webs.txt", Target: "assets[http_service] (only for URLs the httpx file does not hold)"},
-		Field{Path: "/webs/webs_uncommon_ports.txt", Target: "assets[http_service] (only for URLs the httpx file does not hold)"},
-		Field{Path: "/webs/webs_wafs.txt", Target: "assets[http_service].properties.waf"},
+		Field{Path: "/webs/webs.txt", Target: "assets[web_origin] (only for URLs the httpx file does not hold)"},
+		Field{Path: "/webs/webs_uncommon_ports.txt", Target: "assets[web_origin] (only for URLs the httpx file does not hold)"},
+		Field{Path: "/webs/webs_wafs.txt", Target: "assets[web_origin].technical.http.waf"},
 		Field{Path: "/webs/url_extract.txt", Target: "endpoints[] (source import; query parameter names only)"},
 		Field{Path: "/webs/urls_by_ext.txt", Target: "endpoints[] (source import)"},
 		Field{Path: "/gf/*.txt", Target: "endpoints[] (source import; the class is recomputed, the file's bucket name is not kept)"},
 		Field{Path: "/js/js_livelinks.txt", Target: "endpoints[] (kind script, source js)"},
 		Field{Path: "/js/js_endpoints.txt", Target: "endpoints[] (source js)"},
-		Field{Path: "/webs/takeover.txt", Target: "assets[domain or subdomain].properties.candidate_exposure=subdomain_takeover"},
+		Field{Path: "/webs/takeover.txt", Target: "assets[domain_name].extensions[io.openctem].candidate_exposure=subdomain_takeover"},
 		Field{Path: "/subdomains/s3buckets.txt", Target: "assets[storage] (candidate_exposure=storage_bucket)"},
 		Field{Path: "/subdomains/cloud_assets.txt", Target: "assets[storage] (candidate_exposure=cloud_asset)"},
 		Field{Path: "/nuclei_output/*_json.txt", Target: "findings[] through the nuclei importer; assets[] for the hosts they name"},
@@ -87,25 +87,25 @@ func reconFields(v4 bool) []Field {
 // Members not listed are reported in Result.Unmapped.
 var httpxMembers = func() []httpxMember {
 	m := []httpxMember{
-		{name: "url", target: "assets[http_service].value and name; endpoints[].origin (query values, user info, fragment and control characters refused)"},
-		{name: "host", target: "assets[http_service].properties.ip (when it is an address)"},
-		{name: "host_ip", target: "assets[http_service].properties.ip"},
-		{name: "scheme", target: "assets[http_service].technical.service.protocol, tls (from the URL)"},
-		{name: "status_code", target: "assets[http_service].properties.status_code"},
-		{name: "content_length", target: "assets[http_service].properties.content_length"},
-		{name: "title", target: "assets[http_service].properties.title"},
-		{name: "webserver", target: "assets[http_service].properties.web_server, technical.service.name"},
-		{name: "content_type", target: "assets[http_service].properties.content_type"},
-		{name: "tech", target: "assets[http_service].properties.technologies"},
-		{name: "cdn", target: "assets[http_service].properties.cdn (with cdn_name)"},
-		{name: "cdn_name", target: "assets[http_service].properties.cdn, hosted_by"},
-		{name: "cdn_type", target: "assets[http_service].properties.cdn_type, waf"},
-		{name: "time", target: "assets[http_service].properties.response_time_ms"},
-		{name: "location", target: "assets[http_service].properties.redirect_url (no query values)"},
-		{name: "favicon", target: "assets[http_service].properties.favicon_mmh3"},
-		{name: "jarm", target: "assets[http_service].properties.jarm"},
+		{name: "url", target: "assets[web_origin].value (the origin) and name; endpoints[].origin (query values, user info, fragment and control characters refused)"},
+		{name: "host", target: "assets[ip_address] (when it is an address), relationships[resolves_to]"},
+		{name: "host_ip", target: "assets[ip_address], relationships[resolves_to]"},
+		{name: "scheme", target: "assets[web_origin].value (scheme)"},
+		{name: "status_code", target: "assets[web_origin].technical.http.status_code"},
+		{name: "content_length", target: "assets[web_origin] (not kept: content length)"},
+		{name: "title", target: "assets[web_origin].technical.http.title"},
+		{name: "webserver", target: "assets[web_origin].technical.http.web_server"},
+		{name: "content_type", target: "assets[web_origin].technical.http.content_type"},
+		{name: "tech", target: "assets[web_origin].technologies[]"},
+		{name: "cdn", target: "assets[web_origin].technical.http.cdn (with cdn_name)"},
+		{name: "cdn_name", target: "assets[web_origin].technical.http.cdn"},
+		{name: "cdn_type", target: "assets[web_origin].technical.http.cdn or waf"},
+		{name: "time", target: "assets[web_origin].extensions[io.openctem] (not kept: response time)"},
+		{name: "location", target: "assets[web_origin].technical.http.redirect_url (no query values)"},
+		{name: "favicon", target: "assets[web_origin].technical.http.favicon_mmh3"},
+		{name: "jarm", target: "assets[web_origin].technical.http.jarm"},
 		{name: "tls", target: "(container)"},
-		{name: "tls/tls_version", target: "assets[http_service].properties.tls_version"},
+		{name: "tls/tls_version", target: "assets[web_origin].technical.http.tls_version"},
 		{name: "tls/subject_cn", target: "assets[certificate].technical.certificate.subject_cn"},
 		{name: "tls/subject_an", target: "assets[certificate].technical.certificate.sans"},
 		{name: "tls/issuer_cn", target: "assets[certificate].technical.certificate.issuer_cn"},
@@ -118,9 +118,9 @@ var httpxMembers = func() []httpxMember {
 		{name: "tls/wildcard_certificate", target: "assets[certificate].technical.certificate.wildcard"},
 		{name: "tls/mismatched", target: "assets[certificate].properties.host_mismatch"},
 		{name: "asn", target: "(container)"},
-		{name: "asn/as_number", target: "assets[http_service].properties.asn"},
-		{name: "asn/as_name", target: "assets[http_service].properties.asn_org"},
-		{name: "asn/as_country", target: "assets[http_service].properties.asn_country"},
+		{name: "asn/as_number", target: "assets[ip_address].technical.ip_address.asn"},
+		{name: "asn/as_name", target: "assets[ip_address].technical.ip_address.asn_org"},
+		{name: "asn/as_country", target: "assets[ip_address].technical.ip_address.country"},
 		{name: "failed", ignored: "a failed probe has no result; the line is skipped"},
 		{name: "input", ignored: "the probe input; url is kept"},
 		{name: "port", ignored: "the URL carries the port"},

@@ -1,0 +1,248 @@
+{
+ "description": "Every document and the result a conforming implementation must reach: valid, or invalid with the problem category (version, decode, validate) and a substring of its message. schema_level false marks a document schemas/v2 alone accepts and only semantic validation refuses. Paths are relative to this file.",
+ "documents": [
+  {
+   "file": "valid/minimal.json",
+   "result": "valid"
+  },
+  {
+   "file": "invalid/asset-value-not-canonical.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: value \"WWW.Example.com\" is not canonical for type domain_na",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/dangling-asset-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: asset_ref \"missing\" names no asset in this report",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/duplicate-asset-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[1]: duplicate id \"a\"",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/version-minor-future.json",
+   "result": "invalid",
+   "category": "version",
+   "error": "unsupported version \"2.99\": this tool implements [2.0]",
+   "schema_level": false
+  },
+  {
+   "file": "../../../examples/assets-attack-surface.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/compliance.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/ctem-coverage.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/discovery-graph.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/misconfiguration.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/network-vulnerability-interop.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/network-vulnerability.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/sast.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/secret.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/vulnerability-sca.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/web-endpoints-evidence.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/web3.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/invalid/asset-type-other.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: invalid type \"other\""
+  },
+  {
+   "file": "../../../examples/invalid/asset-type-removed-subdomain.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: invalid type \"subdomain\""
+  },
+  {
+   "file": "../../../examples/invalid/attack-technique-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: attack_technique_ids[0] \"TA0043\" is not an ATT&CK techniq"
+  },
+  {
+   "file": "../../../examples/invalid/endpoint-param-value.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "json: unknown field \"value\""
+  },
+  {
+   "file": "../../../examples/invalid/endpoint-path-query.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: path must start with '/', have no query or fragment, no "
+  },
+  {
+   "file": "invalid/epss-percentile-0-100.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: value 97.5 is outside 0-1",
+   "schema_level": false
+  },
+  {
+   "file": "../../../examples/invalid/evidence-header-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: evidence_items[0]: http.request.headers[0].name is not a "
+  },
+  {
+   "file": "../../../examples/invalid/evidence-kind-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: evidence_items[0]: invalid kind"
+  },
+  {
+   "file": "../../../examples/invalid/extension-namespace-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "extensions: \"openctem\" is not a reverse-DNS namespace"
+  },
+  {
+   "file": "../../../examples/invalid/finding-type-web3.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: invalid type \"web3\""
+  },
+  {
+   "file": "../../../examples/invalid/finding-web-param-location.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: parameter: invalid location \"body\""
+  },
+  {
+   "file": "../../../examples/invalid/finding-without-asset-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: asset_ref is required"
+  },
+  {
+   "file": "../../../examples/invalid/legacy-member-cve-id.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "json: unknown field \"cve_id\""
+  },
+  {
+   "file": "../../../examples/invalid/metadata-id-not-uuidv7.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.id \"import-test\" is not a lowercase UUIDv7"
+  },
+  {
+   "file": "../../../examples/invalid/ref-uuid-shaped.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0].id \"6f1c2b0e-4a7d-4e3b-9c1a-2b3c4d5e6f70\" is UUID-shaped: do"
+  },
+  {
+   "file": "../../../examples/invalid/reference-javascript-url.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0].references[0] \"javascript:alert(1)\" is not an http or http"
+  },
+  {
+   "file": "../../../examples/invalid/relationship-type-unknown.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: invalid type \"owns\""
+  },
+  {
+   "file": "../../../examples/invalid/score-system-unknown.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: invalid system \"cvss_v3\""
+  },
+  {
+   "file": "../../../examples/invalid/service-without-transport.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technical.service.transport \"\" is not tcp, udp or sctp"
+  },
+  {
+   "file": "../../../examples/invalid/source-extra-not-string.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "cannot unmarshal object"
+  },
+  {
+   "file": "../../../examples/invalid/suppression-state.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "json: unknown field \"state\""
+  },
+  {
+   "file": "../../../examples/invalid/target-class-does-not-fit.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[0]: state done takes no class or cause"
+  },
+  {
+   "file": "../../../examples/invalid/threat-signal-due-on-datetime.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vulnerability.threat_signals[0].due_on \"2026-11-10T00:00:"
+  },
+  {
+   "file": "../../../examples/invalid/unknown-field.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "json: unknown field \"sevrity\""
+  },
+  {
+   "file": "../../../examples/invalid/version-major-1.json",
+   "result": "invalid",
+   "category": "version",
+   "error": "unsupported version \"1.6\": this tool implements [2.0]; upgrade the pro"
+  },
+  {
+   "file": "../../../examples/invalid/vex-justification-unknown.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vex.justification \"not_reachable\" is invalid"
+  },
+  {
+   "file": "../../../examples/invalid/vulnerability-id-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vulnerability.ids[0] (\"cve\", \"CVE 2024 1\") is not a valid"
+  }
+ ]
+}

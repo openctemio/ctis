@@ -8,14 +8,11 @@ import (
 )
 
 // The HTTP posture of an origin: the response headers that state a security
-// policy, and the names and flags of the cookies it sets. It is an attribute
-// of the http_service asset (Properties["http_posture"]). A scanned server
+// policy, and the names and flags of the cookies it sets. It is
+// technical.http.security_headers of the web_origin asset. A scanned server
 // chooses every byte, so the converter applies the allow-list itself, whatever
 // the producer sent: a header outside it, and any cookie value, never reach
 // the report.
-
-// HTTPPostureProperty is the asset property that holds the posture.
-const HTTPPostureProperty = "http_posture"
 
 // Bounds on posture values.
 const (
@@ -44,68 +41,64 @@ type CookieFlagsInput struct {
 	Persistent bool
 }
 
-// postureKeys maps an allow-listed header (lower case) to its property key.
-var postureKeys = map[string]string{
-	"strict-transport-security":        "strict_transport_security",
-	"content-security-policy":          "content_security_policy",
-	"x-frame-options":                  "x_frame_options",
-	"x-content-type-options":           "x_content_type_options",
-	"referrer-policy":                  "referrer_policy",
-	"permissions-policy":               "permissions_policy",
-	"access-control-allow-origin":      "access_control_allow_origin",
-	"access-control-allow-credentials": "access_control_allow_credentials",
-}
-
-// PostureKeys returns the keys a posture attribute can hold besides
-// "cookies", sorted.
-func PostureKeys() []string {
-	keys := make([]string, 0, len(postureKeys))
-	for _, k := range postureKeys {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-// httpPosture builds the http_posture attribute, or nil when nothing passes.
-func httpPosture(in *ResponseHeadersInput) map[string]any {
+// httpPosture builds the security headers of an origin, or nil when
+// nothing passes the allow-list.
+func httpPosture(in *ResponseHeadersInput) *SecurityHeaders {
 	if in == nil {
 		return nil
 	}
-	out := map[string]any{}
+	out := &SecurityHeaders{}
+	set := false
 	for name, v := range in.Values {
-		key, ok := postureKeys[strings.ToLower(strings.TrimSpace(name))]
-		if !ok {
-			continue
-		}
 		v = strings.TrimSpace(v)
 		if v == "" || len(v) > MaxPostureValueLen || !plainText(v) {
 			continue
 		}
-		out[key] = v
+		var dst *string
+		switch strings.ToLower(strings.TrimSpace(name)) {
+		case "strict-transport-security":
+			dst = &out.StrictTransportSecurity
+		case "content-security-policy":
+			dst = &out.ContentSecurityPolicy
+		case "x-frame-options":
+			dst = &out.XFrameOptions
+		case "x-content-type-options":
+			dst = &out.XContentTypeOptions
+		case "referrer-policy":
+			dst = &out.ReferrerPolicy
+		case "permissions-policy":
+			dst = &out.PermissionsPolicy
+		case "access-control-allow-origin":
+			dst = &out.AccessControlAllowOrigin
+		case "access-control-allow-credentials":
+			dst = &out.AccessControlAllowCredentials
+		default:
+			continue
+		}
+		*dst = v
+		set = true
 	}
-	var cookies []map[string]any
 	seen := map[string]bool{}
 	for _, c := range in.Cookies {
-		if len(cookies) >= MaxPostureCookies {
+		if len(out.Cookies) >= MaxPostureCookies {
 			break
 		}
 		if !validCookieToken(c.Name) || seen[c.Name] {
 			continue
 		}
 		seen[c.Name] = true
-		m := map[string]any{"name": c.Name, "secure": c.Secure, "http_only": c.HTTPOnly, "persistent": c.Persistent}
+		cf := CookieFlags{Name: c.Name, IsSecure: c.Secure, IsHTTPOnly: c.HTTPOnly, IsPersistent: c.Persistent}
 		switch ss := strings.ToLower(strings.TrimSpace(c.SameSite)); ss {
 		case "strict", "lax", "none":
-			m["same_site"] = ss
+			cf.SameSite = ss
 		}
-		cookies = append(cookies, m)
+		out.Cookies = append(out.Cookies, cf)
 	}
-	if len(cookies) > 0 {
-		sort.Slice(cookies, func(i, j int) bool { return cookies[i]["name"].(string) < cookies[j]["name"].(string) })
-		out["cookies"] = cookies
+	if len(out.Cookies) > 0 {
+		sort.Slice(out.Cookies, func(i, j int) bool { return out.Cookies[i].Name < out.Cookies[j].Name })
+		set = true
 	}
-	if len(out) == 0 {
+	if !set {
 		return nil
 	}
 	return out

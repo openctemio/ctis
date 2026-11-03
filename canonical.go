@@ -121,6 +121,11 @@ func CanonicalDomain(s string) (string, error) {
 		}
 		labels[i] = l
 	}
+	if allDigits(labels[len(labels)-1]) {
+		// An all-numeric top label is an IPv4 address in another notation
+		// (192.168.001.010, 3232235786), never a domain name (RFC 3696).
+		return "", canonErr("domain", s, "numeric top-level label")
+	}
 	out := strings.Join(labels, ".")
 	if len(out) > maxDomainLen {
 		return "", canonErr("domain", s, "longer than 253 bytes")

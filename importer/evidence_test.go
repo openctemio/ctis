@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Evidence items carry the HTTP exchange as captured: every credential in

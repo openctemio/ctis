@@ -1,37 +1,37 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "nuclei",
     "vendor": "ProjectDiscovery",
     "info_url": "https://github.com/projectdiscovery/nuclei",
-    "capabilities": [
+    "techniques": [
       "dast"
     ]
   },
   "assets": [
     {
-      "id": "asset-1",
-      "type": "domain",
-      "value": "example.com",
-      "name": "example.com"
+      "id": "web_origin-https://example.com",
+      "type": "web_origin",
+      "value": "https://example.com",
+      "name": "https://example.com"
     },
     {
-      "id": "asset-2",
-      "type": "domain",
-      "value": "expired.example.com",
-      "name": "expired.example.com"
+      "id": "web_origin-https://expired.example.com",
+      "type": "web_origin",
+      "value": "https://expired.example.com",
+      "name": "https://expired.example.com"
     },
     {
-      "id": "asset-3",
-      "type": "ip_address",
-      "value": "10.0.0.7",
-      "name": "10.0.0.7"
+      "id": "web_origin-http://10.0.0.7:3000",
+      "type": "web_origin",
+      "value": "http://10.0.0.7:3000",
+      "name": "http://10.0.0.7:3000"
     }
   ],
   "findings": [
@@ -43,24 +43,19 @@
       "severity": "critical",
       "confidence": 90,
       "rule_id": "cve-2023-1234",
-      "asset_ref": "asset-1",
+      "asset_ref": "web_origin-https://example.com",
+      "web": {
+        "url": "https://example.com/cgi-bin/test"
+      },
       "vulnerability": {
-        "cve_id": "CVE-2023-1234",
-        "cve_ids": [
-          "CVE-2023-1234"
-        ],
-        "cwe_ids": [
-          "CWE-78"
-        ],
-        "cwe_id": "CWE-78",
-        "cvss_version": "3.1",
-        "cvss_score": 9.8,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
         "ids": [
           {
             "type": "cve",
             "id": "CVE-2023-1234"
           }
+        ],
+        "cwe_ids": [
+          "CWE-78"
         ]
       },
       "remediation": {
@@ -78,7 +73,7 @@
         "nuclei",
         "http"
       ],
-      "fingerprint": "ead2725aa7347fea093b8b952f114242a64cf55aeb95ded7f1555dd5ec897886",
+      "fingerprint": "ctis-fp/2:90c2ecbea01aa633fa171edba49509b0d2f529743070eee59c1df718d5dcc40c",
       "native": {
         "scheme": "other",
         "vuln_id": "cve-2023-1234",
@@ -98,9 +93,6 @@
         "matcher_name": "body",
         "target": "https://example.com"
       },
-      "web": {
-        "url": "https://example.com/cgi-bin/test"
-      },
       "evidence_items": [
         {
           "kind": "curl",
@@ -117,14 +109,17 @@
       "severity": "info",
       "confidence": 90,
       "rule_id": "tech-detect",
-      "asset_ref": "asset-1",
+      "asset_ref": "web_origin-https://example.com",
+      "web": {
+        "url": "https://example.com/"
+      },
       "tags": [
         "tech",
         "apache",
         "nuclei",
         "http"
       ],
-      "fingerprint": "da0374e50c79cf07707f83ad0084ee3340fb24f033ab2f1f3ba91d5904549f32",
+      "fingerprint": "ctis-fp/2:c0cdfa9bd7fd644ef57897b05935b2ae2cd85c130317c89f10b1d1f8b5ce146b",
       "native": {
         "scheme": "other",
         "vuln_id": "tech-detect",
@@ -133,9 +128,6 @@
       },
       "source_extra": {
         "target": "https://example.com"
-      },
-      "web": {
-        "url": "https://example.com/"
       }
     },
     {
@@ -146,7 +138,10 @@
       "severity": "high",
       "confidence": 90,
       "rule_id": "ssl-expired",
-      "asset_ref": "asset-2",
+      "asset_ref": "web_origin-https://expired.example.com",
+      "web": {
+        "url": "https://expired.example.com/"
+      },
       "references": [
         "https://ssl-config.mozilla.org/"
       ],
@@ -156,7 +151,7 @@
         "expired",
         "nuclei"
       ],
-      "fingerprint": "3219f7ffe6d9eef3175c2f4df98170ea3e8a0ab724ef8f3defe083215522d7b4",
+      "fingerprint": "ctis-fp/2:5a84138b809b3286de58732e48d03619675b0e4c8364ceb90f8e0d5027a618f8",
       "native": {
         "scheme": "other",
         "vuln_id": "ssl-expired",
@@ -165,9 +160,6 @@
       },
       "source_extra": {
         "target": "https://expired.example.com"
-      },
-      "web": {
-        "url": "https://expired.example.com/"
       }
     },
     {
@@ -177,14 +169,17 @@
       "severity": "info",
       "confidence": 90,
       "rule_id": "exposed-panel-grafana",
-      "asset_ref": "asset-3",
+      "asset_ref": "web_origin-http://10.0.0.7:3000",
+      "web": {
+        "url": "http://10.0.0.7:3000/login"
+      },
       "tags": [
         "panel",
         "grafana",
         "nuclei",
         "http"
       ],
-      "fingerprint": "c9853fec4857cd75b9ade6680fd55f926ced93a9a40500cdc5795e3ab3b5815e",
+      "fingerprint": "ctis-fp/2:469cd831e0c659b4b967a7eebd68749943fc8ce11f19e499246d79359e2fe814",
       "native": {
         "scheme": "other",
         "vuln_id": "exposed-panel-grafana",
@@ -193,9 +188,6 @@
       },
       "source_extra": {
         "target": "10.0.0.7:3000"
-      },
-      "web": {
-        "url": "http://10.0.0.7:3000/login"
       }
     }
   ]

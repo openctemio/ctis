@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// docs/spec.md carries a field reference generated from schemas/v1 between
+// docs/spec.md carries a field reference generated from schemas/v2 between
 // two markers. This test regenerates it and fails when the committed text is
 // stale; run `go test -run TestSpecFieldReference -update` to refresh it.
 
@@ -18,7 +18,7 @@ const (
 	specEndMarker   = "<!-- END GENERATED FIELD REFERENCE -->"
 )
 
-var specFileOrder = []string{"report.json", "asset.json", "finding.json", "dependency.json", "web3-asset.json", "web3-finding.json"}
+var specFileOrder = []string{"report.json", "asset.json", "finding.json", "dependency.json", "endpoint.json", "evidence-item.json", "web3-asset.json", "web3-finding.json"}
 
 func TestSpecFieldReference(t *testing.T) {
 	s := loadSchemaSet(t)

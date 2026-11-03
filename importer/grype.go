@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // grype JSON output: the vulnerability matches of the packages found in an
@@ -15,7 +16,7 @@ import (
 
 func init() {
 	parsers[FormatGrype] = parseGrype
-	tools[FormatGrype] = ctis.Tool{Name: "grype", Vendor: "Anchore", Capabilities: []string{"sca"}}
+	tools[FormatGrype] = ctis.Tool{Name: "grype", Vendor: "Anchore", Techniques: []ctis.Technique{ctis.TechniqueSCA}}
 }
 
 type grypeCVSS struct {
@@ -127,10 +128,10 @@ type grypeOutput struct {
 		Version string `json:"version"`
 	} `json:"distro"`
 	Descriptor struct {
-		Name      string `json:"name"`
-		Version   string `json:"version"`
-		Timestamp string `json:"timestamp"`
-		DB        struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+		TS      string `json:"timestamp"`
+		DB      struct {
 			Built         string  `json:"built"`
 			SchemaVersion flexStr `json:"schemaVersion"`
 		} `json:"db"`
@@ -165,7 +166,7 @@ func parseGrype(b *builder, r io.Reader) error {
 	if v := line(out.Descriptor.DB.SchemaVersion.String(), 32); v != "" {
 		props["grype_db_schema"] = v
 	}
-	if t := parseTime(out.Descriptor.Timestamp); t != nil {
+	if t := parseTime(out.Descriptor.TS); t != nil {
 		props["generated_at"] = t.Format("2006-01-02T15:04:05Z07:00")
 	}
 	if len(props) > 0 {
@@ -198,9 +199,13 @@ func parseGrype(b *builder, r io.Reader) error {
 			if assetID, err = b.asset(asset); err != nil {
 				return err
 			}
+			if assetID == "" {
+				b.res.Stats.Skipped++
+				continue
+			}
 		}
 		dep := grypeDependency(&m.Artifact)
-		if !depIDs[dep.ID] {
+		if dep.ID != "" && !depIDs[dep.ID] {
 			depIDs[dep.ID] = true
 			if err := b.dependency(dep); err != nil {
 				return err
@@ -231,17 +236,24 @@ func (b *builder) grypeAsset(kind string, target json.RawMessage, distro, distro
 	}
 	kind = strings.ToLower(strings.TrimSpace(kind))
 	value := line(firstNonEmpty(t.UserInput, t.Path), capShort)
-	typ := ctis.AssetTypeRepository
-	switch kind {
-	case "image":
-		typ = ctis.AssetTypeContainer
-	case "sbom", "":
-		typ = ctis.AssetTypeUnclassified
+	// A directory or file is a local path, which is no repository: it stays
+	// unclassified, like an SBOM.
+	typ := ctis.AssetTypeUnclassified
+	if kind == "image" {
+		typ = ctis.AssetTypeContainerImage
+		// A repo digest names the image itself; the user input may only name
+		// its repository and tag.
+		for _, d := range t.RepoDigests {
+			if c, err := ctis.CanonicalImage(d); err == nil && strings.Contains(c, "@sha256:") {
+				value = c
+				break
+			}
+		}
 	}
 	if value == "" {
 		value = "grype-" + firstNonEmpty(kind, "scan")
 	}
-	a := ctis.Asset{ID: "grype-" + value, Type: typ, Value: value, Name: value}
+	a := ctis.Asset{Type: typ, Value: value, Name: value}
 	p := ctis.Properties{}
 	set := func(k, v string) {
 		if v = line(v, capShort); v != "" {
@@ -273,17 +285,22 @@ func grypeDependency(a *grypeArtifact) ctis.Dependency {
 	version := line(a.Version, capShort)
 	purl := cleanPURL(a.PURL)
 	id := line(firstNonEmpty(a.ID, purl, nameVersion(name, version)), capShort)
-	d := ctis.Dependency{ID: id, Name: name, Version: version, PURL: purl, Type: line(a.Type, 32)}
-	if e := vulnEcosystem(firstNonEmpty(purlType(purl), a.Language, a.Type)); e != "" {
-		d.Ecosystem = e
+	if id != "" {
+		id = refOr("dep", id)
 	}
+	if _, _, err := ctis.CanonicalPurl(purl); err != nil {
+		purl = ""
+	}
+	d := ctis.Dependency{ID: id, Name: name, Version: version, PURL: purl, Type: ctis.DependencyTypeLibrary}
 	for _, l := range a.Licenses {
 		if v := line(l.String(), capShort); v != "" && len(d.Licenses) < 16 {
 			d.Licenses = appendUnique(d.Licenses, v)
 		}
 	}
 	if len(a.Locations) > 0 {
-		d.Path = line(a.Locations[0].Path, 1024)
+		if p := line(a.Locations[0].Path, 1024); p != "" {
+			d.Locations = []ctis.DependencyLocation{{Path: p}}
+		}
 		addDepProperty(&d, "layer_id", a.Locations[0].LayerID)
 	}
 	if len(a.CPEs) > 0 {
@@ -316,12 +333,9 @@ func (b *builder) grypeFinding(m *grypeMatch, vid, assetID, ptr string, i int, d
 		},
 	}
 	vuln := &ctis.VulnerabilityDetails{
-		Package:         pkg,
-		AffectedVersion: version,
-		PURL:            cleanPURL(art.PURL),
-	}
-	if e := vulnEcosystem(firstNonEmpty(purlType(vuln.PURL), art.Language, art.Type)); e != "" {
-		vuln.Ecosystem = e
+		PackageName:      pkg,
+		InstalledVersion: version,
+		PURL:             goodPURL(art.PURL),
 	}
 	if len(art.CPEs) > 0 {
 		vuln.CPE = line(art.CPEs[0], capShort)
@@ -350,49 +364,38 @@ func (b *builder) grypeFinding(m *grypeMatch, vid, assetID, ptr string, i int, d
 			if e.EPSS != nil && *e.EPSS >= 0 && *e.EPSS <= 1 {
 				vc := *e.EPSS
 				addScore(&f, ctis.Score{System: ctis.ScoreSystemEPSS, Value: &vc, Source: "first", AsOf: parseTime(e.Date)})
-				if vc > vuln.EPSSScore {
-					vuln.EPSSScore = vc
-				}
 			}
 			if e.Percentile != nil && *e.Percentile >= 0 && *e.Percentile <= 1 {
 				vc := *e.Percentile
 				addScore(&f, ctis.Score{System: ctis.ScoreSystemEPSSPercentile, Value: &vc, Source: "first", AsOf: parseTime(e.Date)})
-				if vc > vuln.EPSSPercentile {
-					vuln.EPSSPercentile = vc
-				}
 			}
 		}
 		for _, kev := range meta.KnownExploited {
-			vuln.InCISAKEV = true
-			vuln.ExploitAvailable = true
+			kevAt := parseTime(kev.DateAdded)
+			addSignal(vuln, ctis.ThreatSignalKEV, "cisa", kevAt)
+			for k := range vuln.ThreatSignals {
+				if s := &vuln.ThreatSignals[k]; s.Type == ctis.ThreatSignalKEV && s.DueOn == "" {
+					if d := parseTime(kev.DueDate); d != nil {
+						s.DueOn = d.Format(time.DateOnly)
+					}
+				}
+			}
+			if strings.EqualFold(strings.TrimSpace(kev.KnownRansomwareCampaignUse), "known") {
+				addSignal(vuln, ctis.ThreatSignalRansomwareUse, "cisa", kevAt)
+			}
 			for _, c := range kev.CWEs {
 				if c = strings.ToUpper(strings.TrimSpace(c)); strings.HasPrefix(c, "CWE-") && len(c) <= 16 {
 					vuln.CWEIDs = appendUnique(vuln.CWEIDs, c)
 				}
 			}
-			extras(&f, "kev_date_added", kev.DateAdded, "kev_due_date", kev.DueDate,
-				"kev_required_action", kev.RequiredAction, "kev_ransomware_use", kev.KnownRansomwareCampaignUse,
+			extras(&f, "kev_required_action", kev.RequiredAction,
 				"kev_notes", kev.Notes, "kev_vendor_product", strings.TrimSpace(kev.VendorProject+" "+kev.Product))
-			for _, u := range kev.URLs {
-				if validURL(u) {
-					f.References = addRefs(f.References, u)
-				}
-			}
+			f.References = addWebRefs(f.References, kev.URLs...)
 		}
-		for _, u := range meta.URLs {
-			if validURL(u) {
-				f.References = addRefs(f.References, u)
-			}
-		}
-		if validURL(meta.DataSource) {
-			f.References = addRefs(f.References, meta.DataSource)
-		}
-	}
-	if len(vuln.CWEIDs) > 0 {
-		vuln.CWEID = vuln.CWEIDs[0]
+		f.References = addWebRefs(f.References, meta.URLs...)
+		f.References = addWebRefs(f.References, meta.DataSource)
 	}
 	f.Vulnerability = vuln
-	setLegacyCVSS(&f)
 
 	sev, ok := severityWord(v.Severity)
 	if !ok {
@@ -416,24 +419,25 @@ func (b *builder) grypeFinding(m *grypeMatch, vid, assetID, ptr string, i int, d
 			vuln.FixedVersions = appendUnique(vuln.FixedVersions, fv)
 		}
 	}
-	if len(vuln.FixedVersions) > 0 {
-		vuln.FixedVersion = vuln.FixedVersions[0]
-	}
 	rem := &ctis.Remediation{}
 	switch strings.ToLower(strings.TrimSpace(v.Fix.State)) {
 	case "fixed":
-		rem.FixAvailable = true
+		rem.IsFixAvailable = ctis.Bool(true)
 		rem.SolutionType = ctis.SolutionTypeUpgrade
-		if vuln.FixedVersion != "" {
+		if len(vuln.FixedVersions) > 0 {
 			rem.Recommendation = "Upgrade " + pkg + " to " + strings.Join(vuln.FixedVersions, " or ") + "."
 		}
 	case "wont-fix":
-		rem.SolutionType = ctis.SolutionTypeNoFix
+		rem.IsFixAvailable = ctis.Bool(false)
+		rem.SolutionType = ctis.SolutionTypeNoFixPlanned
+	case "not-fixed":
+		rem.IsFixAvailable = ctis.Bool(false)
+		rem.SolutionType = ctis.SolutionTypeNoneAvailable
 	}
 	for _, a := range v.Advisories {
 		addAdvisoryURL(rem, a.ID, a.Link)
 	}
-	if rem.FixAvailable || rem.SolutionType != "" || len(rem.Advisories) > 0 {
+	if rem.IsFixAvailable != nil || rem.SolutionType != "" || len(rem.Advisories) > 0 {
 		f.Remediation = rem
 	}
 	if v.Risk != nil && *v.Risk >= 0 && *v.Risk <= 1e6 {

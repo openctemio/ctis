@@ -60,22 +60,31 @@ func TestReconHostileInput(t *testing.T) {
 	}
 
 	byValue := assetsByValue(r)
-	http, ok := byValue["https://app.example.com:8443/login"]
+	http, ok := byValue["https://app.example.com:8443"]
 	if !ok {
-		t.Fatalf("http service not keyed by the URL without userinfo: %v", keys(byValue))
+		t.Fatalf("web origin not keyed by the origin without userinfo: %v", keys(byValue))
 	}
-	if got := http.Properties["title"]; got != "Login[31mINFO forged log line" {
+	if got := http.Technical.HTTP.Title; got != "Login[31mINFO forged log line" {
 		t.Errorf("title = %q", got)
 	}
-	if got := http.Properties["redirect_url"]; got != "https://sso.example.com/" {
+	if got := http.Technical.HTTP.RedirectURL; got != "https://sso.example.com/" {
 		t.Errorf("redirect_url = %q", got)
 	}
-	if _, ok := byValue["https://app.example.com/a?x="]; !ok {
-		t.Errorf("crawled URL not stripped of userinfo and query values: %v", keys(byValue))
+	foundEP := false
+	for _, e := range r.Endpoints {
+		if e.Origin == "https://app.example.com" && e.Path == "/a" {
+			foundEP = true
+		}
 	}
-	ports := byValue["192.0.2.1"].Technical.IPAddress.Ports
-	if len(ports) != 1 || ports[0].Service != "ssh]0;pwned" || ports[0].Banner != "SSH-2.0-OpenSSH_9.6\r\nline2[2J" {
-		t.Errorf("port = %+v", ports)
+	if !foundEP {
+		t.Errorf("crawled URL is not an endpoint: %+v", r.Endpoints)
+	}
+	svc, ok := byValue["192.0.2.1:22/tcp"]
+	if !ok {
+		t.Fatalf("no service asset: %v", keys(byValue))
+	}
+	if st := svc.Technical.Service; st.AppProtocol != "" || st.Banner != "SSH-2.0-OpenSSH_9.6\r\nline2[2J" {
+		t.Errorf("service = %+v (a hostile service label is not an IANA name)", st)
 	}
 	var recs []string
 	for _, rec := range byValue["a.example.com"].Technical.Domain.DNSRecords {

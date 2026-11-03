@@ -12,8 +12,8 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 - One finding per ReportItem: type vulnerability, or compliance when the item carries compliance-check-name.
 - Every finding has network.host (the asset value), network.port and network.protocol; port 0 is a host-level result, and its pseudo-service general is not kept as network.service.
 - Severity: the severity attribute (0-4) through ctis.NormalizeNativeSeverity (0 info, 1 low, 2 medium, 3 high, 4 critical); risk_factor when the attribute is unusable. native.severity keeps the attribute; severity 0 sets native.detection_type info.
-- Every CVSS version goes to finding.scores with source tenable. The legacy vulnerability.cvss_* members take the first of v3, v4, v2, with cvss_source vendor.
-- plugin_output and compliance-actual-value go to evidence after credential redaction: account lines (User:, Login:, Account:) and account labels inside a line, `as '<account>'`, and password, secret, token, API key and community values become [redacted]. The passwords, tokens and community strings found there are also masked (ctis.MaskSecretMatch) wherever any other field of the finding repeats them.
+- Every CVSS version goes to finding.scores with source tenable. VPR is a vendor score with source tenable; exploit and KEV data become vulnerability.threat_signals (source tenable or cisa).
+- plugin_output and compliance-actual-value go to raw_text evidence items after credential redaction: account lines (User:, Login:, Account:) and account labels inside a line, `as '<account>'`, and password, secret, token, API key and community values become [redacted]. The passwords, tokens and community strings found there are also masked (ctis.MaskSecretMatch) wherever any other field of the finding repeats them.
 - The Policy element (server and plugin preferences, which hold scan credentials and account names) is skipped whole, and smb-login-used, ssh-login-used and compliance-uname are never read.
 - Values are cleaned of control characters and cut to the CTIS receiver caps (title 500, description 32 KiB, evidence 64 KiB, remediation 16 KiB).
 
@@ -30,19 +30,19 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/@name` | `assets[].value (when no host-fqdn or host-ip)` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties` | (container) |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[*]/@name` | (container) |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[host-ip]` | `assets[].value, assets[].properties.ip_address` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[host-fqdn]` | `assets[].value, assets[].identity_hints.fqdn, assets[].properties.fqdn` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[host-ip]` | `assets[].value` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[host-fqdn]` | `assets[].value, assets[].identity_hints.fqdn` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[host-rdns]` | `assets[].properties.host_rdns` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[netbios-name]` | `assets[].identity_hints.netbios_name` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[mac-address]` | `assets[].identity_hints.mac_addresses, assets[].properties.mac_address` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[operating-system]` | `assets[].properties.os (first guess)` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[operating-system-conf]` | `assets[].properties.os_confidence` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[operating-system-method]` | `assets[].properties.os_method` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[operating-system]` | `assets[].technologies[] (operating-system)` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[operating-system-conf]` | `assets[].technologies[] (operating-system)_confidence` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[operating-system-method]` | `assets[].technologies[] (operating-system)_method` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[os]` |  | OS family word (linux, windows); operating-system is kept |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[system-type]` | `assets[].properties.system_type` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[cpe]` | `assets[].identity_hints.os_cpe (an OS CPE)` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[cpe-*]` | `assets[].identity_hints.os_cpe (the first OS CPE)` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[bios-uuid]` | `assets[].properties.bios_uuid` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[bios-uuid]` | `assets[].identifiers.bios_uuid` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[aws-instance-instanceId]` | `assets[].identity_hints.cloud_resource_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[azure-instance-id]` | `assets[].identity_hints.cloud_resource_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[gcp-instance-id]` | `assets[].identity_hints.cloud_resource_id` |  |
@@ -53,10 +53,10 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[tenable-agent-uuid]` | `assets[].identity_hints.agent_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[agent-uuid]` | `assets[].identity_hints.agent_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[Credentialed_Scan]` | `findings[].native.credentialed` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START]` | `assets[].properties.scan_started_at (when no timestamp)` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START_TIMESTAMP]` | `assets[].properties.scan_started_at` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END]` | `assets[].properties.scan_ended_at (when no timestamp)` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END_TIMESTAMP]` | `assets[].properties.scan_ended_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START]` | `assets[].first_seen_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START_TIMESTAMP]` | `assets[].first_seen_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END]` | `assets[].last_seen_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END_TIMESTAMP]` | `assets[].last_seen_at` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[local-checks-proto]` | `assets[].properties.local_checks_protocol` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[smb-login-used]` |  | the account the scan logged in with |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[ssh-login-used]` |  | the account the scan logged in with |
@@ -78,8 +78,8 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[*]` |  | other host properties (installed software and hardware inventory, scanner bookkeeping); listed by name in Result.Unmapped only when not matched here |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem` | `findings[]` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/@port` | `findings[].network.port` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/@svc_name` | `findings[].network.service` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/@protocol` | `findings[].network.protocol` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/@svc_name` | `findings[].network.app_protocol` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/@protocol` | `findings[].network.transport` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/@severity` | `findings[].severity, findings[].native.severity` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/@pluginID` | `findings[].rule_id, findings[].native.vuln_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/@pluginName` | `findings[].title, findings[].rule_name` |  |
@@ -88,10 +88,10 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/synopsis` | `findings[].message, findings[].description` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/description` | `findings[].description` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/solution` | `findings[].remediation.recommendation` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_output` | `findings[].evidence (credentials redacted)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_output` | `findings[].evidence_items[raw_text] (credentials redacted)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/see_also` | `findings[].references` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/risk_factor` | `findings[].severity (fallback), findings[].source_extra.risk_factor` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/cve` | `findings[].vulnerability.cve_id, cve_ids, ids[] (cve)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/cve` | `findings[].vulnerability.ids[] (cve)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/bid` | `findings[].vulnerability.ids[] (vendor, source bid)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/xref` | `findings[].vulnerability.cwe_ids (CWE), ids[] (vendor), remediation.advisories (MSFT, MSKB, IAVA, IAVB, CERT, ...), source_extra.xref` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/msft` | `findings[].remediation.advisories (source msft)` |  |
@@ -101,10 +101,10 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/iavt` | `findings[].remediation.advisories (source iavt)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cert` | `findings[].remediation.advisories (source cert)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cea-id` | `findings[].remediation.advisories (source cea-id)` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss_base_score` | `findings[].scores[] (cvss 2.0), vulnerability.cvss_score` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss_vector` | `findings[].scores[].vector (cvss 2.0), properties.cvss_v2_vector` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss3_base_score` | `findings[].scores[] (cvss 3.x), vulnerability.cvss_score` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss3_vector` | `findings[].scores[].vector (cvss 3.x), properties.cvss_v3_vector` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss_base_score` | `findings[].scores[] (cvss 2.0), scores[] (cvss)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss_vector` | `findings[].scores[].vector (cvss 2.0)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss3_base_score` | `findings[].scores[] (cvss 3.x), scores[] (cvss)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss3_vector` | `findings[].scores[].vector (cvss 3.x)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss4_base_score` | `findings[].scores[] (cvss 4.0)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss4_vector` | `findings[].scores[].vector (cvss 4.0)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss4_base_vector` | `findings[].scores[].vector (cvss 4.0)` |  |
@@ -118,10 +118,10 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss4_threat_vector` | `findings[].source_extra.cvss4_threat_vector` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss_score_source` | `findings[].source_extra.cvss_score_source` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cvss3_score_source` | `findings[].source_extra.cvss3_score_source` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/vpr_score` | `findings[].scores[] (vpr), vulnerability.vpr_score` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/epss_score` | `findings[].scores[] (epss), vulnerability.epss_score` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/exploit_available` | `findings[].vulnerability.exploit_available` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/exploit_code_maturity` | `findings[].vulnerability.exploit_maturity, source_extra.exploit_code_maturity` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/vpr_score` | `findings[].scores[] (vpr), scores[] (vendor, tenable)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/epss_score` | `findings[].scores[] (epss), scores[] (epss)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/exploit_available` | `findings[].vulnerability.threat_signals[]` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/exploit_code_maturity` | `findings[].vulnerability.threat_signals[], source_extra.exploit_code_maturity` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/exploitability_ease` | `findings[].source_extra.exploitability_ease` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/exploit_framework_metasploit` | `findings[].source_extra.exploit_framework_metasploit` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/exploit_framework_canvas` | `findings[].source_extra.exploit_framework_canvas` |  |
@@ -136,11 +136,11 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/in_the_news` | `findings[].source_extra.in_the_news` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/unsupported_by_vendor` | `findings[].remediation.solution_type (upgrade), source_extra.unsupported_by_vendor` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/default_account` | `findings[].source_extra.default_account` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/cisa-known-exploited` | `findings[].vulnerability.in_cisa_kev, source_extra (the KEV due date)` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/cisa_known_exploited` | `findings[].vulnerability.in_cisa_kev, source_extra` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/cisa-known-exploited` | `findings[].vulnerability.threat_signals[], source_extra (the KEV due date)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/cisa_known_exploited` | `findings[].vulnerability.threat_signals[], source_extra` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cpe` | `findings[].vulnerability.cpe` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/vuln_publication_date` | `findings[].vulnerability.published_at, source_extra` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/patch_publication_date` | `findings[].remediation.patch_published_at, fix_available, properties.patch_publication_date` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/patch_publication_date` | `findings[].remediation.patch_published_at, is_fix_available` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_publication_date` | `findings[].source_extra.plugin_publication_date` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_modification_date` | `findings[].source_extra.plugin_modification_date` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_type` | `findings[].source_extra.plugin_type` |  |
@@ -165,7 +165,7 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-control-id` | `findings[].compliance.control_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-result` | `findings[].compliance.result, source_extra.compliance-result` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-info` | `findings[].compliance.control_description` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-actual-value` | `findings[].evidence (credentials redacted)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-actual-value` | `findings[].evidence_items[raw_text] (credentials redacted)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-policy-value` | `findings[].source_extra.compliance-policy-value` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-solution` | `findings[].remediation.recommendation` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-see-also` | `findings[].references` |  |

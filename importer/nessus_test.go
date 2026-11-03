@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"testing"
+
+	"github.com/openctemio/ctis/v2"
 )
 
 // Values at the edges of the CTIS limits still give a valid report.
@@ -22,8 +24,9 @@ func TestNessus_EdgeValuesStayValid(t *testing.T) {
 	if err := res.Report.Validate(); err != nil {
 		t.Fatalf("invalid report: %v", err)
 	}
-	if got := res.Report.Findings[0].Vulnerability.ExploitMaturity; got != "none" {
-		t.Fatalf("exploit_maturity = %q", got)
+	// "unproven" maturity asserts no exploit signal.
+	if v := res.Report.Findings[0].Vulnerability; v != nil && ctis.HasThreatSignal(v, ctis.ThreatSignalPublicExploit, ctis.ThreatSignalWeaponized) {
+		t.Fatalf("threat signals = %+v", v.ThreatSignals)
 	}
 }
 
@@ -40,17 +43,18 @@ func TestNessus_HostLevelResultHasNetworkLocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Port 99999 is no port: the finding keeps no port and no transport.
 	want := []struct {
 		port      int
 		proto, sv string
-	}{{0, "tcp", ""}, {443, "tcp", "www"}, {0, "udp", "x"}}
+	}{{0, "", ""}, {443, "tcp", "www"}, {0, "", "x"}}
 	if len(res.Report.Findings) != len(want) {
 		t.Fatalf("findings = %d", len(res.Report.Findings))
 	}
 	for i, w := range want {
 		n := res.Report.Findings[i].Network
-		if n == nil || n.Host != "192.0.2.1" || n.Port != w.port || n.Protocol != w.proto || n.Service != w.sv {
-			t.Errorf("finding %d network = %+v, want host 192.0.2.1 %+v", i, n, w)
+		if n == nil || n.Port != w.port || string(n.Transport) != w.proto || n.AppProtocol != w.sv {
+			t.Errorf("finding %d network = %+v, want %+v", i, n, w)
 		}
 	}
 }

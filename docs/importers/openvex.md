@@ -20,7 +20,7 @@ Generated from `importer/spec_openvex.go`; do not edit. Regenerate with `go test
 | Source field | CTIS | Ignored because |
 |---|---|---|
 | `/@context` | `metadata.properties.openvex_context (format check)` |  |
-| `/@id` | `metadata.source_ref, vex[].vex.source` |  |
+| `/@id` | `metadata.source_refs[], vex[].vex.source` |  |
 | `/author` | `vex[].vex.source, metadata.properties.author` |  |
 | `/role` |  | the author's role (prose) |
 | `/timestamp` | `vex[].vex.as_of (when the statement has none)` |  |

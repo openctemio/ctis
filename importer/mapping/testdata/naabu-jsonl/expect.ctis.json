@@ -1,9 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "timestamp": "2026-10-07T08:00:00Z",
-    "source_type": "scanner"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-07T08:00:00Z",
+    "channel": "scanner"
   },
   "tool": {
     "name": "naabu-jsonl",
@@ -11,32 +12,50 @@
   },
   "assets": [
     {
-      "type": "open_port",
-      "value": "192.0.2.10:443",
+      "id": "asset-1",
+      "type": "service",
+      "value": "192.0.2.10:443/tcp",
+      "technical": {
+        "service": {
+          "port": 443,
+          "transport": "tcp",
+          "state": "open"
+        }
+      },
       "properties": {
         "host": "192.0.2.10",
-        "hostname": "a.example.com",
-        "port": 443,
-        "protocol": "tcp"
+        "hostname": "a.example.com"
       }
     },
     {
-      "type": "open_port",
-      "value": "192.0.2.10:8080",
+      "id": "asset-2",
+      "type": "service",
+      "value": "192.0.2.10:8080/tcp",
+      "technical": {
+        "service": {
+          "port": 8080,
+          "transport": "tcp",
+          "state": "open"
+        }
+      },
       "properties": {
         "host": "192.0.2.10",
-        "hostname": "a.example.com",
-        "port": 8080,
-        "protocol": "tcp"
+        "hostname": "a.example.com"
       }
     },
     {
-      "type": "open_port",
-      "value": "192.0.2.11:22",
+      "id": "asset-3",
+      "type": "service",
+      "value": "192.0.2.11:22/tcp",
+      "technical": {
+        "service": {
+          "port": 22,
+          "transport": "tcp",
+          "state": "open"
+        }
+      },
       "properties": {
-        "host": "192.0.2.11",
-        "port": 22,
-        "protocol": "tcp"
+        "host": "192.0.2.11"
       }
     }
   ]

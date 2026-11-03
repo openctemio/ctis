@@ -43,7 +43,7 @@ func FuzzApply(f *testing.F) {
 	f.Add([]byte(`<!DOCTYPE r [<!ENTITY x SYSTEM "file:///etc/passwd">]><r><testcase name="&x;"/></r>`))
 	f.Add([]byte(strings.Repeat("<testcase>", 80)))
 	f.Add([]byte(`<r><testcase name="a" classname="b"><failure message="m" type="high">t</failure><failure/></testcase></r>`))
-	opts := Options{Now: fixedNow, MaxRecords: 500, MaxOutputs: 500, MaxRecordBytes: 64 << 10, MaxInputBytes: 1 << 20}
+	opts := Options{Now: fixedNow, ReportID: "0192f0a0-0000-7000-8000-000000000001", MaxRecords: 500, MaxOutputs: 500, MaxRecordBytes: 64 << 10, MaxInputBytes: 1 << 20}
 	f.Fuzz(func(t *testing.T, data []byte) {
 		for _, m := range maps {
 			r1, s1, err1 := m.Apply(context.Background(), bytes.NewReader(data), opts)
@@ -77,7 +77,7 @@ func FuzzLoad(f *testing.F) {
 			f.Add(b)
 		}
 	}
-	f.Add([]byte(`{"apiVersion": "openctem.io/mapping/v1", "source": "json", "each": "/a[0][1]/~1", "records": []}`))
+	f.Add([]byte(`{"apiVersion": "openctem.io/mapping/v2", "source": "json", "each": "/a[0][1]/~1", "records": []}`))
 	f.Fuzz(func(t *testing.T, data []byte) {
 		m, err := Load(data)
 		if err != nil {

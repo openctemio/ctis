@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// The JSON Schema in schemas/v1 and the Go types are two descriptions of one
+// The JSON Schema in schemas/v2 and the Go types are two descriptions of one
 // wire format, and receivers decode strictly into the Go types. These tests
 // walk both together, recursively and in both directions, so any difference
 // fails the build:
@@ -28,43 +28,58 @@ var timeType = reflect.TypeOf(time.Time{})
 
 // goEnums maps each Go string enum type to its full value set.
 var goEnums = map[reflect.Type][]string{
-	reflect.TypeOf(Severity("")):             stringsOf(AllSeverities()),
-	reflect.TypeOf(FindingType("")):          stringsOf(AllFindingTypes()),
-	reflect.TypeOf(FindingStatus("")):        stringsOf(AllFindingStatuses()),
-	reflect.TypeOf(AssetType("")):            stringsOf(AllAssetTypes()),
-	reflect.TypeOf(Criticality("")):          stringsOf(AllCriticalities()),
-	reflect.TypeOf(DataFlowLocationType("")): stringsOf(AllDataFlowLocationTypes()),
-	reflect.TypeOf(NativeScheme("")):         stringsOf(AllNativeSchemes()),
-	reflect.TypeOf(DetectionType("")):        stringsOf(AllDetectionTypes()),
-	reflect.TypeOf(ScoreSystem("")):          stringsOf(AllScoreSystems()),
-	reflect.TypeOf(VEXStatus("")):            stringsOf(AllVEXStatuses()),
-	reflect.TypeOf(VEXJustification("")):     stringsOf(AllVEXJustifications()),
-	reflect.TypeOf(SourceState("")):          stringsOf(AllSourceStates()),
-	reflect.TypeOf(VulnerabilityIDType("")):  stringsOf(AllVulnerabilityIDTypes()),
-	reflect.TypeOf(SolutionType("")):         stringsOf(AllSolutionTypes()),
-	reflect.TypeOf(EndpointKind("")):         stringsOf(AllEndpointKinds()),
-	reflect.TypeOf(EndpointSource("")):       stringsOf(AllEndpointSources()),
-	reflect.TypeOf(EndpointAuth("")):         stringsOf(AllEndpointAuths()),
-	reflect.TypeOf(ParamLocation("")):        stringsOf(AllParamLocations()),
-	reflect.TypeOf(RelationshipType("")):     stringsOf(AllRelationshipTypes()),
-	reflect.TypeOf(Environment("")):          stringsOf(AllEnvironments()),
-	reflect.TypeOf(OwnerKind("")):            stringsOf(AllOwnerKinds()),
-	reflect.TypeOf(OwnerRole("")):            stringsOf(AllOwnerRoles()),
-	reflect.TypeOf(AssetState("")):           stringsOf(AllAssetStates()),
-	reflect.TypeOf(AssetStateReason("")):     stringsOf(AllAssetStateReasons()),
-	reflect.TypeOf(ValidationStatus("")):     stringsOf(AllValidationStatuses()),
-	reflect.TypeOf(ValidationMethod("")):     stringsOf(AllValidationMethods()),
-	reflect.TypeOf(ThreatSignalType("")):     stringsOf(AllThreatSignalTypes()),
-	reflect.TypeOf(TargetState("")):          stringsOf(AllTargetStates()),
-	reflect.TypeOf(TargetClass("")):          stringsOf(AllTargetClasses()),
-	reflect.TypeOf(TargetCause("")):          stringsOf(AllTargetCauses()),
+	reflect.TypeOf(Severity("")):               stringsOf(AllSeverities()),
+	reflect.TypeOf(FindingType("")):            stringsOf(AllFindingTypes()),
+	reflect.TypeOf(FindingStatus("")):          stringsOf(AllFindingStatuses()),
+	reflect.TypeOf(AssetType("")):              stringsOf(AllAssetTypes()),
+	reflect.TypeOf(Criticality("")):            stringsOf(AllCriticalities()),
+	reflect.TypeOf(DataFlowLocationType("")):   stringsOf(AllDataFlowLocationTypes()),
+	reflect.TypeOf(NativeScheme("")):           stringsOf(AllNativeSchemes()),
+	reflect.TypeOf(DetectionType("")):          stringsOf(AllDetectionTypes()),
+	reflect.TypeOf(ScoreSystem("")):            stringsOf(AllScoreSystems()),
+	reflect.TypeOf(VEXStatus("")):              stringsOf(AllVEXStatuses()),
+	reflect.TypeOf(VEXJustification("")):       stringsOf(AllVEXJustifications()),
+	reflect.TypeOf(SourceState("")):            stringsOf(AllSourceStates()),
+	reflect.TypeOf(VulnerabilityIDType("")):    stringsOf(AllVulnerabilityIDTypes()),
+	reflect.TypeOf(SolutionType("")):           stringsOf(AllSolutionTypes()),
+	reflect.TypeOf(EndpointKind("")):           stringsOf(AllEndpointKinds()),
+	reflect.TypeOf(EndpointSource("")):         stringsOf(AllEndpointSources()),
+	reflect.TypeOf(EndpointAuth("")):           stringsOf(AllEndpointAuths()),
+	reflect.TypeOf(ParamLocation("")):          stringsOf(AllParamLocations()),
+	reflect.TypeOf(RelationshipType("")):       stringsOf(AllRelationshipTypes()),
+	reflect.TypeOf(Environment("")):            stringsOf(AllEnvironments()),
+	reflect.TypeOf(OwnerKind("")):              stringsOf(AllOwnerKinds()),
+	reflect.TypeOf(OwnerRole("")):              stringsOf(AllOwnerRoles()),
+	reflect.TypeOf(AssetState("")):             stringsOf(AllAssetStates()),
+	reflect.TypeOf(AssetStateReason("")):       stringsOf(AllAssetStateReasons()),
+	reflect.TypeOf(ValidationStatus("")):       stringsOf(AllValidationStatuses()),
+	reflect.TypeOf(ValidationMethod("")):       stringsOf(AllValidationMethods()),
+	reflect.TypeOf(ThreatSignalType("")):       stringsOf(AllThreatSignalTypes()),
+	reflect.TypeOf(TargetState("")):            stringsOf(AllTargetStates()),
+	reflect.TypeOf(TargetClass("")):            stringsOf(AllTargetClasses()),
+	reflect.TypeOf(TargetCause("")):            stringsOf(AllTargetCauses()),
+	reflect.TypeOf(Channel("")):                stringsOf(AllChannels()),
+	reflect.TypeOf(CoverageType("")):           stringsOf(AllCoverageTypes()),
+	reflect.TypeOf(Profile("")):                stringsOf(AllProfiles()),
+	reflect.TypeOf(Technique("")):              stringsOf(AllTechniques()),
+	reflect.TypeOf(DataClassification("")):     stringsOf(AllDataClassifications()),
+	reflect.TypeOf(ComplianceFramework("")):    stringsOf(AllComplianceFrameworks()),
+	reflect.TypeOf(TLSVersion("")):             stringsOf(AllTLSVersions()),
+	reflect.TypeOf(IdentityKind("")):           stringsOf(AllIdentityKinds()),
+	reflect.TypeOf(PortState("")):              stringsOf(AllPortStates()),
+	reflect.TypeOf(Transport("")):              stringsOf(AllTransports()),
+	reflect.TypeOf(DependencyRelationship("")): stringsOf(AllDependencyRelationships()),
+	reflect.TypeOf(DependencyType("")):         stringsOf(AllDependencyTypes()),
+	reflect.TypeOf(ExposureVector("")):         stringsOf(AllExposureVectors()),
+	reflect.TypeOf(Effort("")):                 stringsOf(AllEfforts()),
 }
 
 // openEnums are Go enum types whose schema member is an open token
 // (OpenTokenPattern): the Go constants are the known values, and every one
 // of them must match the pattern.
 var openEnums = map[reflect.Type]bool{
-	reflect.TypeOf(NativeScheme("")): true,
+	reflect.TypeOf(NativeScheme("")):        true,
+	reflect.TypeOf(ComplianceFramework("")): true,
 }
 
 func stringsOf[T ~string](in []T) []string {
@@ -117,16 +132,19 @@ func TestSchemaVersionMatchesGo(t *testing.T) {
 	if v["default"] != SchemaVersion {
 		t.Errorf("report.json version default = %v, Go SchemaVersion = %q: bump them together", v["default"], SchemaVersion)
 	}
-	for _, ok := range []string{"1.0", "1.1", "1.2", SchemaVersion, "1.10"} {
-		if errs := s.validateValue(t, map[string]any{"version": ok, "metadata": map[string]any{"timestamp": "2026-10-02T00:00:00Z"}}, "report.json"); len(errs) > 0 {
+	doc := func(v string) map[string]any {
+		return map[string]any{"version": v, "metadata": map[string]any{"id": testReportID, "generated_at": "2026-10-02T00:00:00Z"}}
+	}
+	for _, ok := range []string{"2.0", "2.1", SchemaVersion, "2.10"} {
+		if errs := s.validateValue(t, doc(ok), "report.json"); len(errs) > 0 {
 			t.Errorf("schema rejects version %q: %v", ok, errs)
 		}
 		if !IsCompatibleVersion(ok) {
 			t.Errorf("IsCompatibleVersion(%q) = false", ok)
 		}
 	}
-	for _, bad := range []string{"", "1", "2.0", "0.9", "v1.3", "1.03", "1.3.0", "1.x", "9.9-garbage"} {
-		errs := s.validateValue(t, map[string]any{"version": bad, "metadata": map[string]any{"timestamp": "2026-10-02T00:00:00Z"}}, "report.json")
+	for _, bad := range []string{"", "2", "1.6", "1.0", "3.0", "0.9", "v2.0", "2.03", "2.0.0", "2.x", "9.9-garbage"} {
+		errs := s.validateValue(t, doc(bad), "report.json")
 		if len(errs) == 0 {
 			t.Errorf("schema accepts version %q", bad)
 		}
@@ -148,14 +166,18 @@ func TestSchemaIDsAndDialect(t *testing.T) {
 		if got, want := doc["$id"], SchemaBaseURL+file; got != want {
 			t.Errorf("%s: $id = %v, want %s", file, got, want)
 		}
-		if doc["$schema"] != "http://json-schema.org/draft-07/schema#" {
-			t.Errorf("%s: $schema must be draft-07", file)
+		if doc["$schema"] != "https://json-schema.org/draft/2020-12/schema" {
+			t.Errorf("%s: $schema must be JSON Schema 2020-12", file)
+		}
+		if !strings.HasPrefix(doc["$id"].(string), "https://schemas.openctem.io/ctis/"+SchemaVersion+"/") {
+			t.Errorf("%s: $id must be versioned", file)
 		}
 	}
 }
 
 // TestSchemaKeywords keeps the schemas inside what the test validator
-// evaluates, and flags $ref siblings, which draft-07 ignores.
+// evaluates, and allows only annotations next to $ref (the test validator
+// does not merge sibling assertions).
 func TestSchemaKeywords(t *testing.T) {
 	s := loadSchemaSet(t)
 	for file, doc := range s.docs {
@@ -170,7 +192,7 @@ func checkKeywords(t *testing.T, file, path string, node map[string]any) {
 			t.Errorf("%s#%s: keyword %q is not supported by the test validator", file, path, k)
 		}
 		if hasRef && k != "$ref" && !annotationKeywords[k] {
-			t.Errorf("%s#%s: %q next to $ref is ignored by draft-07", file, path, k)
+			t.Errorf("%s#%s: %q next to $ref is not evaluated by the test validator", file, path, k)
 		}
 		switch k {
 		case "properties", "$defs":

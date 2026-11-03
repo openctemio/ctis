@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Validate the CTIS schemas and examples with the reference implementation.
 
-  1. every schemas/v1/*.json is a valid draft-07 schema (meta-validation);
+  1. every schemas/v2/*.json is a valid JSON Schema 2020-12 schema
+     (meta-validation), and the extension schemas too;
   2. every $ref resolves, through a registry built from the files' $ids;
   3. examples/*.json and the converter golden files validate against
      report.json;
   4. examples/invalid/*.json do not;
-  5. conformance/v1/documents/manifest.json: every document it lists as valid
+  5. conformance/v2/documents/manifest.json: every document it lists as valid
      validates, and every one it lists as invalid is rejected, except those
      marked "schema_level": false (only semantic validation refuses them; the
      Go conformance test covers those).
@@ -22,9 +23,9 @@ import json
 import os
 import sys
 
-from jsonschema import Draft7Validator, FormatChecker
+from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
-from referencing.jsonschema import DRAFT7
+from referencing.jsonschema import DRAFT202012
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXPECTED = {
@@ -41,14 +42,14 @@ def load(path):
 def main():
     failures = 0
     schemas = {}
-    for path in sorted(glob.glob(os.path.join(ROOT, "schemas", "v1", "*.json"))):
+    for path in sorted(glob.glob(os.path.join(ROOT, "schemas", "v2", "*.json"))):
         name = os.path.basename(path)
         schema = load(path)
-        Draft7Validator.check_schema(schema)
+        Draft202012Validator.check_schema(schema)
         schemas[name] = schema
     # Namespace schemas of extensions (informative) must be valid too.
     for path in sorted(glob.glob(os.path.join(ROOT, "schemas", "extensions", "*", "*.json"))):
-        Draft7Validator.check_schema(load(path))
+        Draft202012Validator.check_schema(load(path))
         print(f"ok      {os.path.relpath(path, ROOT)} (extension schema)")
     missing = EXPECTED - set(schemas)
     if missing:
@@ -56,10 +57,10 @@ def main():
         return 1
 
     registry = Registry().with_resources(
-        (s["$id"], Resource.from_contents(s, default_specification=DRAFT7))
+        (s["$id"], Resource.from_contents(s, default_specification=DRAFT202012))
         for s in schemas.values()
     )
-    validator = Draft7Validator(
+    validator = Draft202012Validator(
         schemas["report.json"], registry=registry, format_checker=FormatChecker()
     )
 
@@ -122,7 +123,7 @@ def main():
 
 
 def check_manifest(validator):
-    base = os.path.join(ROOT, "conformance", "v1", "documents")
+    base = os.path.join(ROOT, "conformance", "v2", "documents")
     manifest = load(os.path.join(base, "manifest.json"))
     failures = 0
     for entry in manifest["documents"]:

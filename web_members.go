@@ -1,13 +1,14 @@
 package ctis
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
-// Web members (CTIS 1.6, spec section 4.12): the endpoints a crawler, a
+// Web members (spec sections 3 and 6.2): the endpoints a crawler, a
 // spec import or a scanner saw on a web origin, and the typed web location
 // of a finding. A URL in either never carries a query value, user info or
 // fragment: parameters are named, never valued.
@@ -117,7 +118,7 @@ type Endpoint struct {
 	// Origin is the normalised origin, "https://api.example.com".
 	Origin string `json:"origin"`
 
-	// OriginRef names the http_service asset of the origin in this report.
+	// OriginRef names the web_origin asset of the origin in this report.
 	OriginRef string `json:"origin_ref,omitempty"`
 
 	// Method is an HTTP method, or ANY when unknown.
@@ -132,9 +133,9 @@ type Endpoint struct {
 	Kind   EndpointKind   `json:"kind,omitempty"`
 	Source EndpointSource `json:"source,omitempty"`
 
-	// Parent is the page the endpoint was found on, redacted (no query
+	// ParentURL is the page the endpoint was found on, redacted (no query
 	// values, user info or fragment).
-	Parent string `json:"parent,omitempty"`
+	ParentURL string `json:"parent_url,omitempty"`
 
 	StatusCode  int          `json:"status_code,omitempty"`
 	ContentType string       `json:"content_type,omitempty"`
@@ -146,17 +147,17 @@ type Endpoint struct {
 	// never values.
 	Params []EndpointParam `json:"params,omitempty"`
 
-	// Namespaced producer data (2.0).
+	// Namespaced producer data.
 	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // EndpointParam is one parameter of an endpoint. It has no value member: a
 // value is refused by every strict receiver.
 type EndpointParam struct {
-	Location ParamLocation `json:"location"`
-	Name     string        `json:"name"`
-	TypeHint string        `json:"type_hint,omitempty"`
-	Required bool          `json:"required,omitempty"`
+	Location   ParamLocation `json:"location"`
+	Name       string        `json:"name"`
+	TypeHint   string        `json:"type_hint,omitempty"`
+	IsRequired bool          `json:"is_required,omitempty"`
 }
 
 // WebLocation is where on a web origin a finding was observed.
@@ -186,9 +187,7 @@ type WebParameter struct {
 }
 
 var (
-	reportIDRE   = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
-	typeHintRE   = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
-	requestRefRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
+	typeHintRE = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 )
 
 func validEnum[T ~string](v T, all []T) bool {
@@ -242,11 +241,9 @@ func validateEndpoints(r *Report, assetIDs map[string]bool, add func(string, ...
 	for i, e := range r.Endpoints {
 		p := func(format string, args ...any) { add("endpoints[%d]: "+format, append([]any{i}, args...)...) }
 		if e.ID != "" {
-			switch {
-			case !reportIDRE.MatchString(e.ID):
-				p("invalid id")
-			case ids[e.ID]:
-				p("duplicate id %q", e.ID)
+			validateDocumentRef(fmt.Sprintf("endpoints[%d].id", i), e.ID, add)
+			if ids[e.ID] {
+				p("duplicate id %q", truncateForError(e.ID))
 			}
 			ids[e.ID] = true
 		}
@@ -274,8 +271,8 @@ func validateEndpoints(r *Report, assetIDs map[string]bool, add func(string, ...
 		if e.Auth != "" && !validEnum(e.Auth, AllEndpointAuths()) {
 			p("invalid auth %q", truncateForError(string(e.Auth)))
 		}
-		if e.Parent != "" && !redactedURL(e.Parent) {
-			p("parent must be a redacted URL (no query value, user info or fragment)")
+		if e.ParentURL != "" && !redactedURL(e.ParentURL) {
+			p("parent_url must be a redacted URL (no query value, user info or fragment)")
 		}
 		if !validStatus(e.StatusCode) {
 			p("status_code %d is outside 100-599", e.StatusCode)
@@ -330,9 +327,7 @@ func validateWebLocation(i int, w *WebLocation, endpointIDs map[string]bool, add
 			p("parameter: name must be 1 to %d bytes without control characters", MaxParamNameLen)
 		}
 	}
-	if w.RequestRef != "" && !requestRefRE.MatchString(w.RequestRef) {
-		p("invalid request_ref")
-	}
+	validateDocumentRef(fmt.Sprintf("findings[%d].web.request_ref", i), w.RequestRef, add)
 	if !validStatus(w.StatusCode) {
 		p("status_code %d is outside 100-599", w.StatusCode)
 	}

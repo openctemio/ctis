@@ -1,1 +1,20 @@
-{"version": "1.6", "metadata": {"timestamp": "2026-10-07T00:00:00Z"}, "endpoints": [{"origin": "https://a.example", "path": "/x", "params": [{"location": "query", "name": "token", "value": "s3cr3t"}]}]}
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7660-af0b-194152d5c87c",
+    "generated_at": "2026-10-07T00:00:00Z"
+  },
+  "endpoints": [
+    {
+      "origin": "https://a.example",
+      "path": "/x",
+      "params": [
+        {
+          "location": "query",
+          "name": "token",
+          "value": "s3cr3t"
+        }
+      ]
+    }
+  ]
+}

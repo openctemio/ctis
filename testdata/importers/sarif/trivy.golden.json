@@ -1,18 +1,18 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "Trivy",
     "version": "0.56.2",
     "info_url": "https://github.com/aquasecurity/trivy",
-    "capabilities": [
-      "vulnerability",
-      "misconfiguration"
+    "techniques": [
+      "sca",
+      "iac"
     ]
   },
   "assets": [
@@ -42,7 +42,12 @@
         "end_column": 1
       },
       "vulnerability": {
-        "cve_id": "CVE-2021-44228"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2021-44228"
+          }
+        ]
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2021-44228"
@@ -69,6 +74,14 @@
         "end_line": 1,
         "start_column": 1,
         "end_column": 1
+      },
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "ghsa",
+            "id": "GHSA-jfh8-c2jp-5v3q"
+          }
+        ]
       },
       "references": [
         "https://github.com/advisories/GHSA-jfh8-c2jp-5v3q"

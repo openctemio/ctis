@@ -9,10 +9,10 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 ## Rules
 
 - The JSON and XML forms are one format; the first character of the file decides which parser reads it. The paths below list both forms.
-- One website asset per site, named by its origin (scheme, host and port; no path, query or user info). One finding per alert, method, URL template and parameter (at most 100 per alert, the rest counted in an issue), on the site's host and port, with finding.web: the URI without user info, fragment or query values, the method and the parameter (query when the URI names it, form for a request with a body, otherwise left out).
+- One web_origin asset per site, named by its origin (scheme, host and port; no path, query or user info). One finding per alert, method, URL template and parameter (at most 100 per alert, the rest counted in an issue), on the site's host and port, with finding.web: the URI without user info, fragment or query values, the method and the parameter (query when the URI names it, form for a request with a body, otherwise left out).
 - Severity: riskcode 0 info, 1 low, 2 medium, 3 high; native.severity keeps it. Confidence 1, 2, 3, 4 become 30, 60, 90, 100; 0 (marked a false positive in ZAP) sets status false_positive.
-- Each instance (method, redacted URI, parameter, attack, evidence) becomes a line of the evidence of its finding, at most 20 per finding; the attack string is kept as text, never as markup. occurrence_count is the number of instances of the finding.
-- The HTTP message of the first 3 instances of a finding (request and response headers and bodies) becomes http_exchange evidence items (CTIS 1.6), capped, with the instance's evidence located in the response body. Cookies, authorization headers, session tokens and sensitive query, form and JSON members, and every repetition of them, are marked in the items' sensitive spans, never masked: the receiver masks them.
+- Each instance (method, redacted URI, parameter, attack, evidence) becomes a line of a raw_text evidence item of its finding, at most 20 per finding; the attack string is kept as text, never as markup. occurrence_count is the number of instances of the finding.
+- The HTTP message of the first 3 instances of a finding (request and response headers and bodies) becomes http_exchange evidence items , capped, with the instance's evidence located in the response body. Cookies, authorization headers, session tokens and sensitive query, form and JSON members, and every repetition of them, are marked in the items' sensitive spans, never masked: the receiver masks them.
 
 ## Fields
 
@@ -47,17 +47,17 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/site[]/alerts[]/solution` | `findings[].remediation.recommendation (HTML reduced to text)` |  |
 | `/site[]/alerts[]/otherinfo` | `findings[].source_extra.otherinfo (HTML reduced to text)` |  |
 | `/site[]/alerts[]/reference` | `findings[].references (the http(s) URLs)` |  |
-| `/site[]/alerts[]/cweid` | `findings[].vulnerability.cwe_id, cwe_ids` |  |
+| `/site[]/alerts[]/cweid` | `findings[].vulnerability.cwe_ids` |  |
 | `/site[]/alerts[]/wascid` | `findings[].source_extra.wascid` |  |
 | `/site[]/alerts[]/sourceid` | `findings[].source_extra.sourceid` |  |
 | `/site[]/alerts[]/instances` | (container) |  |
-| `/site[]/alerts[]/instances[]` | `findings[] (one per method, URL template and parameter), evidence (one line per instance, at most 20, the rest counted)` |  |
-| `/site[]/alerts[]/instances[]/uri` | `findings[].web.url, evidence (no user info, fragment or query values)` |  |
-| `/site[]/alerts[]/instances[]/method` | `findings[].web.method, evidence` |  |
-| `/site[]/alerts[]/instances[]/param` | `findings[].web.parameter.name, evidence` |  |
-| `/site[]/alerts[]/instances[]/attack` | `findings[].evidence (text)` |  |
-| `/site[]/alerts[]/instances[]/evidence` | `findings[].evidence (text)` |  |
-| `/site[]/alerts[]/instances[]/otherinfo` | `findings[].evidence` |  |
+| `/site[]/alerts[]/instances[]` | `findings[] (one per method, URL template and parameter), evidence_items[raw_text] (one line per instance, at most 20, the rest counted)` |  |
+| `/site[]/alerts[]/instances[]/uri` | `findings[].web.url, evidence_items[raw_text] (no user info, fragment or query values)` |  |
+| `/site[]/alerts[]/instances[]/method` | `findings[].web.method, evidence_items[raw_text]` |  |
+| `/site[]/alerts[]/instances[]/param` | `findings[].web.parameter.name, evidence_items[raw_text]` |  |
+| `/site[]/alerts[]/instances[]/attack` | `findings[].evidence_items[raw_text] (text)` |  |
+| `/site[]/alerts[]/instances[]/evidence` | `findings[].evidence_items[raw_text] (text)` |  |
+| `/site[]/alerts[]/instances[]/otherinfo` | `findings[].evidence_items[raw_text]` |  |
 | `/site[]/alerts[]/instances[]/id` |  | ZAP-internal instance number |
 | `/site[]/alerts[]/instances[]/nodeName` |  | the site tree node; the URI is kept |
 | `/site[]/alerts[]/tags` | (container) |  |
@@ -91,17 +91,17 @@ Generated from `importer/spec_zap.go`; do not edit. Regenerate with `go test ./i
 | `/OWASPZAPReport/site/alerts/alertitem/solution` | `findings[].remediation.recommendation (HTML reduced to text)` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/otherinfo` | `findings[].source_extra.otherinfo (HTML reduced to text)` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/reference` | `findings[].references (the http(s) URLs)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/cweid` | `findings[].vulnerability.cwe_id, cwe_ids` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/cweid` | `findings[].vulnerability.cwe_ids` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/wascid` | `findings[].source_extra.wascid` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/sourceid` | `findings[].source_extra.sourceid` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/instances` | (container) |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance` | `findings[] (one per method, URL template and parameter), evidence (one line per instance, at most 20, the rest counted)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/uri` | `findings[].web.url, evidence (no user info, fragment or query values)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/method` | `findings[].web.method, evidence` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/param` | `findings[].web.parameter.name, evidence` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/attack` | `findings[].evidence (text)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/evidence` | `findings[].evidence (text)` |  |
-| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/otherinfo` | `findings[].evidence` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance` | `findings[] (one per method, URL template and parameter), evidence_items[raw_text] (one line per instance, at most 20, the rest counted)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/uri` | `findings[].web.url, evidence_items[raw_text] (no user info, fragment or query values)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/method` | `findings[].web.method, evidence_items[raw_text]` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/param` | `findings[].web.parameter.name, evidence_items[raw_text]` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/attack` | `findings[].evidence_items[raw_text] (text)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/evidence` | `findings[].evidence_items[raw_text] (text)` |  |
+| `/OWASPZAPReport/site/alerts/alertitem/instances/instance/otherinfo` | `findings[].evidence_items[raw_text]` |  |
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/id` |  | ZAP-internal instance number |
 | `/OWASPZAPReport/site/alerts/alertitem/instances/instance/nodeName` |  | the site tree node; the URI is kept |
 | `/OWASPZAPReport/site/alerts/alertitem/tags` | (container) |  |

@@ -8,10 +8,10 @@ Generated from `importer/spec_trivy.go`; do not edit. Regenerate with `go test .
 
 ## Rules
 
-- Asset: Options.Repository; else the image of an image scan (container asset with image id, OS and digest) or the repository of a repository scan; a file-system scan names a local path, so its findings go to Options.DefaultAsset or an unclassified asset (with an issue).
+- Asset: Options.Repository; else the image of an image scan (container_image asset, by its repo digest when the report has one, with the OS as a technology) or the repository of a repository scan; a file-system scan names a local path, so its findings go to Options.DefaultAsset or an unclassified asset (with an issue).
 - One finding per vulnerability, misconfiguration and secret. Severity CRITICAL/HIGH/MEDIUM/LOW/UNKNOWN maps to critical/high/medium/low/info; native.severity keeps the word.
-- Every CVSS source (nvd, ghsa, redhat, ...) and version goes to finding.scores; the legacy vulnerability.cvss_* members take the highest v3 score (nvd first on a tie), else v2.
-- A secret's match line is masked again with ctis.MaskSecretMatch unless trivy already masked it; the fingerprint input is the masked match. An unmasked match is also masked in every other field (ctis.RedactSecretFinding).
+- Every CVSS source (nvd, ghsa, redhat, ...) and version goes to finding.scores; each vendor severity is a vendor score with the vendor as source; the status is finding.vex.
+- A secret's match line is masked again with ctis.MaskSecretMatch unless trivy already masked it; the fingerprint is left to the receiver (the secret is masked, so there is nothing to digest). An unmasked match is also masked in every other field (ctis.RedactSecretFinding).
 - Packages (--list-all-pkgs) become dependencies with their PURL; a language result's dependencies carry its target (the manifest or lockfile) as path and their lockfile lines as locations.
 - With the packages of a language result, each vulnerability gets vulnerability.is_direct (its package's relationship is direct), vulnerability.dependency_path (the shortest chain of package ids from the project, or the direct dependency, to the package; at most 32 entries, the first and the 31 nearest the package kept), the package's PURL when the record has none, and the target with the package's first lockfile line as location when the record has no package path.
 
@@ -26,8 +26,8 @@ Generated from `importer/spec_trivy.go`; do not edit. Regenerate with `go test .
 | `/ArtifactType` | `assets[].type (container, repository)` |  |
 | `/Metadata` | (container) |  |
 | `/Metadata/OS` | (container) |  |
-| `/Metadata/OS/Family` | `assets[].properties.os` |  |
-| `/Metadata/OS/Name` | `assets[].properties.os` |  |
+| `/Metadata/OS/Family` | `assets[].technologies[] (operating-system)` |  |
+| `/Metadata/OS/Name` | `assets[].technologies[] (operating-system)` |  |
 | `/Metadata/ImageID` | `assets[].properties.image_id` |  |
 | `/Metadata/RepoDigests` | (container) |  |
 | `/Metadata/RepoDigests[]` | `assets[].properties.repo_digest (the first)` |  |
@@ -52,7 +52,7 @@ Generated from `importer/spec_trivy.go`; do not edit. Regenerate with `go test .
 | `/Results[]/Packages[]/Version` | `dependencies[].version` |  |
 | `/Results[]/Packages[]/Identifier` | (container) |  |
 | `/Results[]/Packages[]/Identifier/PURL` | `dependencies[].purl` |  |
-| `/Results[]/Packages[]/Identifier/UID` | `dependencies[].uid` |  |
+| `/Results[]/Packages[]/Identifier/UID` | `dependencies[].source_id` |  |
 | `/Results[]/Packages[]/Licenses` | (container) |  |
 | `/Results[]/Packages[]/Licenses[]` | `dependencies[].licenses` |  |
 | `/Results[]/Packages[]/DependsOn` | (container) |  |
@@ -67,23 +67,23 @@ Generated from `importer/spec_trivy.go`; do not edit. Regenerate with `go test .
 | `/Results[]/Packages[]/*/**` |  | other package details (layer, arch, source package, file path) |
 | `/Results[]/Vulnerabilities` | (container) |  |
 | `/Results[]/Vulnerabilities[]` | `findings[] (vulnerability)` |  |
-| `/Results[]/Vulnerabilities[]/VulnerabilityID` | `findings[].rule_id, native.vuln_id, vulnerability.ids, cve_id` |  |
+| `/Results[]/Vulnerabilities[]/VulnerabilityID` | `findings[].rule_id, native.vuln_id, vulnerability.ids` |  |
 | `/Results[]/Vulnerabilities[]/VendorIDs` | (container) |  |
 | `/Results[]/Vulnerabilities[]/VendorIDs[]` | `findings[].vulnerability.ids[] (vendor)` |  |
 | `/Results[]/Vulnerabilities[]/PkgID` | `findings[].source_extra.pkg_id; the package whose graph places the finding` |  |
 | `/Results[]/Vulnerabilities[]/Fingerprint` |  | trivy's own result hash; the CTIS SCA fingerprint is computed |
-| `/Results[]/Vulnerabilities[]/PkgName` | `findings[].vulnerability.package` |  |
+| `/Results[]/Vulnerabilities[]/PkgName` | `findings[].vulnerability.package_name` |  |
 | `/Results[]/Vulnerabilities[]/PkgPath` | `findings[].location.path` |  |
 | `/Results[]/Vulnerabilities[]/PkgIdentifier` | (container) |  |
 | `/Results[]/Vulnerabilities[]/PkgIdentifier/PURL` | `findings[].vulnerability.purl` |  |
 | `/Results[]/Vulnerabilities[]/PkgIdentifier/UID` |  | trivy-internal package uid |
-| `/Results[]/Vulnerabilities[]/InstalledVersion` | `findings[].vulnerability.affected_version` |  |
-| `/Results[]/Vulnerabilities[]/FixedVersion` | `findings[].vulnerability.fixed_version, remediation` |  |
-| `/Results[]/Vulnerabilities[]/Status` | `findings[].vulnerability.vuln_status` |  |
-| `/Results[]/Vulnerabilities[]/SeveritySource` | `findings[].vulnerability.severity_source` |  |
+| `/Results[]/Vulnerabilities[]/InstalledVersion` | `findings[].vulnerability.installed_version` |  |
+| `/Results[]/Vulnerabilities[]/FixedVersion` | `findings[].vulnerability.fixed_versions, remediation` |  |
+| `/Results[]/Vulnerabilities[]/Status` | `findings[].vex.status` |  |
+| `/Results[]/Vulnerabilities[]/SeveritySource` | `findings[].scores[] (vendor source)` |  |
 | `/Results[]/Vulnerabilities[]/Severity` | `findings[].severity, native.severity` |  |
-| `/Results[]/Vulnerabilities[]/VendorSeverity` | `findings[].vulnerability.vendor_severity` |  |
-| `/Results[]/Vulnerabilities[]/VendorSeverity/*` | `findings[].vulnerability.vendor_severity` |  |
+| `/Results[]/Vulnerabilities[]/VendorSeverity` | `findings[].scores[] (vendor)` |  |
+| `/Results[]/Vulnerabilities[]/VendorSeverity/*` | `findings[].scores[] (vendor)` |  |
 | `/Results[]/Vulnerabilities[]/Title` | `findings[].title` |  |
 | `/Results[]/Vulnerabilities[]/Description` | `findings[].description` |  |
 | `/Results[]/Vulnerabilities[]/PrimaryURL` | `findings[].references` |  |
@@ -94,9 +94,9 @@ Generated from `importer/spec_trivy.go`; do not edit. Regenerate with `go test .
 | `/Results[]/Vulnerabilities[]/CVSS` | (container) |  |
 | `/Results[]/Vulnerabilities[]/CVSS/*` | (container) |  |
 | `/Results[]/Vulnerabilities[]/CVSS/*/V2Vector` | `findings[].scores[] (cvss 2.0)` |  |
-| `/Results[]/Vulnerabilities[]/CVSS/*/V2Score` | `findings[].scores[] (cvss 2.0), vulnerability.cvss_score (when no v3)` |  |
-| `/Results[]/Vulnerabilities[]/CVSS/*/V3Vector` | `findings[].scores[] (cvss 3.x), vulnerability.cvss_vector` |  |
-| `/Results[]/Vulnerabilities[]/CVSS/*/V3Score` | `findings[].scores[] (cvss 3.x), vulnerability.cvss_score` |  |
+| `/Results[]/Vulnerabilities[]/CVSS/*/V2Score` | `findings[].scores[] (cvss 2.0), scores[] (cvss)` |  |
+| `/Results[]/Vulnerabilities[]/CVSS/*/V3Vector` | `findings[].scores[] (cvss 3.x), scores[] (cvss)` |  |
+| `/Results[]/Vulnerabilities[]/CVSS/*/V3Score` | `findings[].scores[] (cvss 3.x), scores[] (cvss)` |  |
 | `/Results[]/Vulnerabilities[]/CVSS/*/V40Vector` | `findings[].scores[] (cvss 4.0)` |  |
 | `/Results[]/Vulnerabilities[]/CVSS/*/V40Score` | `findings[].scores[] (cvss 4.0)` |  |
 | `/Results[]/Vulnerabilities[]/CweIDs` | (container) |  |
@@ -112,7 +112,7 @@ Generated from `importer/spec_trivy.go`; do not edit. Regenerate with `go test .
 | `/Results[]/Misconfigurations[]` | `findings[] (misconfiguration)` |  |
 | `/Results[]/Misconfigurations[]/Type` | `findings[].source_extra.misconfig_type` |  |
 | `/Results[]/Misconfigurations[]/ID` | `findings[].rule_id, misconfiguration.policy_id` |  |
-| `/Results[]/Misconfigurations[]/AVDID` | `findings[].misconfiguration.avd_id` |  |
+| `/Results[]/Misconfigurations[]/AVDID` | `findings[].misconfiguration.policy_id (the AVD id when given)` |  |
 | `/Results[]/Misconfigurations[]/Title` | `findings[].title, misconfiguration.policy_name` |  |
 | `/Results[]/Misconfigurations[]/Description` | `findings[].description` |  |
 | `/Results[]/Misconfigurations[]/Message` | `findings[].message` |  |
@@ -138,7 +138,7 @@ Generated from `importer/spec_trivy.go`; do not edit. Regenerate with `go test .
 | `/Results[]/Secrets` | (container) |  |
 | `/Results[]/Secrets[]` | `findings[] (secret)` |  |
 | `/Results[]/Secrets[]/RuleID` | `findings[].rule_id, native.vuln_id` |  |
-| `/Results[]/Secrets[]/Category` | `findings[].secret.secret_type, source_extra.category` |  |
+| `/Results[]/Secrets[]/Category` | `findings[].secret.type, source_extra.category` |  |
 | `/Results[]/Secrets[]/Severity` | `findings[].severity, native.severity` |  |
 | `/Results[]/Secrets[]/Title` | `findings[].title` |  |
 | `/Results[]/Secrets[]/StartLine` | `findings[].location.start_line` |  |

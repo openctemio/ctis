@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis/severity"
+	"github.com/openctemio/ctis/v2/severity"
 )
 
 // =============================================================================
@@ -237,7 +237,7 @@ func DefaultConvertOptions() *ConvertOptions {
 //
 // Every run is converted. The report's tool is the first run's driver; when
 // the log has more than one run, each finding names its run's tool in
-// properties["sarif_tool"].
+// finding.tool.
 //
 // Mapping:
 //   - severity: the GitHub "security-severity" score (result, then rule) via
@@ -277,24 +277,29 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 	report.Tool = &Tool{
 		Name:    first.Name,
 		Version: first.Version,
-		InfoURL: first.InformationURI,
+	}
+	if IsWebURL(first.InformationURI) {
+		report.Tool.InfoURL = first.InformationURI
 	}
 	if report.Tool.Version == "" {
 		report.Tool.Version = first.SemanticVersion
 	}
 
-	assetID := ""
-	if opts.AssetValue != "" {
-		assetID = opts.AssetID
-		if assetID == "" {
-			assetID = "asset-1"
-		}
-		report.Assets = append(report.Assets, Asset{
-			ID:    assetID,
-			Type:  opts.AssetType,
-			Value: opts.AssetValue,
-		})
+	// Every finding names an asset. Without one from the caller, the
+	// findings go on an unclassified asset named after the tool.
+	assetID := opts.AssetID
+	if assetID == "" {
+		assetID = "asset-1"
 	}
+	assetType, assetValue := opts.AssetType, opts.AssetValue
+	if assetValue == "" || !assetType.IsValid() {
+		assetType, assetValue = AssetTypeUnclassified, "sarif:"+first.Name
+	}
+	report.Assets = append(report.Assets, Asset{
+		ID:    assetID,
+		Type:  assetType,
+		Value: NormalizeAssetName(assetType, assetValue),
+	})
 
 	// Set branch info for branch-aware finding lifecycle
 	if opts.BranchInfo != nil {
@@ -325,16 +330,13 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 			finding.ID = fmt.Sprintf("finding-%d", n)
 			finding.AssetRef = assetID
 			if multiRun {
-				if finding.Properties == nil {
-					finding.Properties = Properties{}
-				}
-				finding.Properties["sarif_tool"] = driver.Name
+				finding.Tool = &Tool{Name: driver.Name, Version: driver.Version}
 			}
 			report.Findings = append(report.Findings, finding)
 		}
 	}
 
-	report.Tool.Capabilities = detectCapabilities(first.Name, opts.ToolType)
+	report.Tool.Techniques = detectTechniques(first.Name, opts.ToolType)
 	return report, nil
 }
 
@@ -405,13 +407,10 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 		vuln.CWEIDs = sarifCWEs(rule.Properties)
 		vuln.OWASPIDs = sarifOWASP(rule.Properties)
 	}
-	if cveIDPattern.MatchString(ruleID) {
-		vuln.CVEID = strings.ToUpper(ruleID)
+	if cveIDPattern.MatchString(ruleID) || ghsaIDPattern.MatchString(ruleID) {
+		vuln.AddID(ruleID, "")
 	}
-	if len(vuln.CWEIDs) > 0 {
-		vuln.CWEID = vuln.CWEIDs[0]
-	}
-	if vuln.CVEID != "" || len(vuln.CWEIDs) > 0 || len(vuln.OWASPIDs) > 0 {
+	if len(vuln.IDs) > 0 || len(vuln.CWEIDs) > 0 || len(vuln.OWASPIDs) > 0 {
 		finding.Vulnerability = &vuln
 	}
 
@@ -422,7 +421,10 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 	if len(result.Locations) > 0 {
 		loc := result.Locations[0]
 		if loc.PhysicalLocation != nil || len(loc.LogicalLocations) > 0 {
-			finding.Location = &FindingLocation{Branch: branch, CommitSHA: commit}
+			finding.Location = &FindingLocation{Branch: branch}
+			if commit != "" {
+				finding.Location.Commit = &CommitInfo{SHA: commit}
+			}
 		}
 		if pl := loc.PhysicalLocation; pl != nil {
 			if pl.ArtifactLocation != nil {
@@ -857,9 +859,12 @@ func detectResultType(rule *SARIFRule, ruleID, toolName, toolType string) Findin
 		return FindingTypeSecret
 	case "iac":
 		return FindingTypeMisconfiguration
-	case "web3":
-		return FindingTypeWeb3
-	case "sca", "sast":
+	case "web3", "sast":
+		if cveIDPattern.MatchString(ruleID) || ghsaIDPattern.MatchString(ruleID) {
+			return FindingTypeVulnerability
+		}
+		return FindingTypeWeakness
+	case "sca":
 		return FindingTypeVulnerability
 	}
 	if rule != nil {
@@ -867,6 +872,8 @@ func detectResultType(rule *SARIFRule, ruleID, toolName, toolType string) Findin
 			switch strings.ToLower(strings.TrimSpace(tag)) {
 			case "vulnerability":
 				return FindingTypeVulnerability
+			case "weakness":
+				return FindingTypeWeakness
 			case "misconfiguration":
 				return FindingTypeMisconfiguration
 			case "secret":
@@ -890,9 +897,9 @@ func detectFindingType(toolName string, toolType string) FindingType {
 		return FindingTypeSecret
 	case "iac":
 		return FindingTypeMisconfiguration
-	case "web3":
-		return FindingTypeWeb3
-	case "sca", "sast":
+	case "web3", "sast":
+		return FindingTypeWeakness
+	case "sca":
 		return FindingTypeVulnerability
 	}
 
@@ -904,7 +911,7 @@ func detectFindingType(toolName string, toolType string) FindingType {
 	web3Tools := []string{"slither", "mythril", "securify", "manticore", "echidna", "aderyn"}
 	for _, t := range web3Tools {
 		if strings.Contains(name, t) {
-			return FindingTypeWeb3
+			return FindingTypeWeakness
 		}
 	}
 
@@ -916,7 +923,14 @@ func detectFindingType(toolName string, toolType string) FindingType {
 		}
 	}
 
-	// Default to vulnerability
+	// Static analysers report code weaknesses (a CVE or GHSA rule id was
+	// recognised before this point).
+	for _, t := range sastToolNames {
+		if strings.Contains(name, t) {
+			return FindingTypeWeakness
+		}
+	}
+
 	return FindingTypeVulnerability
 }
 
@@ -941,40 +955,34 @@ var sastToolNames = []string{
 	"psalm", "phpstan", "flawfinder", "cppcheck",
 }
 
-// detectCapabilities determines tool capabilities. The values are the
-// capability vocabulary of report.json; receivers derive the detection
-// technique from them.
-func detectCapabilities(toolName string, toolType string) []string {
+// detectTechniques determines the detection techniques of a SARIF tool.
+func detectTechniques(toolName string, toolType string) []Technique {
 	name := strings.ToLower(toolName)
 
 	switch toolType {
 	case "secret":
-		return []string{"secret"}
+		return []Technique{TechniqueSecret}
 	case "iac":
-		return []string{"misconfiguration"}
-	case "web3":
-		return []string{"web3"}
+		return []Technique{TechniqueIaC}
 	case "sca":
-		return []string{"sca"}
-	case "sast":
-		return []string{"sast"}
+		return []Technique{TechniqueSCA}
+	case "sast", "web3":
+		return []Technique{TechniqueSAST}
 	}
 
-	// Auto-detect
 	if isSecretTool(name) {
-		return []string{"secret"}
+		return []Technique{TechniqueSecret}
 	}
 	if strings.Contains(name, "slither") || strings.Contains(name, "mythril") {
-		return []string{"web3"}
+		return []Technique{TechniqueSAST}
 	}
 	if strings.Contains(name, "trivy") || strings.Contains(name, "checkov") {
-		return []string{"vulnerability", "misconfiguration"}
+		return []Technique{TechniqueSCA, TechniqueIaC}
 	}
 	for _, t := range sastToolNames {
 		if strings.Contains(name, t) {
-			return []string{"sast"}
+			return []Technique{TechniqueSAST}
 		}
 	}
-
-	return []string{"vulnerability"}
+	return nil
 }

@@ -275,7 +275,7 @@ var cdxDepKeys = map[string]bool{"group": true, "cpe": true, "scope": true, "pub
 
 func cdxComponentOf(d *Dependency, ref string) cdxOutComponent {
 	c := cdxOutComponent{
-		Type:        d.Type,
+		Type:        string(d.Type),
 		BOMRef:      ref,
 		Name:        d.Name,
 		Version:     d.Version,
@@ -371,12 +371,6 @@ func cdxVulnID(f *Finding) string {
 		if len(v.IDs) > 0 {
 			return v.IDs[0].ID
 		}
-		if v.CVEID != "" {
-			return v.CVEID
-		}
-		if len(v.CVEIDs) > 0 {
-			return v.CVEIDs[0]
-		}
 	}
 	return f.RuleID
 }
@@ -423,10 +417,10 @@ func (b *cdxBuilder) componentFor(v *VulnerabilityDetails) string {
 	if ref, ok := b.byPURL[v.PURL]; ok && v.PURL != "" {
 		return ref
 	}
-	if v.Package == "" {
+	if v.PackageName == "" {
 		return ""
 	}
-	key := nameAtVersion(v.Package, v.AffectedVersion)
+	key := nameAtVersion(v.PackageName, v.InstalledVersion)
 	if ref, ok := b.byName[key]; ok {
 		return ref
 	}
@@ -435,7 +429,7 @@ func (b *cdxBuilder) componentFor(v *VulnerabilityDetails) string {
 		ref = "pkg-" + key
 	}
 	if !b.refs[ref] {
-		b.addComponent(cdxOutComponent{Type: "library", BOMRef: ref, Name: v.Package, Version: v.AffectedVersion, PURL: v.PURL, CPE: v.CPE})
+		b.addComponent(cdxOutComponent{Type: "library", BOMRef: ref, Name: v.PackageName, Version: v.InstalledVersion, PURL: v.PURL, CPE: v.CPE})
 	}
 	return ref
 }
@@ -475,8 +469,8 @@ func ToCycloneDX(r *Report, opts *CycloneDXOptions) ([]byte, error) {
 		md.Timestamp = opts.Timestamp.UTC().Format(time.RFC3339)
 	case propString(meta, "bom_timestamp") != "":
 		md.Timestamp = propString(meta, "bom_timestamp")
-	case !r.Metadata.Timestamp.IsZero():
-		md.Timestamp = r.Metadata.Timestamp.UTC().Format(time.RFC3339)
+	case !r.Metadata.GeneratedAt.IsZero():
+		md.Timestamp = r.Metadata.GeneratedAt.UTC().Format(time.RFC3339)
 	}
 	if t := r.Tool; t != nil && t.Name != "" {
 		md.Tools = &cdxOutTools{Components: []cdxOutComponent{{Type: "application", Name: t.Name, Version: t.Version}}}
@@ -664,13 +658,6 @@ func cdxVulnOf(f *Finding, vid string) cdxOutVuln {
 		}
 		out.References = append(out.References, ref)
 	}
-	for _, id := range append([]string{v.CVEID}, v.CVEIDs...) {
-		if id == "" || seen[strings.ToUpper(id)] || len(out.References) >= MaxVulnerabilityIDs {
-			continue
-		}
-		seen[strings.ToUpper(id)] = true
-		out.References = append(out.References, cdxOutRef{ID: id})
-	}
 
 	// Ratings from the scores; scores CycloneDX has no method for are kept
 	// as properties.
@@ -701,32 +688,11 @@ func cdxVulnOf(f *Finding, vid string) cdxOutVuln {
 		rt.Justification = f.SourceExtra["rating_justification:"+cdxExtraKey(s.Source+":"+method)]
 		out.Ratings = append(out.Ratings, rt)
 	}
-	if len(out.Ratings) == 0 && (v.CVSSScore > 0 || v.CVSSVector != "") {
-		// Only the single legacy CVSS members.
-		s := Score{System: ScoreSystemCVSS, Version: v.CVSSVersion, Vector: v.CVSSVector}
-		if s.Version == "" {
-			s.Version = CVSSVersionOfVector(v.CVSSVector)
-		}
-		method, _ := cdxMethodOf(&s)
-		rt := cdxOutRating{Method: method, Vector: v.CVSSVector, Severity: cdxSeverityOf(f.Severity)}
-		if v.CVSSScore > 0 {
-			val := v.CVSSScore
-			rt.Score = &val
-		}
-		if v.CVSSSource != "" {
-			rt.Source = &cdxOutSource{Name: v.CVSSSource}
-		}
-		out.Ratings = append(out.Ratings, rt)
-	}
 	if len(out.Ratings) == 0 && f.SourceExtra["severity_note"] == "" && f.Severity.IsValid() {
 		out.Ratings = []cdxOutRating{{Severity: cdxSeverityOf(f.Severity), Method: "other", Source: &cdxOutSource{Name: "ctis"}}}
 	}
 
-	cwes := v.CWEIDs
-	if len(cwes) == 0 && v.CWEID != "" {
-		cwes = []string{v.CWEID}
-	}
-	for _, c := range cwes {
+	for _, c := range v.CWEIDs {
 		if n, err := strconv.Atoi(strings.TrimPrefix(strings.ToUpper(strings.TrimSpace(c)), "CWE-")); err == nil && n > 0 {
 			out.CWEs = append(out.CWEs, n)
 		}

@@ -11,7 +11,7 @@ Generated from `importer/spec_opengrep.go`; do not edit. Regenerate with `go tes
 - The opengrep format is the semgrep parser under the opengrep tool name: the output has the same shape, and Detect names it semgrep, so choose opengrep with Options.Format.
 - One finding per result, filed on Options.Repository, else Options.DefaultAsset, else an unclassified asset named after the tool (with an issue).
 - Severity: ERROR high, WARNING medium, INFO low, INVENTORY and EXPERIMENT info; native.severity keeps the word. Confidence from metadata.confidence (HIGH 90, MEDIUM 70, LOW 50).
-- extra.fingerprint is opengrep's match-based id: it becomes the partial fingerprint matchBasedId/v1. The finding's fingerprint is derived from path, rule and line, the key a semgrep run without a login gave, so a finding first reported by semgrep keeps its identity.
+- extra.fingerprint is opengrep's match-based id: it becomes the partial fingerprint matchBasedId/v1. The finding's fingerprint (recipe v2) is derived from path, rule and lines, the same as a semgrep run, so a finding first reported by semgrep keeps its identity.
 - A taint trace is read in both forms the engine writes (objects, or the tagged ["CliLoc", [location, content]]); call steps are skipped.
 - An ignored result (nosemgrep) gets an in-source suppression. Errors become issues.
 
@@ -62,17 +62,17 @@ Generated from `importer/spec_opengrep.go`; do not edit. Regenerate with `go tes
 | `/results[]/extra/metadata/owasp` | `findings[].vulnerability.owasp_ids` |  |
 | `/results[]/extra/metadata/owasp[]` | `findings[].vulnerability.owasp_ids` |  |
 | `/results[]/extra/metadata/confidence` | `findings[].confidence` |  |
-| `/results[]/extra/metadata/impact` | `findings[].impact` |  |
-| `/results[]/extra/metadata/likelihood` | `findings[].likelihood` |  |
+| `/results[]/extra/metadata/impact` | `findings[].source_extra.impact` |  |
+| `/results[]/extra/metadata/likelihood` | `findings[].source_extra.likelihood` |  |
 | `/results[]/extra/metadata/category` | `findings[].category` |  |
-| `/results[]/extra/metadata/subcategory` | `findings[].subcategory` |  |
-| `/results[]/extra/metadata/subcategory[]` | `findings[].subcategory` |  |
+| `/results[]/extra/metadata/subcategory` | `findings[].subcategories` |  |
+| `/results[]/extra/metadata/subcategory[]` | `findings[].subcategories` |  |
 | `/results[]/extra/metadata/technology` | `findings[].tags` |  |
 | `/results[]/extra/metadata/technology[]` | `findings[].tags` |  |
 | `/results[]/extra/metadata/references` | `findings[].references` |  |
 | `/results[]/extra/metadata/references[]` | `findings[].references` |  |
-| `/results[]/extra/metadata/vulnerability_class` | `findings[].vulnerability_class` |  |
-| `/results[]/extra/metadata/vulnerability_class[]` | `findings[].vulnerability_class` |  |
+| `/results[]/extra/metadata/vulnerability_class` | `findings[].vulnerability_classes` |  |
+| `/results[]/extra/metadata/vulnerability_class[]` | `findings[].vulnerability_classes` |  |
 | `/results[]/extra/metadata/source` | `findings[].source_extra.rule_source` |  |
 | `/results[]/extra/metadata/source-rule-url` | `findings[].references` |  |
 | `/results[]/extra/metadata/shortlink` | `findings[].references` |  |

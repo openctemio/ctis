@@ -4,13 +4,13 @@ import (
 	"path"
 	"strings"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
-// Endpoints from crawl results (CTIS 1.6). A crawl reports one URL per
-// fetch; the endpoints are one per origin, method and path template, with
-// the query parameter names of every URL that fell into it. The legacy
-// discovered_url assets are still emitted, redacted, for one release train.
+// Endpoints from crawl results. A crawl reports one URL per fetch; the
+// endpoints are one per origin, method and path template, with the query
+// parameter names of every URL that fell into it. The converter adds the
+// web_origin asset of each origin.
 
 // endpointKey is the dedup key of a crawled endpoint.
 func endpointKey(origin, method, template string) string {
@@ -66,7 +66,7 @@ func convertCrawlEndpoints(report *Report, urls []DiscoveredURLInput) {
 		if len(report.Endpoints) >= MaxEndpoints {
 			return
 		}
-		pu, err := weburl.Parse(u.URL)
+		pu, err := weburl.Parse(weburl.RedactURL(u.URL))
 		if err != nil {
 			continue
 		}
@@ -98,7 +98,7 @@ func convertCrawlEndpoints(report *Report, urls []DiscoveredURLInput) {
 			}
 			if u.Parent != "" {
 				if p := weburl.RedactURL(u.Parent); redactedURL(p) {
-					ep.Parent = p
+					ep.ParentURL = p
 				}
 			}
 			report.Endpoints = append(report.Endpoints, ep)
@@ -200,7 +200,7 @@ func convertCrawlForm(report *Report, index map[string]int, page *weburl.URL, f 
 			Source:   EndpointSourceCrawl,
 		}
 		if p := weburl.RedactURL(page.String()); redactedURL(p) {
-			ep.Parent = p
+			ep.ParentURL = p
 		}
 		report.Endpoints = append(report.Endpoints, ep)
 		i = len(report.Endpoints) - 1
@@ -248,7 +248,7 @@ func looksLikePasswordField(name string) bool {
 }
 
 // ConvertEndpoints converts discovered URLs to endpoints only, without the
-// legacy discovered_url assets ConvertReconToCTIS also emits. It is for
+// web_origin assets ConvertReconToCTIS also adds. It is for
 // callers that read a large URL list (an import) and need the endpoints
 // alone. URLs that do not parse are left out; at most MaxEndpoints are
 // returned.

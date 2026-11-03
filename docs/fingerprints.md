@@ -1,4 +1,4 @@
-# Fingerprints and the correlation key (CTIS 2.0)
+# Fingerprints and the correlation key
 
 This page is normative for recipe v2 (`ctis-fp/2`) and the correlation key (`ctis-ck/1`). Both ship in CTIS 2.0. The Go implementation is the `fingerprint` package and `CorrelationKey`; any other language implements the text below and runs the vectors in `conformance/v2/fingerprint/` and `conformance/v2/correlation/`.
 
@@ -76,7 +76,7 @@ The correlation key says that two findings, possibly from different tools, descr
 
 1. the asset key, computed by the receiver (never taken from the producer);
 2. the preferred vulnerability id (CVE first, the numerically smallest; then GHSA, OSV, vendor, in their listed order), or, when the finding has no vulnerability id, `rule:` + tool name + `/` + rule id, both trimmed;
-3. `LocationKey`: the first of `pkg:<versionless purl>` (or `pkg:<type>/<name>` from the ecosystem and package name), `url:<origin><path>` from `web.url` and then from a URL-shaped `location.path`, `file:<repository path>`, `net:<port>/<protocol>` (`net:host` without a port), `resource:<type>/<name>`; empty when none applies. A key longer than 512 bytes is cut and ends in `#` and 32 hex characters of its SHA-256.
+3. `LocationKey`: the first of `pkg:<versionless purl>` (the ecosystem is the purl type; a package name without a purl gives no `pkg:` key), `url:<origin><path>` from `web.url` and then from a URL-shaped `location.path`, `file:<repository path>`, `net:<port>/<transport>` (`net:host` without a port), `resource:<type>/<name>`; empty when none applies. A key longer than 512 bytes is cut and ends in `#` and 32 hex characters of its SHA-256.
 
 Receivers compute the key; a producer's value is never trusted.
 

@@ -3,195 +3,144 @@
 [![Code: Apache-2.0](https://img.shields.io/badge/code-Apache_2.0-blue.svg)](LICENSE) [![Spec: CC BY 4.0](https://img.shields.io/badge/spec-CC_BY_4.0-lightgrey.svg)](LICENSE-docs)
 [![CI](https://github.com/openctemio/ctis/actions/workflows/ci.yml/badge.svg)](https://github.com/openctemio/ctis/actions/workflows/ci.yml)
 
-CTIS is the JSON format security tools use to send assets, findings and dependencies (SBOM) to a CTEM platform such as [OpenCTEM](https://openctem.io). Product documentation: <https://docs.openctem.io>. This repository is the single source of truth for:
+CTIS is an open JSON document format for continuous threat exposure management: security tools and platforms use it to exchange the assets they observe, the findings on them, software components, the relationships between assets and the web endpoints an origin serves. A document carries natural keys (canonical forms) and the producer's own references, never a receiver's database keys, so any producer can talk to any receiver.
 
-- **The specification**: [`docs/spec.md`](docs/spec.md), normative, with a field reference generated from the schema.
-- **JSON Schemas** (`schemas/v1/`): draft-07, language-agnostic.
-- **Go types** (root package): what OpenCTEM decodes reports into.
-- **Severity** (`severity/`) and **fingerprint** (`fingerprint/`) helpers.
-- **Converters**: SARIF and recon (subfinder, dnsx, naabu, httpx, katana) output to CTIS.
-- **Examples** (`examples/`): one report per finding type, validated in CI.
-- **Edge protection** (`edgeprotect/`): recognise a CDN or WAF challenge, block or rate limit from vendor-specific signs (Cloudflare, CloudFront, Akamai, Fastly, Azure Front Door, Imperva, F5, DataDome, HUMAN/PerimeterX, Sucuri).
-- **Web URLs** (`weburl/`): parse, normalise, template and redact web URLs.
-- **Politeness keys** (`politeness/`): which hosts a scan job touches and when two jobs touch the same host.
-- **Repository source** (`source/`): the repository, branch and exact commit a platform code scan fetches.
-- **Per-target outcomes** (`outcome/`): how each target of a scan task ended (done, failed, skipped, unfinished), so only unfinished targets are run again.
-- **Capability taxonomy** (`capability/`): the closed list of acts a scan tool performs and the contract of each ([docs/capabilities.md](docs/capabilities.md)).
-- **Tool settings** (`settings/`): the closed JSON Schema subset a tool manifest declares its configuration in, the validator, and layered resolution of the values a scan runs with.
-- **Tool options** (`tooloption/`): the common execution options of scan tools (timeout, rate, concurrency, retries), their bounds and how layers may narrow them.
-- **Feed transfer** (`transfer/`, its own module): download of signed, chunked feed bundles from ordered origins with retries, resume and fall-back, and the bundle format, writer and consumer.
+This repository holds the standard and its reference implementation:
 
-The current specification version is **1.6**. See [CHANGELOG.md](CHANGELOG.md).
+- **Specification**: [`docs/spec.md`](docs/spec.md), normative and receiver-neutral, with a field reference generated from the schema.
+- **JSON Schemas**: [`schemas/v2/`](schemas/v2), JSON Schema 2020-12, with immutable versioned `$id`s (`https://schemas.openctem.io/ctis/2.0/report.json`; identifiers, never fetched).
+- **Conformance vectors**: [`conformance/v2/`](conformance/README.md), plain JSON every implementation runs: canonical forms, asset keys, location keys, preferred ids, fingerprints, correlation keys, valid and invalid documents.
+- **Validator CLI**: `ctis`, a single static binary.
+- **Go reference implementation** (root package `github.com/openctemio/ctis/v2`): types, `Decode`, `Validate`, canonical forms, fingerprints (`fingerprint/`), severity mapping (`severity/`), web URLs (`weburl/`), importers (`importer/`), exporters and converters.
+- **Examples**: [`examples/`](examples), validated in CI.
+
+The current specification version is **2.0**. Upgrading from 1.x: [docs/migration-2.0.md](docs/migration-2.0.md). History: [CHANGELOG.md](CHANGELOG.md).
+
+## Media type and files
+
+`application/vnd.ctis+json; version=2.0`, file suffix `.ctis.json`.
 
 ## Installation (Go)
 
 ```bash
-go get github.com/openctemio/ctis
+go get github.com/openctemio/ctis/v2
 ```
 
 The module has no dependencies outside the Go standard library.
 
 ```go
 import (
-    "github.com/openctemio/ctis"
-    "github.com/openctemio/ctis/fingerprint"
-    "github.com/openctemio/ctis/severity"
+    "github.com/openctemio/ctis/v2"
+    "github.com/openctemio/ctis/v2/fingerprint"
+    "github.com/openctemio/ctis/v2/severity"
 )
 
-// Produce
-report := ctis.NewReport() // version 1.6, $schema set, timestamp now
-report.Tool = &ctis.Tool{Name: "my-scanner", Version: "1.0.0", Capabilities: []string{"sast"}}
+// Produce. NewReport stamps version 2.0, the schema id, a fresh UUIDv7
+// metadata.id (the idempotency key: re-send it on retry) and generated_at.
+report := ctis.NewReport()
+report.Tool = &ctis.Tool{Name: "my-scanner", Version: "1.0.0", Techniques: []ctis.Technique{ctis.TechniqueSAST}}
 report.Assets = append(report.Assets, ctis.Asset{ID: "repo", Type: ctis.AssetTypeRepository, Value: "github.com/org/repo"})
 report.Findings = append(report.Findings, ctis.Finding{
-    Type:        ctis.FindingTypeVulnerability,
+    Type:        ctis.FindingTypeWeakness,
     Title:       "SQL injection",
     Severity:    ctis.Severity(severity.FromCVSS(8.8)),
     AssetRef:    "repo",
     RuleID:      "sqli",
     Location:    &ctis.FindingLocation{Path: "app/db.go", StartLine: 42, Snippet: snippet},
-    Fingerprint: fingerprint.GenerateSASTStable("app/db.go", "sqli", "db.Find", snippet),
+    Fingerprint: fingerprint.V2SASTContent("app/db.go", "sqli", "db.Find", snippet),
 })
 if err := report.Validate(); err != nil {
     log.Fatal(err)
 }
 
-// Consume: decode under the compatibility rule, then validate. A document of
-// this module's minor or an older one decodes strictly (a typo is an error);
-// a newer minor has unknown members ignored and unknown enum values mapped
-// to their fallback, each listed in unknown; another major is refused.
+// Consume: decode under the compatibility rule, then validate. A document
+// of this module's minor or an older one decodes strictly (a typo is an
+// error); a newer minor has unknown members ignored and unknown enum values
+// mapped to their fallback; another major (any 1.x document) is refused.
 in, unknown, err := ctis.Decode(io.LimitReader(r, 64<<20))
 if err != nil { /* reject */ }
 if err := in.Validate(); err != nil { /* reject */ }
 _ = unknown.Entries // log what was ignored
 
-// Key assets on their canonical value (receivers never trust a producer's key).
-host, _ := ctis.CanonicalDomain("Bücher.Example.")    // "xn--bcher-kva.example"
-key := ctis.AssetKey(ctis.AssetTypeDomain, host)
-
-
-// Convert SARIF (Semgrep, CodeQL, Trivy, ...)
-report, err := ctis.FromSARIF(sarifBytes, nil)
+// Key assets on their canonical value; never trust a producer's key.
+v, _ := ctis.CanonicalAssetValue(ctis.AssetTypeDomainName, "Bücher.Example.") // "xn--bcher-kva.example"
+key := ctis.AssetKey(ctis.AssetTypeDomainName, v)
 ```
 
 ## Schemas
 
 | Schema | Description |
 |---|---|
-| `report.json` | Report envelope: version, metadata, tool, assets, findings, dependencies, endpoints |
-| `asset.json` | Assets (domains, IPs, hosts, repositories, cloud, Web3, ...) |
-| `finding.json` | Security findings, with their web location (`web`) and typed evidence (`evidence_items`) |
-| `dependency.json` | SBOM dependencies |
-| `endpoint.json` | Web endpoints: a method and a path on an origin, parameters by name only (1.6) |
-| `evidence-item.json` | Typed evidence of a finding: HTTP exchanges, text, command output, file excerpts, screenshots, with marked sensitive spans (1.6) |
-| `web3-asset.json` | Web3 asset details |
-| `web3-finding.json` | Web3 vulnerability details |
+| `report.json` | Report: version, metadata, tool, assets, findings, dependencies, relationships, endpoints, extensions |
+| `asset.json` | Assets and their technical details |
+| `finding.json` | Findings: location, network and web location, vulnerability, scores, threat signals, remediation, validation |
+| `dependency.json` | Software components (SBOM) |
+| `endpoint.json` | Web endpoints: a method and a path on an origin, parameters by name only |
+| `evidence-item.json` | Typed evidence: HTTP exchanges, text, command output, file excerpts, screenshots, with marked sensitive spans |
+| `web3-asset.json`, `web3-finding.json` | The optional web3 profile |
 
-Each schema's `$id` resolves:
+Every object sets `additionalProperties: false` except the `properties` bags (opaque: receivers give them no meaning) and `extensions` (namespaced data, keyed by reverse-DNS namespace). Every member carries a bound; URL members admit only http and https.
 
-```
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/asset.json
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/finding.json
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/dependency.json
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/endpoint.json
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/evidence-item.json
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-asset.json
-https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.json
-```
+## Validate a document
 
-Replace `main` with a release tag (`vX.Y.Z`) for an immutable copy. Every object sets `additionalProperties: false` except the `properties` bags: put producer-specific data in `properties`.
-
-## Validate a report
-
-`ctis` is a single static binary (standard library only) that checks a report the way a strict receiver does: unknown members are refused, the version must be one this release implements, and `Report.Validate` must pass. It reads only the files you name (or `-` for standard input) and never fetches a URL.
+`ctis` checks a document the way a strict receiver does: the version must be one this release implements, unknown members are refused, and `Report.Validate` must pass. It reads only the files you name (or `-` for standard input) and never fetches a URL.
 
 ```bash
-go install github.com/openctemio/ctis/cmd/ctis@latest   # or download a binary from the release page
-ctis validate report.json                  # exit 0 valid, 1 invalid, 2 usage or I/O error
+go install github.com/openctemio/ctis/v2/cmd/ctis@latest   # or download a release binary
+ctis validate report.ctis.json             # exit 0 valid, 1 invalid, 2 usage or I/O error
 ctis validate --json a.json b.json         # one JSON object per file
-ctis validate --max-size 1048576 -         # read standard input, at most 1 MiB (default 64 MiB)
-ctis conformance conformance/v1               # run the conformance vectors
+ctis validate --max-size 1048576 -         # standard input, at most 1 MiB (default 64 MiB)
+ctis canon domain_name WWW.Example.COM.    # canonical value and asset key
+ctis conformance conformance/v2            # run the conformance vectors
 ```
 
-Release binaries come with `SHA256SUMS`. The conformance vectors in [`conformance/`](conformance/README.md) let any other implementation check its canonical forms, correlation keys and fingerprints against this one.
+With another validator, load all eight schemas (`report.json` references the others by relative `$ref`) into a JSON Schema 2020-12 validator; [`scripts/validate_schemas.py`](scripts/validate_schemas.py) shows how with python-jsonschema. Schema validation checks shape; `Report.Validate()` also checks what a schema cannot (unique ids, references that resolve, canonical asset values, score ranges per system).
 
-## Validating CTIS reports
+## Asset types
 
-`report.json` references the other schemas, so load all eight.
+| Group | Types |
+|---|---|
+| External surface | `domain_name`, `ip_address`, `ip_range`, `certificate`, `autonomous_system` |
+| Applications and services | `web_origin`, `web_application`, `api`, `mobile_app`, `saas_application`, `service` |
+| Code and artifacts | `repository`, `package`, `container_image`, `ai_model` |
+| Cloud | `cloud_account`, `cloud_resource`, `storage`, `database`, `serverless`, `container_registry` |
+| Infrastructure and devices | `host`, `container`, `kubernetes_cluster`, `kubernetes_namespace`, `kubernetes_workload`, `endpoint_device`, `iot_device`, `ot_device`, `network_device` |
+| Network | `vpc`, `subnet`, `load_balancer`, `firewall` |
+| Identity | `identity` (`technical.identity.kind`) |
+| Web3 profile | `smart_contract`, `wallet`, `nft_collection`, `defi_protocol`, `token`, `blockchain` |
+| Fallback | `unclassified` |
 
-### Python
+A port is a `service` asset (`host:port/transport`) linked from its host by an `exposes` relationship; a web origin's paths are `endpoints`, not assets.
 
-```bash
-pip install "jsonschema[format-nongpl]"
-```
+## Finding types
 
-```python
-import glob, json
-from jsonschema import Draft7Validator, FormatChecker
-from referencing import Registry, Resource
-from referencing.jsonschema import DRAFT7
-
-schemas = [json.load(open(p)) for p in glob.glob("schemas/v1/*.json")]
-registry = Registry().with_resources(
-    (s["$id"], Resource.from_contents(s, default_specification=DRAFT7)) for s in schemas
-)
-report_schema = next(s for s in schemas if s["$id"].endswith("/report.json"))
-validator = Draft7Validator(report_schema, registry=registry, format_checker=FormatChecker())
-
-errors = list(validator.iter_errors(json.load(open("my-report.json"))))
-for e in errors:
-    print("/".join(map(str, e.path)), e.message)
-```
-
-`scripts/validate_schemas.py` does this for the examples in CI.
-
-### Node.js
-
-```bash
-npm install ajv ajv-formats
-```
-
-```javascript
-const Ajv = require('ajv');
-const addFormats = require('ajv-formats');
-const fs = require('fs');
-
-const ajv = new Ajv({ allErrors: true });
-addFormats(ajv);
-for (const f of fs.readdirSync('schemas/v1')) {
-  ajv.addSchema(JSON.parse(fs.readFileSync(`schemas/v1/${f}`, 'utf8')));
-}
-const validate = ajv.getSchema('https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json');
-if (!validate(myReport)) console.log(validate.errors);
-```
-
-Schema validation checks shape. `Report.Validate()` in Go also checks what a schema cannot: unique IDs, `asset_ref` resolution, the spec version and score ranges ([spec section 3.3](docs/spec.md#33-reportvalidate)).
+`vulnerability` (an advisory id), `weakness` (no advisory id: most SAST results), `secret`, `misconfiguration`, `compliance` (the result is `kind`), `exposure`, `malware`, `license`. Web3 is a profile: a `web3` block on a vulnerability or weakness.
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 1.6: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP traditional report (JSON and XML), generic bug-bounty reports (`bounty_report`, JSON and CSV), and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. `Detect` cannot tell opengrep JSON from semgrep JSON (same shape), so a caller that ran opengrep sets `Options.Format` to `opengrep`; its findings keep the fingerprint a semgrep run gave them. `Detect` names bounty report JSON by its top-level `bounty_reports` member but never CSV, which a caller forces with `Options.Format`; `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 2.0: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP report, generic bug-bounty reports, and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})
-// res.Report: the CTIS report; res.VEX: statements of a VEX document;
+// res.Report: the CTIS document; res.VEX: statements of a VEX document;
 // res.Stats, res.Issues (with line numbers), res.Unmapped.
 ```
 
-Each format has a mapping spec: every source field, the CTIS member that keeps it or why it is ignored on purpose ([docs/importers](docs/importers/README.md), generated from the code). The tests fail when a fixture holds a field its spec does not list, or a spec maps a field no fixture holds. Inputs are treated as hostile: size, depth, element, text and record limits; no XML internal subsets, entities or external resources; UTF-8, US-ASCII or ISO-8859-1 only; `OpenZip` refuses traversal, links, nested archives and decompression bombs. Scan credentials and account names are never copied into a report.
+Each format has a mapping spec: every source field, the CTIS member that keeps it or why it is ignored on purpose ([docs/importers](docs/importers/README.md)). Inputs are treated as hostile: size, depth, element, text and record limits; no XML entities or external resources; `OpenZip` refuses traversal, links, nested archives and decompression bombs. Scan credentials and account names are never copied.
+
+The `importer/mapping` package turns the JSON, JSON Lines, CSV or XML output of any tool into CTIS through a declarative, closed mapping language ([docs/mapping.md](docs/mapping.md)).
 
 ## Exporters
 
-`ToSARIF`, `ToCycloneDX` and `ToOCSF` write a report out as SARIF 2.1.0, a CycloneDX 1.6 BOM with its vulnerabilities (VDR/VEX), and OCSF 1.3.0 Vulnerability Finding (2002) and Compliance Finding (2003) events. Output is deterministic, needs no network and never carries a raw secret. Each exporter has round-trip tests against the importers; the mapping and the accepted losses per format are in [docs/exporters.md](docs/exporters.md).
+`ToSARIF`, `ToCycloneDX` and `ToOCSF` write a document as SARIF 2.1.0, a CycloneDX 1.6 BOM with its vulnerabilities (VDR/VEX), and OCSF 1.3.0 Vulnerability and Compliance Finding events. Output is deterministic, needs no network and never carries a raw secret. Round trips against the importers are tested; the mapping and the accepted losses per format are in [docs/exporters.md](docs/exporters.md).
 
-```go
-sarif, err := ctis.ToSARIF(report)
-bom, err := ctis.ToCycloneDX(report, nil)
-events, err := ctis.ToOCSF(report, nil)
-```
+## Converters
+
+`ctis.FromSARIF` converts a SARIF log; `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports` convert subdomain, DNS, port, HTTP probe and crawl results into the 2.0 asset graph (domain names, addresses, services with `exposes`, web origins with their certificate, endpoints).
 
 ## Web URLs
 
-The `weburl` package parses, normalises and templates web URLs, so a crawler, a scanner and the platform give one endpoint the same identity:
+The `weburl` package parses, normalises, templates and redacts web URLs, so a crawler, a scanner and a receiver give one endpoint the same identity:
 
 ```go
 u, err := weburl.Parse("HTTPS://Shop.Example.COM:443/api/v1/orders/42/?token=x")
@@ -199,160 +148,16 @@ u.Origin()   // "https://shop.example.com"
 u.Template() // "/api/v1/orders/{int}"
 u.Params     // ["token"]: names only, never values
 weburl.RedactURL("https://u:p@a.example/x?api_key=k#t") // "https://a.example/x?api_key="
-weburl.PathHash("GET", u.Template())                      // the endpoint's dedup key
 ```
 
-`Parse` refuses anything that is not a plain absolute http(s) URL: user info, control and bidi characters, malformed escapes, invalid ports, ambiguous numeric hosts and URLs over 2,048 bytes. A query value is never kept.
+## Fingerprints
 
-## Politeness keys
-
-The `politeness` package is the one definition of the per-host politeness keys of scan work, shared by the platform (which holds the keys while a job runs and sends them with the job) and the sensor runtime (which admits the job under the same keys):
-
-```go
-keys := politeness.Keys([]string{"https://www.example.com/x", "10.0.0.5", "10.0.1.0/24"}, "")
-// ["10.0.0.5" "in:10.0.0.0/24" "net:10.0.1.0/24" "www.example.com"]
-politeness.Conflicts(keys) // the keys another job must not hold at the same time
-```
-
-A name, the host of a URL or a service, an address (with the marker of its /24 or /120 bucket) and a range (one key per bucket) each have a key. An address and a range scan of its bucket conflict, two addresses of one bucket do not. With a network id, the keys of private addresses and of names carry the network, so overlapping private ranges at two sites stay two sets of hosts; public addresses never do.
-
-A port never makes a separate host: `203.0.113.5`, `203.0.113.5:8443` and `https://203.0.113.5/` all have the key `203.0.113.5`. `Group` cuts a target list into groups of one host, so parts built from whole groups (the chunks of a step, the waves of a running job) never conflict with each other:
-
-```go
-politeness.Group([]string{"203.0.113.5", "198.51.100.7", "203.0.113.5:8443"}, "")
-// [["203.0.113.5" "203.0.113.5:8443"] ["198.51.100.7"]]
-```
-
-## Repository source
-
-The `source` package is the source of a platform code scan (a full scan of a protected branch): the platform puts a `source.Repository` in the job, the sensor fetches exactly that commit read-only, and both validate it with the same code:
-
-```json
-{"kind": "github", "clone_url": "https://github.com/acme/api.git", "branch": "main",
- "commit": "4f2c…(40 or 64 hex)", "depth": 1, "credential": "scm",
- "capabilities": ["sast.code@1", "secrets.code@1", "sca.deps@1", "iac.misconfig@1"]}
-```
-
-`Validate` accepts only an HTTPS URL with a DNS host (no address, no user information, query or fragment, plain path segments), a branch git accepts as a ref (no leading `-`), a full commit id, a depth of 1 to 10000 and capabilities that take a repository as input. `credential` is the name of the credential the sensor asks the platform for when the job starts (a short-lived, read-only token for this repository); a token never travels in the job.
-
-## SAST code identity and data flow
-
-- `fingerprint.SnippetHash` hashes the code a SAST finding flags, independent of its line and indentation. A producer that has the scanned tree but no snippet sends it as the partial fingerprint `snippetHash/v1` (`fingerprint.PartialSnippetHash`) instead of the code, so a receiver can key the finding on the flagged code and a decision on it survives code moving above it.
-- A finding's `data_flow` is its taint trace: source, intermediate steps and sink, each with file, lines, snippet and label. `FromSARIF` maps `codeFlows` to it, and the semgrep and opengrep importers keep their traces. `NormalizeDataFlow` bounds a trace (at most `MaxDataFlowSteps`, 100, steps), makes paths repository-relative (dropping a path that leaves the repository) and masks credentials in snippets and labels. A malformed trace leaves the finding without a data flow and never fails the report. The data flow never feeds the fingerprint.
-
-## Per-target outcomes
-
-The `outcome` package is the shape a sensor uses to say how each target of a scan task ended, and the platform uses to settle targets one by one. A command result carries the list under `target_outcomes`:
-
-```json
-[{"target": "https://a.example", "state": "done"},
- {"target": "https://b.example", "state": "failed", "class": "timeout"},
- {"target": "https://c.example", "state": "unfinished"}]
-```
-
-States are `done`, `failed` (class `unreachable`, `timeout`, `tool_error` or `egress_refused`: the sensor's network confinement refused every connection toward the target), `skipped` (class `refused` or `excluded`) and `unfinished` (the task stopped first). Done, failed and skipped settle a target; only unfinished targets are handed out again. `outcome.Normalize(reported, taskTargets)` reads a sensor's list against the task's own targets: unknown targets and invalid entries are dropped, and a task target without a valid entry is unfinished, so a sensor can never add work. `outcome.Remaining` returns the targets to run again.
-
-Revision 2 (`outcome.Revision`) adds classes that say why a target was not covered, so a fact about the target is not read as a failure of the scan: `name_gone` (the name no longer exists), `resolver_failed` (the name could not be resolved), `sensor_network_fault` (the sensor's own network failed its control probe), `rate_limited`, and `edge_challenged` / `edge_blocked` (a WAF or CDN answered in place of the service; failed or skipped). An entry may also carry `cause` (`target`, `sensor` or `platform`; `Target.Side` derives it from the class when absent, `Target.Fault` is true for sensor and platform causes), `reason` (a short token refining `unreachable`, such as `host_down` or `filtered`) and `vendor` (the edge). All three are optional and omitted when empty. A platform advertises the revision it accepts and a sensor sends revision 2 entries only to such a platform; `Target.Legacy` gives the entry a revision 1 receiver accepts. An entry with a class the receiver does not know is dropped by `Normalize`, so the target is unfinished and never done.
-
-## Capability taxonomy
-
-The `capability` package is the closed, versioned list of acts a scan tool can perform (`discover.subdomains@1`, `scan.ports@1`, `sast.code@1`, ...). The capability, not the tool, carries the facts about the act: its phase and CTEM stage, its tier floor (how intrusive it is at minimum), its typed input and output ports with the CTIS asset types they carry, its standard params, the CTIS paths every report of it must carry, and its MITRE ATT&CK, D3FEND and CAPEC references. A tool only declares which capabilities it implements.
-
-```go
-c, ok := capability.Lookup("scan.ports@1")
-c.Accepts("ip_address")          // true: an input port carries it
-c.MayEmit("asset:repository")    // false: no port carries it
-violations, err := c.Check(report, capability.CheckOptions{})
-```
-
-`Check` reports outputs the capability may not emit and records that miss a required path; producers run it before upload and receivers again at ingest. The reference page [docs/capabilities.md](docs/capabilities.md) is generated from the data.
-
-## Tool settings
-
-The `settings` package is the tool settings contract: the closed subset of JSON Schema 2020-12 (plus `x-octm-*` annotations) in which a tool manifest declares its configuration, the validator, and the layered resolution of the values a task runs with. The platform validates what an administrator enters with it and the sensor validates the same values again before a task uses them; both import this one implementation, so the two never disagree.
-
-```go
-s, err := settings.ParseSchema(manifestConfigJSON)
-err = s.Validate(map[string]any{"rate_limit": 100})
-eff, err := s.Resolve(
-	settings.Layer{Source: settings.SourceSensor, Values: sensorValues},
-	settings.Layer{Source: settings.SourceScan, Values: scanValues},
-)
-eff.Source("rate_limit") // which layer set the effective value
-```
-
-Annotations: `x-octm-scope` (`sensor` or `scan`: the lowest layer that may set the key), `x-octm-tier` (the safety class of a non-default value: `T0` safe, `T1` impact, `T2` dangerous), `x-octm-common` (the key is a common tool option, see below), `x-octm-flag` (the tool's native flag, shown in a job's effective configuration), and presentation hints. Layers, in order: tenant policy, the sensor's configuration, a scan profile or workflow step, the scan, the platform's decision for one job; only tenant and sensor layers may set `sensor`-scope keys.
-
-## Tool options
-
-The `tooloption` package defines the execution options almost every scan tool has, once, so every tool, the sensor runtime and the platform mean the same thing by each name:
-
-| Option | Unit | Bounds | Narrows |
-|---|---|---|---|
-| `timeout` | seconds per request or probe | 1..300 | no |
-| `rate` | requests or packets per second | 1..100000 | down |
-| `concurrency` | targets or requests at once | 1..1000 | down |
-| `retries` | repeats of an unanswered request | 0..10 | down |
-
-A tool declares its options in the configuration schema of its tool manifest; a property that is a common option carries `"x-octm-common": "<name>"`, must have the common type and may only narrow the common bounds (`CheckProperty`). Settings are layered (platform defaults, tenant policy, sensor configuration, scan or workflow step, the platform's decision for one job); for an option that narrows down, only an administrator's layer (tenant, sensor) may raise it above the tool's default, and a layer closer to the job may only lower the value in force (`NarrowValue`). `proxy`, `user_agent` and `headers` are reserved: the platform's egress and HTTP policy set them, never a tool option (`Reserved`).
-
-```go
-o, _ := tooloption.Lookup("rate")
-o.CheckProperty("integer", nil, &max) // a tool's "rate" property is compatible
-v, ok := o.NarrowValue(100, 500)      // 100, false: a scan cannot raise the sensor's rate
-```
-
-## Mapping any JSON tool output
-
-The `importer/mapping` package turns the JSON or JSON Lines output of any command-line tool into CTIS through a declarative mapping file (`openctem.io/mapping/v1`), so wrapping a tool needs no parser code:
-
-```go
-m, err := mapping.Load(mappingJSON)
-report, stats, err := m.Apply(ctx, stdout, mapping.Options{Tool: &ctis.Tool{Name: "example-portscan"}})
-```
-
-The language is closed: predicates (`exists`, `equals`, `in`, RE2 `matches`), source paths, constants, named templates and a fixed list of transforms. It has no expressions, code, file or network access. Targets are checked against the CTIS types. Ids, links between records and the report's `tool` cannot be set. Input is bounded in size, depth, line length and record count. See [docs/mapping.md](docs/mapping.md).
-
-## Feed transfer
-
-`github.com/openctemio/ctis/transfer` is a separate Go module (tagged `transfer/vX.Y.Z`) so the root module keeps zero dependencies; it needs the standard library and the Prometheus client. `transfer` fetches files from an ordered list of origins (release URL, mirrors, a local directory) with retries, Range resume, a content-addressed blob cache and per-origin circuits; `transfer/bundle` is the signed (DSSE, Ed25519), chunked JSON Lines bundle format, its writer and a resumable consumer.
-
-```sh
-go get github.com/openctemio/ctis/transfer
-```
-
-The caller supplies the HTTP client, and it must be SSRF-guarded: there is no unguarded default. The format is pinned by a golden test to the bytes of `github.com/openctemio/sdk-go/pkg/transfer` v0.1.0, where the package lived before; switching the import path changes nothing on the wire or on disk.
-
-## Asset types
-
-| Group | Types |
-|---|---|
-| External attack surface | `domain`, `subdomain`, `ip_address`, `certificate` |
-| Applications | `website`, `web_application`, `api`, `mobile_app`, `service` |
-| Code | `repository` |
-| Cloud | `cloud_account`, `compute`, `storage`, `database`, `serverless`, `container_registry` |
-| Infrastructure | `host`, `server`, `container`, `kubernetes`, `kubernetes_cluster`, `kubernetes_namespace` |
-| Network | `network`, `vpc`, `subnet`, `load_balancer`, `firewall` |
-| Identity / IAM | `iam_user`, `iam_role`, `service_account` |
-| Recon results | `http_service`, `open_port`, `discovered_url` |
-| Web3 | `smart_contract`, `wallet`, `token`, `nft_collection`, `defi_protocol`, `blockchain` |
-| Other | `unclassified` |
-
-## Finding types
-
-| Type | Description |
-|---|---|
-| `vulnerability` | Code, dependency, host or web vulnerabilities |
-| `secret` | Exposed secrets and credentials |
-| `misconfiguration` | IaC, cloud and configuration issues |
-| `compliance` | Compliance control failures |
-| `web3` | Smart contract vulnerabilities |
+Recipe `ctis-fp/2` and the cross-tool correlation key `ctis-ck/1` are specified in [docs/fingerprints.md](docs/fingerprints.md) and implemented in the `fingerprint` package (`V2Auto`, `V2SAST`, `V2SCA`, `V2Secret` with an HMAC digest, `V2VA`, ...) and `ctis.CorrelationKey`. Recipe v1 stays in the package, deprecated, for receivers migrating stored data.
 
 ## Versioning
 
-- `version` in a report is the spec version, `MAJOR.MINOR`. Receivers accept any minor of their major.
-- Minor versions only add optional members or values. Receivers decode strictly, so a producer must not send members newer than the receiver's minor: **upgrade receivers first, then producers.**
-- Module `v1.MINOR.x` implements spec `1.MINOR`.
+- `version` is the specification version, `MAJOR.MINOR`. A minor only adds optional members or values; receivers decode their own or older minors strictly and ignore what they do not know in a newer minor; another major is refused.
+- Module `v2.MINOR.x` implements CTIS `2.MINOR`.
 
 Details: [docs/spec.md, section 2](docs/spec.md#2-versioning-and-compatibility).
 
@@ -360,7 +165,7 @@ Details: [docs/spec.md, section 2](docs/spec.md#2-versioning-and-compatibility).
 
 Contributions are made under the Developer Certificate of Origin (`git commit -s`); format changes go through a [proposal](proposals/README.md). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Every change to the format updates the schema, the Go types, the examples and the CHANGELOG together. `go test ./...` fails when the schema and the Go types disagree, when an example does not validate, or when the generated field reference in `docs/spec.md` is stale (refresh it with `go test -run TestSpecFieldReference -update`). The design record of the 1.4 to 1.6 additions, with the status of each proposal, is [docs/proposals-1.4.md](docs/proposals-1.4.md).
+Every change to the format updates the schema, the Go types, the examples, the conformance vectors and the CHANGELOG together. `go test ./...` fails when the schema and the Go types disagree, when an example does not validate, or when the generated field reference in `docs/spec.md` is stale (`go test -run TestSpecFieldReference -update`).
 
 ## Security
 

@@ -1,6 +1,6 @@
 package importer
 
-import "github.com/openctemio/ctis"
+import "github.com/openctemio/ctis/v2"
 
 // Limits bound what a parser accepts. A zero field takes its default
 // (DefaultLimits). The defaults are sized for a real export of a large

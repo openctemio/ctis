@@ -1,30 +1,37 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "trivy",
     "vendor": "Aqua Security",
-    "capabilities": [
+    "techniques": [
       "sca",
-      "misconfiguration",
+      "iac",
+      "container",
       "secret"
     ]
   },
   "assets": [
     {
       "id": "asset-1",
-      "type": "container",
-      "value": "registry.example.com/shop/api:1.4.2",
+      "type": "container_image",
+      "value": "registry.example.com/shop/api@sha256:0000000000000000000000000000000000000000000000000000000000000003",
       "name": "registry.example.com/shop/api:1.4.2",
+      "technologies": [
+        {
+          "name": "debian 12.7",
+          "categories": [
+            "operating-system"
+          ]
+        }
+      ],
       "properties": {
         "image_id": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
-        "os": "debian 12.7",
-        "repo_digest": "registry.example.com/shop/api@sha256:0000000000000000000000000000000000000000000000000000000000000003",
         "source": "trivy_artifact"
       }
     }
@@ -38,40 +45,6 @@
       "rule_id": "CVE-2024-5535",
       "asset_ref": "asset-1",
       "vulnerability": {
-        "cve_id": "CVE-2024-5535",
-        "cve_ids": [
-          "CVE-2024-5535"
-        ],
-        "cwe_ids": [
-          "CWE-200"
-        ],
-        "cwe_id": "CWE-200",
-        "cvss_version": "3.1",
-        "cvss_score": 9.1,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H",
-        "cvss_source": "nvd",
-        "package": "libssl3",
-        "purl": "pkg:deb/debian/libssl3@3.0.14-1~deb12u1?arch=amd64&distro=debian-12.7",
-        "affected_version": "3.0.14-1~deb12u1",
-        "fixed_version": "3.0.15-1~deb12u1",
-        "published_at": "2024-06-27T11:15:24.447Z",
-        "modified_at": "2024-09-04T21:15:05.193Z",
-        "data_source": {
-          "id": "debian",
-          "name": "Debian Security Tracker",
-          "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
-        },
-        "severity_source": "debian",
-        "vendor_severity": {
-          "debian": 1,
-          "nvd": 4,
-          "redhat": 2
-        },
-        "layer": {
-          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000004",
-          "diff_id": "sha256:0000000000000000000000000000000000000000000000000000000000000002"
-        },
-        "vuln_status": "fixed",
         "ids": [
           {
             "type": "cve",
@@ -79,14 +52,35 @@
           },
           {
             "type": "vendor",
-            "id": "DSA-5764-1"
+            "id": "DSA-5764-1",
+            "source": "trivy"
           }
-        ]
+        ],
+        "cwe_ids": [
+          "CWE-200"
+        ],
+        "package_name": "libssl3",
+        "purl": "pkg:deb/debian/libssl3@3.0.14-1~deb12u1?arch=amd64&distro=debian-12.7",
+        "installed_version": "3.0.14-1~deb12u1",
+        "fixed_versions": [
+          "3.0.15-1~deb12u1"
+        ],
+        "published_at": "2024-06-27T11:15:24.447Z",
+        "modified_at": "2024-09-04T21:15:05.193Z",
+        "data_source": {
+          "id": "debian",
+          "name": "Debian Security Tracker",
+          "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+        },
+        "layer": {
+          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000004",
+          "diff_id": "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+        }
       },
       "remediation": {
         "recommendation": "Upgrade libssl3 to 3.0.15-1~deb12u1",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-5535",
@@ -96,11 +90,12 @@
         "trivy",
         "registry.example.com/shop/api:1.4.2 (debian 12.7)"
       ],
-      "fingerprint": "4bc4940ed45f7476f66bebdb95644e0e262a5871deb51586169098bd53797a70",
+      "fingerprint": "ctis-fp/2:83cfb7e6ba3990bcbb4932dd29fdc4e4fe14959ba0dbe9589308532152e4406a",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-5535",
-        "severity": "LOW"
+        "severity": "LOW",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -130,10 +125,30 @@
           "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:L",
           "value": 4.8,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "low",
+          "source": "debian"
+        },
+        {
+          "system": "vendor",
+          "label": "critical",
+          "source": "nvd"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "redhat"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "libssl3@3.0.14-1~deb12u1",
+        "severity_source": "debian",
         "target": "registry.example.com/shop/api:1.4.2 (debian 12.7)"
       }
     },
@@ -151,9 +166,9 @@
         "end_line": 34
       },
       "misconfiguration": {
-        "policy_id": "KSV001",
+        "policy_id": "AVD-KSV-0001",
         "policy_name": "Process can elevate its own privileges",
-        "avd_id": "AVD-KSV-0001",
+        "resource_type": "Kubernetes Security Check",
         "resource_name": "Deployment/api",
         "provider": "Kubernetes",
         "service": "general",
@@ -162,7 +177,7 @@
       },
       "remediation": {
         "recommendation": "Set 'set containers[].securityContext.allowPrivilegeEscalation' to 'false'.",
-        "solution_type": "config"
+        "solution_type": "config_change"
       },
       "references": [
         "https://avd.aquasec.com/misconfig/ksv001",
@@ -173,7 +188,7 @@
         "misconfiguration",
         "deploy/k8s.yaml"
       ],
-      "fingerprint": "8049dd5d07a0188f7ecdf51b4ece4294f1bab970b8e488b3a72363f86f9bc4af",
+      "fingerprint": "ctis-fp/2:7097238c4514a63731bb56bb1aa3ad472801122f42c703b1d69a113fa96bec47",
       "native": {
         "scheme": "other",
         "vuln_id": "KSV001",
@@ -181,7 +196,6 @@
         "status": "FAIL"
       },
       "source_extra": {
-        "misconfig_type": "Kubernetes Security Check",
         "target": "deploy/k8s.yaml"
       }
     },
@@ -198,14 +212,13 @@
         "snippet": "TOKE********"
       },
       "secret": {
-        "secret_type": "token"
+        "type": "token"
       },
       "tags": [
         "trivy",
         "secret",
         "app/settings.py"
       ],
-      "fingerprint": "43f8b4506278054616914755f75393ac3a1889eef2534bbe576ae516cad0b0f9",
       "native": {
         "scheme": "other",
         "vuln_id": "github-pat",
@@ -221,15 +234,13 @@
       "id": "libssl3@3.0.14-1~deb12u1",
       "name": "libssl3",
       "version": "3.0.14-1~deb12u1",
+      "type": "library",
       "purl": "pkg:deb/debian/libssl3@3.0.14-1~deb12u1?arch=amd64&distro=debian-12.7",
-      "uid": "a1b2c3d4",
+      "source_id": "libssl3@3.0.14-1~deb12u1",
       "licenses": [
         "Apache-2.0"
       ],
-      "relationship": "direct",
-      "depends_on": [
-        "libc6@2.36-9+deb12u8"
-      ]
+      "relationship": "direct"
     }
   ]
 }

@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // SPDX 2.2 / 2.3 JSON: packages and their relationships. SPDX carries no
@@ -14,7 +14,7 @@ import (
 
 func init() {
 	parsers[FormatSPDX] = parseSPDX
-	tools[FormatSPDX] = ctis.Tool{Name: "spdx", Capabilities: []string{"sca"}}
+	tools[FormatSPDX] = ctis.Tool{Name: "spdx", Techniques: []ctis.Technique{ctis.TechniqueSCA}}
 }
 
 type spdxDoc struct {
@@ -189,7 +189,7 @@ func parseSPDX(b *builder, r io.Reader) error {
 		if !ok || deps[to] == nil || from == to || len(fd.DependsOn) >= maxDependsOn {
 			return
 		}
-		fd.DependsOn = appendUnique(fd.DependsOn, to)
+		fd.DependsOn = appendUnique(fd.DependsOn, deps[to].ID)
 	}
 	for _, rel := range d.Relationships {
 		if err := b.tick(); err != nil {
@@ -207,7 +207,8 @@ func parseSPDX(b *builder, r io.Reader) error {
 	if len(order) == 0 {
 		return nil
 	}
-	if _, err := b.asset(spdxSubjectAsset(subject, d.Name)); err != nil {
+	assetID, err := b.asset(spdxSubjectAsset(subject, d.Name))
+	if err != nil {
 		return err
 	}
 	if subject == nil {
@@ -217,10 +218,11 @@ func parseSPDX(b *builder, r io.Reader) error {
 		dep := deps[id]
 		switch {
 		case direct[id]:
-			dep.Relationship = "direct"
+			dep.Relationship = ctis.DependencyDirect
 		case hasGraph:
-			dep.Relationship = "indirect"
+			dep.Relationship = ctis.DependencyTransitive
 		}
+		dep.AssetRef = assetID
 		b.res.Stats.Records++
 		if err := b.dependency(*dep); err != nil {
 			return err
@@ -230,14 +232,16 @@ func parseSPDX(b *builder, r io.Reader) error {
 }
 
 func spdxDependency(p *spdxPackage, id string) ctis.Dependency {
-	d := ctis.Dependency{ID: id, Name: line(p.Name, capShort), Version: line(p.VersionInfo, capShort)}
+	d := ctis.Dependency{ID: refOr("dep", id), SourceID: id, Name: line(p.Name, capShort), Version: line(p.VersionInfo, capShort)}
 	if l := spdxLicense(p.LicenseConcluded); l != "" {
 		d.Licenses = append(d.Licenses, l)
 	} else if l := spdxLicense(p.LicenseDeclared); l != "" {
 		d.Licenses = append(d.Licenses, l)
 	}
 	if purpose := line(p.PrimaryPackagePurpose, 32); purpose != "" {
-		d.Type = strings.ToLower(purpose)
+		if t := ctis.DependencyType(strings.ToLower(purpose)); t.IsValid() {
+			d.Type = t
+		}
 	}
 	var security []string
 	for _, ref := range p.ExternalRefs {
@@ -245,7 +249,7 @@ func spdxDependency(p *spdxPackage, id string) ctis.Dependency {
 		switch strings.ToLower(strings.TrimSpace(ref.ReferenceType)) {
 		case "purl":
 			if d.PURL == "" {
-				d.PURL = cleanPURL(loc)
+				d.PURL = goodPURL(loc)
 			}
 		case "cpe23type", "cpe22type":
 			addDepProperty(&d, "cpe", loc)
@@ -262,7 +266,6 @@ func spdxDependency(p *spdxPackage, id string) ctis.Dependency {
 	if len(security) > 0 {
 		addDepProperty(&d, "security_refs", strings.Join(security, " "))
 	}
-	d.Ecosystem = purlType(d.PURL)
 	for _, c := range p.Checksums {
 		if alg := strings.ToLower(line(c.Algorithm, 16)); alg != "" {
 			addDepProperty(&d, "checksum_"+alg, c.ChecksumValue)
@@ -286,21 +289,22 @@ func spdxSubjectAsset(p *spdxPackage, docName string) ctis.Asset {
 		if v == "" {
 			v = "spdx-document"
 		}
-		return ctis.Asset{ID: "sbom-" + v, Type: ctis.AssetTypeRepository, Value: v, Name: v}
+		return ctis.Asset{Type: ctis.AssetTypeUnclassified, Value: v, Name: v}
 	}
 	name := line(p.Name, capShort)
 	version := line(p.VersionInfo, capShort)
-	value := ""
+	purl := ""
 	for _, ref := range p.ExternalRefs {
 		if strings.EqualFold(strings.TrimSpace(ref.ReferenceType), "purl") {
-			value = cleanPURL(ref.ReferenceLocator)
+			purl = ref.ReferenceLocator
 			break
 		}
 	}
+	typ, value := subjectAssetOf(p.PrimaryPackagePurpose, purl, name, version, line(docName, capShort))
 	if value == "" {
-		value = nameVersion(name, version)
+		value = "spdx-document"
 	}
-	a := ctis.Asset{ID: "sbom-" + value, Type: assetTypeOfPurpose(p.PrimaryPackagePurpose), Value: value, Name: name}
+	a := ctis.Asset{Type: typ, Value: value, Name: name}
 	pr := ctis.Properties{}
 	if version != "" {
 		pr["version"] = version

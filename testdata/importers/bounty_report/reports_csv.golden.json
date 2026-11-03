@@ -1,24 +1,24 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "bounty_report"
   },
   "assets": [
     {
-      "id": "host-shop.example.com",
-      "type": "domain",
+      "id": "domain_name-shop.example.com",
+      "type": "domain_name",
       "value": "shop.example.com",
       "name": "shop.example.com"
     },
     {
-      "id": "host-vpn.example.com",
-      "type": "domain",
+      "id": "domain_name-vpn.example.com",
+      "type": "domain_name",
       "value": "vpn.example.com",
       "name": "vpn.example.com"
     }
@@ -29,14 +29,13 @@
       "title": "SQL injection in search, authenticated",
       "description": "The \"q\" parameter reaches the query.\n\n## Steps to reproduce\n\nSend q=' OR 1=1 --\n\n## Impact\n\nRead access to orders.",
       "severity": "medium",
-      "asset_ref": "host-shop.example.com",
+      "asset_ref": "domain_name-shop.example.com",
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
-      "fingerprint": "bounty_report:v1:9f679110a98fe92d3e0c8df5dbd17b024abc0e55c969f7dd6da7ce134018e50a",
+      "fingerprint": "ctis-fp/2:087abb9c91701d11fb62b81bc21323f1861ae324e1656a96a251e8ffec794dc0",
       "first_seen_at": "2026-09-03T08:00:00Z",
       "native": {
         "scheme": "other",
@@ -54,28 +53,30 @@
         }
       ],
       "source_lifecycle": {
-        "first_found": "2026-09-03T08:00:00Z"
+        "first_found_at": "2026-09-03T08:00:00Z"
       },
-      "properties": {
-        "bounty_report": {
-          "disclosure": {
-            "agreed_date": "2026-11-15",
-            "state": "private"
-          },
-          "intake": "intake-a",
-          "parameter": "q",
-          "ref": "BB-1",
-          "reported_severity": "medium",
-          "researcher": "carol",
-          "reward": {
-            "amount": "250",
-            "currency": "USD",
-            "status": "paid"
-          },
-          "state": "triaged",
-          "submitted_at": "2026-09-03T08:00:00Z",
-          "url": "https://shop.example.com/search",
-          "weakness": "CWE-89"
+      "extensions": {
+        "io.openctem": {
+          "bounty_report": {
+            "disclosure": {
+              "agreed_date": "2026-11-15",
+              "state": "private"
+            },
+            "intake": "intake-a",
+            "parameter": "q",
+            "ref": "BB-1",
+            "reported_severity": "medium",
+            "researcher": "carol",
+            "reward": {
+              "amount": "250",
+              "currency": "USD",
+              "status": "paid"
+            },
+            "state": "triaged",
+            "submitted_at": "2026-09-03T08:00:00Z",
+            "url": "https://shop.example.com/search",
+            "weakness": "CWE-89"
+          }
         }
       }
     },
@@ -84,8 +85,8 @@
       "title": "=HYPERLINK()",
       "description": "-1+1\n\n## Steps to reproduce\n\n@SUM(A1)",
       "severity": "low",
-      "asset_ref": "host-vpn.example.com",
-      "fingerprint": "bounty_report:v1:a4a83a2906b1aaefd8bdab8b4e850d8afe560bd40323da080616ceae65deb0e7",
+      "asset_ref": "domain_name-vpn.example.com",
+      "fingerprint": "ctis-fp/2:910b08ad39733f2e0d62c8fb88a2e4db96dccc511706f65b42fca893d2cde7e3",
       "native": {
         "scheme": "other",
         "instance_id": "BB-2",
@@ -93,13 +94,15 @@
         "status": "new",
         "raw_ref": "/bounty_reports/1"
       },
-      "properties": {
-        "bounty_report": {
-          "intake": "import",
-          "ref": "BB-2",
-          "reported_severity": "low",
-          "researcher": "+dave",
-          "state": "new"
+      "extensions": {
+        "io.openctem": {
+          "bounty_report": {
+            "intake": "import",
+            "ref": "BB-2",
+            "reported_severity": "low",
+            "researcher": "+dave",
+            "state": "new"
+          }
         }
       }
     }

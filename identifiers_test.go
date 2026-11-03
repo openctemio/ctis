@@ -40,7 +40,7 @@ func TestAssetIdentifiersRoundTrip(t *testing.T) {
 // The published schema and the struct must describe the same members:
 // strict receivers refuse fields the struct does not have.
 func TestAssetIdentifiersSchemaMatchesStruct(t *testing.T) {
-	raw, err := os.ReadFile("schemas/v1/asset.json")
+	raw, err := os.ReadFile("schemas/v2/asset.json")
 	if err != nil {
 		t.Fatal(err)
 	}

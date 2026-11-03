@@ -15,14 +15,14 @@ import (
 	"time"
 )
 
-// A small JSON Schema (draft-07) validator for the tests. The module has no
+// A small JSON Schema (2020-12) validator for the tests. The module has no
 // dependencies, test dependencies included, so it cannot import one. It
-// implements exactly the keywords schemas/v1 uses; TestSchemaKeywords fails
+// implements exactly the keywords schemas/v2 uses; TestSchemaKeywords fails
 // if a schema starts using a keyword this validator would silently ignore.
 // CI also validates the examples with the reference Python implementation
 // (scripts/validate_schemas.py), which cross-checks this one.
 
-const schemaDir = "schemas/v1"
+const schemaDir = "schemas/v2"
 
 // supportedKeywords are the schema keywords the validator evaluates or that
 // are pure annotations.
@@ -33,7 +33,7 @@ var supportedKeywords = map[string]bool{
 	"items": true, "enum": true, "const": true, "pattern": true,
 	"minimum": true, "maximum": true, "minLength": true, "maxLength": true,
 	"maxItems": true, "maxProperties": true, "propertyNames": true,
-	"format": true,
+	"format": true, "not": true, "uniqueItems": true, "minItems": true,
 	// x-ctis-pii marks a member holding personal data (an annotation).
 	"x-ctis-pii": true,
 }
@@ -152,6 +152,13 @@ func (s *schemaSet) validate(v any, node map[string]any, file, path string, errs
 		*errs = append(*errs, p+": "+fmt.Sprintf(format, args...))
 	}
 
+	if not, ok := node["not"].(map[string]any); ok {
+		var sub []string
+		s.validate(v, not, file, path, &sub)
+		if len(sub) == 0 {
+			fail("matches a schema it must not match")
+		}
+	}
 	if typ, ok := node["type"].(string); ok && !jsonTypeMatches(v, typ) {
 		fail("want %s, got %s", typ, jsonTypeOf(v))
 		return
@@ -207,6 +214,18 @@ func (s *schemaSet) validate(v any, node map[string]any, file, path string, errs
 	case []any:
 		if m, ok := numberOf(node["maxItems"]); ok && float64(len(val)) > m {
 			fail("more than %v items", m)
+		}
+		if m, ok := numberOf(node["minItems"]); ok && float64(len(val)) < m {
+			fail("fewer than %v items", m)
+		}
+		if u, ok := node["uniqueItems"].(bool); ok && u {
+			for i := range val {
+				for j := i + 1; j < len(val); j++ {
+					if jsonEqual(val[i], val[j]) {
+						fail("items %d and %d are equal", i, j)
+					}
+				}
+			}
 		}
 		if items, ok := node["items"].(map[string]any); ok {
 			for i, item := range val {
@@ -332,28 +351,32 @@ func jsonEqual(a, b any) bool {
 func assertReportValid(t testing.TB, s *schemaSet, r *Report) {
 	t.Helper()
 	if errs := s.validateValue(t, r, "report.json"); len(errs) > 0 {
-		t.Fatalf("report does not validate against schemas/v1/report.json:\n  %s", strings.Join(errs, "\n  "))
+		t.Fatalf("report does not validate against schemas/v2/report.json:\n  %s", strings.Join(errs, "\n  "))
 	}
 }
 
 func TestSchemaValidatorSelfCheck(t *testing.T) {
 	s := loadSchemaSet(t)
-	ok := `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},
-		"assets":[{"type":"host","value":"h"}],
-		"findings":[{"type":"secret","title":"t","severity":"high","vulnerability":{"cvss_score":9.8}}]}`
+	const meta = `"metadata":{"id":"0192f0a0-0000-7000-8000-000000000001","generated_at":"2026-11-03T00:00:00Z"}`
+	ok := `{"version":"2.0",` + meta + `,
+		"assets":[{"id":"h1","type":"host","value":"h"}],
+		"findings":[{"type":"secret","title":"t","severity":"high","asset_ref":"h1","scores":[{"system":"cvss","version":"3.1","value":9.8}]}]}`
 	if errs := s.validateJSON([]byte(ok), "report.json"); len(errs) > 0 {
 		t.Fatalf("valid document rejected: %v", errs)
 	}
 	bad := map[string]string{
-		"unknown member":   `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"sevrity":1}`,
-		"missing required": `{"version":"1.3"}`,
-		"bad enum":         `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"assets":[{"type":"other","value":"h"}]}`,
-		"bad pattern":      `{"version":"2.0","metadata":{"timestamp":"2026-10-02T00:00:00Z"}}`,
-		"above maximum":    `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"secret","title":"t","severity":"high","vulnerability":{"cvss_score":99}}]}`,
-		"bad date-time":    `{"version":"1.3","metadata":{"timestamp":"yesterday"}}`,
-		"wrong type":       `{"version":1,"metadata":{"timestamp":"2026-10-02T00:00:00Z"}}`,
-		"not an integer":   `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z","duration_ms":1.5}}`,
-		"nested unknown":   `{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"secret","title":"t","severity":"high","suppression":{"state":"accepted"}}]}`,
+		"unknown member":   `{"version":"2.0",` + meta + `,"sevrity":1}`,
+		"missing required": `{"version":"2.0"}`,
+		"bad enum":         `{"version":"2.0",` + meta + `,"assets":[{"id":"a","type":"subdomain","value":"h"}]}`,
+		"bad pattern":      `{"version":"1.6",` + meta + `}`,
+		"above maximum":    `{"version":"2.0",` + meta + `,"assets":[{"id":"a","type":"service","value":"h:1/tcp","technical":{"service":{"port":70000,"transport":"tcp"}}}]}`,
+		"bad date-time":    `{"version":"2.0","metadata":{"id":"0192f0a0-0000-7000-8000-000000000001","generated_at":"yesterday"}}`,
+		"wrong type":       `{"version":2,` + meta + `}`,
+		"not an integer":   `{"version":"2.0","metadata":{"id":"0192f0a0-0000-7000-8000-000000000001","generated_at":"2026-11-03T00:00:00Z","duration_ms":1.5}}`,
+		"nested unknown":   `{"version":"2.0",` + meta + `,"findings":[{"type":"secret","title":"t","severity":"high","asset_ref":"a","suppression":{"state":"accepted"}}]}`,
+		"uuid-shaped ref":  `{"version":"2.0",` + meta + `,"assets":[{"id":"6f1c2b0e-4a7d-4e3b-9c1a-2b3c4d5e6f70","type":"host","value":"h"}]}`,
+		"duplicate items":  `{"version":"2.0","metadata":{"id":"0192f0a0-0000-7000-8000-000000000001","generated_at":"2026-11-03T00:00:00Z","profiles":["core","core"]}}`,
+		"javascript url":   `{"version":"2.0",` + meta + `,"tool":{"name":"t","info_url":"javascript:alert(1)"}}`,
 	}
 	for name, doc := range bad {
 		if errs := s.validateJSON([]byte(doc), "report.json"); len(errs) == 0 {

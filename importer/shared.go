@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Helpers shared by the importers of SBOM, VEX, OSV and generic findings

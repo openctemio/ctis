@@ -3,7 +3,7 @@ package importer
 import (
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // The package graph of one trivy result (--list-all-pkgs): it tells each
@@ -63,6 +63,20 @@ func trivyRelationship(p *trivyPackage) string {
 	return ""
 }
 
+// depRelationship maps trivy's relationship word to the CTIS one: a
+// workspace is a root, an indirect dependency is transitive.
+func depRelationship(rel string) ctis.DependencyRelationship {
+	switch rel {
+	case "root", "workspace":
+		return ctis.DependencyRoot
+	case "direct":
+		return ctis.DependencyDirect
+	case "indirect", "transitive":
+		return ctis.DependencyTransitive
+	}
+	return ""
+}
+
 // lookup finds the vulnerability's package by its id, else by name and
 // version.
 func (g *trivyGraph) lookup(v *trivyVuln) *trivyPackage {
@@ -93,6 +107,9 @@ func (g *trivyGraph) place(f *ctis.Finding, v *trivyVuln, file string) {
 	if rel := trivyRelationship(p); rel != "" {
 		vd.IsDirect = rel == "direct"
 		vd.DependencyPath = g.path(p.ID)
+	}
+	if p.ID != "" {
+		f.DependencyRef = refOr("dep", line(p.ID, capShort))
 	}
 	if f.Location == nil && file != "" {
 		f.Location = &ctis.FindingLocation{Path: file}

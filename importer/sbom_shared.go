@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // Helpers of the SBOM and package-vulnerability importers (CycloneDX, SPDX,
@@ -53,6 +53,18 @@ func cleanPURL(purl string) string {
 	return purl
 }
 
+// goodPURL returns a package URL that has a canonical form, else "".
+func goodPURL(purl string) string {
+	purl = cleanPURL(purl)
+	if purl == "" {
+		return ""
+	}
+	if _, _, err := ctis.CanonicalPurl(purl); err != nil {
+		return ""
+	}
+	return purl
+}
+
 // purlName returns the name of a package URL with its namespace
 // ("@scope/name", "group:artifact"), unescaped, or "".
 func purlName(purl string) string {
@@ -74,19 +86,36 @@ func purlName(purl string) string {
 	return name
 }
 
-// vulnEcosystems maps purl types and OSV ecosystem names to the
-// vulnerability.ecosystem vocabulary of CTIS.
-var vulnEcosystems = map[string]string{
-	"npm": "npm", "pypi": "pip", "pip": "pip", "maven": "maven", "gradle": "gradle",
-	"nuget": "nuget", "cargo": "cargo", "crates.io": "cargo", "golang": "go", "go": "go",
-	"composer": "composer", "packagist": "composer", "gem": "rubygems", "rubygems": "rubygems",
+// purlTypes maps OSV ecosystem names and language words to the package URL
+// type.
+var purlTypes = map[string]string{
+	"npm": "npm", "pypi": "pypi", "pip": "pypi", "maven": "maven", "gradle": "maven",
+	"nuget": "nuget", "cargo": "cargo", "crates.io": "cargo", "golang": "golang", "go": "golang",
+	"composer": "composer", "packagist": "composer", "gem": "gem", "rubygems": "gem",
 	"hex": "hex", "pub": "pub", "swift": "swift", "swifturl": "swift", "cocoapods": "cocoapods",
 }
 
-// vulnEcosystem returns the CTIS ecosystem of a purl type or OSV ecosystem,
-// or "" when CTIS has no word for it (the dependency keeps the native one).
-func vulnEcosystem(native string) string {
-	return vulnEcosystems[strings.ToLower(strings.TrimSpace(native))]
+// purlOf builds a package URL from an OSV ecosystem, a name and a version;
+// "" when the ecosystem has no package URL type or the result is not a
+// canonical package URL.
+func purlOf(ecosystem, name, version string) string {
+	typ := purlTypes[strings.ToLower(strings.TrimSpace(ecosystem))]
+	name = strings.TrimSpace(name)
+	if typ == "" || name == "" {
+		return ""
+	}
+	if typ == "maven" {
+		name = strings.Replace(name, ":", "/", 1)
+	}
+	segs := strings.Split(name, "/")
+	for i, sg := range segs {
+		segs[i] = url.PathEscape(sg)
+	}
+	p := "pkg:" + typ + "/" + strings.Join(segs, "/")
+	if version != "" {
+		p += "@" + url.PathEscape(version)
+	}
+	return goodPURL(p)
 }
 
 // severityFromCVSS bands a CVSS base score (the CVSS v3/v4 qualitative
@@ -123,8 +152,42 @@ func severityWord(s string) (ctis.Severity, bool) {
 	return "", false
 }
 
-// cvssOrder ranks CVSS versions for the legacy single cvss_* members: the
-// newest version wins.
+// cvssVectorScore returns a CVSS score of a vector string with no value.
+func cvssVectorScore(vector, source string) (ctis.Score, bool) {
+	vector = line(vector, ctis.MaxScoreVectorLen)
+	ver := ctis.CVSSVersionOfVector(vector)
+	if ver == "" {
+		return ctis.Score{}, false
+	}
+	return ctis.Score{System: ctis.ScoreSystemCVSS, Version: ver, Vector: vector, Source: line(source, ctis.MaxScoreSourceLen)}, true
+}
+
+// subjectAssetOf chooses the asset type and value of an SBOM subject (a
+// CycloneDX metadata component, an SPDX root package): a container is an
+// image when its name and version make an image reference, a component with
+// a package URL is that package, anything else is unclassified, named by
+// name and version (or fallback).
+func subjectAssetOf(kind, purl, name, version, fallback string) (ctis.AssetType, string) {
+	if strings.EqualFold(strings.TrimSpace(kind), "container") && name != "" {
+		ref := name
+		if strings.HasPrefix(version, "sha256:") {
+			ref += "@" + version
+		}
+		if c, err := ctis.CanonicalImage(ref); err == nil {
+			return ctis.AssetTypeContainerImage, c
+		}
+	}
+	if purl = goodPURL(purl); purl != "" {
+		return ctis.AssetTypePackage, purl
+	}
+	v := nameVersion(name, version)
+	if v == "" {
+		v = fallback
+	}
+	return ctis.AssetTypeUnclassified, v
+}
+
+// cvssOrder ranks CVSS versions: the newest version wins.
 func cvssOrder(version string) int {
 	switch version {
 	case "4.0":
@@ -137,61 +200,6 @@ func cvssOrder(version string) int {
 		return 1
 	}
 	return 0
-}
-
-// setLegacyCVSS fills the single-valued cvss_* members from the best CVSS
-// score of f.
-func setLegacyCVSS(f *ctis.Finding) {
-	if f.Vulnerability == nil {
-		return
-	}
-	best := -1
-	for i, s := range f.Scores {
-		if s.System != ctis.ScoreSystemCVSS {
-			continue
-		}
-		if best < 0 || cvssOrder(s.Version) > cvssOrder(f.Scores[best].Version) ||
-			(cvssOrder(s.Version) == cvssOrder(f.Scores[best].Version) && s.Value != nil && f.Scores[best].Value == nil) {
-			best = i
-		}
-	}
-	if best < 0 {
-		return
-	}
-	s := f.Scores[best]
-	f.Vulnerability.CVSSVersion = s.Version
-	f.Vulnerability.CVSSVector = s.Vector
-	if s.Value != nil {
-		f.Vulnerability.CVSSScore = *s.Value
-	}
-	switch strings.ToLower(s.Source) {
-	case "nvd", "ghsa", "redhat", "bitnami":
-		f.Vulnerability.CVSSSource = strings.ToLower(s.Source)
-	default:
-		f.Vulnerability.CVSSSource = "vendor"
-	}
-}
-
-// cvssVectorScore returns a CVSS score of a vector string with no value.
-func cvssVectorScore(vector, source string) (ctis.Score, bool) {
-	vector = line(vector, ctis.MaxScoreVectorLen)
-	ver := ctis.CVSSVersionOfVector(vector)
-	if ver == "" {
-		return ctis.Score{}, false
-	}
-	return ctis.Score{System: ctis.ScoreSystemCVSS, Version: ver, Vector: vector, Source: line(source, ctis.MaxScoreSourceLen)}, true
-}
-
-// assetTypeOfPurpose maps an SBOM subject kind (CycloneDX component type,
-// SPDX primaryPackagePurpose) to a CTIS asset type.
-func assetTypeOfPurpose(kind string) ctis.AssetType {
-	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(kind), "_", "-")) {
-	case "container":
-		return ctis.AssetTypeContainer
-	case "operating-system", "device", "firmware", "platform":
-		return ctis.AssetTypeHost
-	}
-	return ctis.AssetTypeRepository
 }
 
 // addDepProperty sets a bounded dependency property.

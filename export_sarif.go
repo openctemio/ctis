@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/openctemio/ctis/severity"
+	"github.com/openctemio/ctis/v2/severity"
 )
 
 // CTIS to SARIF 2.1.0.
@@ -27,7 +27,7 @@ import (
 //     tool name would not give it back.
 //   - location -> locations[0] (physical and logical location, region and
 //     snippet); metadata.branch -> run.versionControlProvenance.
-//   - fingerprint -> fingerprints["ctis/v1"]; partial_fingerprints ->
+//   - fingerprint -> fingerprints["ctis/v2"]; partial_fingerprints ->
 //     partialFingerprints; correlation_id -> correlationGuid;
 //     baseline_state, kind, suppression -> the SARIF members of that name.
 //   - tags -> properties.tags; data_flow -> codeFlows[0].threadFlows[0];
@@ -37,7 +37,7 @@ const (
 	sarifVersion   = "2.1.0"
 	sarifSchemaURI = "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json"
 	// sarifFingerprintKey names the CTIS fingerprint in result.fingerprints.
-	sarifFingerprintKey = "ctis/v1"
+	sarifFingerprintKey = "ctis/v2"
 	// sarifDefaultDriver names the driver of a report without a tool.
 	sarifDefaultDriver = "ctis"
 )
@@ -88,18 +88,22 @@ func ToSARIF(r *Report) ([]byte, error) {
 		driver.InformationURI = r.Tool.InfoURL
 	}
 
-	// Findings grouped into runs by the tool FromSARIF recorded for a
-	// multi-run log (properties["sarif_tool"]), in first-seen order.
+	// Findings grouped into runs by their own tool (finding.tool, which
+	// FromSARIF records for a multi-run log), in first-seen order.
 	var order []string
 	byTool := map[string][]Finding{}
+	toolVersion := map[string]string{}
 	for i := range r.Findings {
 		c, err := exportFinding(&r.Findings[i])
 		if err != nil {
 			return nil, err
 		}
 		tool := driver.Name
-		if s := propString(c.Properties, "sarif_tool"); s != "" {
-			tool = s
+		if c.Tool != nil && c.Tool.Name != "" {
+			tool = c.Tool.Name
+			if _, ok := toolVersion[tool]; !ok {
+				toolVersion[tool] = c.Tool.Version
+			}
 		}
 		if _, ok := byTool[tool]; !ok {
 			order = append(order, tool)
@@ -111,7 +115,7 @@ func ToSARIF(r *Report) ([]byte, error) {
 	}
 	log := sarifOutLog{Schema: sarifSchemaURI, Version: sarifVersion}
 	for i, tool := range order {
-		d := SARIFDriver{Name: tool}
+		d := SARIFDriver{Name: tool, Version: toolVersion[tool]}
 		if tool == driver.Name {
 			d = driver
 		}
@@ -197,9 +201,9 @@ func sarifSecuritySeverity(f *Finding) (string, bool) {
 	if !f.Severity.IsValid() || f.Severity == SeverityUnknown {
 		return "", false
 	}
-	if v := f.Vulnerability; v != nil && v.CVSSScore > 0 && v.CVSSScore <= 10 &&
-		Severity(severity.FromCVSS(v.CVSSScore)) == f.Severity {
-		return formatScore(v.CVSSScore), true
+	if c, ok := PrimaryCVSS(f); ok && c.Value != nil && *c.Value > 0 && *c.Value <= 10 &&
+		Severity(severity.FromCVSS(*c.Value)) == f.Severity {
+		return formatScore(*c.Value), true
 	}
 	switch f.Severity {
 	case SeverityCritical:
@@ -254,9 +258,6 @@ func sarifRuleOf(f *Finding, id, toolName string) SARIFRule {
 	}
 	if v := f.Vulnerability; v != nil {
 		cwes := v.CWEIDs
-		if len(cwes) == 0 && v.CWEID != "" {
-			cwes = []string{v.CWEID}
-		}
 		if len(cwes) > 0 {
 			props["cwe"] = append([]string(nil), cwes...)
 		}
@@ -268,7 +269,7 @@ func sarifRuleOf(f *Finding, id, toolName string) SARIFRule {
 	// not is it written as the rule tag FromSARIF reads.
 	if detectResultType(nil, id, toolName, "") != f.Type {
 		switch f.Type {
-		case FindingTypeVulnerability, FindingTypeMisconfiguration, FindingTypeSecret:
+		case FindingTypeVulnerability, FindingTypeWeakness, FindingTypeMisconfiguration, FindingTypeSecret:
 			props["tags"] = []string{string(f.Type)}
 		}
 	}

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files")
@@ -35,7 +35,7 @@ func runSample(t *testing.T, dir string) (report, stats []byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r, st, err := m.Apply(context.Background(), bytes.NewReader(in), Options{Now: fixedNow, Observe: true, Tool: &ctis.Tool{Name: filepath.Base(dir), Version: "1.0.0"}})
+	r, st, err := m.Apply(context.Background(), bytes.NewReader(in), Options{Now: fixedNow, ReportID: "0192f0a0-0000-7000-8000-000000000001", Observe: true, Tool: &ctis.Tool{Name: filepath.Base(dir), Version: "1.0.0"}})
 	if err != nil {
 		t.Fatal(err)
 	}

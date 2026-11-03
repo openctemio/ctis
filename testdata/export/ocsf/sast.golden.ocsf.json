@@ -62,7 +62,7 @@
       }
     ],
     "unmapped": {
-      "ctis_type": "vulnerability"
+      "ctis_type": "weakness"
     }
   },
   {
@@ -118,7 +118,7 @@
       }
     ],
     "unmapped": {
-      "ctis_type": "vulnerability"
+      "ctis_type": "weakness"
     }
   }
 ]

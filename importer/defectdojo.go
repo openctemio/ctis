@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // DefectDojo Generic Findings Import JSON: {"name", "type", "version",
@@ -289,7 +289,7 @@ func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int,
 	}
 	nativeStatus := ddStatus(d)
 	f.Native.Status = nativeStatus
-	lc := &ctis.SourceLifecycle{FirstFound: parseTime(d.Date.String()), LastFixed: parseTime(d.Mitigated.String())}
+	lc := &ctis.SourceLifecycle{FirstFoundAt: parseTime(d.Date.String()), LastFixedAt: parseTime(d.Mitigated.String())}
 	if status, state, ok := ctis.NormalizeNativeStatus(ctis.NativeSchemeDefectDojo, nativeStatus); ok {
 		f.Status = status
 		lc.State = state
@@ -297,10 +297,10 @@ func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int,
 	if d.Verified.Bool() && nativeStatus == "active" || nativeStatus == "verified" {
 		f.Native.DetectionType = ctis.DetectionTypeConfirmed
 	}
-	if lc.FirstFound != nil || lc.LastFixed != nil || lc.State != "" {
+	if lc.FirstFoundAt != nil || lc.LastFixedAt != nil || lc.State != "" {
 		f.SourceLifecycle = lc
 	}
-	f.FirstSeenAt = lc.FirstFound
+	f.FirstSeenAt = lc.FirstFoundAt
 
 	vuln := &ctis.VulnerabilityDetails{}
 	addVulnID(vuln, d.CVE.String())
@@ -309,8 +309,7 @@ func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int,
 	}
 	if c := strings.TrimPrefix(strings.ToUpper(d.CWE.String()), "CWE-"); c != "" && c != "0" {
 		if n, err := strconv.Atoi(c); err == nil && n > 0 {
-			vuln.CWEID = "CWE-" + c
-			vuln.CWEIDs = []string{vuln.CWEID}
+			vuln.CWEIDs = []string{"CWE-" + strconv.Itoa(n)}
 		}
 	}
 	for _, c := range []struct{ vec, score, def string }{{d.CVSSv3.String(), d.CVSSv3Score.String(), "3.1"}, {d.CVSSv4.String(), d.CVSSv4Score.String(), "4.0"}} {
@@ -325,47 +324,50 @@ func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int,
 		if v, ok := parseScore(c.score, 10); ok {
 			vc := v
 			s.Value = &vc
-			if vuln.CVSSVersion == "" {
-				vuln.CVSSScore, vuln.CVSSVersion, vuln.CVSSVector, vuln.CVSSSource = v, ver, s.Vector, "vendor"
-			}
 		}
 		addScore(&f, s)
 	}
 	if v, ok := parseScore(d.EPSSScore.String(), 1); ok {
-		vuln.EPSSScore = v
 		vc := v
 		addScore(&f, ctis.Score{System: ctis.ScoreSystemEPSS, Value: &vc, Source: "first"})
 	}
 	if v, ok := parseScore(d.EPSSPercentile.String(), 1); ok {
-		vuln.EPSSPercentile = v
 		vc := v
 		addScore(&f, ctis.Score{System: ctis.ScoreSystemEPSSPercentile, Value: &vc, Source: "first"})
 	}
+	kevAt := parseTime(d.KEVDate.String())
 	if d.KnownExploited.Bool() {
-		vuln.InCISAKEV = true
-		vuln.ExploitAvailable = true
+		addSignal(vuln, ctis.ThreatSignalKEV, "defectdojo", kevAt)
 	}
-	vuln.Package = line(d.ComponentName.String(), capShort)
-	vuln.AffectedVersion = line(d.ComponentVersion.String(), 128)
-	vuln.FixedVersion = line(d.FixVersion.String(), 128)
+	if d.RansomwareUsed.Bool() {
+		addSignal(vuln, ctis.ThreatSignalRansomwareUse, "defectdojo", kevAt)
+	}
+	vuln.PackageName = line(d.ComponentName.String(), capShort)
+	vuln.InstalledVersion = line(d.ComponentVersion.String(), 128)
+	if fv := line(d.FixVersion.String(), 128); fv != "" {
+		vuln.FixedVersions = []string{fv}
+	}
 	vuln.PublishedAt = parseTime(d.PublishDate.String())
-	if vuln.CVEID != "" || len(vuln.IDs) > 0 || vuln.CWEID != "" || vuln.CVSSScore > 0 || vuln.EPSSScore > 0 || vuln.Package != "" || vuln.InCISAKEV || vuln.PublishedAt != nil {
+	if len(vuln.IDs) > 0 || len(vuln.CWEIDs) > 0 || vuln.PackageName != "" || len(vuln.ThreatSignals) > 0 || vuln.PublishedAt != nil {
 		f.Vulnerability = vuln
+	}
+	if len(vuln.IDs) == 0 && d.StaticFinding.Bool() {
+		f.Type = ctis.FindingTypeWeakness
 	}
 
 	if m := text(d.Mitigation.String(), capRemediation); m != "" || d.FixAvailable.Bool() || d.FixVersion.String() != "" {
-		f.Remediation = &ctis.Remediation{Recommendation: m, FixAvailable: d.FixAvailable.Bool() || d.FixVersion.String() != ""}
-	}
-	if e := strings.ToLower(d.EffortForFixing.String()); e == "low" || e == "medium" || e == "high" {
-		if f.Remediation == nil {
-			f.Remediation = &ctis.Remediation{}
+		f.Remediation = &ctis.Remediation{Recommendation: m}
+		if d.FixAvailable.Bool() || d.FixVersion.String() != "" {
+			f.Remediation.IsFixAvailable = ctis.Bool(true)
 		}
-		f.Remediation.Effort = e
+	}
+	if e := ctis.Effort(strings.ToLower(d.EffortForFixing.String())); e == ctis.EffortLow || e == ctis.EffortMedium || e == ctis.EffortHigh {
+		ensureRemediation(&f).Effort = e
 	}
 	for _, ref := range splitLines(d.References.String()) {
 		for _, w := range strings.Fields(ref) {
 			if validURL(w) {
-				f.References = addRefs(f.References, strings.Trim(w, "()<>[],"))
+				f.References = addWebRefs(f.References, strings.Trim(w, "()<>[],"))
 			}
 		}
 	}
@@ -382,15 +384,13 @@ func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int,
 		f.OccurrenceCount = n
 	}
 	if p := d.Payload.String(); p != "" {
-		f.Evidence = text(p, capEvidence)
+		rawTextEvidence(&f, "payload", p, "")
 	}
 	extras(&f,
 		"impact", d.Impact.String(),
 		"steps_to_reproduce", d.StepsToReproduce.String(),
 		"severity_justification", d.SeverityJustification.String(),
 		"references", d.References.String(),
-		"ransomware_used", d.RansomwareUsed.String(),
-		"kev_date", d.KEVDate.String(),
 		"mitigated", d.Mitigated.String(),
 		"under_review", d.UnderReview.String(),
 		"sast_source_object", d.SASTSourceObject.String(),
@@ -420,7 +420,7 @@ func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int,
 			continue
 		}
 		seen[host] = true
-		a := ctis.Asset{ID: "host-" + host, Type: ctis.AssetTypeDomain, Value: host, Name: host}
+		a := ctis.Asset{Type: ctis.AssetTypeDomainName, Value: host, Name: host}
 		if net.ParseIP(host) != nil {
 			a.Type = ctis.AssetTypeIPAddress
 		}
@@ -434,6 +434,9 @@ func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int,
 		id, err := b.asset(t.asset)
 		if err != nil {
 			return added, err
+		}
+		if id == "" {
+			continue
 		}
 		g := f
 		g.AssetRef = id
@@ -457,18 +460,18 @@ func ddNetwork(ep *ddEndpoint, host string, extraIn map[string]string) (*ctis.Ne
 	n := &ctis.NetworkLocation{Host: host}
 	if p, err := strconv.Atoi(ep.Port.String()); err == nil && p > 0 && p <= 65535 {
 		n.Port = p
-		n.Protocol = "tcp"
+		n.Transport = ctis.TransportTCP
 	}
 	switch proto {
 	case "", "tcp", "udp":
-		if proto != "" {
-			n.Protocol = proto
+		if t := transportOf(proto); t != "" {
+			n.Transport = t
 		}
 	default:
-		n.Service = proto
+		n.AppProtocol = ianaName(proto)
 		if n.Port == 0 {
 			if p, ok := map[string]int{"http": 80, "https": 443, "ssh": 22, "ftp": 21}[proto]; ok {
-				n.Port, n.Protocol = p, "tcp"
+				n.Port, n.Transport = p, ctis.TransportTCP
 			}
 		}
 	}
@@ -499,9 +502,6 @@ func (b *builder) defaultAsset() ctis.Asset {
 		if out.Type == "" {
 			out.Type = ctis.AssetTypeUnclassified
 		}
-		if out.ID == "" {
-			out.ID = string(out.Type) + "-" + out.Value
-		}
 		return out
 	}
 	name := "import"
@@ -509,7 +509,7 @@ func (b *builder) defaultAsset() ctis.Asset {
 		name = b.res.Report.Tool.Name
 	}
 	v := line(slug(name)+"-import", capShort)
-	return ctis.Asset{ID: "unclassified-" + v, Type: ctis.AssetTypeUnclassified, Value: v, Name: v}
+	return ctis.Asset{Type: ctis.AssetTypeUnclassified, Value: v, Name: v}
 }
 
 // slug lower-cases s and turns every run of other characters than letters

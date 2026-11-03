@@ -1,19 +1,16 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
-    "scope": {
-      "name": "github.com/example/shop"
-    }
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "semgrep",
     "version": "1.149.0",
     "vendor": "Semgrep, Inc.",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -32,7 +29,7 @@
   ],
   "findings": [
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "exec",
       "message": "exec",
       "severity": "medium",
@@ -50,7 +47,7 @@
       "tags": [
         "semgrep"
       ],
-      "fingerprint": "eb7de1a66105556096b546e6d80ae6af5a6d6cd431610e9a0d0b08ccccb6b337",
+      "fingerprint": "ctis-fp/2:a7459b1ddcbcd998ca8d3cbbc986aead758ecfc555b3f7cca9c25abb0792f345",
       "native": {
         "scheme": "other",
         "vuln_id": "go-exec",
@@ -63,7 +60,7 @@
       }
     },
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "exec",
       "message": "exec",
       "severity": "high",
@@ -81,7 +78,7 @@
       "tags": [
         "semgrep"
       ],
-      "fingerprint": "54c987d0319ef6332d420ce075cfe6f54ab96a52ddd47444d58cf4e0035ed304",
+      "fingerprint": "ctis-fp/2:14687bf580214cc6a34ea4f5d8cd53f303f44f599d3fbaea41be7a15267246fd",
       "native": {
         "scheme": "other",
         "vuln_id": "js-exec",

@@ -7,48 +7,11 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/openctemio/ctis/outcome"
 )
-
-// The target vocabulary is copied from the outcome package (the root package
-// does not import it); keep the two equal.
-func TestTargetVocabularyMatchesOutcome(t *testing.T) {
-	states := []string{string(outcome.Done), string(outcome.Failed), string(outcome.Skipped), string(outcome.Unfinished)}
-	if d := enumDiff(states, stringsOf(AllTargetStates())); d != "" {
-		t.Errorf("states: %s", d)
-	}
-	classes := []outcome.Class{
-		outcome.Unreachable, outcome.Timeout, outcome.ToolError, outcome.EgressRefused,
-		outcome.NameGone, outcome.ResolverFailed, outcome.SensorNetworkFault, outcome.RateLimited,
-		outcome.EdgeChallenged, outcome.EdgeBlocked, outcome.Refused, outcome.Excluded,
-	}
-	if d := enumDiff(stringsOf(classes), stringsOf(AllTargetClasses())); d != "" {
-		t.Errorf("classes: %s", d)
-	}
-	causes := []outcome.Cause{outcome.CauseTarget, outcome.CauseSensor, outcome.CausePlatform}
-	if d := enumDiff(stringsOf(causes), stringsOf(AllTargetCauses())); d != "" {
-		t.Errorf("causes: %s", d)
-	}
-	if MaxTargets != outcome.MaxTargets || MaxTargetLen != outcome.MaxTargetLen {
-		t.Error("target bounds differ from the outcome package")
-	}
-	// The class/state fit is the outcome package's Valid.
-	for _, st := range AllTargetStates() {
-		for _, c := range append(AllTargetClasses(), "") {
-			o := outcome.Target{Target: "t", State: outcome.State(st), Class: outcome.Class(c)}
-			r := minimalReport17()
-			r.Metadata.Targets = []TargetOutcome{{Target: "t", State: st, Class: c}}
-			if got := r.Validate() == nil; got != o.Valid() {
-				t.Errorf("state %s class %q: Validate %v, outcome.Valid %v", st, c, got, o.Valid())
-			}
-		}
-	}
-}
 
 func minimalReport17() *Report {
 	r := NewReport()
-	r.Metadata.Timestamp = time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC)
+	r.Metadata.GeneratedAt = time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC)
 	return r
 }
 
@@ -57,19 +20,19 @@ func TestValidateCoverageMembers(t *testing.T) {
 	earlier := ts.Add(-time.Hour)
 	good := func() *Report {
 		r := minimalReport17()
-		r.Metadata.ID = "run-1"
 		r.Metadata.StartedAt, r.Metadata.EndedAt = &earlier, &ts
 		r.Metadata.Segment = &Segment{Index: 0, Count: 2}
-		r.Metadata.Targets = []TargetOutcome{{Target: "example.com", Kind: AssetTypeDomain, State: TargetDone}}
+		r.Metadata.Targets = []TargetOutcome{{Target: "example.com", Kind: AssetTypeDomainName, State: TargetDone}}
 		r.Assets = []Asset{{ID: "a", Type: AssetTypeContainerImage, Value: "docker.io/library/nginx@sha256:" + strings.Repeat("a", 64),
 			Environment: EnvironmentProduction, Owners: []AssetOwner{{Kind: OwnerKindTeam, Ref: "platform", Role: OwnerRoleTechnical}},
 			FirstSeenAt: &earlier, LastSeenAt: &ts}, {ID: "b", Type: AssetTypeKubernetesWorkload, Value: "prod/api", State: AssetStateGone, StateReason: StateReasonResourceDeleted}}
 		r.Dependencies = []Dependency{{ID: "d", Name: "lodash", AssetRef: "a"}}
 		r.Relationships = []Relationship{{Type: RelDeployedFrom, FromRef: "b", ToRef: "a", Confidence: 90, FirstSeenAt: &earlier, LastSeenAt: &ts}}
-		r.Findings = []Finding{{Type: FindingTypeMalware, Title: "t", Severity: SeverityUnknown, DependencyRef: "d",
+		r.Findings = []Finding{{Type: FindingTypeMalware, Title: "t", Severity: SeverityUnknown, DependencyRef: "d", AssetRef: "a",
+			CAPECIDs:   []string{"CAPEC-66"},
 			Tool:       &Tool{Name: "scanner"},
 			Validation: &FindingValidation{Status: ValidationExploited, Method: ValidationMethodPentest, EvidenceRefs: []string{"sha256:" + strings.Repeat("b", 64)}},
-			Vulnerability: &VulnerabilityDetails{CAPECIDs: []string{"CAPEC-66"},
+			Vulnerability: &VulnerabilityDetails{
 				ThreatSignals: []ThreatSignal{{Type: ThreatSignalKEV, Source: "kev-catalog", DueOn: "2026-12-01"}}},
 			Extensions: Extensions{"com.example.scanner": {"k": "v"}}}}
 		r.Extensions = Extensions{"io.openctem": {"capability": "scan.ports@1"}}
@@ -82,7 +45,7 @@ func TestValidateCoverageMembers(t *testing.T) {
 		"ended before started": func(r *Report) { r.Metadata.StartedAt, r.Metadata.EndedAt = r.Metadata.EndedAt, r.Metadata.StartedAt },
 		"segment index":        func(r *Report) { r.Metadata.Segment.Index = 2 },
 		"segment count":        func(r *Report) { r.Metadata.Segment.Count = 0 },
-		"segment without id":   func(r *Report) { r.Metadata.ID = "" },
+		"metadata without id":  func(r *Report) { r.Metadata.ID = "" },
 		"duplicate target":     func(r *Report) { r.Metadata.Targets = append(r.Metadata.Targets, r.Metadata.Targets[0]) },
 		"target too long":      func(r *Report) { r.Metadata.Targets[0].Target = strings.Repeat("x", MaxTargetLen+1) },
 		"done with class":      func(r *Report) { r.Metadata.Targets[0].Class = TargetClassTimeout },
@@ -106,7 +69,7 @@ func TestValidateCoverageMembers(t *testing.T) {
 		"validation method":      func(r *Report) { r.Findings[0].Validation.Method = "guess" },
 		"validator long":         func(r *Report) { r.Findings[0].Validation.Validator = strings.Repeat("x", MaxValidatorLen+1) },
 		"evidence ref":           func(r *Report) { r.Findings[0].Validation.EvidenceRefs = []string{"../etc/passwd"} },
-		"capec id":               func(r *Report) { r.Findings[0].Vulnerability.CAPECIDs = []string{"CAPEC-0"} },
+		"capec id":               func(r *Report) { r.Findings[0].CAPECIDs = []string{"CAPEC-0"} },
 		"signal type":            func(r *Report) { r.Findings[0].Vulnerability.ThreatSignals[0].Type = "rumour" },
 		"signal source":          func(r *Report) { r.Findings[0].Vulnerability.ThreatSignals[0].Source = "" },
 		"signal due_on":          func(r *Report) { r.Findings[0].Vulnerability.ThreatSignals[0].DueOn = "2026-02-30" },
@@ -163,12 +126,13 @@ func TestSchemaPIIAnnotations(t *testing.T) {
 	}
 	sort.Strings(got)
 	want := []string{
-		"asset.json#/$defs/AssetCompliance/properties/regulatory_owner",
 		"asset.json#/$defs/AssetOwner/properties/ref",
+		"asset.json#/$defs/DomainTechnical/properties/whois",
+		"finding.json#/$defs/CommitInfo/properties/author",
+		"finding.json#/$defs/CommitInfo/properties/author_email",
 		"finding.json#/$defs/FindingValidation/properties/validator",
+		"finding.json#/$defs/SecretDetails/properties/scopes",
 		"finding.json#/$defs/Suppression/properties/suppressed_by",
-		"finding.json#/properties/author",
-		"finding.json#/properties/author_email",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("x-ctis-pii members:\n got %v\nwant %v", got, want)
@@ -177,7 +141,7 @@ func TestSchemaPIIAnnotations(t *testing.T) {
 
 func TestExtensionsSchema(t *testing.T) {
 	s := loadSchemaSet(t)
-	base := `{"version":"1.6","metadata":{"timestamp":"2026-11-03T00:00:00Z"},"extensions":%s}`
+	base := `{"version":"2.0","metadata":{"id":"` + testReportID + `","generated_at":"2026-11-03T00:00:00Z"},"extensions":%s}`
 	for _, ok := range []string{`{"io.openctem":{"a":1}}`, `{"com.example.scanner":{}}`} {
 		if errs := s.validateJSON([]byte(strings.Replace(base, "%s", ok, 1)), "report.json"); len(errs) > 0 {
 			t.Errorf("%s rejected: %v", ok, errs)
@@ -194,7 +158,7 @@ func TestExtensionsSchema(t *testing.T) {
 		}
 	}
 	// The informative namespace schema is valid JSON with the expected keys.
-	raw, err := os.ReadFile("schemas/extensions/io.openctem/1.json")
+	raw, err := os.ReadFile("schemas/extensions/io.openctem/2.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,13 +176,14 @@ func TestExtensionsSchema(t *testing.T) {
 
 func TestOpenVocabularies(t *testing.T) {
 	r := minimalReport17()
-	r.Findings = []Finding{{Type: FindingTypeVulnerability, Title: "t", Severity: SeverityHigh, Native: &NativeIdentity{Scheme: "some_scanner"}}}
+	r.Assets = []Asset{{ID: "a", Type: AssetTypeHost, Value: "h"}}
+	r.Findings = []Finding{{Type: FindingTypeVulnerability, Title: "t", Severity: SeverityHigh, AssetRef: "a", Native: &NativeIdentity{Scheme: "some_scanner"}}}
 	if err := r.Validate(); err != nil {
 		t.Errorf("open native scheme rejected: %v", err)
 	}
 	s := loadSchemaSet(t)
 	assertReportValid(t, s, r)
-	doc := `{"version":"1.6","metadata":{"timestamp":"2026-11-03T00:00:00Z"},"assets":[{"type":"cloud_resource","value":"v","technical":{"cloud":{"provider":"oci"}}}]}`
+	doc := `{"version":"2.0","metadata":{"id":"` + testReportID + `","generated_at":"2026-11-03T00:00:00Z"},"assets":[{"id":"a","type":"cloud_resource","value":"v","technical":{"cloud":{"provider":"oci"}}}]}`
 	if errs := s.validateJSON([]byte(doc), "report.json"); len(errs) > 0 {
 		t.Errorf("open cloud provider rejected: %v", errs)
 	}

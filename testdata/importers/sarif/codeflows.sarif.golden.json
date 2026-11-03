@@ -1,15 +1,15 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "CodeQL",
     "version": "2.19.0",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -24,7 +24,7 @@
   "findings": [
     {
       "id": "finding-1",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "This query string depends on a user-provided value.",
       "description": "Database query built from user-controlled sources",
       "severity": "high",
@@ -41,8 +41,7 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "tags": [
         "security",
@@ -96,13 +95,13 @@
             "taint_state": "sanitized"
           }
         ],
-        "tainted": true,
-        "cross_file": true
+        "is_tainted": true,
+        "is_cross_file": true
       }
     },
     {
       "id": "finding-2",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "Untrusted data reaches a query.",
       "description": "Database query built from user-controlled sources",
       "severity": "high",
@@ -117,8 +116,7 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "tags": [
         "security",
@@ -151,7 +149,7 @@
             "type": "sink"
           }
         ],
-        "tainted": true
+        "is_tainted": true
       }
     }
   ]

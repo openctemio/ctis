@@ -8,10 +8,10 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 
 ## Rules
 
-- One asset for the scanned source: an image is a container asset named by the image reference, a directory or file a repository asset named by its path, an SBOM an unclassified asset; Options.DefaultAsset replaces it.
+- One asset for the scanned source: an image is a container_image asset named by its repo digest (else its reference), a directory, a file or an SBOM an unclassified asset; Options.DefaultAsset replaces it.
 - One finding per match on that asset, with the package, version, PURL and CPE of the artifact; one dependency per artifact.
 - Severity: the severity word (Critical, High, Medium, Low, Negligible); Unknown falls back to the best CVSS score, else medium with an issue.
-- Every CVSS entry of the vulnerability and of its related vulnerabilities goes to finding.scores with its source (nvd@nist.gov is nvd); the legacy cvss_* members take the newest version.
+- Every CVSS entry of the vulnerability and of its related vulnerabilities goes to finding.scores with its source (nvd@nist.gov is nvd).
 - The scan configuration in descriptor.configuration (registry settings, paths, credentials) is never read.
 
 ## Fields
@@ -23,8 +23,8 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/matches[]/vulnerability` | (container) |  |
 | `/matches[]/vulnerability/fix` | (container) |  |
 | `/matches[]/vulnerability/fix/versions` | (container) |  |
-| `/matches[]/vulnerability/fix/versions[]` | `findings[].vulnerability.fixed_versions, fixed_version, remediation.recommendation` |  |
-| `/matches[]/vulnerability/fix/state` | `findings[].remediation.fix_available, solution_type, source_extra.fix_state` |  |
+| `/matches[]/vulnerability/fix/versions[]` | `findings[].vulnerability.fixed_versions, remediation.recommendation` |  |
+| `/matches[]/vulnerability/fix/state` | `findings[].remediation.is_fix_available, solution_type, source_extra.fix_state` |  |
 | `/matches[]/vulnerability/fix/available*` |  | per-version availability dates; the fixed versions are kept |
 | `/matches[]/vulnerability/fix/available*/**` |  | per-version availability dates; the fixed versions are kept |
 | `/matches[]/vulnerability/advisories` | (container) |  |
@@ -42,7 +42,7 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/matches[]/vulnerability/urls[]` | `findings[].references (http(s) only)` |  |
 | `/matches[]/vulnerability/description` | `findings[].description` |  |
 | `/matches[]/vulnerability/cvss` | (container) |  |
-| `/matches[]/vulnerability/cvss[]` | `findings[].scores[] (cvss, one per entry), vulnerability.cvss_* (best)` |  |
+| `/matches[]/vulnerability/cvss[]` | `findings[].scores[] (cvss, one per entry)` |  |
 | `/matches[]/vulnerability/cvss[]/source` | `findings[].scores[].source` |  |
 | `/matches[]/vulnerability/cvss[]/type` |  | Primary or Secondary; the source is kept |
 | `/matches[]/vulnerability/cvss[]/version` |  | the version is read from the vector |
@@ -56,11 +56,11 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/matches[]/vulnerability/epss` | (container) |  |
 | `/matches[]/vulnerability/epss[]` | (container) |  |
 | `/matches[]/vulnerability/epss[]/cve` |  | the CVE the EPSS entry is for; it is one of the finding's ids |
-| `/matches[]/vulnerability/epss[]/epss` | `findings[].scores[] (epss), vulnerability.epss_score` |  |
-| `/matches[]/vulnerability/epss[]/percentile` | `findings[].scores[] (epss_percentile), vulnerability.epss_percentile` |  |
+| `/matches[]/vulnerability/epss[]/epss` | `findings[].scores[] (epss), scores[] (epss)` |  |
+| `/matches[]/vulnerability/epss[]/percentile` | `findings[].scores[] (epss_percentile), scores[] (epss_percentile)` |  |
 | `/matches[]/vulnerability/epss[]/date` | `findings[].scores[].as_of` |  |
 | `/matches[]/vulnerability/knownExploited` | (container) |  |
-| `/matches[]/vulnerability/knownExploited[]` | `findings[].vulnerability.in_cisa_kev, exploit_available` |  |
+| `/matches[]/vulnerability/knownExploited[]` | `findings[].vulnerability.threat_signals[]` |  |
 | `/matches[]/vulnerability/knownExploited[]/cve` |  | the CVE of the KEV entry; it is one of the finding's ids |
 | `/matches[]/vulnerability/knownExploited[]/vendorProject` | `findings[].source_extra.kev_vendor_product` |  |
 | `/matches[]/vulnerability/knownExploited[]/product` | `findings[].source_extra.kev_vendor_product` |  |
@@ -81,7 +81,7 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/matches[]/relatedVulnerabilities[]/urls[]` | `findings[].references (http(s) only)` |  |
 | `/matches[]/relatedVulnerabilities[]/description` | `findings[].description` |  |
 | `/matches[]/relatedVulnerabilities[]/cvss` | (container) |  |
-| `/matches[]/relatedVulnerabilities[]/cvss[]` | `findings[].scores[] (cvss, one per entry), vulnerability.cvss_* (best)` |  |
+| `/matches[]/relatedVulnerabilities[]/cvss[]` | `findings[].scores[] (cvss, one per entry)` |  |
 | `/matches[]/relatedVulnerabilities[]/cvss[]/source` | `findings[].scores[].source` |  |
 | `/matches[]/relatedVulnerabilities[]/cvss[]/type` |  | Primary or Secondary; the source is kept |
 | `/matches[]/relatedVulnerabilities[]/cvss[]/version` |  | the version is read from the vector |
@@ -95,11 +95,11 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/matches[]/relatedVulnerabilities[]/epss` | (container) |  |
 | `/matches[]/relatedVulnerabilities[]/epss[]` | (container) |  |
 | `/matches[]/relatedVulnerabilities[]/epss[]/cve` |  | the CVE the EPSS entry is for; it is one of the finding's ids |
-| `/matches[]/relatedVulnerabilities[]/epss[]/epss` | `findings[].scores[] (epss), vulnerability.epss_score` |  |
-| `/matches[]/relatedVulnerabilities[]/epss[]/percentile` | `findings[].scores[] (epss_percentile), vulnerability.epss_percentile` |  |
+| `/matches[]/relatedVulnerabilities[]/epss[]/epss` | `findings[].scores[] (epss), scores[] (epss)` |  |
+| `/matches[]/relatedVulnerabilities[]/epss[]/percentile` | `findings[].scores[] (epss_percentile), scores[] (epss_percentile)` |  |
 | `/matches[]/relatedVulnerabilities[]/epss[]/date` | `findings[].scores[].as_of` |  |
 | `/matches[]/relatedVulnerabilities[]/knownExploited` | (container) |  |
-| `/matches[]/relatedVulnerabilities[]/knownExploited[]` | `findings[].vulnerability.in_cisa_kev, exploit_available` |  |
+| `/matches[]/relatedVulnerabilities[]/knownExploited[]` | `findings[].vulnerability.threat_signals[]` |  |
 | `/matches[]/relatedVulnerabilities[]/knownExploited[]/cve` |  | the CVE of the KEV entry; it is one of the finding's ids |
 | `/matches[]/relatedVulnerabilities[]/knownExploited[]/vendorProject` | `findings[].source_extra.kev_vendor_product` |  |
 | `/matches[]/relatedVulnerabilities[]/knownExploited[]/product` | `findings[].source_extra.kev_vendor_product` |  |
@@ -124,9 +124,9 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/matches[]/matchDetails[]/found/**` |  | the database record the matcher found (matcher internals) |
 | `/matches[]/artifact` | `dependencies[]` |  |
 | `/matches[]/artifact/id` | `dependencies[].id` |  |
-| `/matches[]/artifact/name` | `dependencies[].name, findings[].vulnerability.package` |  |
-| `/matches[]/artifact/version` | `dependencies[].version, findings[].vulnerability.affected_version` |  |
-| `/matches[]/artifact/type` | `dependencies[].type, ecosystem (fallback)` |  |
+| `/matches[]/artifact/name` | `dependencies[].name, findings[].vulnerability.package_name` |  |
+| `/matches[]/artifact/version` | `dependencies[].version, findings[].vulnerability.installed_version` |  |
+| `/matches[]/artifact/type` | `dependencies[].type` |  |
 | `/matches[]/artifact/locations` | (container) |  |
 | `/matches[]/artifact/locations[]` | (container) |  |
 | `/matches[]/artifact/locations[]/path` | `dependencies[].path, findings[].location.path (first location)` |  |
@@ -134,12 +134,12 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/matches[]/artifact/locations[]/accessPath` |  | the path through links; path is kept |
 | `/matches[]/artifact/locations[]/annotations` |  | evidence annotations of the cataloger |
 | `/matches[]/artifact/locations[]/annotations/**` |  | evidence annotations of the cataloger |
-| `/matches[]/artifact/language` | `dependencies[].ecosystem (fallback), properties.language` |  |
+| `/matches[]/artifact/language` | `dependencies[].properties.language` |  |
 | `/matches[]/artifact/licenses` | (container) |  |
 | `/matches[]/artifact/licenses[]` | `dependencies[].licenses` |  |
 | `/matches[]/artifact/cpes` | (container) |  |
 | `/matches[]/artifact/cpes[]` | `findings[].vulnerability.cpe, dependencies[].properties.cpe (first)` |  |
-| `/matches[]/artifact/purl` | `findings[].vulnerability.purl, dependencies[].purl, ecosystem` |  |
+| `/matches[]/artifact/purl` | `findings[].vulnerability.purl, dependencies[].purl` |  |
 | `/matches[]/artifact/upstreams` | (container) |  |
 | `/matches[]/artifact/upstreams[]` | (container) |  |
 | `/matches[]/artifact/upstreams[]/name` | `dependencies[].properties.upstream (first)` |  |
@@ -161,7 +161,7 @@ Generated from `importer/spec_grype.go`; do not edit. Regenerate with `go test .
 | `/source/target/repoDigests` | (container) |  |
 | `/source/target/repoDigests[]` | `assets[].properties.repo_digest (first)` |  |
 | `/source/target/architecture` | `assets[].properties.architecture` |  |
-| `/source/target/os` | `assets[].properties.os` |  |
+| `/source/target/os` | `assets[].technologies[] (operating-system)` |  |
 | `/source/target/path` | `assets[].value (a directory or file source)` |  |
 | `/source/target/mediaType` |  | image manifest media type |
 | `/source/target/imageSize` |  | image size |

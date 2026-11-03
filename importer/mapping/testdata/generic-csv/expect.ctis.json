@@ -1,24 +1,49 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "timestamp": "2026-10-07T08:00:00Z",
-    "source_type": "scanner"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-07T08:00:00Z",
+    "channel": "scanner"
   },
   "tool": {
     "name": "generic-csv",
     "version": "1.0.0"
   },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "host",
+      "value": "web-01.example.com",
+      "name": "web-01.example.com"
+    },
+    {
+      "id": "asset-2",
+      "type": "ip_address",
+      "value": "10.0.0.5",
+      "name": "10.0.0.5"
+    },
+    {
+      "id": "asset-3",
+      "type": "ip_address",
+      "value": "10.0.0.6",
+      "name": "10.0.0.6"
+    }
+  ],
   "findings": [
     {
       "type": "vulnerability",
       "title": "OpenSSL out of date",
       "description": "Upgrade OpenSSL; see \"advisory\", then restart",
       "severity": "high",
-      "asset_value": "web-01.example.com",
-      "asset_type": "host",
+      "asset_ref": "asset-1",
       "vulnerability": {
-        "cve_id": "CVE-2024-0001"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-0001"
+          }
+        ]
       }
     },
     {
@@ -26,16 +51,14 @@
       "title": "Weak TLS ciphers",
       "description": "Line one\nline two",
       "severity": "medium",
-      "asset_value": "10.0.0.5",
-      "asset_type": "ip_address"
+      "asset_ref": "asset-2"
     },
     {
       "type": "vulnerability",
       "title": "Spreadsheet formula",
       "description": "=HYPERLINK(\"http://attacker.invalid\",\"click\")",
       "severity": "low",
-      "asset_value": "10.0.0.6",
-      "asset_type": "ip_address"
+      "asset_ref": "asset-3"
     }
   ]
 }

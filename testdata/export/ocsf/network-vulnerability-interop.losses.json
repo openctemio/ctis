@@ -7,19 +7,7 @@
       "reason": "finding_info.uid carries the fingerprint (the id only when there is none); ids are producer-local"
     },
     {
-      "member": "findings[].author",
-      "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
-    },
-    {
-      "member": "findings[].author_email",
-      "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
-    },
-    {
-      "member": "findings[].commit_date",
-      "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
-    },
-    {
-      "member": "findings[].business_impact",
+      "member": "findings[].location.commit",
       "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
     },
     {
@@ -27,15 +15,11 @@
       "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
     },
     {
-      "member": "findings[].remediation_context",
-      "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
-    },
-    {
       "member": "findings[].data_flow",
       "reason": "no OCSF member for a taint path"
     },
     {
-      "member": "findings[].evidence",
+      "member": "findings[].evidence_items",
       "reason": "free-text evidence is not exported (it may hold producer data that is not marked sensitive)"
     },
     {
@@ -67,12 +51,8 @@
       "reason": "no OCSF member for an exploitability statement"
     },
     {
-      "member": "findings[].vulnerability_class",
+      "member": "findings[].vulnerability_classes",
       "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
-    },
-    {
-      "member": "findings[].location.commit_sha",
-      "reason": "affected_code carries file and lines only"
     },
     {
       "member": "findings[].location.start_column",
@@ -123,11 +103,11 @@
       "reason": "remediation carries desc and references only"
     },
     {
-      "member": "findings[].remediation.auto_fixable",
+      "member": "findings[].remediation.is_auto_fixable",
       "reason": "as remediation.advisories"
     },
     {
-      "member": "findings[].remediation.fix_available",
+      "member": "findings[].remediation.is_fix_available",
       "reason": "as remediation.advisories"
     },
     {
@@ -147,7 +127,7 @@
       "reason": "as remediation.advisories"
     },
     {
-      "member": "findings[].secret.age_in_days",
+      "member": "findings[].secret.age_days",
       "reason": "a secret finding carries its type, service and masked value in unmapped; the rest has no member"
     },
     {
@@ -159,7 +139,7 @@
       "reason": "as secret.age_in_days"
     },
     {
-      "member": "findings[].secret.in_history_only",
+      "member": "findings[].secret.is_history_only",
       "reason": "as secret.age_in_days"
     },
     {
@@ -167,7 +147,7 @@
       "reason": "as secret.age_in_days"
     },
     {
-      "member": "findings[].secret.valid",
+      "member": "findings[].secret.is_valid",
       "reason": "as secret.age_in_days"
     },
     {
@@ -175,28 +155,12 @@
       "reason": "as secret.age_in_days"
     },
     {
-      "member": "findings[].vulnerability.advisories",
-      "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
-    },
-    {
       "member": "findings[].vulnerability.affected_version_range",
       "reason": "affected_packages carry one version"
     },
     {
-      "member": "findings[].vulnerability.ecosystem",
-      "reason": "implied by the purl"
-    },
-    {
-      "member": "findings[].vulnerability.exploit_maturity",
-      "reason": "only is_exploit_available"
-    },
-    {
       "member": "findings[].vulnerability.fixed_versions",
       "reason": "affected_packages carry one fixed_in_version"
-    },
-    {
-      "member": "findings[].vulnerability.in_cisa_kev",
-      "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
     },
     {
       "member": "findings[].vulnerability.is_direct",
@@ -207,40 +171,8 @@
       "reason": "no OCSF 1.3.0 member in the Vulnerability or Compliance Finding classes"
     },
     {
-      "member": "findings[].vulnerability.epss_score",
-      "reason": "legacy member: the EPSS score is written from scores[] (system epss)"
-    },
-    {
-      "member": "findings[].vulnerability.epss_percentile",
-      "reason": "as epss_score"
-    },
-    {
-      "member": "findings[].vulnerability.cve_id",
-      "reason": "legacy member: every CVE id is written to vulnerabilities[].cve.uid and read back as cve_ids"
-    },
-    {
       "member": "findings[].vulnerability.ids",
       "reason": "as cve_id: CVE ids are written; GHSA, OSV and vendor ids have no OCSF member"
-    },
-    {
-      "member": "findings[].vulnerability.cwe_id",
-      "reason": "legacy member: written as the first cwe and read back in cwe_ids"
-    },
-    {
-      "member": "findings[].vulnerability.cvss_score",
-      "reason": "legacy member: written as cve.cvss[] when scores[] has no CVSS score, read back as a score"
-    },
-    {
-      "member": "findings[].vulnerability.cvss_vector",
-      "reason": "as cvss_score"
-    },
-    {
-      "member": "findings[].vulnerability.cvss_version",
-      "reason": "as cvss_score"
-    },
-    {
-      "member": "findings[].vulnerability.cvss_source",
-      "reason": "cve.cvss[] has no source member"
     }
   ]
 }

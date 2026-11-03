@@ -1,9 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "timestamp": "2026-10-02T00:00:00Z",
-    "source_type": "scanner",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-02T00:00:00Z",
+    "channel": "scanner",
     "branch": {
       "name": "main",
       "is_default_branch": true,
@@ -13,7 +14,7 @@
   "tool": {
     "name": "CodeQL",
     "version": "2.18.4",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -27,7 +28,7 @@
   "findings": [
     {
       "id": "finding-1",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "Cross-site scripting vulnerability due to a [user-provided value](1).",
       "description": "Reflected cross-site scripting",
       "severity": "high",
@@ -41,7 +42,9 @@
         "start_column": 14,
         "end_column": 37,
         "branch": "main",
-        "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+        "commit": {
+          "sha": "0123456789abcdef0123456789abcdef01234567"
+        },
         "logical_location": {
           "fully_qualified_name": "server.handleSearch",
           "name": "handleSearch",
@@ -52,8 +55,7 @@
         "cwe_ids": [
           "CWE-79",
           "CWE-116"
-        ],
-        "cwe_id": "CWE-79"
+        ]
       },
       "tags": [
         "security",
@@ -67,7 +69,7 @@
     },
     {
       "id": "finding-2",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "This query string depends on a [user-provided value](1).",
       "description": "Database query built from user-controlled sources",
       "severity": "high",
@@ -81,15 +83,16 @@
         "start_column": 20,
         "end_column": 25,
         "branch": "main",
-        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+        "commit": {
+          "sha": "0123456789abcdef0123456789abcdef01234567"
+        }
       },
       "vulnerability": {
         "cwe_ids": [
           "CWE-89",
           "CWE-90",
           "CWE-943"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "tags": [
         "security",
@@ -104,7 +107,7 @@
     },
     {
       "id": "finding-3",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "This command line depends on a [user-provided value](1).",
       "description": "Uncontrolled command line",
       "severity": "critical",
@@ -118,14 +121,15 @@
         "start_column": 3,
         "end_column": 30,
         "branch": "main",
-        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+        "commit": {
+          "sha": "0123456789abcdef0123456789abcdef01234567"
+        }
       },
       "vulnerability": {
         "cwe_ids": [
           "CWE-78",
           "CWE-88"
-        ],
-        "cwe_id": "CWE-78"
+        ]
       },
       "tags": [
         "correctness",

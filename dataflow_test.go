@@ -12,13 +12,13 @@ func TestDataFlowHelpers(t *testing.T) {
 	sink.CalledFunction = "db.Exec"
 
 	df := NewDataFlow(src, sink)
-	if !df.Tainted || df.Sources[0].Index != 0 || df.Sinks[0].Index != 1 {
+	if !df.IsTainted || df.Sources[0].Index != 0 || df.Sinks[0].Index != 1 {
 		t.Fatalf("NewDataFlow: %+v", df)
 	}
 	df.TaintType = "user_input"
 	df.AddIntermediate(NewDataFlowLocation("api/handler.go", 12, 3, "q := base + id"))
 	df.AddIntermediate(NewDataFlowLocation("db/query.go", 40, 3, "Find(q)"))
-	if df.Sinks[0].Index != 3 || !df.CrossFile || df.GetPathLength() != 4 || len(df.GetFullPath()) != 4 {
+	if df.Sinks[0].Index != 3 || !df.IsCrossFile || df.GetPathLength() != 4 || len(df.GetFullPath()) != 4 {
 		t.Errorf("intermediates: %+v", df)
 	}
 	if !df.IsCrossFunction() {
@@ -32,7 +32,7 @@ func TestDataFlowHelpers(t *testing.T) {
 
 	df.AddSanitizer(NewDataFlowLocation("api/handler.go", 11, 1, "id = clean(id)").AsSanitizer())
 	df.MarkAsSanitized()
-	if df.Tainted || df.Sanitizers[0].TaintState != "sanitized" {
+	if df.IsTainted || df.Sanitizers[0].TaintState != "sanitized" {
 		t.Error("sanitizer")
 	}
 
@@ -41,7 +41,7 @@ func TestDataFlowHelpers(t *testing.T) {
 	if got := same.BuildSummary(); got != "tainted data flows from a.go:1 to sink at line 9 (sanitized)" {
 		t.Errorf("summary %q", got)
 	}
-	if (&DataFlow{}).BuildSummary() != "" || (&DataFlow{Interprocedural: true}).IsCrossFunction() != true {
+	if (&DataFlow{}).BuildSummary() != "" || (&DataFlow{IsInterprocedural: true}).IsCrossFunction() != true {
 		t.Error("empty flow")
 	}
 }

@@ -3,7 +3,7 @@ package importer
 import (
 	"io"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // gitleaks JSON report: an array of leak records. gitleaks and every
@@ -14,7 +14,7 @@ import (
 
 func init() {
 	parsers[FormatGitleaks] = parseGitleaks
-	tools[FormatGitleaks] = ctis.Tool{Name: "gitleaks", Vendor: "Gitleaks", InfoURL: "https://github.com/gitleaks/gitleaks", Capabilities: []string{"secret"}}
+	tools[FormatGitleaks] = ctis.Tool{Name: "gitleaks", Vendor: "Gitleaks", InfoURL: "https://github.com/gitleaks/gitleaks", Techniques: []ctis.Technique{ctis.TechniqueSecret}}
 }
 
 func parseGitleaks(b *builder, r io.Reader) error {

@@ -10,7 +10,7 @@ Generated from `importer/spec_semgrep.go`; do not edit. Regenerate with `go test
 
 - One finding per result, filed on Options.Repository, else Options.DefaultAsset, else an unclassified asset named after the tool (with an issue).
 - Severity: ERROR high, WARNING medium, INFO low, INVENTORY and EXPERIMENT info; native.severity keeps the word. Confidence from metadata.confidence (HIGH 90, MEDIUM 70, LOW 50).
-- The placeholder "requires login" that semgrep writes in fingerprint and lines without a login is no value and is dropped; the fingerprint is then derived from path, rule and line.
+- The placeholder "requires login" that semgrep writes in fingerprint and lines without a login is no value and is dropped; the partial fingerprint is then left out. The fingerprint is always recipe v2 over path, rule and lines.
 - A taint trace is read in both forms semgrep writes (objects, or the tagged ["CliLoc", [location, content]]); call steps are skipped. The trace is bounded and cleaned by ctis.NormalizeDataFlow: at most ctis.MaxDataFlowSteps steps, repository-relative paths (an absolute path outside the repository is dropped, the step kept), credentials in snippets masked. It never feeds the fingerprint.
 - An ignored result (nosemgrep) gets an in-source suppression. Errors become issues.
 
@@ -61,17 +61,17 @@ Generated from `importer/spec_semgrep.go`; do not edit. Regenerate with `go test
 | `/results[]/extra/metadata/owasp` | `findings[].vulnerability.owasp_ids` |  |
 | `/results[]/extra/metadata/owasp[]` | `findings[].vulnerability.owasp_ids` |  |
 | `/results[]/extra/metadata/confidence` | `findings[].confidence` |  |
-| `/results[]/extra/metadata/impact` | `findings[].impact` |  |
-| `/results[]/extra/metadata/likelihood` | `findings[].likelihood` |  |
+| `/results[]/extra/metadata/impact` | `findings[].source_extra.impact` |  |
+| `/results[]/extra/metadata/likelihood` | `findings[].source_extra.likelihood` |  |
 | `/results[]/extra/metadata/category` | `findings[].category` |  |
-| `/results[]/extra/metadata/subcategory` | `findings[].subcategory` |  |
-| `/results[]/extra/metadata/subcategory[]` | `findings[].subcategory` |  |
+| `/results[]/extra/metadata/subcategory` | `findings[].subcategories` |  |
+| `/results[]/extra/metadata/subcategory[]` | `findings[].subcategories` |  |
 | `/results[]/extra/metadata/technology` | `findings[].tags` |  |
 | `/results[]/extra/metadata/technology[]` | `findings[].tags` |  |
 | `/results[]/extra/metadata/references` | `findings[].references` |  |
 | `/results[]/extra/metadata/references[]` | `findings[].references` |  |
-| `/results[]/extra/metadata/vulnerability_class` | `findings[].vulnerability_class` |  |
-| `/results[]/extra/metadata/vulnerability_class[]` | `findings[].vulnerability_class` |  |
+| `/results[]/extra/metadata/vulnerability_class` | `findings[].vulnerability_classes` |  |
+| `/results[]/extra/metadata/vulnerability_class[]` | `findings[].vulnerability_classes` |  |
 | `/results[]/extra/metadata/source` | `findings[].source_extra.rule_source` |  |
 | `/results[]/extra/metadata/source-rule-url` | `findings[].references` |  |
 | `/results[]/extra/metadata/shortlink` | `findings[].references` |  |

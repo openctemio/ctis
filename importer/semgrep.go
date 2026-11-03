@@ -4,18 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // semgrep JSON output (semgrep --json). The mapping is spec_semgrep.go.
 
 func init() {
 	parsers[FormatSemgrep] = parseSemgrep
-	tools[FormatSemgrep] = ctis.Tool{Name: "semgrep", Vendor: "Semgrep, Inc.", Capabilities: []string{"sast"}}
+	tools[FormatSemgrep] = ctis.Tool{Name: "semgrep", Vendor: "Semgrep, Inc.", Techniques: []ctis.Technique{ctis.TechniqueSAST}}
 }
 
 type sgPos struct {
@@ -171,12 +172,6 @@ type sgEngine struct {
 	format Format
 	// name tags the findings and prefixes the reported errors.
 	name string
-	// matchID: the engine writes a real match-based id in extra.fingerprint
-	// (opengrep). It becomes the partial fingerprint "matchBasedId/v1" and
-	// the finding's own fingerprint stays the path, rule and line key a
-	// semgrep run without a login gave, so a finding first reported by
-	// semgrep keeps its identity when opengrep reports it.
-	matchID bool
 }
 
 var semgrepEngine = sgEngine{format: FormatSemgrep, name: "semgrep"}
@@ -261,7 +256,7 @@ func sgFinding(r *sgResult, eng sgEngine) (ctis.Finding, bool) {
 		title = rule
 	}
 	f := ctis.Finding{
-		Type:       ctis.FindingTypeVulnerability,
+		Type:       ctis.FindingTypeWeakness,
 		Title:      title,
 		Message:    msg,
 		Severity:   sgSeverity(r.Extra.Severity),
@@ -287,57 +282,50 @@ func sgFinding(r *sgResult, eng sgEngine) (ctis.Finding, bool) {
 			vuln.CWEIDs = appendUnique(vuln.CWEIDs, id)
 		}
 	}
-	if len(vuln.CWEIDs) > 0 {
-		vuln.CWEID = vuln.CWEIDs[0]
-	}
 	for _, o := range stringList(md.OWASP) {
-		vuln.OWASPIDs = appendUnique(vuln.OWASPIDs, line(o, 128))
+		if id := owaspID(o); id != "" {
+			vuln.OWASPIDs = appendUnique(vuln.OWASPIDs, id)
+		}
 	}
 	if len(vuln.CWEIDs) > 0 || len(vuln.OWASPIDs) > 0 {
 		f.Vulnerability = vuln
 	}
 	for _, v := range stringList(md.VulnerabilityClass) {
-		if len(f.VulnerabilityClass) < 50 {
-			f.VulnerabilityClass = append(f.VulnerabilityClass, line(v, 200))
+		if len(f.VulnerabilityClasses) < 50 {
+			f.VulnerabilityClasses = append(f.VulnerabilityClasses, line(v, 200))
 		}
 	}
 	for _, v := range stringList(md.Subcategory) {
-		if len(f.Subcategory) < 50 {
-			f.Subcategory = append(f.Subcategory, line(v, 200))
+		if len(f.Subcategories) < 50 {
+			f.Subcategories = append(f.Subcategories, line(v, 200))
 		}
 	}
 	f.Category = line(md.Category.String(), capCategory)
-	f.Impact = sgLevel(md.Impact.String())
-	f.Likelihood = sgLevel(md.Likelihood.String())
-	f.References = addRefs(f.References, stringList(md.References)...)
-	f.References = addRefs(f.References, md.SourceRuleURL.String(), md.Shortlink.String())
+	f.References = addWebRefs(f.References, stringList(md.References)...)
+	f.References = addWebRefs(f.References, md.SourceRuleURL.String(), md.Shortlink.String())
 	f.Tags = addTags(f.Tags, stringList(md.Technology)...)
 	f.Tags = addTags(f.Tags, eng.name)
 	if r.Extra.Fix != "" || r.Extra.FixRegex != nil {
-		f.Remediation = &ctis.Remediation{Recommendation: "Apply the suggested fix code.", FixAvailable: true, FixCode: text(r.Extra.Fix, capRemediation)}
+		f.Remediation = &ctis.Remediation{Recommendation: "Apply the suggested fix code.", IsFixAvailable: ctis.Bool(true), IsAutoFixable: r.Extra.FixRegex != nil, FixCode: text(r.Extra.Fix, capRemediation)}
 		if fr := r.Extra.FixRegex; fr != nil {
 			f.Remediation.FixRegex = &ctis.FixRegex{Regex: line(fr.Regex, 2048), Replacement: line(fr.Replacement, 2048), Count: nonNeg(fr.Count)}
 		}
 	}
-	fp := line(r.Extra.Fingerprint, 512)
-	switch {
-	case eng.matchID:
-		if fp != "" && fp != sgPlaceholder {
-			f.PartialFingerprints = map[string]string{sgMatchBasedID: fp}
-		}
-		f.Fingerprint = fingerprint.GenerateSAST(r.Path, r.CheckID, r.Start.Line, 0)
-	case fp != "" && fp != sgPlaceholder:
-		f.Fingerprint = fp
-	default:
-		f.Fingerprint = fingerprint.GenerateSAST(r.Path, r.CheckID, r.Start.Line, 0)
+	// The engine's own match-based id is a partial fingerprint; the CTIS
+	// fingerprint is recipe v2 over the rule, file and lines.
+	if fp := line(r.Extra.Fingerprint, 512); fp != "" && fp != sgPlaceholder {
+		f.PartialFingerprints = map[string]string{sgMatchBasedID: fp}
 	}
+	// Line-based, as semgrep without a login has no matched code: the same
+	// finding keeps its identity whichever engine reports it.
+	f.Fingerprint = fingerprint.V2SAST(r.Path, r.CheckID, r.Start.Line, r.End.Line)
 	if t := r.Extra.Dataflow; t != nil {
 		f.DataFlow = sgDataFlow(t)
 	}
 	if r.Extra.IsIgnored {
 		f.Suppression = &ctis.Suppression{Kind: "in_source", Status: "accepted", Justification: "nosemgrep"}
 	}
-	extras(&f, "validation_state", r.Extra.ValidationState, "engine_kind", r.Extra.EngineKind,
+	extras(&f, "impact", md.Impact.String(), "likelihood", md.Likelihood.String(), "validation_state", r.Extra.ValidationState, "engine_kind", r.Extra.EngineKind,
 		"rule_source", md.Source.String(), "rule_license", md.License.String())
 	return f, true
 }
@@ -425,16 +413,6 @@ func sgConfidence(c string) int {
 	return 70
 }
 
-// sgLevel keeps the CTIS impact and likelihood words (critical, high,
-// medium, low) and drops anything else.
-func sgLevel(s string) string {
-	switch l := strings.ToLower(strings.TrimSpace(s)); l {
-	case "critical", "high", "medium", "low":
-		return l
-	}
-	return ""
-}
-
 // sgRuleName turns the last part of a check id into words:
 // "python.lang.security.sql-injection" -> "Sql Injection".
 func sgRuleName(checkID string) string {
@@ -447,3 +425,9 @@ func sgRuleName(checkID string) string {
 	}
 	return strings.Join(words, " ")
 }
+
+var owaspIDRE = regexp.MustCompile(`A(?:0[1-9]|10):20[0-9]{2}`)
+
+// owaspID cuts "A03:2021 - Injection" to "A03:2021", the form CTIS keeps;
+// anything without such an id is dropped.
+func owaspID(s string) string { return owaspIDRE.FindString(s) }

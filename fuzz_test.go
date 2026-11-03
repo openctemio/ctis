@@ -33,7 +33,7 @@ func FuzzValidate(f *testing.F) {
 			}
 		}
 	}
-	f.Add([]byte(`{"version":"1.3","metadata":{"timestamp":"2026-10-02T00:00:00Z"},"findings":[{"type":"vulnerability","title":"t","severity":"high","vulnerability":{"cvss_score":1e308,"epss_percentile":-0}}]}`))
+	f.Add([]byte(`{"version":"2.0","metadata":{"id":"0192f0a0-0000-7000-8000-000000000001","generated_at":"2026-10-02T00:00:00Z"},"assets":[{"id":"a","type":"host","value":"h"}],"findings":[{"type":"vulnerability","title":"t","severity":"high","asset_ref":"a","scores":[{"system":"cvss","version":"3.1","value":1e308},{"system":"epss_percentile","value":-0}]}]}`))
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var r Report
 		if err := json.Unmarshal(data, &r); err != nil {
@@ -42,7 +42,7 @@ func FuzzValidate(f *testing.F) {
 		_ = r.Validate()
 		for _, fd := range r.Findings {
 			_ = fd.Severity.Score()
-			_ = NormalizeAssetName(fd.AssetType, fd.AssetValue)
+			_ = LocationKey(&fd)
 			if fd.DataFlow != nil {
 				_ = fd.DataFlow.BuildSummary()
 				_ = fd.DataFlow.IsCrossFunction()

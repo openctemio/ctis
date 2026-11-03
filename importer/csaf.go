@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // CSAF 2.0 JSON (the csaf_vex and csaf_security_advisory profiles). A CSAF
@@ -166,7 +166,9 @@ func parseCSAF(b *builder, r io.Reader) error {
 	}
 
 	meta := &b.res.Report.Metadata
-	meta.SourceRef = line(d.Document.Tracking.ID, capShort)
+	if id := line(d.Document.Tracking.ID, capShort); id != "" {
+		meta.SourceRefs = []ctis.SourceRef{{System: "csaf", ID: id}}
+	}
 	props := ctis.Properties{}
 	setProp := func(k, v string) {
 		if v = line(v, capShort); v != "" {

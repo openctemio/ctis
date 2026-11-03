@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "generated": "2025-10-05T08:00:00.000Z"
     }
@@ -12,32 +12,22 @@
   "tool": {
     "name": "zap",
     "version": "2.15.0",
-    "capabilities": [
+    "techniques": [
       "dast"
     ]
   },
   "assets": [
     {
-      "id": "site-https://shop.example.com",
-      "type": "website",
+      "id": "web_origin-https://shop.example.com",
+      "type": "web_origin",
       "value": "https://shop.example.com",
-      "name": "https://shop.example.com",
-      "properties": {
-        "host": "shop.example.com",
-        "port": "443",
-        "scheme": "https"
-      }
+      "name": "https://shop.example.com"
     },
     {
-      "id": "site-http://legacy.example.com:8080",
-      "type": "website",
+      "id": "web_origin-http://legacy.example.com:8080",
+      "type": "web_origin",
       "value": "http://legacy.example.com:8080",
-      "name": "http://legacy.example.com:8080",
-      "properties": {
-        "host": "legacy.example.com",
-        "port": "8080",
-        "scheme": "http"
-      }
+      "name": "http://legacy.example.com:8080"
     }
   ],
   "findings": [
@@ -50,19 +40,24 @@
       "confidence": 60,
       "rule_id": "40012",
       "rule_name": "Cross Site Scripting (Reflected)",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "GET https://shop.example.com/search?q= param=q attack=<script>alert(1);</script> evidence=<script>alert(1);</script>",
+      "web": {
+        "url": "https://shop.example.com/search?q=",
+        "method": "GET",
+        "parameter": {
+          "location": "query",
+          "name": "q"
+        }
+      },
       "vulnerability": {
         "cwe_ids": [
           "CWE-79"
-        ],
-        "cwe_id": "CWE-79"
+        ]
       },
       "remediation": {
         "recommendation": "Phase: Architecture and Design\n\nUse a vetted library or framework that does not allow this weakness to occur."
@@ -91,15 +86,13 @@
         "systemic": "false",
         "wascid": "8"
       },
-      "web": {
-        "url": "https://shop.example.com/search?q=",
-        "method": "GET",
-        "parameter": {
-          "location": "query",
-          "name": "q"
-        }
-      },
       "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "GET https://shop.example.com/search?q= param=q attack=<script>alert(1);</script> evidence=<script>alert(1);</script>"
+        },
         {
           "kind": "http_exchange",
           "version": 1,
@@ -160,19 +153,20 @@
       "confidence": 90,
       "rule_id": "10038",
       "rule_name": "Content Security Policy (CSP) Header Not Set",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "GET https://shop.example.com/",
+      "web": {
+        "url": "https://shop.example.com/",
+        "method": "GET"
+      },
       "vulnerability": {
         "cwe_ids": [
           "CWE-693"
-        ],
-        "cwe_id": "CWE-693"
+        ]
       },
       "remediation": {
         "recommendation": "Set the Content-Security-Policy header."
@@ -194,10 +188,14 @@
         "systemic": "true",
         "wascid": "15"
       },
-      "web": {
-        "url": "https://shop.example.com/",
-        "method": "GET"
-      }
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "GET https://shop.example.com/"
+        }
+      ]
     },
     {
       "type": "vulnerability",
@@ -208,19 +206,20 @@
       "confidence": 90,
       "rule_id": "10038",
       "rule_name": "Content Security Policy (CSP) Header Not Set",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "GET https://shop.example.com/cart",
+      "web": {
+        "url": "https://shop.example.com/cart",
+        "method": "GET"
+      },
       "vulnerability": {
         "cwe_ids": [
           "CWE-693"
-        ],
-        "cwe_id": "CWE-693"
+        ]
       },
       "remediation": {
         "recommendation": "Set the Content-Security-Policy header."
@@ -242,10 +241,14 @@
         "systemic": "true",
         "wascid": "15"
       },
-      "web": {
-        "url": "https://shop.example.com/cart",
-        "method": "GET"
-      }
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "GET https://shop.example.com/cart"
+        }
+      ]
     },
     {
       "type": "vulnerability",
@@ -255,12 +258,11 @@
       "confidence": 30,
       "rule_id": "10096",
       "rule_name": "Timestamp Disclosure - Unix",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
       "native": {
         "scheme": "other",
@@ -281,14 +283,16 @@
       "severity": "low",
       "rule_id": "90022",
       "rule_name": "Application Error Disclosure",
-      "asset_ref": "site-https://shop.example.com",
+      "asset_ref": "web_origin-https://shop.example.com",
       "network": {
-        "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "POST https://shop.example.com/api",
+      "web": {
+        "url": "https://shop.example.com/api",
+        "method": "POST"
+      },
       "occurrence_count": 1,
       "status": "false_positive",
       "native": {
@@ -301,10 +305,14 @@
       "source_extra": {
         "confidence": "0"
       },
-      "web": {
-        "url": "https://shop.example.com/api",
-        "method": "POST"
-      }
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "POST https://shop.example.com/api"
+        }
+      ]
     },
     {
       "type": "vulnerability",
@@ -315,14 +323,16 @@
       "confidence": 100,
       "rule_id": "10020",
       "rule_name": "Missing Anti-clickjacking Header",
-      "asset_ref": "site-http://legacy.example.com:8080",
+      "asset_ref": "web_origin-http://legacy.example.com:8080",
       "network": {
-        "host": "legacy.example.com",
         "port": 8080,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "http"
       },
-      "evidence": "GET http://legacy.example.com:8080/",
+      "web": {
+        "url": "http://legacy.example.com:8080/",
+        "method": "GET"
+      },
       "occurrence_count": 1,
       "native": {
         "scheme": "other",
@@ -335,10 +345,14 @@
       "source_extra": {
         "confidence": "4"
       },
-      "web": {
-        "url": "http://legacy.example.com:8080/",
-        "method": "GET"
-      }
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "GET http://legacy.example.com:8080/"
+        }
+      ]
     }
   ]
 }

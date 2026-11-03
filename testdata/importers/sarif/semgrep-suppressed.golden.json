@@ -1,15 +1,15 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "Semgrep OSS",
     "version": "1.149.0",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -24,7 +24,7 @@
   "findings": [
     {
       "id": "finding-1",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "Found shell=True",
       "description": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
       "severity": "high",
@@ -43,8 +43,7 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-78"
-        ],
-        "cwe_id": "CWE-78"
+        ]
       },
       "tags": [
         "CWE-78: OS Command Injection",
@@ -58,7 +57,7 @@
     },
     {
       "id": "finding-2",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "Found shell=True",
       "description": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
       "severity": "high",
@@ -77,8 +76,7 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-78"
-        ],
-        "cwe_id": "CWE-78"
+        ]
       },
       "tags": [
         "CWE-78: OS Command Injection",

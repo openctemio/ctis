@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "generated": "Sun, 5 Oct 2025 08:00:00"
     }
@@ -12,21 +12,16 @@
   "tool": {
     "name": "zap",
     "version": "2.15.0",
-    "capabilities": [
+    "techniques": [
       "dast"
     ]
   },
   "assets": [
     {
-      "id": "site-https://api.example.com",
-      "type": "website",
+      "id": "web_origin-https://api.example.com",
+      "type": "web_origin",
       "value": "https://api.example.com",
-      "name": "https://api.example.com",
-      "properties": {
-        "host": "api.example.com",
-        "port": "443",
-        "scheme": "https"
-      }
+      "name": "https://api.example.com"
     }
   ],
   "findings": [
@@ -39,19 +34,20 @@
       "confidence": 30,
       "rule_id": "10202",
       "rule_name": "Absence of Anti-CSRF Tokens",
-      "asset_ref": "site-https://api.example.com",
+      "asset_ref": "web_origin-https://api.example.com",
       "network": {
-        "host": "api.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "http"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "GET https://api.example.com/login evidence=<form action=\"/login\" method=\"post\"> otherinfo=No known Anti-CSRF token was found.",
+      "web": {
+        "url": "https://api.example.com/login",
+        "method": "GET"
+      },
       "vulnerability": {
         "cwe_ids": [
           "CWE-352"
-        ],
-        "cwe_id": "CWE-352"
+        ]
       },
       "remediation": {
         "recommendation": "Use a vetted library or framework."
@@ -78,11 +74,13 @@
         "systemic": "false",
         "wascid": "9"
       },
-      "web": {
-        "url": "https://api.example.com/login",
-        "method": "GET"
-      },
       "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "instances",
+          "text": "GET https://api.example.com/login evidence=<form action=\"/login\" method=\"post\"> otherinfo=No known Anti-CSRF token was found."
+        },
         {
           "kind": "http_exchange",
           "version": 1,

@@ -100,7 +100,7 @@ func NormalizeDataFlow(df *DataFlow, roots ...string) *DataFlow {
 		l.Label = RedactCodeSecrets(flowLine(l.Label, MaxDataFlowLabelLen))
 		l.Notes = RedactCodeSecrets(flowText(l.Notes, MaxDataFlowLabelLen))
 		l.Function = flowLine(l.Function, MaxDataFlowLabelLen)
-		l.Class = flowLine(l.Class, MaxDataFlowLabelLen)
+		l.ClassName = flowLine(l.ClassName, MaxDataFlowLabelLen)
 		l.Module = flowLine(l.Module, MaxDataFlowLabelLen)
 		l.CalledFunction = flowLine(l.CalledFunction, MaxDataFlowLabelLen)
 		l.Operation = flowLine(l.Operation, MaxDataFlowLabelLen)
@@ -121,12 +121,11 @@ func NormalizeDataFlow(df *DataFlow, roots ...string) *DataFlow {
 	}
 	df.Summary = RedactCodeSecrets(flowText(df.Summary, MaxDataFlowContentLen))
 	df.TaintType = flowLine(df.TaintType, MaxDataFlowLabelLen)
-	df.VulnerabilityType = flowLine(df.VulnerabilityType, MaxDataFlowLabelLen)
 	if df.Confidence < 0 || df.Confidence > 100 {
 		df.Confidence = 0
 	}
-	df.Tainted = len(df.Sources) > 0 && len(df.Sinks) > 0
-	df.CrossFile = false
+	df.IsTainted = len(df.Sources) > 0 && len(df.Sinks) > 0
+	df.IsCrossFile = false
 	first := ""
 	for _, l := range df.GetFullPath() {
 		if l.Path == "" {
@@ -135,7 +134,7 @@ func NormalizeDataFlow(df *DataFlow, roots ...string) *DataFlow {
 		if first == "" {
 			first = l.Path
 		} else if l.Path != first {
-			df.CrossFile = true
+			df.IsCrossFile = true
 		}
 	}
 	return df

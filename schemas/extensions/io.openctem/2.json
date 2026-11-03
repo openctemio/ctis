@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.openctem.io/ctis/extensions/io.openctem/2.json",
+  "title": "OpenCTEM extension namespace, revision 2",
+  "description": "The value of extensions[\"io.openctem\"] on a report, metadata, asset or finding: data only the OpenCTEM receiver profile defines (docs/profiles/openctem.md). A receiver that does not know the namespace ignores it. Revision 2 is the CTIS 2.0 revision; these keys are no longer read from properties.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "capability": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+@[1-9][0-9]{0,2}$",
+      "description": "On metadata: the OpenCTEM capability the report answers, as id@major (scan.ports@1). A producer claim; the receiver uses the capability of the command it bound the report to."
+    },
+    "import_scope": {
+      "type": "string",
+      "enum": [
+        "in_target",
+        "outside_target",
+        "unknown"
+      ],
+      "description": "On an asset from an importer: whether the asset belongs to the import's target. The receiver decides scope; the importer never drops an outside asset."
+    },
+    "candidate_exposure": {
+      "type": "string",
+      "enum": [
+        "subdomain_takeover",
+        "storage_bucket",
+        "cloud_asset"
+      ],
+      "description": "On an asset: an exposure a tool suspects but did not verify. The receiver verifies before it alerts."
+    },
+    "candidate_unverified": {
+      "type": "boolean",
+      "description": "On an asset with candidate_exposure: true while nobody verified it."
+    },
+    "bounty_report": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "On a finding from a bug-bounty or disclosure report: intake, ref, researcher (personal data), submitted_at, reported_severity, state, weakness, endpoint_path, parameter, url (https only, never fetched), reward and disclosure.",
+      "maxProperties": 32,
+      "properties": {
+        "researcher": {
+          "type": "string",
+          "maxLength": 256,
+          "x-ctis-pii": true
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^[Hh][Tt][Tt][Pp][Ss]://"
+        }
+      }
+    },
+    "web_content": {
+      "type": "array",
+      "maxItems": 200,
+      "description": "On a web_origin asset: the captures of a web content fetch. Each item: url, final_url (http or https), status_code, content_type, size, sha256, truncated, body (text, at most 512 KiB), body_truncated, fetched_at.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://"
+          },
+          "final_url": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "status_code": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 599
+          },
+          "content_type": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 524288
+          },
+          "body_truncated": {
+            "type": "boolean"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "maxLength": 64
+          }
+        }
+      }
+    }
+  }
+}

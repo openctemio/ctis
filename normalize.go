@@ -1,89 +1,158 @@
 package ctis
 
 import (
-	"net"
+	"strconv"
 	"strings"
 )
 
-// NormalizeAssetName normalizes an asset name for the given type.
-// This is a lightweight implementation for defense-in-depth.
-// The API server re-normalizes authoritatively before storage.
-//
-// Part of RFC-001: Asset Identity Resolution.
-func NormalizeAssetName(assetType AssetType, name string) string {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return ""
+// MaxAssetValueLen bounds asset.value.
+const MaxAssetValueLen = 2048
+
+// CanonicalAssetValue returns value in the canonical form of asset type t
+// (spec section "Canonical forms"), or an error when value has no canonical
+// form for t. The asset key is AssetKey(t, canonical value). Types without a
+// structured form (a web application name, an identity) are trimmed and must
+// not contain control characters.
+func CanonicalAssetValue(t AssetType, value string) (string, error) {
+	v := strings.TrimSpace(value)
+	if v == "" {
+		return "", canonErr(string(t), value, "empty")
 	}
-
-	switch assetType {
-	case AssetTypeDomain, AssetTypeSubdomain:
-		name = strings.ToLower(name)
-		name = strings.TrimRight(name, ".")
-		return name
-
+	switch t {
+	case AssetTypeDomainName:
+		return CanonicalDomain(v)
 	case AssetTypeIPAddress:
-		if ip := net.ParseIP(name); ip != nil {
-			if v4 := ip.To4(); v4 != nil {
-				return v4.String()
-			}
-			return ip.String()
-		}
-		return name
-
+		return CanonicalIP(v)
+	case AssetTypeIPRange:
+		return CanonicalCIDR(v)
 	case AssetTypeHost:
-		// If IP, normalize as IP
-		if ip := net.ParseIP(name); ip != nil {
-			if v4 := ip.To4(); v4 != nil {
-				return v4.String()
-			}
-			return ip.String()
-		}
-		// Otherwise lowercase hostname
-		name = strings.ToLower(name)
-		name = strings.TrimRight(name, ".")
-		return name
-
+		h, _, err := canonicalHost(v)
+		return h, err
+	case AssetTypeService:
+		return canonicalServiceValue(v)
+	case AssetTypeWebOrigin:
+		return CanonicalOrigin(v)
 	case AssetTypeRepository:
-		name = strings.TrimPrefix(name, "https://")
-		name = strings.TrimPrefix(name, "http://")
-		if strings.HasPrefix(name, "git@") {
-			name = strings.TrimPrefix(name, "git@")
-			if idx := strings.Index(name, ":"); idx > 0 {
-				name = name[:idx] + "/" + name[idx+1:]
-			}
-		}
-		name = strings.TrimSuffix(name, ".git")
-		name = strings.ToLower(name)
-		name = strings.TrimRight(name, "/")
-		return name
-
-	case AssetTypeHTTPService, AssetTypeDiscoveredURL:
-		// Scheme and host are case-insensitive; the path and query are not
-		// (/Admin and /admin can be different resources), so keep their case.
-		return normalizeURLName(name)
-
-	default:
-		return name
+		return CanonicalRepository(v)
+	case AssetTypePackage:
+		id, _, err := CanonicalPurl(v)
+		return id, err
+	case AssetTypeContainerImage:
+		return CanonicalImage(v)
+	case AssetTypeCertificate:
+		return CanonicalCertificateFingerprint(v)
+	case AssetTypeAutonomousSystem:
+		return canonicalASN(v)
+	case AssetTypeCloudResource, AssetTypeCloudAccount, AssetTypeStorage, AssetTypeDatabase, AssetTypeServerless:
+		return canonicalCloudID(v)
 	}
+	if hasControlRune(v) {
+		return "", canonErr(string(t), value, "control character")
+	}
+	return v, nil
 }
 
-// normalizeURLName lower-cases the scheme and the host of a URL-like value
-// and keeps everything after the authority (path, query, fragment) as given.
-// User info keeps its case. A value without a scheme is read as host[/path].
-// A trailing slash is dropped.
-func normalizeURLName(name string) string {
-	scheme, rest := "", name
-	if i := strings.Index(name, "://"); i > 0 {
-		scheme, rest = strings.ToLower(name[:i])+"://", name[i+3:]
+// NormalizeAssetName returns the canonical value of name for type t, or the
+// trimmed name when it has no canonical form (a receiver then refuses the
+// asset in Validate).
+func NormalizeAssetName(t AssetType, name string) string {
+	if c, err := CanonicalAssetValue(t, name); err == nil {
+		return c
 	}
-	authority, tail := rest, ""
-	if i := strings.IndexAny(rest, "/?#"); i >= 0 {
-		authority, tail = rest[:i], rest[i:]
+	return strings.TrimSpace(name)
+}
+
+// canonicalServiceValue parses "host:port/transport" ("[v6]:port/transport")
+// and returns it canonical.
+func canonicalServiceValue(v string) (string, error) {
+	hp, tr, ok := strings.Cut(v, "/")
+	if !ok {
+		return "", canonErr("service", v, "not host:port/transport")
 	}
-	userinfo := ""
-	if i := strings.LastIndex(authority, "@"); i >= 0 {
-		userinfo, authority = authority[:i+1], authority[i+1:]
+	i := strings.LastIndex(hp, ":")
+	if i <= 0 {
+		return "", canonErr("service", v, "not host:port/transport")
 	}
-	return strings.TrimRight(scheme+userinfo+strings.ToLower(authority)+tail, "/")
+	port, err := strconv.Atoi(hp[i+1:])
+	if err != nil {
+		return "", canonErr("service", v, "port is not a number")
+	}
+	return CanonicalService(hp[:i], port, tr)
+}
+
+// canonicalASN returns "AS<number>" for "AS64500", "as64500" or "64500".
+func canonicalASN(v string) (string, error) {
+	n := strings.TrimPrefix(strings.TrimPrefix(v, "AS"), "as")
+	if n == "" || len(n) > 10 || !allDigits(n) || (len(n) > 1 && n[0] == '0') {
+		return "", canonErr("autonomous system", v, "not AS<number>")
+	}
+	x, err := strconv.ParseUint(n, 10, 32)
+	if err != nil {
+		return "", canonErr("autonomous system", v, "number outside 0-4294967295")
+	}
+	return "AS" + strconv.FormatUint(x, 10), nil
+}
+
+// canonicalCloudID returns an ARN, an Azure resource id or a GCP full
+// resource name in canonical form; another provider id is kept as given.
+func canonicalCloudID(v string) (string, error) {
+	switch {
+	case strings.HasPrefix(strings.ToLower(v), "arn:"):
+		return CanonicalARN(v)
+	case strings.HasPrefix(v, "/"):
+		if strings.HasPrefix(v, "//") {
+			return CanonicalGCPResourceName(v)
+		}
+		return CanonicalAzureResourceID(v)
+	}
+	if hasControlRune(v) {
+		return "", canonErr("cloud id", v, "control character")
+	}
+	return v, nil
+}
+
+// caseInsensitiveSCMHosts are source-code hosts whose owner and repository
+// names are case-insensitive, so their canonical form is lowercase.
+var caseInsensitiveSCMHosts = map[string]bool{
+	"github.com": true, "gitlab.com": true, "bitbucket.org": true, "codeberg.org": true,
+}
+
+// CanonicalRepository returns a repository as "<host>/<owner path>/<name>":
+// no scheme, user info, port-less host lowercase, no ".git", no trailing
+// slash. scp-style "git@host:owner/name" is accepted. The owner path and
+// name are lowercase on hosts known to be case-insensitive and kept as given
+// elsewhere.
+func CanonicalRepository(s string) (string, error) {
+	v := strings.TrimSpace(s)
+	if i := strings.Index(v, "://"); i > 0 {
+		v = v[i+3:]
+	} else if at := strings.Index(v, "@"); at >= 0 && strings.Contains(v[at:], ":") && !strings.Contains(v[:at], "/") {
+		// scp-like: user@host:owner/name
+		rest := v[at+1:]
+		h, p, _ := strings.Cut(rest, ":")
+		v = h + "/" + p
+	}
+	if at := strings.LastIndex(v, "@"); at >= 0 && at < strings.Index(v+"/", "/") {
+		v = v[at+1:]
+	}
+	v = strings.TrimRight(v, "/")
+	v = strings.TrimSuffix(v, ".git")
+	host, path, ok := strings.Cut(v, "/")
+	if !ok || path == "" {
+		return "", canonErr("repository", s, "not host/owner/name")
+	}
+	if h, _, found := strings.Cut(host, ":"); found {
+		host = h
+	}
+	host, err := CanonicalDomain(host)
+	if err != nil {
+		return "", err
+	}
+	if strings.Contains(path, "//") || hasControlRune(path) || strings.ContainsAny(path, " ?#") {
+		return "", canonErr("repository", s, "invalid owner path or name")
+	}
+	if caseInsensitiveSCMHosts[host] {
+		path = strings.ToLower(path)
+	}
+	return host + "/" + path, nil
 }

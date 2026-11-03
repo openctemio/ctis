@@ -3,7 +3,7 @@ package importer
 import (
 	"strings"
 
-	"github.com/openctemio/ctis"
+	"github.com/openctemio/ctis/v2"
 )
 
 // The asset of a code report (SARIF, semgrep, betterleaks, a trivy
@@ -17,6 +17,9 @@ const codeAssetID = "asset-1"
 // criticality: that is the receiver's call (CTIS spec 4.1).
 func repoAsset(value, branch, commit, source string) ctis.Asset {
 	value = line(value, capShort)
+	if c, err := ctis.CanonicalAssetValue(ctis.AssetTypeRepository, value); err == nil {
+		value = c
+	}
 	props := ctis.Properties{"source": source}
 	if b := line(branch, capShort); b != "" {
 		props["branch"] = b
@@ -33,11 +36,8 @@ func repoAsset(value, branch, commit, source string) ctis.Asset {
 //  2. else the asset the file names (fromFile, when not nil);
 //  3. else Options.DefaultAsset, else an unclassified asset named after
 //     the tool, with an issue saying the file names no repository.
-//
-// With Options.Repository, the report's scope is named after it.
 func (b *builder) codeAsset(fromFile *ctis.Asset) ctis.Asset {
 	if r := strings.TrimSpace(b.opts.Repository); r != "" {
-		b.res.Report.Metadata.Scope = &ctis.Scope{Name: line(r, capShort)}
 		return repoAsset(r, b.opts.Branch, b.opts.CommitSHA, "import_options")
 	}
 	if fromFile != nil && strings.TrimSpace(fromFile.Value) != "" {
@@ -59,6 +59,20 @@ func (b *builder) bindAll(a ctis.Asset) error {
 	id, err := b.asset(a)
 	if err != nil {
 		return err
+	}
+	if id == "" {
+		// The value is no repository (host/owner/name): the findings stay
+		// on an unclassified asset of the same name, not lost.
+		a.Type, a.ID = ctis.AssetTypeUnclassified, ""
+		if id, err = b.asset(a); err != nil {
+			return err
+		}
+	}
+	if id == "" {
+		b.res.Stats.Skipped += len(b.res.Report.Findings)
+		b.res.Report.Findings = nil
+		b.res.Stats.BySeverity = map[ctis.Severity]int{}
+		return nil
 	}
 	for i := range b.res.Report.Findings {
 		b.res.Report.Findings[i].AssetRef = id

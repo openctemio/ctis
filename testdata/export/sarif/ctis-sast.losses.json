@@ -3,6 +3,10 @@
   "note": "Accepted losses of CTIS -> ToSARIF -> FromSARIF for this example (docs/exporters.md, SARIF).",
   "losses": [
     {
+      "member": "metadata.id",
+      "reason": "a converted document is a new document with its own idempotency key (a fresh UUIDv7)"
+    },
+    {
       "member": "findings[].id",
       "reason": "FromSARIF numbers findings finding-N; finding ids are producer-local"
     },
@@ -11,7 +15,7 @@
       "reason": "SARIF has no asset; FromSARIF takes the asset from ConvertOptions"
     },
     {
-      "member": "findings[].location.commit_sha",
+      "member": "findings[].location.commit",
       "reason": "SARIF has no per-location commit; FromSARIF takes branch and commit from ConvertOptions (the exporter writes metadata.branch as run.versionControlProvenance)"
     },
     {
@@ -31,19 +35,7 @@
       "reason": "no SARIF member"
     },
     {
-      "member": "findings[].vulnerability_class",
-      "reason": "no SARIF member"
-    },
-    {
-      "member": "findings[].author",
-      "reason": "no SARIF member"
-    },
-    {
-      "member": "findings[].author_email",
-      "reason": "no SARIF member"
-    },
-    {
-      "member": "findings[].commit_date",
+      "member": "findings[].vulnerability_classes",
       "reason": "no SARIF member"
     },
     {
@@ -76,10 +68,6 @@
     },
     {
       "member": "findings[].data_flow.taint_type",
-      "reason": "as data_flow.summary"
-    },
-    {
-      "member": "findings[].data_flow.vulnerability_type",
       "reason": "as data_flow.summary"
     },
     {

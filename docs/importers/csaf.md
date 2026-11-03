@@ -34,7 +34,7 @@ Generated from `importer/spec_csaf.go`; do not edit. Regenerate with `go test ./
 | `/document/publisher/contact_details` |  | publisher contact (personal data) |
 | `/document/publisher/issuing_authority` |  | publisher's authority statement (prose) |
 | `/document/tracking` | (container) |  |
-| `/document/tracking/id` | `metadata.source_ref, vex[].vex.source` |  |
+| `/document/tracking/id` | `metadata.source_refs[], vex[].vex.source` |  |
 | `/document/tracking/version` | `metadata.properties.document_version` |  |
 | `/document/tracking/status` | `metadata.properties.document_status` |  |
 | `/document/tracking/current_release_date` | `vex[].vex.as_of, metadata.properties.current_release_date` |  |

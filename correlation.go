@@ -3,7 +3,7 @@ package ctis
 import (
 	"strings"
 
-	"github.com/openctemio/ctis/fingerprint"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // CorrelationKeyPrefix starts every correlation key.
@@ -50,7 +50,11 @@ func CorrelationKeyForTool(assetKey, tool string, f *Finding) string {
 	return CorrelationKeyPrefix + fingerprint.Hash(fingerprint.EncodeParts(correlationRecipe, assetKey, id, LocationKey(f)))
 }
 
-// findingTool is the tool name recorded on the finding itself. Findings
-// carry no tool member in this release, so it is empty and callers that know
-// the report's tool use CorrelationKeyForTool.
-func findingTool(*Finding) string { return "" }
+// findingTool is the tool name recorded on the finding itself (finding.tool),
+// or "": callers that know the report's tool use CorrelationKeyForTool.
+func findingTool(f *Finding) string {
+	if f == nil || f.Tool == nil {
+		return ""
+	}
+	return f.Tool.Name
+}

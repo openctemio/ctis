@@ -10,8 +10,8 @@ Generated from `importer/spec_reconftw.go`; do not edit. Regenerate with `go tes
 
 - A recon directory is read as one bundle (ParseBundle). Detection looks at the layout (report/report.json, subdomains/subdomains.txt, webs/webs.txt, hosts/ips.txt), never at a file name. Files may sit under one leading directory (the target name); two recon directories in one archive are refused.
 - Layout and version: tool.version is the `reconFTW version:` line of a file under .log/ (first 64 KiB), else `unknown-v4` or `unknown-v3`. A directory with report/report.json, or a log that names version 4 or later, is read with the v4 rows; any other directory with the v3 rows.
-- Candidates: every hostname and address is kept as an asset whether or not it belongs to the target. properties.import_scope is `in_target` (the host is the target domain or below it, or below one of Options.ScopeDomains), `outside_target`, or `unknown` (no target is known, or the asset is an address). A receiver decides scope; the importer never drops an outside host.
-- Takeovers, buckets and cloud assets are candidates, never findings: the host asset (or a storage asset) carries properties.candidate_exposure (`subdomain_takeover`, `storage_bucket`, `cloud_asset`) and candidate_unverified=true, so the receiver can verify before it alerts.
+- Candidates: every hostname and address is kept as an asset whether or not it belongs to the target. extensions[io.openctem].import_scope is `in_target` (the host is the target domain or below it, or below one of Options.ScopeDomains), `outside_target`, or `unknown` (no target is known, or the asset is an address). A receiver decides scope; the importer never drops an outside host.
+- Takeovers, buckets and cloud assets are candidates, never findings: the host asset (or a storage asset) carries extensions[io.openctem].candidate_exposure (`subdomain_takeover`, `storage_bucket`, `cloud_asset`) and candidate_unverified=true (both in extensions[io.openctem]), so the receiver can verify before it alerts.
 - People and credentials: everything under osint/ is never opened (emails, passwords, names, metadata, dorks). Screenshots are not read. Both are listed in Result.Skipped with the reason.
 - Every other file is listed in Result.Unmapped with its path; a field of a mapped httpx line that is not in this spec is listed as `<file>/<member>`.
 - Endpoints: one per origin, method and path template, source `import`, with the names of the query parameters and never their values. A URL that is not a plain http or https URL (javascript:, data:, user info, control characters, CR/LF/NUL) is refused and counted.
@@ -25,38 +25,38 @@ Generated from `importer/spec_reconftw.go`; do not edit. Regenerate with `go tes
 | Source field | CTIS | Ignored because |
 |---|---|---|
 | `/report/report.json` | (container) |  |
-| `/report/report.json/domain` | `metadata.scope.name, metadata.source_ref (the target domain)` |  |
+| `/report/report.json/domain` | `metadata.source_refs[] (the target domain)` |  |
 | `/report/report.json/mode` | `properties.reconftw_mode` |  |
-| `/report/report.json/generated_at` | `metadata.timestamp (clamped to the time of the import), assets[].discovered_at` |  |
+| `/report/report.json/generated_at` | `metadata.generated_at (clamped to the time of the import), assets[].first_seen_at` |  |
 | `/report/report.json/summary` |  | counts reconFTW computed; never trusted, the importer recounts |
 | `/report/report.json/summary/**` |  | counts reconFTW computed; never trusted, the importer recounts |
 | `/report/report.json/delta` |  | change summary against an earlier reconFTW run; the receiver computes its own changes |
 | `/report/report.json/delta/**` |  | change summary against an earlier reconFTW run; the receiver computes its own changes |
 | `/.log/*.txt` | `tool.version (the `reconFTW version:` line, first 64 KiB)` |  |
-| `/subdomains/subdomains.txt` | `assets[] (hostnames and addresses are candidates: properties.import_scope says whether they are inside the target) as domain or subdomain assets` |  |
-| `/hosts/ips.txt` | `assets[] (hostnames and addresses are candidates: properties.import_scope says whether they are inside the target) as ip_address assets` |  |
-| `/hosts/cdn_providers.txt` | `assets[ip_address].properties.cdn` |  |
-| `/hosts/naabu*.txt` | `assets[ip_address or host].technical.ip_address.ports (open, tcp)` |  |
+| `/subdomains/subdomains.txt` | `assets[] (hostnames and addresses are candidates: extensions[io.openctem].import_scope says whether they are inside the target) as domain_name assets` |  |
+| `/hosts/ips.txt` | `assets[] (hostnames and addresses are candidates: extensions[io.openctem].import_scope says whether they are inside the target) as ip_address assets` |  |
+| `/hosts/cdn_providers.txt` | `assets[ip_address].extensions[io.openctem].cdn` |  |
+| `/hosts/naabu*.txt` | `assets[service] (host:port/tcp, exposed by the host), relationships[exposes]` |  |
 | `/webs/web_full_info*.txt` | (container) |  |
-| `/webs/web_full_info*.txt/url` | `assets[http_service].value and name; endpoints[].origin (query values, user info, fragment and control characters refused)` |  |
-| `/webs/web_full_info*.txt/host` | `assets[http_service].properties.ip (when it is an address)` |  |
-| `/webs/web_full_info*.txt/host_ip` | `assets[http_service].properties.ip` |  |
-| `/webs/web_full_info*.txt/scheme` | `assets[http_service].technical.service.protocol, tls (from the URL)` |  |
-| `/webs/web_full_info*.txt/status_code` | `assets[http_service].properties.status_code` |  |
-| `/webs/web_full_info*.txt/content_length` | `assets[http_service].properties.content_length` |  |
-| `/webs/web_full_info*.txt/title` | `assets[http_service].properties.title` |  |
-| `/webs/web_full_info*.txt/webserver` | `assets[http_service].properties.web_server, technical.service.name` |  |
-| `/webs/web_full_info*.txt/content_type` | `assets[http_service].properties.content_type` |  |
-| `/webs/web_full_info*.txt/tech` | `assets[http_service].properties.technologies` |  |
-| `/webs/web_full_info*.txt/cdn` | `assets[http_service].properties.cdn (with cdn_name)` |  |
-| `/webs/web_full_info*.txt/cdn_name` | `assets[http_service].properties.cdn, hosted_by` |  |
-| `/webs/web_full_info*.txt/cdn_type` | `assets[http_service].properties.cdn_type, waf` |  |
-| `/webs/web_full_info*.txt/time` | `assets[http_service].properties.response_time_ms` |  |
-| `/webs/web_full_info*.txt/location` | `assets[http_service].properties.redirect_url (no query values)` |  |
-| `/webs/web_full_info*.txt/favicon` | `assets[http_service].properties.favicon_mmh3` |  |
-| `/webs/web_full_info*.txt/jarm` | `assets[http_service].properties.jarm` |  |
+| `/webs/web_full_info*.txt/url` | `assets[web_origin].value (the origin) and name; endpoints[].origin (query values, user info, fragment and control characters refused)` |  |
+| `/webs/web_full_info*.txt/host` | `assets[ip_address] (when it is an address), relationships[resolves_to]` |  |
+| `/webs/web_full_info*.txt/host_ip` | `assets[ip_address], relationships[resolves_to]` |  |
+| `/webs/web_full_info*.txt/scheme` | `assets[web_origin].value (scheme)` |  |
+| `/webs/web_full_info*.txt/status_code` | `assets[web_origin].technical.http.status_code` |  |
+| `/webs/web_full_info*.txt/content_length` | `assets[web_origin] (not kept: content length)` |  |
+| `/webs/web_full_info*.txt/title` | `assets[web_origin].technical.http.title` |  |
+| `/webs/web_full_info*.txt/webserver` | `assets[web_origin].technical.http.web_server` |  |
+| `/webs/web_full_info*.txt/content_type` | `assets[web_origin].technical.http.content_type` |  |
+| `/webs/web_full_info*.txt/tech` | `assets[web_origin].technologies[]` |  |
+| `/webs/web_full_info*.txt/cdn` | `assets[web_origin].technical.http.cdn (with cdn_name)` |  |
+| `/webs/web_full_info*.txt/cdn_name` | `assets[web_origin].technical.http.cdn` |  |
+| `/webs/web_full_info*.txt/cdn_type` | `assets[web_origin].technical.http.cdn or waf` |  |
+| `/webs/web_full_info*.txt/time` | `assets[web_origin].extensions[io.openctem] (not kept: response time)` |  |
+| `/webs/web_full_info*.txt/location` | `assets[web_origin].technical.http.redirect_url (no query values)` |  |
+| `/webs/web_full_info*.txt/favicon` | `assets[web_origin].technical.http.favicon_mmh3` |  |
+| `/webs/web_full_info*.txt/jarm` | `assets[web_origin].technical.http.jarm` |  |
 | `/webs/web_full_info*.txt/tls` | (container) |  |
-| `/webs/web_full_info*.txt/tls/tls_version` | `assets[http_service].properties.tls_version` |  |
+| `/webs/web_full_info*.txt/tls/tls_version` | `assets[web_origin].technical.http.tls_version` |  |
 | `/webs/web_full_info*.txt/tls/subject_cn` | `assets[certificate].technical.certificate.subject_cn` |  |
 | `/webs/web_full_info*.txt/tls/subject_an` | `assets[certificate].technical.certificate.sans` |  |
 | `/webs/web_full_info*.txt/tls/issuer_cn` | `assets[certificate].technical.certificate.issuer_cn` |  |
@@ -69,9 +69,9 @@ Generated from `importer/spec_reconftw.go`; do not edit. Regenerate with `go tes
 | `/webs/web_full_info*.txt/tls/wildcard_certificate` | `assets[certificate].technical.certificate.wildcard` |  |
 | `/webs/web_full_info*.txt/tls/mismatched` | `assets[certificate].properties.host_mismatch` |  |
 | `/webs/web_full_info*.txt/asn` | (container) |  |
-| `/webs/web_full_info*.txt/asn/as_number` | `assets[http_service].properties.asn` |  |
-| `/webs/web_full_info*.txt/asn/as_name` | `assets[http_service].properties.asn_org` |  |
-| `/webs/web_full_info*.txt/asn/as_country` | `assets[http_service].properties.asn_country` |  |
+| `/webs/web_full_info*.txt/asn/as_number` | `assets[ip_address].technical.ip_address.asn` |  |
+| `/webs/web_full_info*.txt/asn/as_name` | `assets[ip_address].technical.ip_address.asn_org` |  |
+| `/webs/web_full_info*.txt/asn/as_country` | `assets[ip_address].technical.ip_address.country` |  |
 | `/webs/web_full_info*.txt/failed` |  | a failed probe has no result; the line is skipped |
 | `/webs/web_full_info*.txt/input` |  | the probe input; url is kept |
 | `/webs/web_full_info*.txt/port` |  | the URL carries the port |
@@ -117,15 +117,15 @@ Generated from `importer/spec_reconftw.go`; do not edit. Regenerate with `go tes
 | `/webs/web_full_info*.txt/tls/jarm_hash` |  | not kept: handshake detail the platform probes itself |
 | `/webs/web_full_info*.txt/tls/sni` |  | not kept: handshake detail the platform probes itself |
 | `/webs/web_full_info*.txt/tls/version` |  | not kept: handshake detail the platform probes itself |
-| `/webs/webs.txt` | `assets[http_service] (only for URLs the httpx file does not hold)` |  |
-| `/webs/webs_uncommon_ports.txt` | `assets[http_service] (only for URLs the httpx file does not hold)` |  |
-| `/webs/webs_wafs.txt` | `assets[http_service].properties.waf` |  |
+| `/webs/webs.txt` | `assets[web_origin] (only for URLs the httpx file does not hold)` |  |
+| `/webs/webs_uncommon_ports.txt` | `assets[web_origin] (only for URLs the httpx file does not hold)` |  |
+| `/webs/webs_wafs.txt` | `assets[web_origin].technical.http.waf` |  |
 | `/webs/url_extract.txt` | `endpoints[] (source import; query parameter names only)` |  |
 | `/webs/urls_by_ext.txt` | `endpoints[] (source import)` |  |
 | `/gf/*.txt` | `endpoints[] (source import; the class is recomputed, the file's bucket name is not kept)` |  |
 | `/js/js_livelinks.txt` | `endpoints[] (kind script, source js)` |  |
 | `/js/js_endpoints.txt` | `endpoints[] (source js)` |  |
-| `/webs/takeover.txt` | `assets[domain or subdomain].properties.candidate_exposure=subdomain_takeover` |  |
+| `/webs/takeover.txt` | `assets[domain_name].extensions[io.openctem].candidate_exposure=subdomain_takeover` |  |
 | `/subdomains/s3buckets.txt` | `assets[storage] (candidate_exposure=storage_bucket)` |  |
 | `/subdomains/cloud_assets.txt` | `assets[storage] (candidate_exposure=cloud_asset)` |  |
 | `/nuclei_output/*_json.txt` | `findings[] through the nuclei importer; assets[] for the hosts they name` |  |

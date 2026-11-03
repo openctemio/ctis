@@ -19,7 +19,7 @@ Generated from `importer/spec_betterleaks.go`; do not edit. Regenerate with `go 
 | Source field | CTIS | Ignored because |
 |---|---|---|
 | `/[]` | `findings[]` |  |
-| `/[]/RuleID` | `findings[].rule_id, native.vuln_id, severity, secret.secret_type, secret.service` |  |
+| `/[]/RuleID` | `findings[].rule_id, native.vuln_id, severity, secret.type, secret.service` |  |
 | `/[]/Description` | `findings[].title, message` |  |
 | `/[]/File` | `findings[].location.path` |  |
 | `/[]/SymlinkFile` | `findings[].source_extra.symlink_file` |  |
@@ -31,11 +31,11 @@ Generated from `importer/spec_betterleaks.go`; do not edit. Regenerate with `go 
 | `/[]/Secret` | `findings[].secret.masked_value, secret.length, fingerprint input (masked)` |  |
 | `/[]/Line` |  | the whole source line holding the secret; the masked match is kept |
 | `/[]/Entropy` | `findings[].secret.entropy` |  |
-| `/[]/Commit` | `findings[].location.commit_sha` |  |
+| `/[]/Commit` | `findings[].location.commit.sha` |  |
 | `/[]/Link` | `findings[].source_extra.commit_link` |  |
-| `/[]/Author` | `findings[].author` |  |
-| `/[]/Email` | `findings[].author_email` |  |
-| `/[]/Date` | `findings[].commit_date` |  |
+| `/[]/Author` | `findings[].location.commit.author` |  |
+| `/[]/Email` | `findings[].location.commit.author_email` |  |
+| `/[]/Date` | `findings[].location.commit.committed_at` |  |
 | `/[]/Message` | `findings[].source_extra.commit_message (secret masked)` |  |
 | `/[]/Tags` | (container) |  |
 | `/[]/Tags[]` | `findings[].tags` |  |

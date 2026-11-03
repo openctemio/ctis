@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const decodeBase = `"metadata":{"timestamp":"2026-11-03T00:00:00Z"}`
+const decodeBase = `"metadata":{"id":"` + testReportID + `","generated_at":"2026-11-03T00:00:00Z"}`
 
 func decodeAtString(t *testing.T, doc string, recvMinor int) (Report, Unknown, error) {
 	t.Helper()
@@ -25,25 +25,25 @@ func unknownPaths(u Unknown, kind UnknownKind) []string {
 
 func TestDecodeSameMinorIsStrict(t *testing.T) {
 	// A typo in a document of the receiver's own minor is an error.
-	doc := `{"version":"1.6",` + decodeBase + `,"findings":[{"type":"secret","title":"t","sevrity":"high","severity":"high"}]}`
+	doc := `{"version":"2.6",` + decodeBase + `,"findings":[{"type":"secret","title":"t","sevrity":"high","severity":"high"}]}`
 	if _, _, err := decodeAtString(t, doc, 6); err == nil {
 		t.Fatal("same-minor typo accepted")
 	}
 	// Older minor: strict too.
-	doc = `{"version":"1.2",` + decodeBase + `,"surprise":1}`
+	doc = `{"version":"2.2",` + decodeBase + `,"surprise":1}`
 	if _, _, err := decodeAtString(t, doc, 6); err == nil {
 		t.Fatal("older-minor unknown member accepted")
 	}
 	// Clean document: no unknowns.
-	doc = `{"version":"1.6",` + decodeBase + `}`
+	doc = `{"version":"2.6",` + decodeBase + `}`
 	r, u, err := decodeAtString(t, doc, 6)
-	if err != nil || !u.Empty() || r.Version != "1.6" {
+	if err != nil || !u.Empty() || r.Version != "2.6" {
 		t.Fatalf("clean document: %v %+v", err, u)
 	}
 }
 
 func TestDecodeNewerMinorIgnoresUnknownMembers(t *testing.T) {
-	doc := `{"version":"1.9",` + decodeBase + `,"future_member":{"a":1},
+	doc := `{"version":"2.9",` + decodeBase + `,"future_member":{"a":1},
 		"assets":[{"id":"a","type":"host","value":"h","future_asset_member":true,"properties":{"kept":1}}],
 		"findings":[{"type":"secret","title":"t","severity":"high","asset_ref":"a","vulnerability":{"future_vuln":"x"}}]}`
 	r, u, err := decodeAtString(t, doc, 6)
@@ -63,17 +63,17 @@ func TestDecodeNewerMinorIgnoresUnknownMembers(t *testing.T) {
 }
 
 func TestDecodeNewerMinorMapsUnknownEnums(t *testing.T) {
-	doc := `{"version":"1.42",
+	doc := `{"version":"2.42",
 		"assets":[
 			{"id":"a","type":"quantum_widget","value":"q","environment":"preprod","criticality":"extreme","owners":[{"kind":"robot","ref":"r"},{"kind":"team","ref":"t","role":"janitor"}]},
 			{"id":"b","type":"host","value":"h","state":"gone","state_reason":"moon_phase"}
 		],
 		"findings":[
-			{"type":"secret","title":"keep","severity":"apocalyptic","status":"pondering","validation":{"status":"half_exploited"}},
-			{"type":"telepathy","title":"drop","severity":"high"}
+			{"type":"secret","title":"keep","severity":"apocalyptic","status":"pondering","asset_ref":"b","validation":{"status":"half_exploited"}},
+			{"type":"telepathy","title":"drop","severity":"high","asset_ref":"b"}
 		],
 		"relationships":[{"type":"entangled_with","from_ref":"a","to_ref":"b"}],
-		"metadata":{"timestamp":"2026-11-03T00:00:00Z","targets":[
+		"metadata":{"id":"` + testReportID + `","generated_at":"2026-11-03T00:00:00Z","targets":[
 			{"target":"x.example","state":"done"},
 			{"target":"y.example","state":"failed","class":"cosmic_rays"},
 			{"target":"z.example","state":"teleported"}
@@ -122,13 +122,13 @@ func TestDecodeNewerMinorMapsUnknownEnums(t *testing.T) {
 }
 
 func TestDecodeRejectsOtherMajors(t *testing.T) {
-	for _, v := range []string{"2.0", "0.9", "3.1"} {
+	for _, v := range []string{"1.6", "0.9", "3.1"} {
 		doc := `{"version":"` + v + `",` + decodeBase + `}`
 		if _, _, err := decodeAtString(t, doc, 6); err == nil {
 			t.Errorf("version %s accepted", v)
 		}
 	}
-	for _, doc := range []string{`{` + decodeBase + `}`, `{"version":"1.x",` + decodeBase + `}`, `{"version":1,` + decodeBase + `}`, `[]`} {
+	for _, doc := range []string{`{` + decodeBase + `}`, `{"version":"2.x",` + decodeBase + `}`, `{"version":1,` + decodeBase + `}`, `[]`} {
 		if _, _, err := decodeAtString(t, doc, 6); err == nil {
 			t.Errorf("%s accepted", doc)
 		}
@@ -153,17 +153,17 @@ func TestDecodeRejectsOtherMajorsSynthetic(t *testing.T) {
 }
 
 func TestDecodeTrailingDataAndBounds(t *testing.T) {
-	doc := `{"version":"1.6",` + decodeBase + `} {"version":"1.6"}`
+	doc := `{"version":"2.6",` + decodeBase + `} {"version":"2.6"}`
 	if _, _, err := decodeAtString(t, doc, 6); err == nil {
 		t.Error("trailing document accepted (strict path)")
 	}
-	doc = `{"version":"1.9",` + decodeBase + `} x`
+	doc = `{"version":"2.9",` + decodeBase + `} x`
 	if _, _, err := decodeAtString(t, doc, 6); err == nil {
 		t.Error("trailing data accepted (lenient path)")
 	}
 	// Unknown is bounded.
 	var b strings.Builder
-	b.WriteString(`{"version":"1.9",` + decodeBase)
+	b.WriteString(`{"version":"2.9",` + decodeBase)
 	for i := 0; i < MaxUnknownEntries+5; i++ {
 		b.WriteString(`,"m` + itoa(i) + `":0`)
 	}
@@ -205,8 +205,8 @@ func TestDecodeEnumPoliciesCoverSchemaEnums(t *testing.T) {
 }
 
 func FuzzDecode(f *testing.F) {
-	f.Add([]byte(`{"version":"1.9",` + decodeBase + `,"assets":[{"type":"x","value":"v"}]}`))
-	f.Add([]byte(`{"version":"1.6",` + decodeBase + `}`))
+	f.Add([]byte(`{"version":"2.9",` + decodeBase + `,"assets":[{"type":"x","value":"v"}]}`))
+	f.Add([]byte(`{"version":"2.6",` + decodeBase + `}`))
 	f.Fuzz(func(t *testing.T, raw []byte) {
 		if len(raw) > 1<<16 {
 			return

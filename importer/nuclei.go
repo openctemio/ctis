@@ -14,9 +14,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/openctemio/ctis"
-	"github.com/openctemio/ctis/fingerprint"
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // nuclei results: JSON lines (nuclei -jsonl), or a JSON array (nuclei
@@ -24,14 +24,14 @@ import (
 
 func init() {
 	parsers[FormatNuclei] = parseNuclei
-	tools[FormatNuclei] = ctis.Tool{Name: "nuclei", Vendor: "ProjectDiscovery", InfoURL: "https://github.com/projectdiscovery/nuclei", Capabilities: []string{"dast"}}
+	tools[FormatNuclei] = ctis.Tool{Name: "nuclei", Vendor: "ProjectDiscovery", InfoURL: "https://github.com/projectdiscovery/nuclei", Techniques: []ctis.Technique{ctis.TechniqueDAST}}
 }
 
 type nucleiClass struct {
-	CVEID       json.RawMessage `json:"cve-id"`
+	CVE         json.RawMessage `json:"cve-id"`
 	CWEID       json.RawMessage `json:"cwe-id"`
 	CVSSMetrics string          `json:"cvss-metrics"`
-	CVSSScore   float64         `json:"cvss-score"`
+	CvssScore   float64         `json:"cvss-score"`
 	EPSSScore   float64         `json:"epss-score"`
 	EPSSPerc    float64         `json:"epss-percentile"`
 	CPE         string          `json:"cpe"`
@@ -64,7 +64,7 @@ type nucleiResult struct {
 	Path          string          `json:"path"`
 	MatchedAt     string          `json:"matched-at"`
 	IP            string          `json:"ip"`
-	Timestamp     string          `json:"timestamp"`
+	TS            string          `json:"timestamp"`
 	MatcherName   string          `json:"matcher-name"`
 	MatcherStatus bool            `json:"matcher-status"`
 	ExtractorName string          `json:"extractor-name"`
@@ -172,30 +172,35 @@ func (b *builder) nucleiRecord(raw []byte, ln int, ref string) error {
 	if v == "" {
 		return skip("result names no host: skipped")
 	}
-	id := b.nucleiHostID(t, v, res.IP)
 	f := nucleiFinding(&res, v)
+	id, err := b.nucleiAssetID(t, v, &res, f.Web != nil)
+	if err != nil {
+		return err
+	}
+	if id == "" {
+		return skip("result names no usable asset: skipped")
+	}
 	f.AssetRef = id
 	f.Native.RawRef = ref
+	if n := f.Network; n != nil && f.Web == nil {
+		b.service(id, n.Port, n.Transport, n.AppProtocol)
+	}
 	return b.finding(f)
 }
 
-// nucleiHostID returns the asset of a host, adding it on first use (ids
-// asset-1, asset-2, ... in order of first appearance).
-func (b *builder) nucleiHostID(t ctis.AssetType, v, ip string) string {
-	for i := range b.res.Report.Assets {
-		if a := &b.res.Report.Assets[i]; a.Type == t && a.Value == v {
-			return a.ID
-		}
-	}
-	id := "asset-" + strconv.Itoa(len(b.res.Report.Assets)+1)
-	a := ctis.Asset{ID: id, Type: t, Value: v, Name: v}
-	if p := net.ParseIP(strings.TrimSpace(ip)); p != nil && t != ctis.AssetTypeIPAddress {
+// nucleiAssetID returns the asset of a result, adding it on first use: the
+// web origin of an http result, else the host (a domain name or an address).
+func (b *builder) nucleiAssetID(t ctis.AssetType, v string, r *nucleiResult, web bool) (string, error) {
+	a := ctis.Asset{Type: t, Value: v, Name: v}
+	if p := net.ParseIP(strings.TrimSpace(r.IP)); p != nil && t != ctis.AssetTypeIPAddress {
 		a.Properties = ctis.Properties{"ip_address": p.String()}
 	}
-	if _, err := b.asset(a); err != nil {
-		return ""
+	if web {
+		if o, err := ctis.CanonicalOrigin(weburl.RedactURL(strings.TrimSpace(r.MatchedAt))); err == nil {
+			a = ctis.Asset{Type: ctis.AssetTypeWebOrigin, Value: o, Name: o, Properties: a.Properties}
+		}
 	}
-	return id
+	return b.asset(a)
 }
 
 // hostAsset names the host of a target (a host, host:port, an IP or a URL)
@@ -224,7 +229,7 @@ func hostAsset(target string) (ctis.AssetType, string) {
 	if ip := net.ParseIP(s); ip != nil {
 		return ctis.AssetTypeIPAddress, ip.String()
 	}
-	return ctis.AssetTypeDomain, strings.ToLower(s)
+	return ctis.AssetTypeDomainName, strings.ToLower(s)
 }
 
 func nucleiSeverity(s string) ctis.Severity {
@@ -274,7 +279,7 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 	f.EvidenceItems = nucleiEvidence(r)
 	if c := r.Info.Classification; c != nil {
 		vd := &ctis.VulnerabilityDetails{}
-		for _, id := range stringList(c.CVEID) {
+		for _, id := range stringList(c.CVE) {
 			addVulnID(vd, id)
 		}
 		for _, cw := range stringList(c.CWEID) {
@@ -282,31 +287,27 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 				vd.CWEIDs = appendUnique(vd.CWEIDs, id)
 			}
 		}
-		if len(vd.CWEIDs) > 0 {
-			vd.CWEID = vd.CWEIDs[0]
-		}
-		if c.CVSSScore > 0 && c.CVSSScore <= 10 {
+		if c.CvssScore > 0 && c.CvssScore <= 10 {
 			ver := ctis.CVSSVersionOfVector(c.CVSSMetrics)
 			if ver == "" {
 				ver = "3.1"
 			}
-			vd.CVSSScore, vd.CVSSVector, vd.CVSSVersion = c.CVSSScore, line(c.CVSSMetrics, ctis.MaxScoreVectorLen), ver
-			val := c.CVSSScore
-			addScore(&f, ctis.Score{System: ctis.ScoreSystemCVSS, Version: ver, Vector: vd.CVSSVector, Value: &val, Source: "nuclei-templates"})
+			val := c.CvssScore
+			addScore(&f, ctis.Score{System: ctis.ScoreSystemCVSS, Version: ver, Vector: line(c.CVSSMetrics, ctis.MaxScoreVectorLen), Value: &val, Source: "nuclei-templates"})
 		}
 		if c.EPSSScore > 0 && c.EPSSScore <= 1 {
-			vd.EPSSScore = c.EPSSScore
 			val := c.EPSSScore
 			addScore(&f, ctis.Score{System: ctis.ScoreSystemEPSS, Value: &val, Source: "first"})
 		}
 		if c.EPSSPerc > 0 && c.EPSSPerc <= 1 {
-			vd.EPSSPercentile = c.EPSSPerc
+			val := c.EPSSPerc
+			addScore(&f, ctis.Score{System: ctis.ScoreSystemEPSSPercentile, Value: &val, Source: "first"})
 		}
 		vd.CPE = line(c.CPE, capShort)
 		f.Vulnerability = vd
 	}
-	f.References = addRefs(f.References, stringList(r.Info.Reference)...)
-	f.References = addRefs(f.References, r.TemplateURL)
+	f.References = addWebRefs(f.References, stringList(r.Info.Reference)...)
+	f.References = addWebRefs(f.References, r.TemplateURL)
 	f.Tags = addTags(f.Tags, stringList(r.Info.Tags)...)
 	f.Tags = addTags(f.Tags, "nuclei", r.Type)
 	if rem := text(r.Info.Remediation, capRemediation); rem != "" {
@@ -314,15 +315,27 @@ func nucleiFinding(r *nucleiResult, host string) ctis.Finding {
 	}
 	port, _ := strconv.Atoi(r.Port.String())
 	if port > 0 && port <= 65535 {
-		f.Network = &ctis.NetworkLocation{Host: host, Port: port, Protocol: "tcp", Service: line(r.Scheme, 32)}
+		f.Network = &ctis.NetworkLocation{Port: port, Transport: ctis.TransportTCP, AppProtocol: ianaName(r.Scheme)}
 	}
-	f.Fingerprint = fingerprint.GenerateSAST(fingerprintHost(r.Host), r.TemplateID, 0, 0)
+	if f.Web != nil {
+		param := ""
+		if f.Web.Parameter != nil {
+			param = f.Web.Parameter.Name
+		}
+		f.Fingerprint = fingerprint.V2Web(r.TemplateID, f.Web.URL, param)
+	} else {
+		p := 0
+		if f.Network != nil {
+			p = f.Network.Port
+		}
+		f.Fingerprint = fingerprint.V2VA(host, p, "tcp", r.TemplateID)
+	}
 	var meta []string
 	for _, k := range sortedKeysOf(r.Info.Metadata) {
 		meta = append(meta, line(k, 64)+"="+line(string(r.Info.Metadata[k]), 256))
 	}
 	extras(&f, "impact", r.Info.Impact, "matcher_name", r.MatcherName, "extractor_name", r.ExtractorName,
-		"template_path", firstNonEmpty(r.TemplatePath, r.Template), "timestamp", r.Timestamp,
+		"template_path", firstNonEmpty(r.TemplatePath, r.Template), "timestamp", r.TS,
 		"target", line(weburl.RedactURL(strings.TrimSpace(r.Host)), 2048),
 		"template_metadata", strings.Join(meta, "\n"), "authors", strings.Join(stringList(r.Info.Author), ", "))
 	return f
@@ -374,7 +387,7 @@ func nucleiEvidence(r *nucleiResult) []ctis.EvidenceItem {
 	ex, ok := ctis.HTTPExchangeFromRaw(r.Request, r.Response, r.MatchedAt)
 	if ok {
 		ex.Label = line(r.TemplateID, ctis.MaxEvidenceLabelLen)
-		if t, err := time.Parse(time.RFC3339, strings.TrimSpace(r.Timestamp)); err == nil {
+		if t, err := time.Parse(time.RFC3339, strings.TrimSpace(r.TS)); err == nil {
 			t = t.UTC()
 			ex.CapturedAt = &t
 		}

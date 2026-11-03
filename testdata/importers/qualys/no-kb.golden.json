@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "generated_at": "2025-10-05T09:00:00Z"
     }
@@ -12,20 +12,36 @@
   "tool": {
     "name": "qualys",
     "vendor": "Qualys",
-    "capabilities": [
+    "techniques": [
       "va"
     ]
   },
   "assets": [
     {
-      "id": "host-203.0.113.33",
+      "id": "ip_address-203.0.113.33",
       "type": "ip_address",
       "value": "203.0.113.33",
       "name": "203.0.113.33",
+      "source_refs": [
+        {
+          "system": "qualys",
+          "id": "host_id:100003"
+        }
+      ],
       "properties": {
-        "ip_address": "203.0.113.33",
-        "qualys_host_id": "100003",
         "tracking_method": "IP"
+      }
+    },
+    {
+      "id": "service-203.0.113.33:22/tcp",
+      "type": "service",
+      "value": "203.0.113.33:22/tcp",
+      "name": "203.0.113.33:22/tcp",
+      "technical": {
+        "service": {
+          "port": 22,
+          "transport": "tcp"
+        }
       }
     }
   ],
@@ -35,11 +51,10 @@
       "title": "Qualys QID 38909",
       "severity": "high",
       "rule_id": "38909",
-      "asset_ref": "host-203.0.113.33",
+      "asset_ref": "ip_address-203.0.113.33",
       "network": {
-        "host": "203.0.113.33",
         "port": 22,
-        "protocol": "tcp"
+        "transport": "tcp"
       },
       "status": "open",
       "native": {
@@ -56,7 +71,20 @@
       },
       "source_extra": {
         "type": "Confirmed"
-      }
+      },
+      "source_refs": [
+        {
+          "system": "qualys",
+          "id": "38909"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-203.0.113.33",
+      "to_ref": "service-203.0.113.33:22/tcp"
     }
   ]
 }

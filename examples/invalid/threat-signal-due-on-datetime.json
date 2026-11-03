@@ -1,10 +1,31 @@
 {
-  "version": "1.6",
-  "metadata": {"timestamp": "2026-11-03T00:00:00Z"},
-  "findings": [{
-    "type": "vulnerability",
-    "title": "t",
-    "severity": "high",
-    "vulnerability": {"threat_signals": [{"type": "kev", "source": "kev-catalog", "due_on": "2026-11-10T00:00:00Z"}]}
-  }]
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7efb-a136-27e6c79cd4d7",
+    "generated_at": "2026-11-03T00:00:00Z"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "t",
+      "severity": "high",
+      "vulnerability": {
+        "threat_signals": [
+          {
+            "type": "kev",
+            "source": "kev-catalog",
+            "due_on": "2026-11-10T00:00:00Z"
+          }
+        ]
+      },
+      "asset_ref": "a"
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ]
 }

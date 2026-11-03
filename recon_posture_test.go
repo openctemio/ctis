@@ -35,28 +35,37 @@ func TestHTTPPostureAllowList(t *testing.T) {
 	if strings.Contains(string(raw), "SECRET") {
 		t.Fatalf("a disallowed value reached the report: %s", raw)
 	}
-	props := r.Assets[0].Properties
-	posture, ok := props[HTTPPostureProperty].(map[string]any)
-	if !ok {
-		t.Fatalf("no posture: %v", props)
+	sh := r.Assets[0].Technical.HTTP.SecurityHeaders
+	if sh == nil {
+		t.Fatalf("no security headers: %+v", r.Assets[0])
 	}
-	for _, k := range PostureKeys() {
-		if _, ok := posture[k]; !ok {
-			t.Errorf("%s missing", k)
+	for name, v := range map[string]string{
+		"hsts": sh.StrictTransportSecurity, "csp": sh.ContentSecurityPolicy, "xfo": sh.XFrameOptions, "xcto": sh.XContentTypeOptions,
+		"referrer": sh.ReferrerPolicy, "permissions": sh.PermissionsPolicy, "acao": sh.AccessControlAllowOrigin, "acac": sh.AccessControlAllowCredentials,
+	} {
+		if v == "" {
+			t.Errorf("%s missing", name)
 		}
 	}
-	if len(posture) != len(PostureKeys())+1 {
-		t.Errorf("unexpected keys: %v", posture)
+	cookies := sh.Cookies
+	if len(cookies) != 2 || cookies[0].Name != "a" || cookies[1].SameSite != "lax" || !cookies[1].IsSecure {
+		t.Errorf("cookies %+v", cookies)
 	}
-	cookies := posture["cookies"].([]map[string]any)
-	if len(cookies) != 2 || cookies[0]["name"] != "a" || cookies[1]["same_site"] != "lax" || cookies[1]["secure"] != true {
-		t.Errorf("cookies %v", cookies)
-	}
-	if _, has := cookies[0]["same_site"]; has {
+	if cookies[0].SameSite != "" {
 		t.Error("bogus same_site kept")
 	}
-	if cn := props["cnames"].([]string); len(cn) != 1 || cn[0] != "edge.cdn.net" {
-		t.Errorf("cnames %v", props["cnames"])
+	var cnames []string
+	for _, a := range r.Assets {
+		if a.Type == AssetTypeDomainName && a.Technical != nil && a.Technical.Domain != nil {
+			for _, rec := range a.Technical.Domain.DNSRecords {
+				if rec.Type == "CNAME" {
+					cnames = append(cnames, rec.Value)
+				}
+			}
+		}
+	}
+	if len(cnames) != 1 || cnames[0] != "edge.cdn.net" {
+		t.Errorf("cnames %v", cnames)
 	}
 }
 
@@ -81,7 +90,7 @@ func TestHTTPPostureHostile(t *testing.T) {
 	for i := 0; i < 60; i++ {
 		many = append(many, CookieFlagsInput{Name: "c" + strings.Repeat("x", i)})
 	}
-	if p := httpPosture(&ResponseHeadersInput{Cookies: many}); len(p["cookies"].([]map[string]any)) != MaxPostureCookies {
+	if p := httpPosture(&ResponseHeadersInput{Cookies: many}); len(p.Cookies) != MaxPostureCookies {
 		t.Error("cookie cap")
 	}
 	if httpPosture(nil) != nil || httpPosture(&ResponseHeadersInput{}) != nil {
@@ -101,11 +110,13 @@ func TestHTTPPostureHostile(t *testing.T) {
 
 func TestNoPostureWithoutHeaders(t *testing.T) {
 	r := probeReport(t, LiveHostInput{URL: "https://example.com", Host: "example.com", Scheme: "https"})
-	if _, ok := r.Assets[0].Properties[HTTPPostureProperty]; ok {
+	if r.Assets[0].Technical.HTTP.SecurityHeaders != nil {
 		t.Error("posture set without headers")
 	}
-	if _, ok := r.Assets[0].Properties["cnames"]; ok {
-		t.Error("cnames set without data")
+	for _, a := range r.Assets {
+		if a.Technical != nil && a.Technical.Domain != nil && len(a.Technical.Domain.DNSRecords) > 0 {
+			t.Error("cnames set without data")
+		}
 	}
 }
 
@@ -138,7 +149,7 @@ func TestCrawlFormEndpoints(t *testing.T) {
 		by[e.Method+" "+e.Template] = e
 	}
 	login := by["POST /session"]
-	if login.Kind != EndpointKindForm || login.Parent != "https://app.example.com/login" {
+	if login.Kind != EndpointKindForm || login.ParentURL != "https://app.example.com/login" {
 		t.Fatalf("login form: %+v", login)
 	}
 	hint := map[string]string{}
