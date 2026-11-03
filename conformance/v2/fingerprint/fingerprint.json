@@ -316,14 +316,14 @@
         "type": "secret",
         "file_path": "deploy/env.sh",
         "rule_id": "aws-access-token",
-        "secret_digest": "3d8a69365034c6b58e3224ec1785f3df461df9057f50cb14877ee7557d5a3fe9"
+        "secret_digest": "63c81236cb262bbe71f1a369efe443b12f0a43b5993c88f8f17b202c5245f239"
       },
       "parts": [
         "deploy/env.sh",
         "aws-access-token",
-        "3d8a69365034c6b58e3224ec1785f3df461df9057f50cb14877ee7557d5a3fe9"
+        "63c81236cb262bbe71f1a369efe443b12f0a43b5993c88f8f17b202c5245f239"
       ],
-      "expected": "ctis-fp/2:e4cbde1bc1b6654ce54504df88c1eb4ef1c2e05fdf56f3002f8dfc04dbc14e38"
+      "expected": "ctis-fp/2:8bed064f521332c2e54e71d80f97992b1390c62355d97f55c3b77f09b0e803d3"
     },
     {
       "name": "secret other secret same place",
@@ -332,14 +332,14 @@
         "type": "secret",
         "file_path": "deploy/env.sh",
         "rule_id": "aws-access-token",
-        "secret_digest": "7523048c8d9686812c4d14a572f659948bb9eb8e26834c26e23ffd58d7962604"
+        "secret_digest": "fc4ac80e042864f967414816107f511e7a304f822316d03d000d31e8cc2b72fb"
       },
       "parts": [
         "deploy/env.sh",
         "aws-access-token",
-        "7523048c8d9686812c4d14a572f659948bb9eb8e26834c26e23ffd58d7962604"
+        "fc4ac80e042864f967414816107f511e7a304f822316d03d000d31e8cc2b72fb"
       ],
-      "expected": "ctis-fp/2:462dd47b0bc1122d38e08822333e97a1809fe934254e92b45ce6db2930af43f2"
+      "expected": "ctis-fp/2:a9fb6aa0ca0e9707eb5e73a33df4cdd5154604ddbe588c6a1b37c65effdf03f6"
     },
     {
       "name": "secret zero digest is an error",

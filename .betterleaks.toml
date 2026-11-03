@@ -12,6 +12,8 @@ paths = [
     '''(^|/)testdata/''',
     '''_test\.go$''',
     '''(^|/)__tests__/''',
+    # Conformance vectors hold expected hashes and HMAC digests of throwaway strings.
+    '''(^|/)conformance/v2/''',
     '''\.test\.[jt]sx?$''',
     '''(^|/)(go\.sum|package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$''',
 ]
