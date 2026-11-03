@@ -27,6 +27,59 @@
       "input": "cpe:/a:vendor:product%21",
       "error": true,
       "note": "encoded 2.2 URIs are out of scope"
+    },
+    {
+      "input": "CPE:2.3:O:Microsoft:Windows_10:1909:*:*:*:*:*:x64:*",
+      "output": "cpe:2.3:o:microsoft:windows_10:1909:*:*:*:*:*:x64:*",
+      "note": "the whole string is lowercased"
+    },
+    {
+      "input": "cpe:2.3:a:vendor:product:-:*:*:*:*:*:*:*",
+      "output": "cpe:2.3:a:vendor:product:-:*:*:*:*:*:*:*",
+      "note": "NA (-) is kept"
+    },
+    {
+      "input": "cpe:2.3:a:vendor:product:1.0::*:*:*:*:*:*",
+      "output": "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
+      "note": "an empty component becomes *"
+    },
+    {
+      "input": "cpe:/o:Microsoft:Windows_10",
+      "output": "cpe:2.3:o:microsoft:windows_10:*:*:*:*:*:*:*:*",
+      "note": "a 2.2 URI: missing components become *"
+    },
+    {
+      "input": "cpe:/h:cisco:ios:15.0:sp1:en",
+      "output": "cpe:2.3:h:cisco:ios:15.0:sp1:en:*:*:*:*:*"
+    },
+    {
+      "input": "cpe:/a:vendor:product:1:2:3:4",
+      "output": "cpe:2.3:a:vendor:product:1:2:3:4:*:*:*:*",
+      "note": "seven 2.2 components is the most"
+    },
+    {
+      "input": "cpe:/a:vendor:product:1:2:3:4:5",
+      "error": true,
+      "note": "eight are refused"
+    },
+    {
+      "input": "cpe:/a:vendor:product:~1~2~3~4~5",
+      "error": true,
+      "note": "packed edition is out of scope"
+    },
+    {
+      "input": "cpe:2.3:a:vendor:prod\\*uct:1:*:*:*:*:*:*:*",
+      "output": "cpe:2.3:a:vendor:prod\\*uct:1:*:*:*:*:*:*:*",
+      "note": "an escaped character is kept"
+    },
+    {
+      "input": "cpe:2.3:a:vendor:product:1:*:*:*:*:*:*:*:*",
+      "error": true,
+      "note": "14 parts"
+    },
+    {
+      "input": "cpe:2.2:a:vendor:product:1:*:*:*:*:*:*:*",
+      "error": true
     }
   ]
 }

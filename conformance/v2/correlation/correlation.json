@@ -238,6 +238,112 @@
       "vulnerability_id": "rule:a/b/c:d:e",
       "location_key": "",
       "expected": "ctis-ck/1:5c7ecb42280a91db5b0f961db0ac76e2b73625e066a9d635fcf01ccb0c586002"
+    },
+    {
+      "name": "ghsa id when there is no cve",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "grype",
+      "finding": {
+        "rule_id": "x",
+        "vulnerability": {
+          "ids": [
+            {
+              "type": "osv",
+              "id": "GO-2023-1"
+            },
+            {
+              "type": "ghsa",
+              "id": "GHSA-jfh8-c2jp-5v3q"
+            }
+          ],
+          "purl": "pkg:golang/golang.org/x/net@v0.1.0"
+        }
+      },
+      "vulnerability_id": "GHSA-jfh8-c2jp-5v3q",
+      "location_key": "pkg:golang/golang.org/x/net",
+      "expected": "ctis-ck/1:fe576f1a48e326bbbec4c7eff6ef5f388f2033f0a58f4d23797495ef69366dc9"
+    },
+    {
+      "name": "vendor id when it is the only id",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "nessus",
+      "finding": {
+        "rule_id": "12345",
+        "vulnerability": {
+          "ids": [
+            {
+              "type": "vendor",
+              "id": "RHSA-2024:1234",
+              "source": "redhat"
+            }
+          ]
+        },
+        "network": {
+          "port": 22,
+          "transport": "tcp"
+        }
+      },
+      "vulnerability_id": "RHSA-2024:1234",
+      "location_key": "net:22/tcp",
+      "expected": "ctis-ck/1:fcdb845cad844dd705bac29016c3b19622f1c8f4615c75868878c4032a344f23"
+    },
+    {
+      "name": "a vulnerability without a usable id falls back to the rule",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "trivy",
+      "finding": {
+        "rule_id": "AVD-1",
+        "vulnerability": {
+          "ids": [
+            {
+              "type": "cve",
+              "id": "CVE-24-1"
+            }
+          ]
+        }
+      },
+      "vulnerability_id": "rule:trivy/AVD-1",
+      "location_key": "",
+      "expected": "ctis-ck/1:848c4ad0695ad5b53fbfbe40c29910fb6c3fc3d5325468511fcc5366873fcbc9"
+    },
+    {
+      "name": "the tool is trimmed",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": " nuclei ",
+      "finding": {
+        "rule_id": "xss-reflected",
+        "web": {
+          "url": "https://example.com/Search"
+        }
+      },
+      "vulnerability_id": "rule:nuclei/xss-reflected",
+      "location_key": "url:https://example.com/Search",
+      "expected": "ctis-ck/1:462d5e460997dbcd48871281b4fa4ee0fc1f4767cb5f542c792a3daf0cb6053b"
+    },
+    {
+      "name": "no asset key gives no correlation key",
+      "asset_key": "",
+      "tool": "trivy",
+      "finding": {
+        "rule_id": "x"
+      },
+      "vulnerability_id": "rule:trivy/x",
+      "location_key": "",
+      "expected": ""
+    },
+    {
+      "name": "a long location key is cut before hashing",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "semgrep",
+      "finding": {
+        "rule_id": "r",
+        "location": {
+          "path": "d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/x.go"
+        }
+      },
+      "vulnerability_id": "rule:semgrep/r",
+      "location_key": "file:d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/#3e86f5bded9abbbe1d665c545c6a0a26",
+      "expected": "ctis-ck/1:18d6a079a3ee6f132905bb9130673381efe8eab7e35f7491d02e6d1d0fa51392"
     }
   ]
 }

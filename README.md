@@ -9,7 +9,8 @@ This repository holds the standard and its reference implementation:
 
 - **Specification**: [`docs/spec.md`](docs/spec.md), normative and receiver-neutral, with a field reference generated from the schema.
 - **JSON Schemas**: [`schemas/v2/`](schemas/v2), JSON Schema 2020-12, with immutable versioned `$id`s (`https://schemas.openctem.io/ctis/2.0/report.json`; identifiers, never fetched).
-- **Conformance vectors**: [`conformance/v2/`](conformance/README.md), plain JSON every implementation runs: canonical forms, asset keys, location keys, preferred ids, fingerprints, correlation keys, valid and invalid documents.
+- **Conformance vectors**: [`conformance/v2/`](conformance/README.md), plain JSON every implementation runs: canonical forms, asset keys, location keys, preferred ids, fingerprints, correlation keys, web URLs, version-gated decoding, valid and invalid documents (one per validation rule), declarative mappings and the interop engine. A line protocol ([`conformance/PROTOCOL.md`](conformance/PROTOCOL.md)) and a harness (`scripts/conformance_harness.py`) run them against an implementation in any language.
+- **Language-neutral behaviour**: the normative algorithms behind the vectors: [canonical forms and derived keys](docs/canonical-forms.md), [fingerprints](docs/fingerprints.md), [decoding](docs/decoding.md), [validation rules beyond the schema](docs/validation-rules.md), the [declarative mapping language](docs/mapping.md) and the [interop mapping engine](docs/mapping-engine.md). [Porting CTIS to a new language](docs/porting.md) explains how a binding is generated from the schemas and tested with the harness; [`bindings/`](bindings/README.md) is reserved for them.
 - **Validator CLI**: `ctis`, a single static binary.
 - **Go reference implementation** (root package `github.com/openctemio/ctis/v2`): types, `Decode`, `Validate`, canonical forms, fingerprints (`fingerprint/`), severity mapping (`severity/`), web URLs (`weburl/`), importers (`importer/`) and converters. Zero dependencies outside the standard library.
 - **Interoperability adapters** (one Go module per standard format, `github.com/openctemio/ctis/v2/interop/<format>`): SARIF, CycloneDX, SPDX, CSAF, OpenVEX and OCSF, as declarative mapping files per upstream version with lossless passthrough, vendored upstream schemas and conformance vectors ([docs/interop.md](docs/interop.md)).
@@ -93,6 +94,7 @@ ctis validate --json a.json b.json         # one JSON object per file
 ctis validate --max-size 1048576 -         # standard input, at most 1 MiB (default 64 MiB)
 ctis canon domain_name WWW.Example.COM.    # canonical value and asset key
 ctis conformance conformance/v2            # run the conformance vectors
+ctis conformance --serve                   # the conformance protocol server (conformance/PROTOCOL.md)
 ```
 
 With another validator, load all eight schemas (`report.json` references the others by relative `$ref`) into a JSON Schema 2020-12 validator; [`scripts/validate_schemas.py`](scripts/validate_schemas.py) shows how with python-jsonschema. Schema validation checks shape; `Report.Validate()` also checks what a schema cannot (unique ids, references that resolve, canonical asset values, score ranges per system).

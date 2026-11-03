@@ -1,0 +1,40 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7000-8000-000000000001",
+    "generated_at": "2026-11-03T00:00:00Z"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "t",
+      "severity": "high",
+      "asset_ref": "a",
+      "evidence_items": [
+        {
+          "kind": "http_exchange",
+          "http": {
+            "request": {
+              "method": "GET",
+              "url": "https://example.com/",
+              "http_version": "HTTP/1.1",
+              "headers": [
+                {
+                  "name": "X",
+                  "value": "a\u009f"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ]
+}

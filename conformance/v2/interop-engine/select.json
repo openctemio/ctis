@@ -1,0 +1,217 @@
+{
+  "description": "Version detection (docs/mapping-engine.md, section Detection): the import mappings of one format, loaded side by side, and a document to the version of the mapping whose detect predicates all hold, or error category input when none does.",
+  "mappings": [
+    {
+      "apiVersion": "openctem.io/interop/v1",
+      "format": "example",
+      "version": "1.0",
+      "direction": "import",
+      "namespace": "org.example.interop",
+      "title": "Example 1.0",
+      "detect": [
+        {
+          "pointer": "/kind",
+          "equals": "example"
+        },
+        {
+          "pointer": "/specVersion",
+          "in": [
+            "1.0",
+            "1.1"
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "path": "/kind",
+          "ignored": "detected only"
+        }
+      ]
+    },
+    {
+      "apiVersion": "openctem.io/interop/v1",
+      "format": "example",
+      "version": "2.0",
+      "direction": "import",
+      "namespace": "org.example.interop",
+      "title": "Example 2.0",
+      "detect": [
+        {
+          "pointer": "/kind",
+          "equals": "example"
+        },
+        {
+          "pointer": "/specVersion",
+          "prefix": "2."
+        }
+      ],
+      "fields": [
+        {
+          "path": "/kind",
+          "ignored": "detected only"
+        }
+      ]
+    },
+    {
+      "apiVersion": "openctem.io/interop/v1",
+      "format": "example",
+      "version": "3.0",
+      "direction": "import",
+      "namespace": "org.example.interop",
+      "title": "Example 3.0",
+      "detect": [
+        {
+          "pointer": "/kind",
+          "equals": "example"
+        },
+        {
+          "pointer": "/meta/spec",
+          "matches": "^3\\.[0-9]+$"
+        },
+        {
+          "pointer": "/specVersion",
+          "absent": true
+        }
+      ],
+      "fields": [
+        {
+          "path": "/kind",
+          "ignored": "detected only"
+        }
+      ]
+    },
+    {
+      "apiVersion": "openctem.io/interop/v1",
+      "format": "example",
+      "version": "0.9",
+      "direction": "import",
+      "namespace": "org.example.interop",
+      "title": "Example 0.9",
+      "detect": [
+        {
+          "pointer": "/kind",
+          "equals": "example"
+        },
+        {
+          "pointer": "/specVersion",
+          "equals": "0.9",
+          "or_absent": true
+        },
+        {
+          "pointer": "/meta/spec",
+          "absent": true
+        }
+      ],
+      "fields": [
+        {
+          "path": "/kind",
+          "ignored": "detected only"
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "name": "equals and in",
+      "document": {
+        "kind": "example",
+        "specVersion": "1.1"
+      },
+      "expected": "1.0"
+    },
+    {
+      "name": "prefix",
+      "document": {
+        "kind": "example",
+        "specVersion": "2.5"
+      },
+      "expected": "2.0"
+    },
+    {
+      "name": "matches and absent",
+      "document": {
+        "kind": "example",
+        "meta": {
+          "spec": "3.2"
+        }
+      },
+      "expected": "3.0"
+    },
+    {
+      "name": "or_absent: the member may be missing",
+      "document": {
+        "kind": "example"
+      },
+      "expected": "0.9"
+    },
+    {
+      "name": "or_absent: present must match",
+      "document": {
+        "kind": "example",
+        "specVersion": "0.9"
+      },
+      "expected": "0.9"
+    },
+    {
+      "name": "no mapping holds",
+      "document": {
+        "kind": "example",
+        "specVersion": "9.0"
+      },
+      "error": {
+        "category": "input"
+      }
+    },
+    {
+      "name": "a number is compared as its JSON text",
+      "document": {
+        "kind": "example",
+        "specVersion": 2.5
+      },
+      "expected": "2.0"
+    },
+    {
+      "name": "an object is not a scalar",
+      "document": {
+        "kind": {
+          "x": "example"
+        },
+        "specVersion": "1.0"
+      },
+      "error": {
+        "category": "input"
+      }
+    },
+    {
+      "name": "null counts as absent",
+      "document": {
+        "kind": "example",
+        "specVersion": null
+      },
+      "expected": "0.9"
+    },
+    {
+      "name": "a pointer never goes inside an array",
+      "document": {
+        "kind": "example",
+        "meta": [
+          {
+            "spec": "3.1"
+          }
+        ]
+      },
+      "expected": "0.9"
+    },
+    {
+      "name": "the first mapping, in the order given, whose predicates all hold wins",
+      "document": {
+        "kind": "example",
+        "specVersion": "2.0",
+        "meta": {
+          "spec": "3.0"
+        }
+      },
+      "expected": "2.0"
+    }
+  ]
+}

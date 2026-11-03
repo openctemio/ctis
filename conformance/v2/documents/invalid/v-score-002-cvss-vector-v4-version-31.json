@@ -1,0 +1,29 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7000-8000-000000000001",
+    "generated_at": "2026-11-03T00:00:00Z"
+  },
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "t",
+      "severity": "high",
+      "asset_ref": "a",
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ]
+}

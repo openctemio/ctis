@@ -197,6 +197,472 @@
         "value": "Billing Portal"
       },
       "output": "Billing Portal"
+    },
+    {
+      "input": {
+        "type": "api",
+        "value": "  Orders API v2 "
+      },
+      "output": "Orders API v2",
+      "note": "no structured form: trimmed"
+    },
+    {
+      "input": {
+        "type": "mobile_app",
+        "value": "com.example.app"
+      },
+      "output": "com.example.app"
+    },
+    {
+      "input": {
+        "type": "saas_application",
+        "value": "Example CRM tenant 42"
+      },
+      "output": "Example CRM tenant 42"
+    },
+    {
+      "input": {
+        "type": "ai_model",
+        "value": "hf:org/model@rev"
+      },
+      "output": "hf:org/model@rev"
+    },
+    {
+      "input": {
+        "type": "cloud_account",
+        "value": "123456789012"
+      },
+      "output": "123456789012",
+      "note": "another provider id is kept as given"
+    },
+    {
+      "input": {
+        "type": "cloud_account",
+        "value": "arn:aws:organizations::123456789012:account/o-abc/123456789012"
+      },
+      "output": "arn:aws:organizations::123456789012:account/o-abc/123456789012"
+    },
+    {
+      "input": {
+        "type": "storage",
+        "value": "ARN:AWS:S3:::Logs-Bucket"
+      },
+      "output": "arn:aws:s3:::Logs-Bucket",
+      "note": "cloud types share the cloud id rules"
+    },
+    {
+      "input": {
+        "type": "database",
+        "value": "/subscriptions/S1/resourceGroups/RG/providers/Microsoft.Sql/servers/SQL1/databases/DB1"
+      },
+      "output": "/subscriptions/s1/resourcegroups/rg/providers/microsoft.sql/servers/sql1/databases/db1"
+    },
+    {
+      "input": {
+        "type": "serverless",
+        "value": "//CloudFunctions.googleapis.com/projects/p/locations/l/functions/F"
+      },
+      "output": "//cloudfunctions.googleapis.com/projects/p/locations/l/functions/F"
+    },
+    {
+      "input": {
+        "type": "container_registry",
+        "value": "Registry.Example.com"
+      },
+      "output": "Registry.Example.com",
+      "note": "a container registry is free-form: case kept"
+    },
+    {
+      "input": {
+        "type": "container",
+        "value": "3f4e5d6c7b8a"
+      },
+      "output": "3f4e5d6c7b8a"
+    },
+    {
+      "input": {
+        "type": "kubernetes_cluster",
+        "value": "prod-eu-1"
+      },
+      "output": "prod-eu-1"
+    },
+    {
+      "input": {
+        "type": "kubernetes_namespace",
+        "value": "prod-eu-1/payments"
+      },
+      "output": "prod-eu-1/payments"
+    },
+    {
+      "input": {
+        "type": "kubernetes_workload",
+        "value": "prod-eu-1/payments/deployment/api"
+      },
+      "output": "prod-eu-1/payments/deployment/api"
+    },
+    {
+      "input": {
+        "type": "endpoint_device",
+        "value": "LAPTOP-1234"
+      },
+      "output": "LAPTOP-1234"
+    },
+    {
+      "input": {
+        "type": "iot_device",
+        "value": "camera-07"
+      },
+      "output": "camera-07"
+    },
+    {
+      "input": {
+        "type": "ot_device",
+        "value": "PLC-Line3"
+      },
+      "output": "PLC-Line3"
+    },
+    {
+      "input": {
+        "type": "network_device",
+        "value": "core-sw-01"
+      },
+      "output": "core-sw-01"
+    },
+    {
+      "input": {
+        "type": "vpc",
+        "value": "vpc-0abc"
+      },
+      "output": "vpc-0abc"
+    },
+    {
+      "input": {
+        "type": "subnet",
+        "value": "subnet-0abc"
+      },
+      "output": "subnet-0abc"
+    },
+    {
+      "input": {
+        "type": "load_balancer",
+        "value": "lb-prod"
+      },
+      "output": "lb-prod"
+    },
+    {
+      "input": {
+        "type": "firewall",
+        "value": "fw-edge-1"
+      },
+      "output": "fw-edge-1"
+    },
+    {
+      "input": {
+        "type": "smart_contract",
+        "value": "eip155:1:0xABCDEF0123456789abcdef0123456789ABCDEF01"
+      },
+      "output": "eip155:1:0xABCDEF0123456789abcdef0123456789ABCDEF01",
+      "note": "web3 values are free-form: case kept"
+    },
+    {
+      "input": {
+        "type": "wallet",
+        "value": "0xabc"
+      },
+      "output": "0xabc"
+    },
+    {
+      "input": {
+        "type": "nft_collection",
+        "value": "eip155:1:0xabc"
+      },
+      "output": "eip155:1:0xabc"
+    },
+    {
+      "input": {
+        "type": "defi_protocol",
+        "value": "Example Swap"
+      },
+      "output": "Example Swap"
+    },
+    {
+      "input": {
+        "type": "token",
+        "value": "eip155:1:0xabc"
+      },
+      "output": "eip155:1:0xabc"
+    },
+    {
+      "input": {
+        "type": "blockchain",
+        "value": "eip155:1"
+      },
+      "output": "eip155:1"
+    },
+    {
+      "input": {
+        "type": "unclassified",
+        "value": "anything at all"
+      },
+      "output": "anything at all"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "tab\there"
+      },
+      "error": true,
+      "note": "a control character inside is refused"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "   "
+      },
+      "error": true,
+      "note": "empty after trimming"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "bidi‮name"
+      },
+      "error": true,
+      "note": "U+202E is refused"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "line sep"
+      },
+      "error": true,
+      "note": "U+2028 is refused"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "c1x"
+      },
+      "error": true,
+      "note": "a C1 control inside is refused"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "nbsp inside"
+      },
+      "output": "nbsp inside",
+      "note": "U+00A0 inside is kept"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "64500"
+      },
+      "output": "AS64500",
+      "note": "a bare number"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "AS4294967295"
+      },
+      "output": "AS4294967295",
+      "note": "the largest 32-bit number"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "AS4294967296"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "AS064500"
+      },
+      "error": true,
+      "note": "leading zero"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "As64500"
+      },
+      "error": true,
+      "note": "only AS or as"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "AS 64500"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "[2001:db8::1]"
+      },
+      "output": "2001:db8::1",
+      "note": "brackets are removed from an address"
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "fe80::1%eth0"
+      },
+      "output": "fe80::1"
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "bücher.example"
+      },
+      "output": "xn--bcher-kva.example"
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "*.example.com"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "[fe80::1%eth0]:22/tcp"
+      },
+      "output": "[fe80::1]:22/tcp"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "example.com:0443/tcp"
+      },
+      "output": "example.com:443/tcp",
+      "note": "the port is a decimal number"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "example.com:443/tcp/x"
+      },
+      "error": true,
+      "note": "the transport is everything after the first slash"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "2001:db8::1:443/tcp"
+      },
+      "output": "[2001:db8::1]:443/tcp",
+      "note": "unbracketed: the last colon separates the port"
+    },
+    {
+      "input": {
+        "type": "cloud_resource",
+        "value": "//compute.googleapis.com/projects/P/zones/Z/instances/I/"
+      },
+      "output": "//compute.googleapis.com/projects/P/zones/Z/instances/I"
+    },
+    {
+      "input": {
+        "type": "cloud_resource",
+        "value": "arn:aws:s3"
+      },
+      "error": true,
+      "note": "an arn: prefix commits to the ARN rules"
+    },
+    {
+      "input": {
+        "type": "cloud_resource",
+        "value": "ocid1.instance.oc1.phx.abc"
+      },
+      "output": "ocid1.instance.oc1.phx.abc"
+    },
+    {
+      "input": {
+        "type": "cloud_resource",
+        "value": "line\nbreak"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "repository",
+        "value": "GitHub.com/Org/Repo"
+      },
+      "output": "github.com/org/repo"
+    },
+    {
+      "input": {
+        "type": "package",
+        "value": "pkg:PyPI/Foo_Bar@1.0"
+      },
+      "output": "pkg:pypi/foo-bar",
+      "note": "the versionless identity"
+    },
+    {
+      "input": {
+        "type": "package",
+        "value": "not-a-purl"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "certificate",
+        "value": "AB:CD"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "type": "container_image",
+        "value": "nginx:1.25"
+      },
+      "output": "docker.io/library/nginx",
+      "note": "without a digest the value names the repository"
+    },
+    {
+      "input": {
+        "type": "ip_range",
+        "value": "::ffff:10.0.0.0/104"
+      },
+      "output": "10.0.0.0/8"
+    },
+    {
+      "input": {
+        "type": "ip_address",
+        "value": "fe80::1%eth0"
+      },
+      "output": "fe80::1"
+    },
+    {
+      "input": {
+        "type": "web_origin",
+        "value": "https://example.com/path"
+      },
+      "output": "https://example.com",
+      "note": "the path is dropped"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "example.com:+443/tcp"
+      },
+      "output": "example.com:443/tcp",
+      "note": "the port text may carry a sign"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "ASas64500"
+      },
+      "output": "AS64500",
+      "note": "AS, then as, is removed"
     }
   ]
 }

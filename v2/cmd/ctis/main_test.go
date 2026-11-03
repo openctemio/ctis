@@ -147,3 +147,24 @@ func TestConformanceCommand(t *testing.T) {
 		t.Errorf("failing vectors: %d %q", code, out)
 	}
 }
+
+// "conformance --serve" answers the line protocol of conformance/PROTOCOL.md.
+func TestConformanceServe(t *testing.T) {
+	in := `{"id":1,"op":"info"}
+{"id":2,"op":"canonical","input":{"function":"CanonicalDomain","value":"Example.COM."}}
+{"id":3,"op":"validate","input":{"text":"{}"}}
+`
+	code, out, errOut := exec(t, in, "conformance", "--serve")
+	if code != 0 {
+		t.Fatalf("exit %d: %s", code, errOut)
+	}
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("want 3 answers, got %q", out)
+	}
+	for i, want := range []string{`"implementation":"ctis-go"`, `"output":"example.com"`, `"category":"version"`} {
+		if !strings.Contains(lines[i], want) {
+			t.Errorf("answer %d %q lacks %s", i+1, lines[i], want)
+		}
+	}
+}

@@ -1,5 +1,5 @@
 {
- "description": "Every document and the result a conforming implementation must reach: valid, or invalid with the problem category (version, decode, validate) and a substring of its message. schema_level false marks a document schemas/v2 alone accepts and only semantic validation refuses. Paths are relative to this file.",
+ "description": "Every document and the result a conforming implementation must reach: valid, or invalid with the problem category (version, decode, validate) and a substring of its message. schema_level false marks a document schemas/v2 alone accepts and only semantic validation refuses. rule names the rule of docs/validation-rules.md (V-<AREA>-<NNN>) the document breaks; it is set on documents that break exactly one such rule. Paths are relative to this file.",
  "documents": [
   {
    "file": "valid/minimal.json",
@@ -10,28 +10,32 @@
    "result": "invalid",
    "category": "validate",
    "error": "assets[0]: value \"WWW.Example.com\" is not canonical for type domain_na",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-CANON-001"
   },
   {
    "file": "invalid/dangling-asset-ref.json",
    "result": "invalid",
    "category": "validate",
    "error": "findings[0]: asset_ref \"missing\" names no asset in this report",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-REF-006"
   },
   {
    "file": "invalid/duplicate-asset-id.json",
    "result": "invalid",
    "category": "validate",
    "error": "assets[1]: duplicate id \"a\"",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-REF-001"
   },
   {
    "file": "invalid/version-minor-future.json",
    "result": "invalid",
    "category": "version",
    "error": "unsupported version \"2.99\"",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-VER-001"
   },
   {
    "file": "../../../examples/assets-attack-surface.json",
@@ -116,7 +120,8 @@
    "result": "invalid",
    "category": "validate",
    "error": "findings[0]: scores[0]: value 97.5 is outside 0-1",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-SCORE-005"
   },
   {
    "file": "../../../examples/invalid/evidence-header-name.json",
@@ -249,21 +254,24 @@
    "result": "invalid",
    "category": "validate",
    "error": "findings[0]: rule_ref \"r-1\" names no rule in this report",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-REF-008"
   },
   {
    "file": "invalid/rule-ref-rule-id-differs.json",
    "result": "invalid",
    "category": "validate",
    "error": "findings[0]: rule_id \"py.sqli\" differs from rule_id \"py.xss\" of rule \"r-1\"",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-RULE-002"
   },
   {
    "file": "invalid/rule-duplicate-id.json",
    "result": "invalid",
    "category": "validate",
    "error": "rules[1]: duplicate id \"r-1\"",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-REF-004"
   },
   {
    "file": "valid/rule-catalog.json",
@@ -278,7 +286,1176 @@
    "result": "invalid",
    "category": "validate",
    "error": "relationships[0]: has_address must point to an ip_address asset",
-   "schema_level": false
+   "schema_level": false,
+   "rule": "V-REL-002"
+  },
+  {
+   "file": "invalid/v-meta-001-generated-at-zero.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.generated_at is required",
+   "schema_level": false,
+   "rule": "V-META-001"
+  },
+  {
+   "file": "invalid/v-meta-002-ended-before-started.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.ended_at is before metadata.started_at",
+   "schema_level": false,
+   "rule": "V-META-002"
+  },
+  {
+   "file": "invalid/v-text-001-tool-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "tool.name is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-finding-tool-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0].tool.name is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-tool-content-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "tool.content[0].name is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-branch-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.branch.name is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-source-ref-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.source_refs[0].id is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-asset-value.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: value is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-technology-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technologies[0].name is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-endpoint-technology-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: technologies[0].name is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-owner-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: owners[0].ref is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-finding-title.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: title is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-rule-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "rules[0]: rule_id is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-threat-signal-source.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "vulnerability.threat_signals[0].source is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-dependency-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "dependencies[0]: name is required",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-endpoint-param-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: params[0]: name must be 1 to 128 bytes without control ch",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-001-web-parameter-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: parameter: name must be 1 to 128 bytes without control",
+   "schema_level": false,
+   "rule": "V-TEXT-001"
+  },
+  {
+   "file": "invalid/v-text-002-source-ref-id-c0.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.source_refs[0].id has a control character",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-source-ref-id-c1.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.source_refs[0].id has a control character",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-source-ref-id-line-separator.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.source_refs[0].id has a control character",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-source-ref-id-bidi-override.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.source_refs[0].id has a control character",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-endpoint-path.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: path must start with '/', have no query or fragment, no con",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-endpoint-template.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: invalid template",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-endpoint-content-type.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: invalid content_type",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-endpoint-param-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: params[0]: name must be 1 to 128 bytes without control ch",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-web-parameter-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: parameter: name must be 1 to 128 bytes without control",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-evidence-label.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: label longer than 200 or with control characters",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-evidence-header-value.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http.request.headers[0].value longer than 8192 bytes or",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-evidence-request-url.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http.request.url longer than 8192 bytes or with contr",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-evidence-response-reason.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http.response.reason",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-evidence-file-path.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: file.path must be 1 to 4096 bytes without control char",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-002-evidence-artifact-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: artifact size or ref",
+   "schema_level": false,
+   "rule": "V-TEXT-002"
+  },
+  {
+   "file": "invalid/v-text-003-target.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[0].target longer than 2048 bytes",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-asset-value.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: value longer than 2048",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-source-ref-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.source_refs[0].id longer than 256",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-endpoint-path.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: path must start with '/', have no query or fragment, no con",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-endpoint-content-type.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: invalid content_type",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-endpoint-param-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: params[0]: name must be 1 to 128 bytes without control ch",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-web-parameter-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: parameter: name must be 1 to 128 bytes without control",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-body.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http.request.body longer than 65536 bytes",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-text.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: text longer than 65536 bytes",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-header-value.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http.request.headers[0].value longer than 8192 bytes or",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-request-url.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http.request.url longer than 8192 bytes or with contr",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-command.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: command longer than 8192 bytes",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-extracted.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: extracted[0] longer than 1024 bytes",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-file-path.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: file.path must be 1 to 4096 bytes without control char",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-text-003-evidence-file-snippet.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: file.snippet longer than 65536 bytes",
+   "schema_level": false,
+   "rule": "V-TEXT-003"
+  },
+  {
+   "file": "invalid/v-url-001-bad-percent-host.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0].references[0] \"http://%zz/\" is not an http or https URL",
+   "schema_level": false,
+   "rule": "V-URL-001"
+  },
+  {
+   "file": "invalid/v-url-001-unclosed-ipv6.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0].references[0] \"http://[::1/\" is not an http or https URL",
+   "schema_level": false,
+   "rule": "V-URL-001"
+  },
+  {
+   "file": "invalid/v-url-001-control-character.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0].references[0] \"http://example.com/",
+   "schema_level": false,
+   "rule": "V-URL-001"
+  },
+  {
+   "file": "invalid/v-url-001-branch-repository-url.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.branch.repository_url \"http://%zz/\" is not an http or https URL",
+   "schema_level": false,
+   "rule": "V-URL-001"
+  },
+  {
+   "file": "invalid/v-ref-002-duplicate-finding-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[1]: duplicate id \"f\"",
+   "schema_level": false,
+   "rule": "V-REF-002"
+  },
+  {
+   "file": "invalid/v-ref-003-duplicate-dependency-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "dependencies[1]: duplicate id \"d\"",
+   "schema_level": false,
+   "rule": "V-REF-003"
+  },
+  {
+   "file": "invalid/v-ref-005-duplicate-endpoint-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[1]: duplicate id \"e1\"",
+   "schema_level": false,
+   "rule": "V-REF-005"
+  },
+  {
+   "file": "invalid/v-ref-007-dangling-dependency-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: dependency_ref \"d\" names no dependency in this report",
+   "schema_level": false,
+   "rule": "V-REF-007"
+  },
+  {
+   "file": "invalid/v-ref-009-dangling-endpoint-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: endpoint_ref \"e9\" names no endpoint in this report",
+   "schema_level": false,
+   "rule": "V-REF-009"
+  },
+  {
+   "file": "invalid/v-ref-010-dangling-dependency-asset-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "dependencies[0]: asset_ref \"zz\" names no asset in this report",
+   "schema_level": false,
+   "rule": "V-REF-010"
+  },
+  {
+   "file": "invalid/v-ref-011-dangling-depends-on.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "dependencies[0]: depends_on[0] \"zz\" names no dependency in this report",
+   "schema_level": false,
+   "rule": "V-REF-011"
+  },
+  {
+   "file": "invalid/v-ref-012-dangling-from-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: from_ref \"zz\" names no asset in this report",
+   "schema_level": false,
+   "rule": "V-REF-012"
+  },
+  {
+   "file": "invalid/v-ref-012-dangling-to-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: to_ref \"zz\" names no asset in this report",
+   "schema_level": false,
+   "rule": "V-REF-012"
+  },
+  {
+   "file": "invalid/v-ref-013-dangling-origin-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: origin_ref \"zz\" names no asset in this report",
+   "schema_level": false,
+   "rule": "V-REF-013"
+  },
+  {
+   "file": "invalid/v-rule-001-rule-ref-without-rule-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: rule_id is required when rule_ref is set",
+   "schema_level": false,
+   "rule": "V-RULE-001"
+  },
+  {
+   "file": "invalid/v-rule-003-content-path-newline.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "rules[0]: content_path has a control character",
+   "schema_level": false,
+   "rule": "V-RULE-003"
+  },
+  {
+   "file": "invalid/v-rule-003-content-path-nul.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "rules[0]: content_path has a control character",
+   "schema_level": false,
+   "rule": "V-RULE-003"
+  },
+  {
+   "file": "invalid/v-canon-001-ip-no-canonical-form.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: value \"999.1.1.1\" has no canonical form for type ip_address",
+   "schema_level": false,
+   "rule": "V-CANON-001"
+  },
+  {
+   "file": "invalid/v-canon-001-host-not-punycode.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "is not canonical for type host (want \"xn--x-9fa\")",
+   "schema_level": false,
+   "rule": "V-CANON-001"
+  },
+  {
+   "file": "invalid/v-canon-001-service-uppercase.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "is not canonical for type service (want \"web01.example.com:443/tcp\")",
+   "schema_level": false,
+   "rule": "V-CANON-001"
+  },
+  {
+   "file": "invalid/v-canon-001-package-with-version.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "is not canonical for type package (want \"pkg:npm/lodash\")",
+   "schema_level": false,
+   "rule": "V-CANON-001"
+  },
+  {
+   "file": "invalid/v-canon-002-certificate-fingerprint-differs.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technical.certificate.sha256_fingerprint differs from the asset val",
+   "schema_level": false,
+   "rule": "V-CANON-002"
+  },
+  {
+   "file": "invalid/v-canon-003-service-port-differs.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technical.service port and transport differ from the asset value",
+   "schema_level": false,
+   "rule": "V-CANON-003"
+  },
+  {
+   "file": "invalid/v-canon-003-service-transport-differs.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technical.service port and transport differ from the asset value",
+   "schema_level": false,
+   "rule": "V-CANON-003"
+  },
+  {
+   "file": "invalid/v-canon-004-dependency-purl.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "dependencies[0]: purl \"pkg:npm/%zz\" is not a package URL",
+   "schema_level": false,
+   "rule": "V-CANON-004"
+  },
+  {
+   "file": "invalid/v-canon-004-vulnerability-purl.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vulnerability.purl \"pkg:npm\" is not a package URL",
+   "schema_level": false,
+   "rule": "V-CANON-004"
+  },
+  {
+   "file": "invalid/v-canon-005-origin-default-port.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: origin \"https://example.com:443\" is not a normalised origin",
+   "schema_level": false,
+   "rule": "V-CANON-005"
+  },
+  {
+   "file": "invalid/v-canon-005-origin-uppercase-host.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: origin \"https://EXAMPLE.com\" is not a normalised origin",
+   "schema_level": false,
+   "rule": "V-CANON-005"
+  },
+  {
+   "file": "invalid/v-canon-005-origin-trailing-slash.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: origin \"https://example.com/\" is not a normalised origin",
+   "schema_level": false,
+   "rule": "V-CANON-005"
+  },
+  {
+   "file": "invalid/v-asset-001-identity-without-kind.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: identity needs technical.identity.kind",
+   "schema_level": false,
+   "rule": "V-ASSET-001"
+  },
+  {
+   "file": "invalid/v-asset-002-network-device-on-host.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technical.network_device is only for network_device assets, not",
+   "schema_level": false,
+   "rule": "V-ASSET-002"
+  },
+  {
+   "file": "invalid/v-asset-003-last-seen-before-first-seen.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: last_seen_at is before first_seen_at",
+   "schema_level": false,
+   "rule": "V-ASSET-003"
+  },
+  {
+   "file": "invalid/v-asset-004-cookie-name-separator.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technical.http.security_headers.cookies[0].name is not a cooki",
+   "schema_level": false,
+   "rule": "V-ASSET-004"
+  },
+  {
+   "file": "invalid/v-asset-004-cookie-name-non-ascii.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: technical.http.security_headers.cookies[0].name is not a cooki",
+   "schema_level": false,
+   "rule": "V-ASSET-004"
+  },
+  {
+   "file": "invalid/v-cov-001-duplicate-target.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[1]: duplicate target \"example.com\"",
+   "schema_level": false,
+   "rule": "V-COV-001"
+  },
+  {
+   "file": "invalid/v-cov-002-done-with-class.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[0]: state done takes no class or cause",
+   "schema_level": false,
+   "rule": "V-COV-002"
+  },
+  {
+   "file": "invalid/v-cov-002-unfinished-with-cause.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[0]: state unfinished takes no class or cause",
+   "schema_level": false,
+   "rule": "V-COV-002"
+  },
+  {
+   "file": "invalid/v-cov-003-failed-refused.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[0]: class \"refused\" does not fit state failed",
+   "schema_level": false,
+   "rule": "V-COV-003"
+  },
+  {
+   "file": "invalid/v-cov-003-skipped-timeout.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[0]: class \"timeout\" does not fit state skipped",
+   "schema_level": false,
+   "rule": "V-COV-003"
+  },
+  {
+   "file": "invalid/v-cov-003-failed-without-class.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.targets[0]: class \"\" does not fit state failed",
+   "schema_level": false,
+   "rule": "V-COV-003"
+  },
+  {
+   "file": "invalid/v-cov-004-segment-index.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.segment.index 2 is outside 0-1",
+   "schema_level": false,
+   "rule": "V-COV-004"
+  },
+  {
+   "file": "invalid/v-cov-005-gone-without-reason.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: state gone needs a state_reason",
+   "schema_level": false,
+   "rule": "V-COV-005"
+  },
+  {
+   "file": "invalid/v-cov-006-reason-without-gone.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: state_reason is only for state gone",
+   "schema_level": false,
+   "rule": "V-COV-006"
+  },
+  {
+   "file": "invalid/v-cov-006-reason-without-state.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "assets[0]: state_reason is only for state gone",
+   "schema_level": false,
+   "rule": "V-COV-006"
+  },
+  {
+   "file": "invalid/v-find-001-due-on-not-a-date.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "vulnerability.threat_signals[0].due_on \"2026-02-30\" is not a YYYY-MM-DD date",
+   "schema_level": false,
+   "rule": "V-FIND-001"
+  },
+  {
+   "file": "invalid/v-find-002-advisory-without-id-or-url.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: remediation.advisories[0] needs an id or a url",
+   "schema_level": false,
+   "rule": "V-FIND-002"
+  },
+  {
+   "file": "invalid/v-find-003-source-extra-size.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: source_extra is 36018 bytes, at most 32768",
+   "schema_level": false,
+   "rule": "V-FIND-003"
+  },
+  {
+   "file": "invalid/v-find-003-source-extra-size-multibyte.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: source_extra is 36012 bytes, at most 32768",
+   "schema_level": false,
+   "rule": "V-FIND-003"
+  },
+  {
+   "file": "invalid/v-find-004-source-extra-key-control.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: source_extra key \"a\\x01\" is empty, longer than 128 or holds",
+   "schema_level": false,
+   "rule": "V-FIND-004"
+  },
+  {
+   "file": "invalid/v-find-004-source-extra-key-empty.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: source_extra key \"\" is empty, longer than 128 or holds",
+   "schema_level": false,
+   "rule": "V-FIND-004"
+  },
+  {
+   "file": "invalid/v-score-001-cvss-without-version.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: cvss score needs version 2.0, 3.0, 3.1 or 4.0",
+   "schema_level": false,
+   "rule": "V-SCORE-001"
+  },
+  {
+   "file": "invalid/v-score-002-cvss-vector-v4-version-31.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: vector does not match cvss version 3.1",
+   "schema_level": false,
+   "rule": "V-SCORE-002"
+  },
+  {
+   "file": "invalid/v-score-002-cvss-vector-v2-version-31.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: vector does not match cvss version 3.1",
+   "schema_level": false,
+   "rule": "V-SCORE-002"
+  },
+  {
+   "file": "invalid/v-score-002-cvss-vector-unknown-version-31.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: vector does not match cvss version 3.1",
+   "schema_level": false,
+   "rule": "V-SCORE-002"
+  },
+  {
+   "file": "invalid/v-score-002-cvss-vector-v31-version-20.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: vector does not match cvss version 2.0",
+   "schema_level": false,
+   "rule": "V-SCORE-002"
+  },
+  {
+   "file": "invalid/v-score-003-cvss-without-value-or-vector.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: cvss score needs a value or a vector",
+   "schema_level": false,
+   "rule": "V-SCORE-003"
+  },
+  {
+   "file": "invalid/v-score-004-cvss-value-range.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: value 11 is outside 0-10",
+   "schema_level": false,
+   "rule": "V-SCORE-004"
+  },
+  {
+   "file": "invalid/v-score-005-epss-value-range.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: value 1.5 is outside 0-1",
+   "schema_level": false,
+   "rule": "V-SCORE-005"
+  },
+  {
+   "file": "invalid/v-score-005-epss-percentile-negative.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: value -0.1 is outside 0-1",
+   "schema_level": false,
+   "rule": "V-SCORE-005"
+  },
+  {
+   "file": "invalid/v-score-006-ssvc-with-value.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: ssvc has no numeric value",
+   "schema_level": false,
+   "rule": "V-SCORE-006"
+  },
+  {
+   "file": "invalid/v-score-007-ssvc-without-vector-or-label.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: ssvc needs a vector or a label",
+   "schema_level": false,
+   "rule": "V-SCORE-007"
+  },
+  {
+   "file": "invalid/v-score-008-vendor-without-value-or-label.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: vendor score needs a value or a label",
+   "schema_level": false,
+   "rule": "V-SCORE-008"
+  },
+  {
+   "file": "invalid/v-score-009-vendor-value-range.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: scores[0]: value 1e+12 is outside -1e+06-1e+06",
+   "schema_level": false,
+   "rule": "V-SCORE-009"
+  },
+  {
+   "file": "invalid/v-vuln-001-cve-type-ghsa-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vulnerability.ids[0] (\"cve\", \"GHSA-xxxx-xxxx-xxxx\") is not a v",
+   "schema_level": false,
+   "rule": "V-VULN-001"
+  },
+  {
+   "file": "invalid/v-vuln-001-ghsa-type-cve-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vulnerability.ids[0] (\"ghsa\", \"CVE-2024-1234\") is not a valid",
+   "schema_level": false,
+   "rule": "V-VULN-001"
+  },
+  {
+   "file": "invalid/v-vuln-001-cve-short-year.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vulnerability.ids[0] (\"cve\", \"CVE-24-1\") is not a valid id of",
+   "schema_level": false,
+   "rule": "V-VULN-001"
+  },
+  {
+   "file": "invalid/v-vex-001-justification-not-not-affected.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vex.justification is only for status not_affected",
+   "schema_level": false,
+   "rule": "V-VEX-001"
+  },
+  {
+   "file": "invalid/v-vex-002-not-affected-without-reason.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: vex status not_affected needs a justification or a statement",
+   "schema_level": false,
+   "rule": "V-VEX-002"
+  },
+  {
+   "file": "invalid/v-rel-001-self-relationship.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: an asset cannot relate to itself",
+   "schema_level": false,
+   "rule": "V-REL-001"
+  },
+  {
+   "file": "invalid/v-rel-002-has-address-to-host.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: has_address must point to an ip_address asset, not host",
+   "schema_level": false,
+   "rule": "V-REL-002"
+  },
+  {
+   "file": "invalid/v-rel-003-has-address-from-ip.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: has_address cannot start from an ip_address asset",
+   "schema_level": false,
+   "rule": "V-REL-003"
+  },
+  {
+   "file": "invalid/v-rel-003-has-address-from-range.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: has_address cannot start from an ip_range asset",
+   "schema_level": false,
+   "rule": "V-REL-003"
+  },
+  {
+   "file": "invalid/v-rel-004-last-seen-before-first-seen.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0]: last_seen_at is before first_seen_at",
+   "schema_level": false,
+   "rule": "V-REL-004"
+  },
+  {
+   "file": "invalid/v-web-001-url-query-value.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: url must be a redacted http(s) URL",
+   "schema_level": false,
+   "rule": "V-WEB-001"
+  },
+  {
+   "file": "invalid/v-web-001-url-query-name-without-equals.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: url must be a redacted http(s) URL",
+   "schema_level": false,
+   "rule": "V-WEB-001"
+  },
+  {
+   "file": "invalid/v-web-001-url-user-info.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: url must be a redacted http(s) URL",
+   "schema_level": false,
+   "rule": "V-WEB-001"
+  },
+  {
+   "file": "invalid/v-web-001-url-fragment.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: url must be a redacted http(s) URL",
+   "schema_level": false,
+   "rule": "V-WEB-001"
+  },
+  {
+   "file": "invalid/v-web-001-url-too-long.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: web: url must be a redacted http(s) URL",
+   "schema_level": false,
+   "rule": "V-WEB-001"
+  },
+  {
+   "file": "invalid/v-web-001-parent-url-query-value.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: parent_url must be a redacted URL",
+   "schema_level": false,
+   "rule": "V-WEB-001"
+  },
+  {
+   "file": "invalid/v-web-001-parent-url-not-http.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "endpoints[0]: parent_url must be a redacted URL",
+   "schema_level": false,
+   "rule": "V-WEB-001"
+  },
+  {
+   "file": "invalid/v-evid-001-item-too-large.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0]: evidence_items[0]: larger than 262144 bytes",
+   "schema_level": false,
+   "rule": "V-EVID-001"
+  },
+  {
+   "file": "invalid/v-evid-002-known-kind-with-data.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: data is only for kinds this version does not know",
+   "schema_level": false,
+   "rule": "V-EVID-002"
+  },
+  {
+   "file": "invalid/v-evid-003-unknown-kind-data-too-large.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: data larger than 65536 bytes",
+   "schema_level": false,
+   "rule": "V-EVID-003"
+  },
+  {
+   "file": "invalid/v-evid-004-raw-text-without-text.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: raw_text needs text",
+   "schema_level": false,
+   "rule": "V-EVID-004"
+  },
+  {
+   "file": "invalid/v-evid-004-curl-without-text.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: curl needs text",
+   "schema_level": false,
+   "rule": "V-EVID-004"
+  },
+  {
+   "file": "invalid/v-evid-005-http-exchange-empty.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http_exchange needs http.request or http.response",
+   "schema_level": false,
+   "rule": "V-EVID-005"
+  },
+  {
+   "file": "invalid/v-evid-005-http-exchange-without-http.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http_exchange needs http.request or http.response",
+   "schema_level": false,
+   "rule": "V-EVID-005"
+  },
+  {
+   "file": "invalid/v-evid-006-command-output-empty.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: command_output needs a command or text",
+   "schema_level": false,
+   "rule": "V-EVID-006"
+  },
+  {
+   "file": "invalid/v-evid-007-file-excerpt-without-file.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: file_excerpt needs file",
+   "schema_level": false,
+   "rule": "V-EVID-007"
+  },
+  {
+   "file": "invalid/v-evid-008-file-lines-out-of-order.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: file lines out of order",
+   "schema_level": false,
+   "rule": "V-EVID-008"
+  },
+  {
+   "file": "invalid/v-evid-009-screenshot-without-artifact.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: screenshot needs artifact",
+   "schema_level": false,
+   "rule": "V-EVID-009"
+  },
+  {
+   "file": "invalid/v-evid-010-artifact-media-type-uppercase.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: artifact.media_type",
+   "schema_level": false,
+   "rule": "V-EVID-010"
+  },
+  {
+   "file": "invalid/v-evid-010-artifact-media-type-space.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: artifact.media_type",
+   "schema_level": false,
+   "rule": "V-EVID-010"
+  },
+  {
+   "file": "invalid/v-evid-011-match-start-after-end.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: match[0]: start and end must be 0 <= start <= end",
+   "schema_level": false,
+   "rule": "V-EVID-011"
+  },
+  {
+   "file": "invalid/v-evid-011-sensitive-start-after-end.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: sensitive[0]: start and end must be 0 <= start <= end",
+   "schema_level": false,
+   "rule": "V-EVID-011"
+  },
+  {
+   "file": "invalid/v-evid-012-matcher-control-character.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: match[0]: invalid matcher name",
+   "schema_level": false,
+   "rule": "V-EVID-012"
+  },
+  {
+   "file": "invalid/v-ext-001-report.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "extensions is 65624 bytes, at most 65536",
+   "schema_level": false,
+   "rule": "V-EXT-001"
+  },
+  {
+   "file": "invalid/v-ext-001-finding.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "findings[0].extensions is 65624 bytes, at most 65536",
+   "schema_level": false,
+   "rule": "V-EXT-001"
+  },
+  {
+   "file": "invalid/v-ext-001-relationship.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "relationships[0].extensions is 65624 bytes, at most 65536",
+   "schema_level": false,
+   "rule": "V-EXT-001"
   }
  ]
 }

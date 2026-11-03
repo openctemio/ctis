@@ -58,6 +58,131 @@
       "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.example",
       "error": true,
       "note": "label longer than 63 bytes"
+    },
+    {
+      "input": "İSTANBUL.example",
+      "output": "istanbul.example",
+      "note": "Unicode simple lowercase per code point: U+0130 maps to U+0069, so the label becomes ASCII (a full case mapping would add U+0307)"
+    },
+    {
+      "input": "ΣΑΣ.example",
+      "output": "xn--mxa9ab.example",
+      "note": "simple lowercase: every capital sigma becomes U+03C3, never the final form U+03C2"
+    },
+    {
+      "input": "K.example",
+      "output": "k.example",
+      "note": "U+212A KELVIN SIGN lowercases to ASCII k"
+    },
+    {
+      "input": "ＥＸＡＭＰＬＥ.com",
+      "output": "xn--mi7chab1aes7c.com",
+      "note": "no width mapping (no UTS 46): fullwidth letters are lowercased and encoded as an A-label"
+    },
+    {
+      "input": "ﬀ.example",
+      "output": "xn--im6c.example",
+      "note": "no compatibility normalisation: the ligature stays one code point"
+    },
+    {
+      "input": "Ä.example",
+      "output": "xn--4ca.example",
+      "note": "precomposed U+00C4"
+    },
+    {
+      "input": "Ä.example",
+      "output": "xn--a-ccb.example",
+      "note": "decomposed A + U+0308: no NFC, so a different A-label than the precomposed form"
+    },
+    {
+      "input": "faß.example",
+      "output": "xn--fa-hia.example",
+      "note": "sharp s is kept (no transitional mapping to ss)"
+    },
+    {
+      "input": "münchen．de",
+      "output": "xn--mnchen-3ya.de",
+      "note": "fullwidth full stop U+FF0E is a dot"
+    },
+    {
+      "input": "xn--Bcher-kva.example",
+      "output": "xn--bcher-kva.example",
+      "note": "an A-label is lowercased like any ASCII label"
+    },
+    {
+      "input": " example.com\t",
+      "output": "example.com",
+      "note": "trimming removes Unicode White_Space at both ends (here U+00A0 and TAB)"
+    },
+    {
+      "input": "\u001fexample.com",
+      "error": true,
+      "note": "U+001F is not White_Space: it is not trimmed and is an invalid character"
+    },
+    {
+      "input": "-a.example.com",
+      "output": "-a.example.com",
+      "note": "hyphen position is not checked"
+    },
+    {
+      "input": "a_b.example",
+      "output": "a_b.example",
+      "note": "underscore is allowed"
+    },
+    {
+      "input": "123.example",
+      "output": "123.example",
+      "note": "a numeric label is allowed below the top level"
+    },
+    {
+      "input": "example.123",
+      "error": true,
+      "note": "an all-numeric top label is refused"
+    },
+    {
+      "input": "192.168.0.1",
+      "error": true,
+      "note": "an IPv4 address is not a domain name"
+    },
+    {
+      "input": "example.com..",
+      "error": true,
+      "note": "one trailing dot is removed; a second leaves an empty label"
+    },
+    {
+      "input": "a.",
+      "output": "a",
+      "note": "a single label is allowed"
+    },
+    {
+      "input": ".",
+      "error": true,
+      "note": "nothing left after the trailing dot is removed"
+    },
+    {
+      "input": "exa%41mple.com",
+      "error": true,
+      "note": "percent-encoding is not decoded in a domain name"
+    },
+    {
+      "input": "a.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.example",
+      "output": "a.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.example",
+      "note": "a 63-byte label is allowed"
+    },
+    {
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.com",
+      "error": true,
+      "note": "label longer than 63 bytes"
+    },
+    {
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "output": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "note": "253 bytes is the longest name"
+    },
+    {
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "error": true,
+      "note": "254 bytes is refused"
     }
   ]
 }

@@ -52,6 +52,148 @@
     {
       "input": "pkg:npm",
       "error": true
+    },
+    {
+      "input": "pkg:NPM/Lodash@4.17.21",
+      "output": {
+        "identity": "pkg:npm/lodash",
+        "version": "4.17.21"
+      },
+      "note": "npm names are case-insensitive"
+    },
+    {
+      "input": "pkg:npm/%40babel/core@7.0.0?foo=bar#src/x",
+      "output": {
+        "identity": "pkg:npm/%40babel/core",
+        "version": "7.0.0"
+      },
+      "note": "qualifiers and subpath are not identity"
+    },
+    {
+      "input": "pkg:pypi/Typing_Extensions@4.0",
+      "output": {
+        "identity": "pkg:pypi/typing-extensions",
+        "version": "4.0"
+      },
+      "note": "pypi: lowercase, underscore to hyphen"
+    },
+    {
+      "input": "pkg:pypi/zope.interface",
+      "output": {
+        "identity": "pkg:pypi/zope.interface",
+        "version": ""
+      },
+      "note": "pypi: a dot is kept"
+    },
+    {
+      "input": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1?type=jar&classifier=sources",
+      "output": {
+        "identity": "pkg:maven/org.apache.logging.log4j/log4j-core",
+        "version": "2.14.1"
+      }
+    },
+    {
+      "input": "pkg:composer/Laravel/Framework@10.0",
+      "output": {
+        "identity": "pkg:composer/laravel/framework",
+        "version": "10.0"
+      },
+      "note": "composer names are case-insensitive"
+    },
+    {
+      "input": "pkg:hex/Phoenix@1.7",
+      "output": {
+        "identity": "pkg:hex/phoenix",
+        "version": "1.7"
+      },
+      "note": "hex names are case-insensitive"
+    },
+    {
+      "input": "pkg:bitbucket/Team/Repo@abc",
+      "output": {
+        "identity": "pkg:bitbucket/team/repo",
+        "version": "abc"
+      }
+    },
+    {
+      "input": "pkg:deb/debian/curl@7.88.1-10?arch=amd64&distro=debian-12",
+      "output": {
+        "identity": "pkg:deb/debian/curl",
+        "version": "7.88.1-10"
+      }
+    },
+    {
+      "input": "pkg:oci/debian@sha256%3A244fd47e07d10?repository_url=docker.io/library/debian",
+      "output": {
+        "identity": "pkg:oci/debian",
+        "version": "sha256:244fd47e07d10"
+      },
+      "note": "the version is percent-decoded"
+    },
+    {
+      "input": "pkg:nuget/Newtonsoft.Json@13.0.1",
+      "output": {
+        "identity": "pkg:nuget/Newtonsoft.Json",
+        "version": "13.0.1"
+      },
+      "note": "nuget keeps its case here (not in the case-insensitive list)"
+    },
+    {
+      "input": "pkg:cargo/Serde@1.0",
+      "output": {
+        "identity": "pkg:cargo/Serde",
+        "version": "1.0"
+      },
+      "note": "cargo keeps its case"
+    },
+    {
+      "input": "pkg://npm/lodash",
+      "output": {
+        "identity": "pkg:npm/lodash",
+        "version": ""
+      },
+      "note": "slashes after pkg: are ignored"
+    },
+    {
+      "input": "pkg:npm//lodash",
+      "output": {
+        "identity": "pkg:npm/lodash",
+        "version": ""
+      },
+      "note": "an empty segment is dropped"
+    },
+    {
+      "input": "pkg:npm/a b@1",
+      "output": {
+        "identity": "pkg:npm/a%20b",
+        "version": "1"
+      },
+      "note": "a segment is decoded, then every byte but the unreserved is percent-encoded"
+    },
+    {
+      "input": "pkg:npm/foo@1.0.0@2",
+      "output": {
+        "identity": "pkg:npm/foo%401.0.0",
+        "version": "2"
+      },
+      "note": "the version follows the last @"
+    },
+    {
+      "input": "pkg:npm/%zz",
+      "error": true,
+      "note": "malformed percent-encoding"
+    },
+    {
+      "input": "pkg:np_m/x",
+      "error": true,
+      "note": "the type is [a-z0-9.+-]"
+    },
+    {
+      "input": "pkg:swift/github.com/Alamofire/Alamofire@5.4.3",
+      "output": {
+        "identity": "pkg:swift/github.com/Alamofire/Alamofire",
+        "version": "5.4.3"
+      }
     }
   ]
 }

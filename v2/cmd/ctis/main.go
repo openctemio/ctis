@@ -9,6 +9,7 @@
 //	ctis export --format sarif|cyclonedx|ocsf [--no-passthrough] <file|->
 //	ctis canon <asset-type> <value>
 //	ctis conformance [dir]   (default conformance/v2)
+//	ctis conformance --serve (the line protocol of conformance/PROTOCOL.md)
 //	ctis version
 //
 // Exit status: 0 everything valid, 1 a document is invalid or a vector
@@ -48,7 +49,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case "canon":
 		return cmdCanon(args[1:], stdout, stderr)
 	case "conformance":
-		return cmdConformance(args[1:], stdout, stderr)
+		return cmdConformance(args[1:], stdin, stdout, stderr)
 	case "import":
 		return cmdImport(args[1:], stdin, stdout, stderr)
 	case "export":
@@ -70,6 +71,7 @@ func usage(w io.Writer) {
   ctis validate [--json] [--max-size BYTES] <file|->...
   ctis canon <asset-type> <value>
   ctis conformance [dir]   (default conformance/v2)
+  ctis conformance --serve (answer conformance/PROTOCOL.md requests on stdin)
   ctis import [--format F] [--result] [--no-passthrough] [--max-size BYTES] <file|->
   ctis export --format sarif|cyclonedx|ocsf [--no-passthrough] [--max-size BYTES] <file|->
   ctis version
@@ -165,7 +167,17 @@ func cmdCanon(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-func cmdConformance(args []string, stdout, stderr io.Writer) int {
+func cmdConformance(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	if len(args) == 1 && (args[0] == "--serve" || args[0] == "-serve") {
+		// The reference implementation of the conformance protocol: a
+		// harness (scripts/conformance_harness.py) sends one request per
+		// line and reads one answer per line.
+		if err := conformance.Serve(stdin, stdout, "ctis-go", version); err != nil {
+			_, _ = fmt.Fprintf(stderr, "ctis: %v\n", err)
+			return 2
+		}
+		return 0
+	}
 	dir := "conformance/v2"
 	switch len(args) {
 	case 0:

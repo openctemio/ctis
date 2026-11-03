@@ -1,0 +1,16 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7000-8000-000000000001",
+    "generated_at": "2026-11-03T00:00:00Z"
+  },
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com",
+      "first_seen_at": "2026-11-03T00:00:00Z",
+      "last_seen_at": "2026-11-02T00:00:00Z"
+    }
+  ]
+}

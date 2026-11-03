@@ -170,6 +170,213 @@
         }
       },
       "expected": "pkg:maven/org.apache.logging.log4j/log4j-core"
+    },
+    {
+      "name": "purl wins over everything",
+      "finding": {
+        "vulnerability": {
+          "purl": "pkg:npm/a@1"
+        },
+        "web": {
+          "url": "https://e.example/x"
+        },
+        "location": {
+          "path": "src/a.js"
+        },
+        "network": {
+          "port": 1
+        },
+        "misconfiguration": {
+          "resource_type": "t"
+        }
+      },
+      "expected": "pkg:npm/a"
+    },
+    {
+      "name": "a purl that is not a package URL falls through",
+      "finding": {
+        "vulnerability": {
+          "purl": "npm/lodash"
+        },
+        "location": {
+          "path": "src/a.js"
+        }
+      },
+      "expected": "file:src/a.js"
+    },
+    {
+      "name": "purl with an empty name falls through",
+      "finding": {
+        "vulnerability": {
+          "purl": "pkg:npm/"
+        },
+        "network": {
+          "port": 22
+        }
+      },
+      "expected": "net:22/tcp"
+    },
+    {
+      "name": "purl leading slashes and trailing slash",
+      "finding": {
+        "vulnerability": {
+          "purl": "pkg://Maven/org.x/lib/@1.0"
+        }
+      },
+      "expected": "pkg:maven/org.x/lib"
+    },
+    {
+      "name": "web url keeps the path as written (no dot-segment or escape normalisation)",
+      "finding": {
+        "web": {
+          "url": "https://example.com/a/../b/%7e"
+        }
+      },
+      "expected": "url:https://example.com/a/../b/%7e"
+    },
+    {
+      "name": "web url without a path",
+      "finding": {
+        "web": {
+          "url": "https://example.com"
+        }
+      },
+      "expected": "url:https://example.com/"
+    },
+    {
+      "name": "web url host is lowercased but not IDNA-encoded",
+      "finding": {
+        "web": {
+          "url": "https://BÜCHER.example/x"
+        }
+      },
+      "expected": "url:https://bücher.example/x"
+    },
+    {
+      "name": "web url keeps a non default port, ipv6",
+      "finding": {
+        "web": {
+          "url": "https://[2001:DB8::1]:8443/x"
+        }
+      },
+      "expected": "url:https://[2001:db8::1]:8443/x"
+    },
+    {
+      "name": "a non http web url falls through to the file path",
+      "finding": {
+        "web": {
+          "url": "ftp://example.com/x"
+        },
+        "location": {
+          "path": "a/b.txt"
+        }
+      },
+      "expected": "file:a/b.txt"
+    },
+    {
+      "name": "file path: file: prefix and backslashes",
+      "finding": {
+        "location": {
+          "path": "file:///C:\\repo\\src\\x.py"
+        }
+      },
+      "expected": "file:C:/repo/src/x.py"
+    },
+    {
+      "name": "file path: dot segments resolved, leading slash removed",
+      "finding": {
+        "location": {
+          "path": "/a/./b/../c//d.go"
+        }
+      },
+      "expected": "file:a/c/d.go"
+    },
+    {
+      "name": "file path: .. above the root is dropped",
+      "finding": {
+        "location": {
+          "path": "../../etc/passwd"
+        }
+      },
+      "expected": "file:etc/passwd"
+    },
+    {
+      "name": "file path: case kept",
+      "finding": {
+        "location": {
+          "path": "Src/Main.Java"
+        }
+      },
+      "expected": "file:Src/Main.Java"
+    },
+    {
+      "name": "white-space-only path is no location",
+      "finding": {
+        "location": {
+          "path": "   "
+        },
+        "network": {
+          "port": 443,
+          "transport": "tcp"
+        }
+      },
+      "expected": "net:443/tcp"
+    },
+    {
+      "name": "network transport lowercased",
+      "finding": {
+        "network": {
+          "port": 53,
+          "transport": "UDP"
+        }
+      },
+      "expected": "net:53/udp"
+    },
+    {
+      "name": "network port 0 is host level",
+      "finding": {
+        "network": {
+          "port": 0,
+          "transport": "tcp"
+        }
+      },
+      "expected": "net:host"
+    },
+    {
+      "name": "resource with only a name",
+      "finding": {
+        "misconfiguration": {
+          "resource_name": " logs "
+        }
+      },
+      "expected": "resource:/logs"
+    },
+    {
+      "name": "resource with only a type",
+      "finding": {
+        "misconfiguration": {
+          "resource_type": "aws_s3_bucket"
+        }
+      },
+      "expected": "resource:aws_s3_bucket/"
+    },
+    {
+      "name": "a long key is cut and ends in # and 32 hex digits",
+      "finding": {
+        "location": {
+          "path": "d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/x.go"
+        }
+      },
+      "expected": "file:d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/d/#3e86f5bded9abbbe1d665c545c6a0a26"
+    },
+    {
+      "name": "a key of exactly 512 bytes is kept",
+      "finding": {
+        "location": {
+          "path": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "expected": "file:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     }
   ]
 }

@@ -32,6 +32,88 @@
     {
       "input": "example.com",
       "error": true
+    },
+    {
+      "input": "0.0.0.0",
+      "output": "0.0.0.0"
+    },
+    {
+      "input": "::",
+      "output": "::"
+    },
+    {
+      "input": "::1",
+      "output": "::1"
+    },
+    {
+      "input": "2001:0db8:0000:0000:0000:ff00:0042:8329",
+      "output": "2001:db8::ff00:42:8329",
+      "note": "leading zeros in groups removed, longest zero run compressed"
+    },
+    {
+      "input": "2001:db8::1:0:0:0",
+      "output": "2001:db8:0:0:1::",
+      "note": "the longest run of zero groups is compressed, not the first"
+    },
+    {
+      "input": "2001:db8:0:1:1:1:1:1",
+      "output": "2001:db8:0:1:1:1:1:1",
+      "note": "a single zero group is not compressed"
+    },
+    {
+      "input": "::ffff:c000:0201",
+      "output": "192.0.2.1",
+      "note": "an IPv4-mapped address written in hex becomes IPv4"
+    },
+    {
+      "input": "::192.0.2.1",
+      "output": "::c000:201",
+      "note": "an IPv4-compatible (not mapped) address stays IPv6, written in hex groups"
+    },
+    {
+      "input": "64:ff9b::192.0.2.1",
+      "output": "64:ff9b::c000:201",
+      "note": "an embedded IPv4 address of another prefix is written in hex groups"
+    },
+    {
+      "input": "fe80::1%25eth0",
+      "output": "fe80::1",
+      "note": "the zone is dropped, whatever its text"
+    },
+    {
+      "input": " 192.0.2.1 ",
+      "output": "192.0.2.1",
+      "note": "trimmed"
+    },
+    {
+      "input": "[2001:db8::1]",
+      "error": true,
+      "note": "brackets are not part of an address"
+    },
+    {
+      "input": "1.2.3",
+      "error": true,
+      "note": "three parts are not an IPv4 address"
+    },
+    {
+      "input": "01.2.3.4",
+      "error": true,
+      "note": "a leading zero in any part is refused"
+    },
+    {
+      "input": "0x7f.0.0.1",
+      "error": true,
+      "note": "hexadecimal parts are refused"
+    },
+    {
+      "input": "2130706433",
+      "error": true,
+      "note": "a decimal integer is not an IPv4 address"
+    },
+    {
+      "input": "192.0.2.1/32",
+      "error": true,
+      "note": "a prefix is not an address"
     }
   ]
 }

@@ -35,6 +35,76 @@
     {
       "input": "nginx@sha512:abcd",
       "error": true
+    },
+    {
+      "input": "nginx",
+      "output": "docker.io/library/nginx"
+    },
+    {
+      "input": "library/nginx",
+      "output": "docker.io/library/nginx"
+    },
+    {
+      "input": "docker.io/nginx",
+      "output": "docker.io/library/nginx"
+    },
+    {
+      "input": "registry-1.docker.io/library/nginx:1.25",
+      "output": "docker.io/library/nginx",
+      "note": "registry-1.docker.io is docker.io"
+    },
+    {
+      "input": "quay.io/org/app:v1@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "output": "quay.io/org/app@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "note": "tag and digest: the tag goes"
+    },
+    {
+      "input": "registry.example.com:5000/team/app:1.0",
+      "output": "registry.example.com:5000/team/app",
+      "note": "a colon before the last slash is a registry port"
+    },
+    {
+      "input": "localhost/app",
+      "output": "localhost/app",
+      "note": "localhost is a registry"
+    },
+    {
+      "input": "my-registry/app",
+      "output": "docker.io/my-registry/app",
+      "note": "a first component without . or : and not localhost is a Docker Hub namespace"
+    },
+    {
+      "input": "registry.example.com:5000/app@sha256:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "output": "registry.example.com:5000/app@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "note": "the digest is lowercased"
+    },
+    {
+      "input": "ghcr.io/org/app:",
+      "output": "ghcr.io/org/app",
+      "note": "an empty tag"
+    },
+    {
+      "input": "nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "error": true,
+      "note": "63 hex digits"
+    },
+    {
+      "input": "nginx@sha256:gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+      "error": true,
+      "note": "not hex"
+    },
+    {
+      "input": "ghcr.io/Org/app",
+      "error": true,
+      "note": "an upper-case repository is refused, not lowercased"
+    },
+    {
+      "input": "/app",
+      "error": true
+    },
+    {
+      "input": "a//b",
+      "error": true
     }
   ]
 }

@@ -28,13 +28,13 @@ Applied to each part before encoding.
 | identifier (rule id, vulnerability id, resource type and name, framework, control id, parameter, function, logical location) | trim white space; case kept |
 | file path | trim white space; every `\` becomes `/`; empty and `.` segments are dropped (so `./a`, `a//b` and `a/./b` lose their extra parts); a leading `/` is kept; `..` is not resolved; case kept |
 | host or address (VA asset value) | trim; lowercase; one trailing `.` removed |
-| URL | parsed as an http(s) URL with the rules of package `weburl`: lowercase scheme and host, default port dropped, IDNA host, path normalised with its case kept, query and fragment dropped. The parts are the origin (`scheme://host[:port]`) and the path. A URL that does not parse gives no fingerprint |
+| URL | parsed as a web URL ([canonical-forms.md](canonical-forms.md) section 4.3, package `weburl`): lowercase scheme and host, default port dropped, IDNA host, path normalised with its case kept, query and fragment dropped. The parts are the origin (`scheme://host[:port]`) and the path. A URL that does not parse gives no fingerprint |
 | package | a package URL without version, qualifiers and subpath, type in lowercase (`pkg:maven/org.x/lib@1?type=jar` becomes `pkg:maven/org.x/lib`). A value that is not a package URL (`maven/org.x:lib`) is used trimmed |
 | image | the registry and repository, plus `@sha256:<hex>` when a digest is present; the tag is dropped. No registry means `docker.io`; a Docker Hub repository without a namespace gets `library/`. The registry is lowercase, the repository keeps its case |
 | integers (lines, port, chain id) | decimal, no padding |
 | transport | trim; lowercase |
 | contract address | a `0x` (or bare) 40-digit hexadecimal address becomes `0x` and lowercase digits; any other value (not hexadecimal) is trimmed and keeps its case |
-| snippet | every run of white space becomes one space, the ends are trimmed; the part is the lowercase hex SHA-256 of the result |
+| snippet | every run of white space (Unicode `White_Space`) becomes one space, the ends are trimmed; the part is the lowercase hex SHA-256 of the result |
 
 No recipe reads a message, title or description. Line numbers are a part of the line-based SAST recipe (`sast`) and of `generic` only.
 
@@ -56,7 +56,7 @@ Parts, in order, after the recipe name.
 | `web3` | chain id, contract address, rule (SWC) id, function signature | |
 | `generic` | rule id, file path, start line, end line | fallback; no message |
 
-The recipe name is exactly the first column (`misconfig`, not `misconfiguration`). The type to use for input that names none is chosen in this order, first match wins: contract address, image and package, framework or control, secret digest, URL, VA asset value with a port or transport, package and vulnerability id, resource type or name, file and rule and snippet, file and rule and a start line, else `generic`.
+The recipe name is exactly the first column (`misconfig`, not `misconfiguration`). The type to use for input that names none is chosen in this order, first match wins: contract address, image and package, framework or control, secret digest, URL, VA asset value with a port or transport, package and vulnerability id, resource type or name, file and rule and snippet (a snippet that is not only white space), file and rule and a start line greater than 0, else `generic`. A member counts as set when it is not empty (a number: greater than 0; the secret digest: not all zero). The vectors with `detect: true` pin this order.
 
 ## Secrets
 
@@ -76,7 +76,7 @@ The correlation key says that two findings, possibly from different tools, descr
 
 1. the asset key, computed by the receiver (never taken from the producer);
 2. the preferred vulnerability id (CVE first, the numerically smallest; then GHSA, OSV, vendor, in their listed order), or, when the finding has no vulnerability id, `rule:` + tool name + `/` + rule id, both trimmed;
-3. `LocationKey`: the first of `pkg:<versionless purl>` (the ecosystem is the purl type; a package name without a purl gives no `pkg:` key), `url:<origin><path>` from `web.url` and then from a URL-shaped `location.path`, `file:<repository path>`, `net:<port>/<transport>` (`net:host` without a port), `resource:<type>/<name>`; empty when none applies. A key longer than 512 bytes is cut and ends in `#` and 32 hex characters of its SHA-256.
+3. `LocationKey` ([canonical-forms.md](canonical-forms.md) section 9): the first of `pkg:<versionless purl>` (the ecosystem is the purl type; a package name without a purl gives no `pkg:` key), `url:<origin><path>` from `web.url` and then from a URL-shaped `location.path`, `file:<repository path>`, `net:<port>/<transport>` (`net:host` without a port), `resource:<type>/<name>`; empty when none applies. A key longer than 512 bytes is cut and ends in `#` and 32 hex characters of its SHA-256.
 
 Receivers compute the key; a producer's value is never trusted.
 
@@ -84,7 +84,7 @@ The tool is the name of the tool that raised the finding. A finding that carries
 
 ## Vectors
 
-- `conformance/v2/fingerprint/fingerprint.json`: per recipe, the input, the normalised `parts` (to compare each step), the expected value, and cases that must be refused (`error`). It includes colons and `0x1F` in parts, Maven `group:artifact` names, case-differing paths, Unicode and length-prefix look-alikes.
+- `conformance/v2/fingerprint/fingerprint.json`: per recipe, the input, the normalised `parts` (to compare each step), the expected value, cases that must be refused (`error`), and cases with `detect: true` whose recipe comes from the detection order. It includes colons and `0x1F` in parts, Maven `group:artifact` names, case-differing paths, Unicode and length-prefix look-alikes.
 - `conformance/v2/fingerprint/secret-digest.json`: the HMAC function.
 - `conformance/v2/correlation/correlation.json`: finding, tool, intermediate parts and expected key.
 

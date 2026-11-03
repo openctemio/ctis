@@ -42,6 +42,74 @@
       },
       "error": true,
       "note": "http is an application protocol, not a transport"
+    },
+    {
+      "input": {
+        "host": "Example.COM.",
+        "port": 65535,
+        "transport": " SCTP "
+      },
+      "output": "example.com:65535/sctp",
+      "note": "host canonical, transport trimmed and lowercased"
+    },
+    {
+      "input": {
+        "host": "[2001:db8::1]",
+        "port": 443,
+        "transport": "tcp"
+      },
+      "output": "[2001:db8::1]:443/tcp",
+      "note": "a bracketed address"
+    },
+    {
+      "input": {
+        "host": "fe80::1%eth0",
+        "port": 22,
+        "transport": "tcp"
+      },
+      "output": "[fe80::1]:22/tcp",
+      "note": "the zone is dropped"
+    },
+    {
+      "input": {
+        "host": "bücher.example",
+        "port": 443,
+        "transport": "tcp"
+      },
+      "output": "xn--bcher-kva.example:443/tcp"
+    },
+    {
+      "input": {
+        "host": "192.168.001.010",
+        "port": 22,
+        "transport": "tcp"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "host": "example.com",
+        "port": 65536,
+        "transport": "tcp"
+      },
+      "error": true
+    },
+    {
+      "input": {
+        "host": "example.com",
+        "port": 443,
+        "transport": ""
+      },
+      "error": true,
+      "note": "a transport is required"
+    },
+    {
+      "input": {
+        "host": "",
+        "port": 443,
+        "transport": "tcp"
+      },
+      "error": true
     }
   ]
 }

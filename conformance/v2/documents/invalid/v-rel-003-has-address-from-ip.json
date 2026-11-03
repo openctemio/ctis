@@ -1,0 +1,26 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7000-8000-000000000001",
+    "generated_at": "2026-11-03T00:00:00Z"
+  },
+  "assets": [
+    {
+      "id": "c",
+      "type": "ip_address",
+      "value": "192.0.2.2"
+    },
+    {
+      "id": "b",
+      "type": "ip_address",
+      "value": "192.0.2.1"
+    }
+  ],
+  "relationships": [
+    {
+      "type": "has_address",
+      "from_ref": "c",
+      "to_ref": "b"
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "description": "Field path patterns of the interoperability engine (docs/mapping-engine.md, section Paths): a pattern and a path to whether the pattern matches. [] marks array elements, * matches any run of characters inside one segment, a ** segment matches zero or more segments.",
+  "cases": [
+    {
+      "pattern": "/runs[]/results[]",
+      "path": "/runs[]/results[]",
+      "match": true
+    },
+    {
+      "pattern": "/runs[]/results[]",
+      "path": "/runs[]/results",
+      "match": false
+    },
+    {
+      "pattern": "/runs[]/results",
+      "path": "/runs[]/results[]",
+      "match": false
+    },
+    {
+      "pattern": "/runs[]/*",
+      "path": "/runs[]/tool",
+      "match": true
+    },
+    {
+      "pattern": "/runs[]/*",
+      "path": "/runs[]/tool/driver",
+      "match": false
+    },
+    {
+      "pattern": "/runs[]/**",
+      "path": "/runs[]/tool/driver/name",
+      "match": true
+    },
+    {
+      "pattern": "/runs[]/**",
+      "path": "/runs[]",
+      "match": true
+    },
+    {
+      "pattern": "/**/name",
+      "path": "/name",
+      "match": true
+    },
+    {
+      "pattern": "/**/name",
+      "path": "/a/b/name",
+      "match": true
+    },
+    {
+      "pattern": "/**/name",
+      "path": "/a/b/names",
+      "match": false
+    },
+    {
+      "pattern": "/a/x*y/b",
+      "path": "/a/xzzy/b",
+      "match": true
+    },
+    {
+      "pattern": "/a/x*y/b",
+      "path": "/a/xy/b",
+      "match": true
+    },
+    {
+      "pattern": "/a/x*y/b",
+      "path": "/a/xy1/b",
+      "match": false
+    },
+    {
+      "pattern": "/a/*[]",
+      "path": "/a/list[]",
+      "match": true
+    },
+    {
+      "pattern": "/a/*",
+      "path": "/a/list[]",
+      "match": true
+    },
+    {
+      "pattern": "/[]",
+      "path": "/[]",
+      "match": true
+    },
+    {
+      "pattern": "/[]/id",
+      "path": "/[]/id",
+      "match": true
+    },
+    {
+      "pattern": "/a/**/c/**",
+      "path": "/a/c",
+      "match": true
+    },
+    {
+      "pattern": "/a/**/c/**",
+      "path": "/a/b/c/d/e",
+      "match": true
+    },
+    {
+      "pattern": "/a/b",
+      "path": "/a/b/c",
+      "match": false
+    },
+    {
+      "pattern": "/A/b",
+      "path": "/a/b",
+      "match": false
+    },
+    {
+      "pattern": "/a/*/*",
+      "path": "/a/b",
+      "match": false
+    },
+    {
+      "pattern": "/@context",
+      "path": "/@context",
+      "match": true
+    },
+    {
+      "pattern": "/a/b*",
+      "path": "/a/b",
+      "match": true
+    },
+    {
+      "pattern": "/a/*b*c",
+      "path": "/a/abxbc",
+      "match": true
+    }
+  ]
+}
