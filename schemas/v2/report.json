@@ -233,7 +233,8 @@
         "deployed_from",
         "member_of",
         "routes_to",
-        "has_access_to"
+        "has_access_to",
+        "has_address"
       ],
       "description": "One direction per type, read as from <type> to; no inverse duplicates"
     },

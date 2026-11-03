@@ -30,6 +30,13 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
+      # Build and test every module against this commit's modules: the
+      # command requires released versions in its go.mod (go install refuses
+      # replace directives), so CI joins the modules in a workspace that is
+      # never committed.
+      - name: Use this commit's modules
+        run: go work init $(bash .github/scripts/modules.sh)
+
       # Every module (the core, each interoperability adapter, the command)
       # depends on nothing outside this repository: stdlib only.
       - name: Verify zero external dependencies
@@ -174,6 +181,13 @@ jobs:
         with:
           go-version: '1.27'
           cache: true
+
+      # Build and test every module against this commit's modules: the
+      # command requires released versions in its go.mod (go install refuses
+      # replace directives), so CI joins the modules in a workspace that is
+      # never committed.
+      - name: Use this commit's modules
+        run: go work init $(bash .github/scripts/modules.sh)
 
       # v2/cmd/ctis is its own module (it links the adapters).
       - name: Build the CLI

@@ -93,6 +93,10 @@ const (
 	RelRoutesTo RelationshipType = "routes_to"
 	// RelHasAccessTo: from (an identity) has access to to (a resource).
 	RelHasAccessTo RelationshipType = "has_access_to"
+	// RelHasAddress: from (a host, network device, endpoint device or other
+	// machine) is assigned to (an ip_address asset): an interface or
+	// management address, not DNS. A name's DNS answers stay resolves_to.
+	RelHasAddress RelationshipType = "has_address"
 )
 
 // AllRelationshipTypes returns every relationship type.
@@ -100,6 +104,7 @@ func AllRelationshipTypes() []RelationshipType {
 	return []RelationshipType{
 		RelSubdomainOf, RelResolvesTo, RelCnameOf, RelExposes, RelServesCertificate, RelHostedBy,
 		RelContains, RelRunsOn, RelDependsOn, RelDeployedFrom, RelMemberOf, RelRoutesTo, RelHasAccessTo,
+		RelHasAddress,
 	}
 }
 
@@ -135,12 +140,22 @@ func validateRelationships(r *Report, assetIDs map[string]bool, add func(string,
 	if len(r.Relationships) > MaxRelationships {
 		add("relationships has %d entries, at most %d", len(r.Relationships), MaxRelationships)
 	}
+	var types map[string]AssetType
 	for i, rel := range r.Relationships {
 		if i >= MaxRelationships {
 			break
 		}
 		if !rel.Type.IsValid() {
 			add("relationships[%d]: invalid type %q", i, truncateForError(string(rel.Type)))
+		}
+		if rel.Type == RelHasAddress {
+			if types == nil {
+				types = make(map[string]AssetType, len(r.Assets))
+				for _, a := range r.Assets {
+					types[a.ID] = a.Type
+				}
+			}
+			validateHasAddress(i, rel, types, add)
 		}
 		for _, ref := range [][2]string{{"from_ref", rel.FromRef}, {"to_ref", rel.ToRef}} {
 			switch {
@@ -162,6 +177,17 @@ func validateRelationships(r *Report, assetIDs map[string]bool, add func(string,
 			add("relationships[%d]: last_seen_at is before first_seen_at", i)
 		}
 		validateExtensions(fmt.Sprintf("relationships[%d].extensions", i), rel.Extensions, add)
+	}
+}
+
+// validateHasAddress checks a has_address edge: it points at an ip_address
+// asset, from an asset that is not an address or a range itself.
+func validateHasAddress(i int, rel Relationship, types map[string]AssetType, add func(string, ...any)) {
+	if to, ok := types[rel.ToRef]; ok && to != AssetTypeIPAddress {
+		add("relationships[%d]: has_address must point to an ip_address asset, not %s", i, to)
+	}
+	if from, ok := types[rel.FromRef]; ok && (from == AssetTypeIPAddress || from == AssetTypeIPRange) {
+		add("relationships[%d]: has_address cannot start from an %s asset", i, from)
 	}
 }
 

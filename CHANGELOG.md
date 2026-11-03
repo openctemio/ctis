@@ -4,11 +4,18 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
-### Fixed: adapter and command modules resolvable by the Go toolchain
+## [2.0.1] - 2026-11-03
 
-- The adapter modules (`github.com/openctemio/ctis/v2/interop/<format>`) and the command module (`github.com/openctemio/ctis/v2/cmd/ctis`) live under `v2/` (`v2/interop/<format>`, `v2/cmd/ctis`), where the Go toolchain looks for a module whose path continues after the `/v2` of the repository's major version; their tags are `v2/interop/<format>/vX.Y.Z` and `v2/cmd/ctis/vX.Y.Z`. The `interop/<format>/v0.1.0` tags pushed with 2.0.0 could not be resolved and were withdrawn. Module paths and import paths are unchanged.
-- A built `ctis` binary committed by mistake is removed and ignored.
-- `v2/cmd/ctis` requires the released core and adapters (no `replace`), so `go install github.com/openctemio/ctis/v2/cmd/ctis@v0.1.0` works; first adapter releases `v2/interop/<format>/v0.1.0`.
+2.0 finalisation during the initial conversion; no outside adopters yet. The changes below complete 2.0 rather than open a new minor; every receiver and producer in the conversion moves to this release together.
+
+### Added: `has_address` relationships
+
+- Relationship type `has_address`: from a host, network device, endpoint device or other machine to an `ip_address` asset assigned to it (an interface or management address). `resolves_to` stays DNS only (a name and its A/AAAA answers). `Validate` refuses a `has_address` edge to anything but an `ip_address` asset, or from an `ip_address` or `ip_range` asset. Receivers may match machines across producers by these addresses.
+
+### Changed
+
+- Conformance error substrings no longer embed the list of supported versions, so other implementations can match them.
+- CI builds and tests the command against the commit's own modules (an uncommitted workspace); `v2/cmd/ctis` keeps requiring released versions.
 
 ## [2.0.0] - 2026-11-03
 
