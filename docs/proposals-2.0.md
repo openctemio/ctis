@@ -2,7 +2,14 @@
 
 Status: design record, not part of the specification. It comes from a review of CTIS 1.6 against what continuous threat exposure management needs, and against what CTIS needs to be a format that many tools and platforms share.
 
-The record has two parts. Items marked **1.7** are additive, so they fit a minor release under the rule in [spec.md section 2.2](spec.md#22-compatibility-rule). Items marked **2.0** rename or remove members. They are planned as one cleanup in a new major version (`schemas/v2`, module `github.com/openctemio/ctis/v2`), never as aliases, and they need a maintainer decision before any work starts.
+The record has two parts. Items marked **1.7** are additive, so they fit a minor release under the rule in [spec.md section 2.2](spec.md#22-compatibility-rule). Items marked **2.0** rename or remove members. They ship as one cleanup in a new major version (`schemas/v2`, module `github.com/openctemio/ctis/v2`), never as aliases.
+
+**Decision (maintainers, 2026-11-03).** The plan is adopted:
+
+- 1.6.x patch releases fix the defects found in the review and add conformance vectors and a validator CLI;
+- 1.7 adds the items marked 1.7, additive only;
+- 2.0 is one breaking release, done early while CTIS has no outside implementers. There are no aliases on the wire. The Go module ships a receiver-side 1.x to 2.0 upgrader that receivers may run for one release train, so producers can move over without a flag day;
+- contributions to this repository are made under the Developer Certificate of Origin (P10).
 
 ## P1. Receiver-neutral specification (1.7, text only)
 
@@ -151,7 +158,7 @@ A shared format needs a home that no single implementer controls:
 - the specification repository separate from receiver-specific code;
 - specification text under CC BY 4.0 and schemas and code under Apache-2.0;
 - a patent commitment for implementers;
-- contributions under the Developer Certificate of Origin;
+- contributions under the Developer Certificate of Origin (adopted 2026-11-03, see GOVERNANCE.md);
 - a public proposal process;
 - maintainers from more than one organisation once there are other implementers;
 - a validator CLI and a conformance suite that every implementation, including the original one, passes.
