@@ -4,7 +4,9 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
-Patch release (1.6.7, proposed): bug fixes in the receiver-side keys and normalisation, conformance vectors, and the `ctis` command line tool. No report format change.
+## [1.6.7] - 2026-11-03
+
+Patch release: bug fixes in the receiver-side keys and normalisation, conformance vectors, and the `ctis` command line tool. No report format change.
 
 ### Fixed: interoperability keys and URL asset names
 
