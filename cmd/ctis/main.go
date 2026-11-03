@@ -46,19 +46,19 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case "conformance":
 		return cmdConformance(args[1:], stdout, stderr)
 	case "version", "--version":
-		fmt.Fprintf(stdout, "ctis %s (CTIS %s)\n", version, ctis.SchemaVersion)
+		_, _ = fmt.Fprintf(stdout, "ctis %s (CTIS %s)\n", version, ctis.SchemaVersion)
 		return 0
 	case "help", "-h", "--help":
 		usage(stdout)
 		return 0
 	}
-	fmt.Fprintf(stderr, "ctis: unknown command %q\n", args[0])
+	_, _ = fmt.Fprintf(stderr, "ctis: unknown command %q\n", args[0])
 	usage(stderr)
 	return 2
 }
 
 func usage(w io.Writer) {
-	fmt.Fprint(w, `usage:
+	_, _ = fmt.Fprint(w, `usage:
   ctis validate [--json] [--max-size BYTES] <file|->...
   ctis canon <asset-type> <value>
   ctis conformance [dir]   (default conformance/v1)
@@ -91,7 +91,7 @@ func cmdValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	for _, name := range fs.Args() {
 		raw, err := readInput(name, stdin, *maxSize)
 		if err != nil {
-			fmt.Fprintf(stderr, "%s: %v\n", name, err)
+			_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
 			exit = 2
 			continue
 		}
@@ -107,9 +107,9 @@ func cmdValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		case *asJSON:
 			_ = enc.Encode(res)
 		case p != nil:
-			fmt.Fprintf(stdout, "%s: %s: %s\n", name, p.Category, p.Message)
+			_, _ = fmt.Fprintf(stdout, "%s: %s: %s\n", name, p.Category, p.Message)
 		default:
-			fmt.Fprintf(stdout, "%s: ok\n", name)
+			_, _ = fmt.Fprintf(stdout, "%s: ok\n", name)
 		}
 	}
 	return exit
@@ -117,13 +117,13 @@ func cmdValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 // readInput reads a file, or stdin for "-", and refuses more than limit bytes.
 func readInput(name string, stdin io.Reader, limit int64) ([]byte, error) {
-	var r io.Reader = stdin
+	r := stdin
 	if name != "-" {
 		f, err := os.Open(name)
 		if err != nil {
 			return nil, err
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		r = f
 	}
 	raw, err := io.ReadAll(io.LimitReader(r, limit+1))
@@ -141,7 +141,7 @@ func cmdCanon(args []string, stdout, stderr io.Writer) int {
 		usage(stderr)
 		return 2
 	}
-	fmt.Fprintln(stdout, ctis.NormalizeAssetName(ctis.AssetType(args[0]), args[1]))
+	_, _ = fmt.Fprintln(stdout, ctis.NormalizeAssetName(ctis.AssetType(args[0]), args[1]))
 	return 0
 }
 
@@ -157,14 +157,14 @@ func cmdConformance(args []string, stdout, stderr io.Writer) int {
 	}
 	results, err := conformance.Run(dir)
 	if err != nil {
-		fmt.Fprintf(stderr, "ctis: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "ctis: %v\n", err)
 		return 2
 	}
 	bad := conformance.Failures(results)
 	for _, r := range bad {
-		fmt.Fprintf(stdout, "FAIL %s: %s: %s\n", r.Suite, r.Name, r.Err)
+		_, _ = fmt.Fprintf(stdout, "FAIL %s: %s: %s\n", r.Suite, r.Name, r.Err)
 	}
-	fmt.Fprintf(stdout, "%d vectors, %d failed\n", len(results), len(bad))
+	_, _ = fmt.Fprintf(stdout, "%d vectors, %d failed\n", len(results), len(bad))
 	if len(bad) > 0 {
 		return 1
 	}

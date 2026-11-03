@@ -152,7 +152,7 @@ jobs:
           echo "all invalid examples refused"
 
       - name: Conformance vectors
-        run: '"$RUNNER_TEMP/ctis" conformance conformance'
+        run: '"$RUNNER_TEMP/ctis" conformance conformance/v1'
 
   fuzz:
     name: Fuzz (smoke)

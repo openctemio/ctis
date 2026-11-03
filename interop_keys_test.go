@@ -80,7 +80,7 @@ func TestLocationKeyEcosystemToPURLType(t *testing.T) {
 		"nuget": "nuget", "gem": "gem", "rubygems": "gem",
 		"cargo": "cargo", "crates.io": "cargo", "rust": "cargo",
 		"composer": "composer", "packagist": "composer",
-		" Hex ":      "hex",
+		"HEX":        "hex",
 		"unheard-of": "unheard-of",
 	}
 	for eco, typ := range cases {
