@@ -1,0 +1,124 @@
+[
+  {
+    "activity_id": 1,
+    "activity_name": "Create",
+    "category_uid": 2,
+    "category_name": "Findings",
+    "class_uid": 2002,
+    "class_name": "Vulnerability Finding",
+    "type_uid": 200201,
+    "type_name": "Vulnerability Finding: Create",
+    "severity_id": 4,
+    "severity": "High",
+    "time": 1790931600000,
+    "confidence_score": 95,
+    "message": "User-controlled data from a request is passed to 'execute()'.",
+    "metadata": {
+      "version": "1.3.0",
+      "product": {
+        "name": "semgrep",
+        "version": "1.85.0"
+      }
+    },
+    "finding_info": {
+      "uid": "0e1d2c3b4a5f69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "title": "SQL query built from request data",
+      "types": [
+        "security"
+      ],
+      "analytic": {
+        "uid": "python.django.security.injection.sql.sql-injection-db-cursor-execute",
+        "type_id": 1,
+        "type": "Rule"
+      }
+    },
+    "vulnerabilities": [
+      {
+        "title": "SQL query built from request data",
+        "severity": "High",
+        "cwe": {
+          "uid": "CWE-89"
+        },
+        "affected_code": [
+          {
+            "file": {
+              "name": "views.py",
+              "path": "app/views.py"
+            },
+            "start_line": 42,
+            "end_line": 42
+          }
+        ],
+        "remediation": {
+          "desc": "Use parameterised queries."
+        }
+      }
+    ],
+    "resources": [
+      {
+        "uid": "repo",
+        "name": "github.com/example/shop",
+        "type": "repository"
+      }
+    ],
+    "unmapped": {
+      "ctis_type": "vulnerability"
+    }
+  },
+  {
+    "activity_id": 1,
+    "activity_name": "Create",
+    "category_uid": 2,
+    "category_name": "Findings",
+    "class_uid": 2002,
+    "class_name": "Vulnerability Finding",
+    "type_uid": 200201,
+    "type_name": "Vulnerability Finding: Create",
+    "severity_id": 2,
+    "severity": "Low",
+    "status_id": 3,
+    "status": "Suppressed",
+    "time": 1790931600000,
+    "metadata": {
+      "version": "1.3.0",
+      "product": {
+        "name": "semgrep",
+        "version": "1.85.0"
+      }
+    },
+    "finding_info": {
+      "uid": "f-2",
+      "title": "Use of weak hash function MD5",
+      "analytic": {
+        "uid": "python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-md5",
+        "type_id": 1,
+        "type": "Rule"
+      }
+    },
+    "vulnerabilities": [
+      {
+        "title": "Use of weak hash function MD5",
+        "severity": "Low",
+        "affected_code": [
+          {
+            "file": {
+              "name": "fixtures.py",
+              "path": "tests/fixtures.py"
+            },
+            "start_line": 8
+          }
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "uid": "repo",
+        "name": "github.com/example/shop",
+        "type": "repository"
+      }
+    ],
+    "unmapped": {
+      "ctis_type": "vulnerability"
+    }
+  }
+]

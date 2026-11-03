@@ -121,15 +121,6 @@ func TestDecodeNewerMinorMapsUnknownEnums(t *testing.T) {
 	}
 }
 
-func contains(list []string, v string) bool {
-	for _, x := range list {
-		if x == v {
-			return true
-		}
-	}
-	return false
-}
-
 func TestDecodeRejectsOtherMajors(t *testing.T) {
 	for _, v := range []string{"2.0", "0.9", "3.1"} {
 		doc := `{"version":"` + v + `",` + decodeBase + `}`

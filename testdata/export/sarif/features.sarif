@@ -1,0 +1,98 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "example-sast",
+          "version": "2.4.1",
+          "informationUri": "https://example.com/sast",
+          "rules": [
+            {
+              "id": "py.sql-injection",
+              "name": "SqlInjection",
+              "shortDescription": {"text": "User input reaches a SQL query."},
+              "helpUri": "https://example.com/rules/sql-injection",
+              "defaultConfiguration": {"level": "error"},
+              "properties": {"precision": "high", "security-severity": "8.8", "cwe": ["CWE-89"], "tags": ["security", "external/owasp/A03:2021"]}
+            },
+            {
+              "id": "py.xss",
+              "shortDescription": {"text": "Reflected cross-site scripting."},
+              "properties": {"precision": "medium", "tags": ["security", "CWE-79: Improper Neutralization"]}
+            },
+            {
+              "id": "web.missing-header",
+              "shortDescription": {"text": "A security header is missing."},
+              "defaultConfiguration": {"level": "note"},
+              "properties": {"tags": ["misconfiguration"]}
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "py.sql-injection",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {"text": "Tainted request parameter flows into cursor.execute"},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "app/db.py"},
+                "region": {"startLine": 42, "endLine": 42, "startColumn": 5, "endColumn": 40, "snippet": {"text": "cursor.execute(query % name)"}}
+              },
+              "logicalLocations": [{"name": "find_user", "fullyQualifiedName": "app.db.find_user", "kind": "function"}]
+            }
+          ],
+          "fingerprints": {"matchBasedId/v1": "4f2a9c1d3e5b7a8f"},
+          "partialFingerprints": {"primaryLocationLineHash": "a1b2c3d4e5f60718:1"},
+          "correlationGuid": "6b7c1f5e-3a2d-4c8b-9e0f-1a2b3c4d5e6f",
+          "baselineState": "new",
+          "kind": "fail",
+          "properties": {"tags": ["injection"]},
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "app/views.py"}, "region": {"startLine": 10, "snippet": {"text": "name = request.args['name']"}}}, "message": {"text": "Source: request.args"}}, "kinds": ["source"]},
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "app/views.py"}, "region": {"startLine": 12}}, "logicalLocations": [{"fullyQualifiedName": "app.views.lookup"}], "message": {"text": "passed to find_user"}}},
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "app/db.py"}, "region": {"startLine": 42, "startColumn": 5}}, "message": {"text": "Sink: cursor.execute"}}, "kinds": ["sink"]}
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "py.xss",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {"text": "Request value rendered without escaping"},
+          "locations": [{"physicalLocation": {"artifactLocation": {"uri": "app/templates.py"}, "region": {"startLine": 7}}}],
+          "fingerprints": {"b": "zz", "a": "1111aaaa2222bbbb"},
+          "suppressions": [{"kind": "inSource", "justification": "escaped by the template engine"}]
+        },
+        {
+          "ruleId": "py.xss",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {"text": "Second reflected value"},
+          "locations": [{"physicalLocation": {"artifactLocation": {"uri": "app/search.py"}, "region": {"startLine": 3}}}],
+          "suppressions": [{"kind": "external", "status": "underReview", "justification": "triage pending"}]
+        },
+        {
+          "ruleId": "web.missing-header",
+          "ruleIndex": 2,
+          "level": "note",
+          "kind": "notApplicable",
+          "message": {"text": "Content-Security-Policy is not set"},
+          "webRequest": {"protocol": "http", "version": "1.1", "target": "https://app.example.com/login", "method": "GET", "headers": {"Accept": "text/html"}},
+          "webResponse": {"protocol": "http", "version": "1.1", "statusCode": 200, "reasonPhrase": "OK", "headers": {"Content-Type": "text/html"}, "body": {"text": "<html></html>"}}
+        }
+      ]
+    }
+  ]
+}
