@@ -4,7 +4,7 @@ Module `github.com/openctemio/ctis/v2/interop/openvex`, released with tags `v2/i
 
 ## [Unreleased]
 
-## [0.1.0] (draft)
+## [0.1.0] - 2026-11-03
 
 First release: the OpenVEX code moved out of the CTIS core module (CTIS 2.0).
 
