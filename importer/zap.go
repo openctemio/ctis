@@ -536,8 +536,7 @@ func zapExchanges(instances []*zapInstance) []ctis.EvidenceItem {
 	for i := range items {
 		ptrs[i] = &items[i]
 	}
-	ctis.MarkSensitive(ptrs...)
-	return items
+	return dropIncomplete(items, ctis.MarkSensitive(ptrs...))
 }
 
 // zapEvidence is one line per instance (at most zapMaxInstances, the rest

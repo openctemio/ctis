@@ -31,6 +31,10 @@ CTIS 2.0 is a one-time breaking cleanup of the format: one name per concept, one
 - Rule catalog: top-level `rules[]` (`id`, `rule_id`, `name`, `short_description`, `full_description`, `help`, `help_uri`, `default_severity`, `tags`, `cwe_ids`, `extensions`) and `finding.rule_ref`; a finding with `rule_ref` keeps an equal `rule_id`, so identity never depends on the catalog (spec 6.7).
 - `metadata.profiles[]`, `metadata.source_refs[]`, `asset.source_refs[]`, `finding.source_refs[]`, `finding.technique`, `technical.http`, `technical.identity`, `location.commit`, `ctis.Bool`, `ctis.PrimaryCVSS`, `ctis.HasThreatSignal`, `ctis.CVEs`, `VulnerabilityDetails.AddID`, `Extensions.Set`/`Get`.
 
+### Security
+
+- Evidence marking no longer leaves a sensitive value unmarked when an item repeats it more often than `MaxEvidenceSpans` allows (found by the HTTP exchange fuzz target): the spans widen to whole strings, and `MarkSensitive` now returns the indexes of the items it still cannot mark completely. `HTTPExchangeFromRaw`/`HTTPExchangeFromHAR` refuse such an exchange and the importers drop such an item; nothing is sent with a value unmarked. Go: `MarkSensitive(items...)` returns `[]int`.
+
 ### Renames and removals (old → new)
 
 The complete table, also in [docs/migration-2.0.md](docs/migration-2.0.md):
