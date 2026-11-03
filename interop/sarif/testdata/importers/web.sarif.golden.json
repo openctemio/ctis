@@ -18,6 +18,17 @@
       "name": "webscanner-import"
     }
   ],
+  "rules": [
+    {
+      "id": "rule-1",
+      "rule_id": "WEB-SQLI",
+      "short_description": "SQL injection",
+      "tags": [
+        "security",
+        "dast"
+      ]
+    }
+  ],
   "findings": [
     {
       "id": "finding-1",
@@ -27,6 +38,7 @@
       "severity": "high",
       "confidence": 90,
       "rule_id": "WEB-SQLI",
+      "rule_ref": "rule-1",
       "asset_ref": "unclassified-webscanner-import",
       "tags": [
         "security",
@@ -111,6 +123,7 @@
       "severity": "medium",
       "confidence": 90,
       "rule_id": "WEB-SQLI",
+      "rule_ref": "rule-1",
       "asset_ref": "unclassified-webscanner-import",
       "tags": [
         "security",
@@ -146,6 +159,7 @@
       "severity": "low",
       "confidence": 90,
       "rule_id": "WEB-SQLI",
+      "rule_ref": "rule-1",
       "asset_ref": "unclassified-webscanner-import",
       "tags": [
         "security",

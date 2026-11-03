@@ -25,6 +25,24 @@
       "value": "github.com/example/shop"
     }
   ],
+  "rules": [
+    {
+      "id": "rule-1",
+      "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "short_description": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "full_description": "Found shell=True",
+      "help": "Found shell=True",
+      "default_severity": "high",
+      "tags": [
+        "CWE-78: OS Command Injection",
+        "security"
+      ],
+      "cwe_ids": [
+        "CWE-78"
+      ]
+    }
+  ],
   "findings": [
     {
       "id": "finding-1",
@@ -35,6 +53,7 @@
       "confidence": 95,
       "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
       "rule_name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "rule_ref": "rule-1",
       "asset_ref": "repo",
       "location": {
         "path": "src/app.py",
@@ -72,6 +91,7 @@
       "confidence": 95,
       "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
       "rule_name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+      "rule_ref": "rule-1",
       "asset_ref": "repo",
       "location": {
         "path": "src/app.py",

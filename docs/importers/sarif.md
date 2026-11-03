@@ -4,7 +4,7 @@ Generated from `interop/sarif/2.1.0/import.json`; regenerate with `go test ./...
 
 - Format: `sarif`
 - Source versions: SARIF 2.1.0 (OASIS) as written by CodeQL, semgrep, trivy, gitleaks, betterleaks and other static analysis tools
-- Fields: 85 mapped, 48 ignored on purpose (64% mapped)
+- Fields: 88 mapped, 46 ignored on purpose (66% mapped)
 
 ## Rules
 
@@ -33,28 +33,31 @@ Generated from `interop/sarif/2.1.0/import.json`; regenerate with `go test ./...
 | `/runs[]/tool/driver/fullName` |  | display name; name is kept |
 | `/runs[]/tool/driver/organization` |  | the tool vendor's name; not a finding property |
 | `/runs[]/tool/driver/rules` | (container) |  |
-| `/runs[]/tool/driver/rules[]` | `the rule of each result` |  |
-| `/runs[]/tool/driver/rules[]/id` | `findings[].rule_id (rule lookup)` |  |
-| `/runs[]/tool/driver/rules[]/name` | `findings[].rule_name` |  |
+| `/runs[]/tool/driver/rules[]` | `rules[] (each rule a result resolves to) and the rule of each result` |  |
+| `/runs[]/tool/driver/rules[]/id` | `rules[].rule_id, findings[].rule_id (rule lookup)` |  |
+| `/runs[]/tool/driver/rules[]/name` | `rules[].name, findings[].rule_name` |  |
 | `/runs[]/tool/driver/rules[]/shortDescription` | (container) |  |
-| `/runs[]/tool/driver/rules[]/shortDescription/text` | `findings[].description, title (when the result has no message)` |  |
-| `/runs[]/tool/driver/rules[]/fullDescription` |  | long rule text; the short description is kept |
-| `/runs[]/tool/driver/rules[]/fullDescription/text` |  | long rule text; the short description is kept |
-| `/runs[]/tool/driver/rules[]/help` |  | rule help text (documentation of the check, same for every finding) |
-| `/runs[]/tool/driver/rules[]/help/**` |  | rule help text (documentation of the check, same for every finding) |
-| `/runs[]/tool/driver/rules[]/helpUri` | `findings[].references` |  |
+| `/runs[]/tool/driver/rules[]/shortDescription/text` | `rules[].short_description, findings[].description, title (when the result has no message)` |  |
+| `/runs[]/tool/driver/rules[]/fullDescription` | (container) |  |
+| `/runs[]/tool/driver/rules[]/fullDescription/text` | `rules[].full_description` |  |
+| `/runs[]/tool/driver/rules[]/fullDescription/markdown` |  | the markdown form of the description; the text is kept |
+| `/runs[]/tool/driver/rules[]/help` | (container) |  |
+| `/runs[]/tool/driver/rules[]/help/text` | `rules[].help` |  |
+| `/runs[]/tool/driver/rules[]/help/markdown` |  | the markdown form of the help; the text is kept |
+| `/runs[]/tool/driver/rules[]/helpUri` | `rules[].help_uri (http and https only), findings[].references` |  |
 | `/runs[]/tool/driver/rules[]/defaultConfiguration` | (container) |  |
-| `/runs[]/tool/driver/rules[]/defaultConfiguration/level` | `findings[].severity (when the result has no level)` |  |
+| `/runs[]/tool/driver/rules[]/defaultConfiguration/level` | `rules[].default_severity (when there is no security-severity), findings[].severity (when the result has no level)` |  |
 | `/runs[]/tool/driver/rules[]/defaultConfiguration/enabled` |  | tool configuration |
 | `/runs[]/tool/driver/rules[]/properties` | (container) |  |
-| `/runs[]/tool/driver/rules[]/properties/tags` | `findings[].tags, type, vulnerability.cwe_ids, owasp_ids` |  |
-| `/runs[]/tool/driver/rules[]/properties/tags[]` | `findings[].tags, type, vulnerability.cwe_ids, owasp_ids` |  |
+| `/runs[]/tool/driver/rules[]/properties/tags` | `rules[].tags, findings[].tags, type, vulnerability.cwe_ids, owasp_ids` |  |
+| `/runs[]/tool/driver/rules[]/properties/tags[]` | `rules[].tags, findings[].tags, type, vulnerability.cwe_ids, owasp_ids` |  |
 | `/runs[]/tool/driver/rules[]/properties/precision` | `findings[].confidence` |  |
-| `/runs[]/tool/driver/rules[]/properties/security-severity` | `findings[].severity` |  |
-| `/runs[]/tool/driver/rules[]/properties/cwe` | `findings[].vulnerability.cwe_ids` |  |
-| `/runs[]/tool/driver/rules[]/properties/cwe[]` | `findings[].vulnerability.cwe_ids` |  |
+| `/runs[]/tool/driver/rules[]/properties/security-severity` | `rules[].default_severity, findings[].severity` |  |
+| `/runs[]/tool/driver/rules[]/properties/cwe` | `rules[].cwe_ids, findings[].vulnerability.cwe_ids` |  |
+| `/runs[]/tool/driver/rules[]/properties/cwe[]` | `rules[].cwe_ids, findings[].vulnerability.cwe_ids` |  |
 | `/runs[]/tool/driver/rules[]/properties/owasp` | `findings[].vulnerability.owasp_ids` |  |
 | `/runs[]/tool/driver/rules[]/properties/owasp[]` | `findings[].vulnerability.owasp_ids` |  |
+| `/runs[]/tool/driver/rules[]/properties/ctis_id` | `rules[].id (the CTIS rule id the exporter wrote, when it is a free document reference; else rule-N), findings[].rule_ref` |  |
 | `/runs[]/tool/driver/rules[]/properties/*` |  | other rule properties (CodeQL id, kind, name, description, problem.severity): duplicates of rule members or tool internals |
 | `/runs[]/results` | (container) |  |
 | `/runs[]/results[]` | `findings[]` |  |

@@ -22,6 +22,18 @@
       "name": "gitleaks-import"
     }
   ],
+  "rules": [
+    {
+      "id": "rule-1",
+      "rule_id": "aws-access-token",
+      "short_description": "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms."
+    },
+    {
+      "id": "rule-2",
+      "rule_id": "generic-api-key",
+      "short_description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations."
+    }
+  ],
   "findings": [
     {
       "id": "finding-1",
@@ -31,6 +43,7 @@
       "severity": "medium",
       "confidence": 90,
       "rule_id": "aws-access-token",
+      "rule_ref": "rule-1",
       "asset_ref": "unclassified-gitleaks-import",
       "location": {
         "path": "config.env",
@@ -56,6 +69,7 @@
       "severity": "medium",
       "confidence": 90,
       "rule_id": "generic-api-key",
+      "rule_ref": "rule-2",
       "asset_ref": "unclassified-gitleaks-import",
       "location": {
         "path": "config.env",

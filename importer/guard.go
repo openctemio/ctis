@@ -46,7 +46,23 @@ func (b *Builder) guard() error {
 	}
 	rep.Assets = keptAssets
 
-	// Findings, each with its asset, unique ids.
+	// Rules of the catalog, one by one, unique ids.
+	keptRules := rep.Rules[:0]
+	rulesByID := map[string]ctis.Rule{}
+	for _, r := range rep.Rules {
+		p := probe()
+		p.Rules = []ctis.Rule{r}
+		if err := p.Validate(); err != nil || rulesByID[r.ID].ID != "" {
+			note("rule", err)
+			continue
+		}
+		rulesByID[r.ID] = r
+		keptRules = append(keptRules, r)
+	}
+	droppedRules := len(rep.Rules) - len(keptRules)
+	rep.Rules = keptRules
+
+	// Findings, each with its asset (and rule), unique ids.
 	keptFindings := rep.Findings[:0]
 	findingIDs := map[string]bool{}
 	assetsByID := map[string]ctis.Asset{}
@@ -64,7 +80,13 @@ func (b *Builder) guard() error {
 			continue
 		}
 		p.Assets = []ctis.Asset{a}
-		// A dependency_ref is checked against the whole report below.
+		// A dependency_ref is checked against the whole report below. A
+		// rule_ref to a rule that was left out is cleared.
+		if r, ok := rulesByID[f.RuleRef]; ok && f.RuleRef != "" {
+			p.Rules = []ctis.Rule{r}
+		} else {
+			f.RuleRef = ""
+		}
 		pf := f
 		pf.DependencyRef = ""
 		p.Findings = []ctis.Finding{pf}
@@ -169,7 +191,7 @@ func (b *Builder) guard() error {
 	for _, d := range []struct {
 		kind string
 		n    int
-	}{{"asset", droppedAssets}, {"endpoint", droppedEndpoints}, {"finding", droppedFindings}, {"component", droppedDeps}, {"VEX statement", droppedStatements}} {
+	}{{"asset", droppedAssets}, {"rule", droppedRules}, {"endpoint", droppedEndpoints}, {"finding", droppedFindings}, {"component", droppedDeps}, {"VEX statement", droppedStatements}} {
 		if d.n == 0 {
 			continue
 		}

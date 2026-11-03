@@ -86,10 +86,18 @@ func dropMember(v any, path []string) any {
 	key := path[0]
 	if i := strings.IndexByte(key, '['); i > 0 && strings.HasSuffix(key, "]") && strings.Contains(key, "=") {
 		// "list[a.b=value]" drops the elements of list whose member a.b
-		// is value.
+		// is value; "list[a.b=value].c" drops member c of those elements.
 		sel, want, _ := strings.Cut(key[i+1:len(key)-1], "=")
 		arr, ok := m[key[:i]].([]any)
 		if !ok {
+			return m
+		}
+		if len(path) > 1 {
+			for j, el := range arr {
+				if fmt.Sprint(memberAt(el, strings.Split(sel, "."))) == want {
+					arr[j] = dropMember(el, path[1:])
+				}
+			}
 			return m
 		}
 		kept := []any{}

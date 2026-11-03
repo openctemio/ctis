@@ -27,6 +27,30 @@
       "value": "github.com/example/shop"
     }
   ],
+  "rules": [
+    {
+      "id": "rule-1",
+      "rule_id": "CKV_AWS_20",
+      "name": "S3 Bucket has an ACL defined which allows public READ access.",
+      "default_severity": "high"
+    },
+    {
+      "id": "rule-2",
+      "rule_id": "CKV_AWS_18",
+      "name": "Ensure the S3 bucket has access logging enabled",
+      "default_severity": "medium"
+    },
+    {
+      "id": "rule-3",
+      "rule_id": "CKV_AWS_144",
+      "name": "Ensure that S3 bucket has cross-region replication enabled",
+      "default_severity": "low"
+    },
+    {
+      "id": "rule-4",
+      "rule_id": "X1"
+    }
+  ],
   "findings": [
     {
       "id": "finding-1",
@@ -36,6 +60,7 @@
       "confidence": 90,
       "rule_id": "CKV_AWS_20",
       "rule_name": "S3 Bucket has an ACL defined which allows public READ access.",
+      "rule_ref": "rule-1",
       "asset_ref": "repo",
       "location": {
         "path": "terraform/s3.tf",
@@ -61,6 +86,7 @@
       "confidence": 90,
       "rule_id": "CKV_AWS_18",
       "rule_name": "Ensure the S3 bucket has access logging enabled",
+      "rule_ref": "rule-2",
       "asset_ref": "repo",
       "location": {
         "path": "terraform/s3.tf",
@@ -86,6 +112,7 @@
       "confidence": 90,
       "rule_id": "CKV_AWS_144",
       "rule_name": "Ensure that S3 bucket has cross-region replication enabled",
+      "rule_ref": "rule-3",
       "asset_ref": "repo",
       "location": {
         "path": "terraform/s3.tf",
@@ -110,6 +137,7 @@
       "confidence": 90,
       "rule_id": "CKV_AWS_20",
       "rule_name": "S3 Bucket has an ACL defined which allows public READ access.",
+      "rule_ref": "rule-1",
       "asset_ref": "repo",
       "location": {
         "path": "terraform/logs.tf",
@@ -134,6 +162,7 @@
       "severity": "medium",
       "confidence": 90,
       "rule_id": "X1",
+      "rule_ref": "rule-4",
       "asset_ref": "repo",
       "kind": "open",
       "tool": {
@@ -147,6 +176,7 @@
       "severity": "medium",
       "confidence": 90,
       "rule_id": "X1",
+      "rule_ref": "rule-4",
       "asset_ref": "repo",
       "baseline_state": "updated",
       "kind": "informational",
@@ -161,6 +191,7 @@
       "severity": "medium",
       "confidence": 90,
       "rule_id": "X1",
+      "rule_ref": "rule-4",
       "asset_ref": "repo",
       "tool": {
         "name": "custom-linter"
@@ -173,6 +204,7 @@
       "severity": "medium",
       "confidence": 90,
       "rule_id": "X1",
+      "rule_ref": "rule-4",
       "asset_ref": "repo",
       "tool": {
         "name": "custom-linter"

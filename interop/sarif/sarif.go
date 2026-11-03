@@ -333,6 +333,7 @@ func Import(data []byte, opts *Options) (*ctis.Report, error) {
 	}
 
 	multiRun := len(sarif.Runs) > 1
+	rules := newCatalog()
 	n := 0
 	for ri := range sarif.Runs {
 		run := &sarif.Runs[ri]
@@ -356,6 +357,12 @@ func Import(data []byte, opts *Options) (*ctis.Report, error) {
 				}
 			}
 			finding := convertSARIFResult(&result, rule, ruleID, driver.Name, roots, opts, prep)
+			if rule != nil && ruleID != "" && rule.ID == ruleID {
+				finding.RuleRef = rules.ref(rule)
+				if finding.RuleRef != "" && (finding.Type == ctis.FindingTypeSecret || isSecretTool(strings.ToLower(driver.Name))) {
+					rules.redact(finding.RuleRef, rawSnippet(&result))
+				}
+			}
 			finding.ID = fmt.Sprintf("finding-%d", n)
 			finding.AssetRef = assetID
 			if multiRun {
@@ -365,6 +372,7 @@ func Import(data []byte, opts *Options) (*ctis.Report, error) {
 		}
 	}
 
+	report.Rules = rules.rules
 	report.Tool.Techniques = detectTechniques(first.Name, opts.ToolType)
 	return report, nil
 }
@@ -975,4 +983,13 @@ func contentText(c *Content) *string {
 		}
 	}
 	return &s
+}
+
+// rawSnippet is the region snippet of a result's first location, as the
+// tool wrote it.
+func rawSnippet(r *Result) string {
+	if len(r.Locations) == 0 || r.Locations[0].PhysicalLocation == nil || r.Locations[0].PhysicalLocation.Region == nil || r.Locations[0].PhysicalLocation.Region.Snippet == nil {
+		return ""
+	}
+	return r.Locations[0].PhysicalLocation.Region.Snippet.Text
 }

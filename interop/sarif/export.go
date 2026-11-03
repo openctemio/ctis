@@ -145,7 +145,7 @@ func Export(r *ctis.Report, opts *ExportOptions) ([]byte, error) {
 		if tool == driver.Name {
 			d = driver
 		}
-		run, err := sarifRunOf(d, byTool[tool])
+		run, err := sarifRunOf(d, byTool[tool], r.Rules, len(order) == 1)
 		if err != nil {
 			return nil, err
 		}
@@ -190,12 +190,50 @@ func Export(r *ctis.Report, opts *ExportOptions) ([]byte, error) {
 	return out, nil
 }
 
-// sarifRunOf writes one run: the rules catalog built from the findings (the
-// first finding of each rule id defines the rule, rules sorted by id) and
-// one result per finding, in order.
-func sarifRunOf(driver Driver, findings []ctis.Finding) (sarifOutRun, error) {
+// sarifRunOf writes one run: the rules catalog and one result per finding,
+// in order. The catalog rules come first (all of them when all is set, else
+// the ones the findings name), in catalog order; a finding without a catalog
+// rule gets a rule built from it (the first finding of each rule id defines
+// it), after them, sorted by id (rules.go).
+func sarifRunOf(driver Driver, findings []ctis.Finding, cat []ctis.Rule, all bool) (sarifOutRun, error) {
+	byRef := make(map[string]int, len(cat))
+	byRuleID := make(map[string]int, len(cat))
+	for k := range cat {
+		if _, ok := byRef[cat[k].ID]; !ok {
+			byRef[cat[k].ID] = k
+		}
+		if _, ok := byRuleID[cat[k].RuleID]; !ok {
+			byRuleID[cat[k].RuleID] = k
+		}
+	}
+	use := make([]int, len(findings))
+	first := map[int]*ctis.Finding{}
+	for i := range findings {
+		f := &findings[i]
+		k := -1
+		if j, ok := byRef[f.RuleRef]; ok && f.RuleRef != "" {
+			k = j
+		} else if j, ok := byRuleID[f.RuleID]; ok && f.RuleID != "" {
+			k = j
+		}
+		use[i] = k
+		if _, ok := first[k]; k >= 0 && !ok {
+			first[k] = f
+		}
+	}
+	catIndex := map[int]int{}
+	for k := range cat {
+		if _, used := first[k]; !all && !used {
+			continue
+		}
+		catIndex[k] = len(driver.Rules)
+		driver.Rules = append(driver.Rules, sarifRuleOfCatalog(&cat[k], first[k], driver.Name))
+	}
 	rules := map[string]Rule{}
 	for i := range findings {
+		if use[i] >= 0 {
+			continue
+		}
 		id := sarifRuleID(&findings[i])
 		if _, ok := rules[id]; !ok {
 			rules[id] = sarifRuleOf(&findings[i], id, driver.Name)
@@ -207,15 +245,18 @@ func sarifRunOf(driver Driver, findings []ctis.Finding) (sarifOutRun, error) {
 	}
 	sort.Strings(ids)
 	index := make(map[string]int, len(ids))
-	for i, id := range ids {
+	for _, id := range ids {
+		index[id] = len(driver.Rules)
 		driver.Rules = append(driver.Rules, rules[id])
-		index[id] = i
 	}
 	run := sarifOutRun{Tool: Tool{Driver: driver}, Results: []Result{}}
 	for i := range findings {
 		f := &findings[i]
 		id := sarifRuleID(f)
 		idx := index[id]
+		if k := use[i]; k >= 0 {
+			id, idx = cat[k].RuleID, catIndex[k]
+		}
 		res, err := sarifResultOf(f, id)
 		if err != nil {
 			return sarifOutRun{}, err

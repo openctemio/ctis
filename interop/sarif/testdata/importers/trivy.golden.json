@@ -23,6 +23,61 @@
       "name": "trivy-import"
     }
   ],
+  "rules": [
+    {
+      "id": "rule-1",
+      "rule_id": "CVE-2021-44228",
+      "name": "LanguageSpecificPackageVulnerability",
+      "short_description": "log4j-core: Remote code execution in Log4j 2.x when logs contain an attacker-controlled string value",
+      "full_description": "Apache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect against attacker controlled LDAP endpoints.",
+      "help": "Vulnerability CVE-2021-44228\nSeverity: CRITICAL\nPackage: org.apache.logging.log4j:log4j-core\nFixed Version: 2.15.0",
+      "help_uri": "https://avd.aquasec.com/nvd/cve-2021-44228",
+      "default_severity": "critical",
+      "tags": [
+        "vulnerability",
+        "security",
+        "CRITICAL"
+      ]
+    },
+    {
+      "id": "rule-2",
+      "rule_id": "GHSA-jfh8-c2jp-5v3q",
+      "name": "LanguageSpecificPackageVulnerability",
+      "short_description": "Remote code injection in Log4j",
+      "help_uri": "https://github.com/advisories/GHSA-jfh8-c2jp-5v3q",
+      "default_severity": "medium",
+      "tags": [
+        "vulnerability",
+        "security",
+        "MEDIUM"
+      ]
+    },
+    {
+      "id": "rule-3",
+      "rule_id": "DS002",
+      "name": "Misconfiguration",
+      "short_description": "Image user should not be 'root'",
+      "help_uri": "https://avd.aquasec.com/misconfig/ds002",
+      "default_severity": "high",
+      "tags": [
+        "misconfiguration",
+        "security",
+        "HIGH"
+      ]
+    },
+    {
+      "id": "rule-4",
+      "rule_id": "aws-access-key-id",
+      "name": "Secret",
+      "short_description": "AWS Access Key ID",
+      "default_severity": "critical",
+      "tags": [
+        "secret",
+        "security",
+        "CRITICAL"
+      ]
+    }
+  ],
   "findings": [
     {
       "id": "finding-1",
@@ -33,6 +88,7 @@
       "confidence": 95,
       "rule_id": "CVE-2021-44228",
       "rule_name": "LanguageSpecificPackageVulnerability",
+      "rule_ref": "rule-1",
       "asset_ref": "unclassified-trivy-import",
       "location": {
         "path": "pom.xml",
@@ -67,6 +123,7 @@
       "confidence": 95,
       "rule_id": "GHSA-jfh8-c2jp-5v3q",
       "rule_name": "LanguageSpecificPackageVulnerability",
+      "rule_ref": "rule-2",
       "asset_ref": "unclassified-trivy-import",
       "location": {
         "path": "pom.xml",
@@ -101,6 +158,7 @@
       "confidence": 95,
       "rule_id": "DS002",
       "rule_name": "Misconfiguration",
+      "rule_ref": "rule-3",
       "asset_ref": "unclassified-trivy-import",
       "location": {
         "path": "Dockerfile",
@@ -127,6 +185,7 @@
       "confidence": 95,
       "rule_id": "aws-access-key-id",
       "rule_name": "Secret",
+      "rule_ref": "rule-4",
       "asset_ref": "unclassified-trivy-import",
       "location": {
         "path": "config/aws.env",

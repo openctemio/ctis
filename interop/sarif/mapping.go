@@ -17,7 +17,7 @@ var mappingFiles embed.FS
 // the members that are not field to field.
 var (
 	importHooks = []string{
-		"sarif.results", "sarif.severity", "sarif.rule_lookup", "sarif.rule_taxonomy",
+		"sarif.results", "sarif.severity", "sarif.rule_lookup", "sarif.rule_taxonomy", "sarif.rule_catalog",
 		"sarif.fingerprint", "sarif.suppressions", "sarif.web_exchange", "sarif.code_flows",
 		"sarif.provenance",
 	}

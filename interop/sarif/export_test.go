@@ -221,7 +221,7 @@ func TestExportSARIFFromCTIS(t *testing.T) {
 				}
 				want.Findings[i] = c
 			}
-			for _, d := range interoptest.RoundTripDiff(t, map[string]any{"findings": want.Findings}, map[string]any{"findings": back.Findings}, "ctis-"+name+".losses.json") {
+			for _, d := range interoptest.RoundTripDiff(t, map[string]any{"findings": want.Findings, "rules": want.Rules}, map[string]any{"findings": back.Findings, "rules": back.Rules}, "ctis-"+name+".losses.json") {
 				t.Error(d)
 			}
 		})

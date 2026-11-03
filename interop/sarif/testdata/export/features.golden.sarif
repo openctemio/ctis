@@ -20,6 +20,7 @@
                 "level": "error"
               },
               "properties": {
+                "ctis/id": "rule-1",
                 "cwe": [
                   "CWE-89"
                 ],
@@ -27,7 +28,11 @@
                   "A03:2021"
                 ],
                 "precision": "high",
-                "security-severity": "8.0"
+                "security-severity": "8.0",
+                "tags": [
+                  "security",
+                  "external/owasp/A03:2021"
+                ]
               }
             },
             {
@@ -35,15 +40,16 @@
               "shortDescription": {
                 "text": "Reflected cross-site scripting."
               },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
               "properties": {
+                "ctis/id": "rule-2",
                 "cwe": [
                   "CWE-79"
                 ],
                 "precision": "medium",
-                "security-severity": "5.5"
+                "tags": [
+                  "security",
+                  "CWE-79: Improper Neutralization"
+                ]
               }
             },
             {
@@ -55,8 +61,10 @@
                 "level": "note"
               },
               "properties": {
+                "ctis/id": "rule-3",
                 "security-severity": "2.0",
                 "tags": [
+                  "misconfiguration",
                   "misconfiguration"
                 ]
               }

@@ -24,6 +24,22 @@
       }
     }
   ],
+  "rules": [
+    {
+      "id": "r-ex001",
+      "rule_id": "EX001",
+      "name": "HardcodedCredential",
+      "short_description": "Hard-coded credential",
+      "help_uri": "https://www.example.com/rules/EX001",
+      "default_severity": "high",
+      "tags": [
+        "security"
+      ],
+      "cwe_ids": [
+        "CWE-798"
+      ]
+    }
+  ],
   "findings": [
     {
       "id": "finding-1",
@@ -34,6 +50,7 @@
       "confidence": 85,
       "rule_id": "EX001",
       "rule_name": "HardcodedCredential",
+      "rule_ref": "r-ex001",
       "asset_ref": "asset-1",
       "location": {
         "path": "src/config.py",

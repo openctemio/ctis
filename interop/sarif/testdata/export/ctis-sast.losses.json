@@ -1,6 +1,6 @@
 {
   "fixture": "examples/sast.json",
-  "note": "Accepted losses of CTIS -> ToSARIF -> FromSARIF for this example (docs/exporters.md, SARIF).",
+  "note": "Accepted losses of CTIS -> sarif.Export -> sarif.Import for this example (docs/exporters.md, SARIF).",
   "losses": [
     {
       "member": "metadata.id",
@@ -79,12 +79,28 @@
       "reason": "as data_flow.summary"
     },
     {
-      "member": "rules",
-      "reason": "the SARIF exporter builds run.tool.driver.rules[] from the findings; mapping CTIS rules[] to it lands with the interop SARIF adapter"
+      "member": "findings[].description",
+      "reason": "on import the finding repeats the description of the rule it names (a receiver that reads no catalog keeps it)"
     },
     {
-      "member": "findings[].rule_ref",
-      "reason": "the SARIF exporter builds run.tool.driver.rules[] from the findings; mapping CTIS rules[] to it lands with the interop SARIF adapter"
+      "member": "findings[].rule_name",
+      "reason": "as findings[].description"
+    },
+    {
+      "member": "findings[].references",
+      "reason": "as findings[].description (the rule's help URI)"
+    },
+    {
+      "member": "findings[].tags",
+      "reason": "as findings[].description (the rule's tags)"
+    },
+    {
+      "member": "findings[rule_id=python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-md5].rule_ref",
+      "reason": "the example names no catalog rule for this finding; SARIF always has a rule, and import catalogs it"
+    },
+    {
+      "member": "rules[rule_id=python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-md5]",
+      "reason": "as findings[].rule_ref of that finding: the rule import catalogs"
     }
   ]
 }

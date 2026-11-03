@@ -21,6 +21,22 @@
       "name": "codeql-import"
     }
   ],
+  "rules": [
+    {
+      "id": "rule-1",
+      "rule_id": "js/sql-injection",
+      "name": "SqlInjection",
+      "short_description": "Database query built from user-controlled sources",
+      "default_severity": "high",
+      "tags": [
+        "security",
+        "external/cwe/cwe-089"
+      ],
+      "cwe_ids": [
+        "CWE-89"
+      ]
+    }
+  ],
   "findings": [
     {
       "id": "finding-1",
@@ -31,6 +47,7 @@
       "confidence": 85,
       "rule_id": "js/sql-injection",
       "rule_name": "SqlInjection",
+      "rule_ref": "rule-1",
       "asset_ref": "unclassified-codeql-import",
       "location": {
         "path": "src/db/orders.js",
@@ -108,6 +125,7 @@
       "confidence": 85,
       "rule_id": "js/sql-injection",
       "rule_name": "SqlInjection",
+      "rule_ref": "rule-1",
       "asset_ref": "unclassified-codeql-import",
       "location": {
         "path": "src/db/users.js",

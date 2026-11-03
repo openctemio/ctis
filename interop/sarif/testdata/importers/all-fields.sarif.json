@@ -18,7 +18,7 @@
               "properties": {
                 "cwe": ["CWE-798"],
                 "owasp": ["A07:2021"],
-                "precision": "high",
+                "precision": "high", "ctis/id": "r-ex001",
                 "security-severity": "8.1",
                 "tags": ["security"]
               }
