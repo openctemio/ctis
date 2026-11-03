@@ -248,7 +248,7 @@ Web3 is a profile, not a type: a smart-contract issue is a `vulnerability` or `w
 | `member_of` | an identity or host → a group, network or account |
 | `routes_to` | a load balancer, gateway or origin → a target |
 | `has_access_to` | an identity → a resource |
-| `has_address` (2.1) | a host, network device, endpoint device or other machine → an `ip_address` asset assigned to it (an interface or management address; not DNS) |
+| `has_address` | a host, network device, endpoint device or other machine → an `ip_address` asset assigned to it (an interface or management address; not DNS) |
 
 `resolves_to` is DNS only: a name and the addresses its A/AAAA answers give. An address a machine carries is `has_address`; a receiver MAY match machines across producers by these addresses.
 
@@ -364,7 +364,7 @@ CTEM Interchange Schema (CTIS) 2.0: one producer's observations of assets, findi
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
-| `$schema` | string |  | pattern `^[Hh][Tt][Tt][Pp][Ss]?://[^\s/?#]+[^\s]*$`; maxLength 2048 | Schema URL, normally https://schemas.openctem.io/ctis/2.1/report.json. An identifier: receivers never fetch it. |
+| `$schema` | string |  | pattern `^[Hh][Tt][Tt][Pp][Ss]?://[^\s/?#]+[^\s]*$`; maxLength 2048 | Schema URL, normally https://schemas.openctem.io/ctis/2.0/report.json. An identifier: receivers never fetch it. |
 | `assets` | array of `asset.json` |  |  | Discovered assets |
 | `dependencies` | array of `dependency.json` |  |  | Software dependencies (SBOM) |
 | `endpoints` | array of `endpoint.json` |  |  | Methods and paths web origins serve, as a tool saw them; parameters are named, never valued |

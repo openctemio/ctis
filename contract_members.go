@@ -95,8 +95,7 @@ const (
 	RelHasAccessTo RelationshipType = "has_access_to"
 	// RelHasAddress: from (a host, network device, endpoint device or other
 	// machine) is assigned to (an ip_address asset): an interface or
-	// management address, not DNS (CTIS 2.1). A name's DNS answers stay
-	// resolves_to.
+	// management address, not DNS. A name's DNS answers stay resolves_to.
 	RelHasAddress RelationshipType = "has_address"
 )
 

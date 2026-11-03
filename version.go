@@ -19,7 +19,7 @@ import (
 // conversion between majors: a 1.x document is rejected and its producer must
 // be upgraded.
 const (
-	SchemaVersion = "2.1"
+	SchemaVersion = "2.0"
 	SchemaMajor   = 2
 
 	// SchemaBaseURL is the base of the published schema $ids. The $ids are

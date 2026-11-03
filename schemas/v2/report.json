@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.1/report.json",
+  "$id": "https://schemas.openctem.io/ctis/2.0/report.json",
   "title": "CTIS Report",
   "description": "CTEM Interchange Schema (CTIS) 2.0: one producer's observations of assets, findings, dependencies, relationships and endpoints. A document carries natural keys (canonical forms) and the producer's own references, never a receiver's database keys. Normative semantics: docs/spec.md. Media type application/vnd.ctis+json; version=2.0, file suffix .ctis.json.",
   "type": "object",
@@ -13,7 +13,7 @@
     "version": {
       "type": "string",
       "pattern": "^2\\.(0|[1-9][0-9]{0,3})$",
-      "default": "2.1",
+      "default": "2.0",
       "description": "CTIS specification version as MAJOR.MINOR. Receivers decode a document of their own or an older minor strictly, ignore unknown members and map unknown enum values to their fallback in a document of a newer minor, and reject another major (spec section Versioning). 1.x documents are rejected.",
       "maxLength": 1024
     },
@@ -21,7 +21,7 @@
       "type": "string",
       "maxLength": 2048,
       "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://[^\\s/?#]+[^\\s]*$",
-      "description": "Schema URL, normally https://schemas.openctem.io/ctis/2.1/report.json. An identifier: receivers never fetch it."
+      "description": "Schema URL, normally https://schemas.openctem.io/ctis/2.0/report.json. An identifier: receivers never fetch it."
     },
     "metadata": {
       "$ref": "#/$defs/ReportMetadata"

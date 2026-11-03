@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.1/web3-asset.json",
+  "$id": "https://schemas.openctem.io/ctis/2.0/web3-asset.json",
   "title": "Web3 Asset Technical Details",
   "description": "Web3 profile: technical details of web3 assets. Vendor and product vocabularies are open tokens.",
   "type": "object",

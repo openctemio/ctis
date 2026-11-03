@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.1/dependency.json",
+  "$id": "https://schemas.openctem.io/ctis/2.0/dependency.json",
   "title": "CTIS Dependency",
   "description": "Software component or library dependency (SBOM)",
   "type": "object",

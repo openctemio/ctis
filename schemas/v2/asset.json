@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.1/asset.json",
+  "$id": "https://schemas.openctem.io/ctis/2.0/asset.json",
   "title": "CTIS Asset",
   "description": "An observed asset. Its identity is AssetKey(type, canonical value); receivers compute the key and never trust a producer's.",
   "type": "object",

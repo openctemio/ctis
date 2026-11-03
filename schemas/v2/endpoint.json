@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.openctem.io/ctis/2.1/endpoint.json",
+  "$id": "https://schemas.openctem.io/ctis/2.0/endpoint.json",
   "title": "CTIS Endpoint",
   "description": "One method and path a web origin serves, as a tool saw it. Parameters are named, never valued: a value member is refused.",
   "type": "object",
