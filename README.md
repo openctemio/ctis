@@ -64,6 +64,10 @@ if err != nil { /* reject */ }
 if err := in.Validate(); err != nil { /* reject */ }
 _ = unknown.Entries // log what was ignored
 
+// Key assets on their canonical value (receivers never trust a producer's key).
+host, _ := ctis.CanonicalDomain("Bücher.Example.")    // "xn--bcher-kva.example"
+key := ctis.AssetKey(ctis.AssetTypeDomain, host)
+
 
 // Convert SARIF (Semgrep, CodeQL, Trivy, ...)
 report, err := ctis.FromSARIF(sarifBytes, nil)

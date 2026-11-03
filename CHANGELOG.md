@@ -23,6 +23,7 @@ Every member is optional, so a report without them is unchanged. `SchemaVersion`
 - Asset `environment`, `owners[]` (`ctis.AssetOwner`), `first_seen_at`, `last_seen_at`, `state` and `state_reason` (gone only on an authoritative signal); asset types `package`, `container_image`, `identity`, `saas_application`, `endpoint_device`, `iot_device`, `ot_device`, `network_device`, `autonomous_system`, `cloud_resource`, `kubernetes_workload`, `ai_model`.
 - `metadata.started_at`, `ended_at`, `targets[]` (`ctis.TargetOutcome`, the `outcome` vocabulary) and `segment`, with the normative absence rule (spec section 4.17).
 - `vulnerability.capec_ids` and `vulnerability.threat_signals[]` (`ctis.ThreatSignal`, with `due_on`).
+- Canonical forms and asset keys (spec section 5.3): `CanonicalDomain` (IDNA-lite with a Punycode encoder), `CanonicalIP`, `CanonicalCIDR`, `CanonicalService`, `CanonicalOrigin`, `CanonicalURL`, `CanonicalPurl`, `CanonicalCPE`, `CanonicalARN`, `CanonicalAzureResourceID`, `CanonicalGCPResourceName`, `CanonicalImage`, `CanonicalCertificateFingerprint`, `AssetKey` and `AssetKeyNamespace`; vectors in `conformance/canonical`.
 - Schema annotation `"x-ctis-pii": true` on personal-data members (`author`, `author_email`, `suppression.suppressed_by`, `compliance.regulatory_owner`, `owners[].ref`, `validation.validator`).
 - Example `examples/ctem-coverage.json` and invalid examples for a malformed extension namespace, a date-time `due_on` and an unknown target class.
 

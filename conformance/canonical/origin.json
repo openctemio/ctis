@@ -1,0 +1,30 @@
+{
+  "function": "CanonicalOrigin",
+  "description": "Web origins: scheme://host[:port], lowercase, canonical host, default port dropped.",
+  "vectors": [
+    {
+      "input": "HTTPS://WWW.Example.COM:443/path?q=1",
+      "output": "https://www.example.com"
+    },
+    {
+      "input": "http://example.com:8080",
+      "output": "http://example.com:8080"
+    },
+    {
+      "input": "http://[2001:DB8::1]:80/",
+      "output": "http://[2001:db8::1]"
+    },
+    {
+      "input": "https://bücher.example/",
+      "output": "https://xn--bcher-kva.example"
+    },
+    {
+      "input": "ftp://example.com/",
+      "error": true
+    },
+    {
+      "input": "javascript:alert(1)",
+      "error": true
+    }
+  ]
+}

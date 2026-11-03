@@ -1,0 +1,40 @@
+{
+  "function": "CanonicalImage",
+  "description": "Container images: <registry>/<repository>@sha256:<digest>, Docker Hub expanded; the tag is not identity.",
+  "vectors": [
+    {
+      "input": "nginx@sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "output": "docker.io/library/nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "input": "nginx:1.25",
+      "output": "docker.io/library/nginx",
+      "note": "without a digest the value names the repository"
+    },
+    {
+      "input": "example/app:latest@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "output": "docker.io/example/app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "input": "index.docker.io/library/redis",
+      "output": "docker.io/library/redis"
+    },
+    {
+      "input": "GHCR.IO/example/app:v1",
+      "output": "ghcr.io/example/app"
+    },
+    {
+      "input": "localhost:5000/app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "output": "localhost:5000/app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "input": "example/App",
+      "error": true,
+      "note": "repositories are lowercase"
+    },
+    {
+      "input": "nginx@sha512:abcd",
+      "error": true
+    }
+  ]
+}

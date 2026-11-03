@@ -7,7 +7,9 @@
 // Decode reads a document under the compatibility rule: strictly for this
 // module's minor or an older one (a member it does not know is an error),
 // ignoring unknown members and mapping unknown enum values to their
-// fallback for a newer minor, and refusing another major.
+// fallback for a newer minor, and refusing another major. The Canonical*
+// functions and AssetKey give the canonical value and key receivers
+// deduplicate assets on.
 //
 // Producing a report:
 //

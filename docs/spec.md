@@ -49,7 +49,7 @@ Spec versions 1.3 to 1.5 were not tagged as module releases of their own; v1.6.0
 
 Reports produced before 1.3 often carry `"1.0"` regardless of the fields they use. Receivers MUST NOT infer the field set from the version.
 
-Members marked **(2.0)** in this document and in the schema are the additive half of CTIS 2.0, which is being cut now: extensions (section 4.14), asset context (4.15), finding validation, provenance and threat signals (4.16), completeness and absence (4.17), open vocabularies, and version-gated decoding (2.2). They are optional, so a report without them is unchanged. Until the cut sets `version` to `2.0`, a report that uses them still declares `1.6`.
+Members marked **(2.0)** in this document and in the schema are the additive half of CTIS 2.0, which is being cut now: extensions (section 4.14), asset context (4.15), finding validation, provenance and threat signals (4.16), completeness and absence (4.17), canonical forms (5.3), open vocabularies, and version-gated decoding (2.2). They are optional, so a report without them is unchanged. Until the cut sets `version` to `2.0`, a report that uses them still declares `1.6`.
 
 ### 2.2 Compatibility rule
 
@@ -319,6 +319,30 @@ Use the generator for the finding's type. The inputs listed are the identity; an
 | Web3 | `GenerateWeb3(contractAddress, chainID, swcID, functionSignature)` | |
 
 Producers in other languages MUST reproduce the same input strings and hash them with SHA-256; the exact concatenations are in `fingerprint/fingerprint.go`.
+
+### 5.3 Canonical forms and asset keys (2.0)
+
+The canonical value of each kind of asset value is normative. Receivers compute it (and the asset key) themselves and never trust a producer's. The Go module implements every row; [`conformance/canonical`](../conformance/canonical) holds the vectors every implementation runs.
+
+| Value | Canonical form | Go |
+|---|---|---|
+| Domain name | trimmed, lowercase, no trailing dot, each non-ASCII label an IDNA A-label (Punycode, RFC 3492); no wildcard label in an asset value (a wildcard is a certificate attribute) | `CanonicalDomain` |
+| IPv4 / IPv6 | dotted quad without leading zeros; RFC 5952 (lowercase, longest zero run compressed); an IPv4-mapped IPv6 address becomes IPv4; no zone | `CanonicalIP` |
+| IP range | CIDR with the network address (`10.0.0.0/8`) | `CanonicalCIDR` |
+| Service | `<canonical host>:<port>/<transport>`, an IPv6 host bracketed | `CanonicalService` |
+| Web origin | `scheme://host[:port]`, scheme and host lowercase, canonical host, default port dropped | `CanonicalOrigin` |
+| URL | origin + path: path case kept, percent-encoding uppercased and unreserved characters decoded, dot segments removed; query parameter names only, sorted; no user info, fragment or query values | `CanonicalURL` |
+| Package | purl canonical form; the identity is the versionless purl, the version separate; namespace and name lowercase for bitbucket, github, npm, pypi (`_` becomes `-` in the name), composer and hex | `CanonicalPurl` |
+| CPE | CPE 2.3 formatted string binding, lowercase | `CanonicalCPE` |
+| AWS resource | ARN as issued, partition, service and region lowercase | `CanonicalARN` |
+| Azure resource | resource id, lowercase | `CanonicalAzureResourceID` |
+| GCP resource | full resource name `//<service>.googleapis.com/<path>`, host lowercase | `CanonicalGCPResourceName` |
+| Container image | `<registry>/<repository>@sha256:<digest>`, Docker Hub expanded to `docker.io/library/...`; the tag is an attribute, not identity | `CanonicalImage` |
+| Certificate | SHA-256 of the DER, lowercase hex | `CanonicalCertificateFingerprint` |
+
+Domain names follow IDNA-lite: Unicode lowercase and the ideographic full stops are applied before encoding; there is no UTS 46 mapping beyond that and no Unicode normalisation. Producers that hold a name in Unicode SHOULD send it NFC-normalised.
+
+The **asset key** is `uuidv5(9678743b-b91d-59fa-b168-ed192fe9eed3, type + 0x1F + canonical value)` (`ctis.AssetKey`, namespace `ctis.AssetKeyNamespace` = uuidv5 of the URL `urn:ctis:asset-key`).
 
 ## 6. Converters (Go)
 
