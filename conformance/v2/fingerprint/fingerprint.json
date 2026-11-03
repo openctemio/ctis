@@ -1,0 +1,705 @@
+{
+  "cases": [
+    {
+      "name": "sast",
+      "type": "sast",
+      "input": {
+        "type": "sast",
+        "file_path": "Src/App.py",
+        "rule_id": "Rule.1",
+        "start_line": 10,
+        "end_line": 12
+      },
+      "parts": [
+        "Src/App.py",
+        "Rule.1",
+        "10",
+        "12"
+      ],
+      "expected": "ctis-fp/2:52b381719d56842497865f270e575bad9c0454796a8ffb8ae3946e743ed62b00"
+    },
+    {
+      "name": "sast path separators and dot segments",
+      "type": "sast",
+      "input": {
+        "type": "sast",
+        "file_path": ".\\Src\\\\App.py",
+        "rule_id": " Rule.1 ",
+        "start_line": 10,
+        "end_line": 12
+      },
+      "parts": [
+        "Src/App.py",
+        "Rule.1",
+        "10",
+        "12"
+      ],
+      "expected": "ctis-fp/2:52b381719d56842497865f270e575bad9c0454796a8ffb8ae3946e743ed62b00"
+    },
+    {
+      "name": "sast case-differing path A",
+      "type": "sast",
+      "input": {
+        "type": "sast",
+        "file_path": "src/app.py",
+        "rule_id": "r",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "parts": [
+        "src/app.py",
+        "r",
+        "1",
+        "1"
+      ],
+      "expected": "ctis-fp/2:cb215289ce44ca288676f17829d6322a2651ac21fc1b5e31a06d28fa0718c03f"
+    },
+    {
+      "name": "sast case-differing path B",
+      "type": "sast",
+      "input": {
+        "type": "sast",
+        "file_path": "src/App.py",
+        "rule_id": "r",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "parts": [
+        "src/App.py",
+        "r",
+        "1",
+        "1"
+      ],
+      "expected": "ctis-fp/2:b06cba017346cc5048a99185067ea0d7cb3135098c3282d9d7d592e1a91870c5"
+    },
+    {
+      "name": "sast absolute path",
+      "type": "sast",
+      "input": {
+        "type": "sast",
+        "file_path": "/srv//app/./main.go",
+        "rule_id": "r",
+        "start_line": 3,
+        "end_line": 3
+      },
+      "parts": [
+        "/srv/app/main.go",
+        "r",
+        "3",
+        "3"
+      ],
+      "expected": "ctis-fp/2:b25d2508f3f17b2900df428ad418268e6ac96b0d41e49b1a54407234d53260ac"
+    },
+    {
+      "name": "sast unicode path",
+      "type": "sast",
+      "input": {
+        "type": "sast",
+        "file_path": "src/caf\u00e9/\u30c6\u30b9\u30c8.py",
+        "rule_id": "r\u00e9gle",
+        "start_line": 2,
+        "end_line": 4
+      },
+      "parts": [
+        "src/café/テスト.py",
+        "régle",
+        "2",
+        "4"
+      ],
+      "expected": "ctis-fp/2:6fc5d11dbeeb438f6a64e8b495893c9e1b45bff4402009726e1fc556423d8847"
+    },
+    {
+      "name": "sast-content",
+      "type": "sast-content",
+      "input": {
+        "type": "sast-content",
+        "file_path": "src/App.py",
+        "rule_id": "Rule.1",
+        "logical_location": "app.main",
+        "snippet": "eval(  x )\n"
+      },
+      "parts": [
+        "src/App.py",
+        "Rule.1",
+        "app.main",
+        "7b0b6ec08c0fdff377015113c8998b0e713eda9ebabad38fe4cc489b05ddbf20"
+      ],
+      "expected": "ctis-fp/2:cc6e5e0870c8c4a473435eaa4f7cf6fc3b95c5410f1ef520b8e87275e5170169"
+    },
+    {
+      "name": "sast-content whitespace-only change",
+      "type": "sast-content",
+      "input": {
+        "type": "sast-content",
+        "file_path": "src/App.py",
+        "rule_id": "Rule.1",
+        "logical_location": "app.main",
+        "snippet": "eval( x )"
+      },
+      "parts": [
+        "src/App.py",
+        "Rule.1",
+        "app.main",
+        "7b0b6ec08c0fdff377015113c8998b0e713eda9ebabad38fe4cc489b05ddbf20"
+      ],
+      "expected": "ctis-fp/2:cc6e5e0870c8c4a473435eaa4f7cf6fc3b95c5410f1ef520b8e87275e5170169"
+    },
+    {
+      "name": "sast-content empty snippet is an error",
+      "type": "sast-content",
+      "input": {
+        "type": "sast-content",
+        "file_path": "a.py",
+        "rule_id": "r",
+        "snippet": "  \n"
+      },
+      "error": true
+    },
+    {
+      "name": "sca purl",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "pkg:npm/lodash@4.17.20",
+        "vulnerability_id": "CVE-2021-23337"
+      },
+      "parts": [
+        "pkg:npm/lodash",
+        "CVE-2021-23337"
+      ],
+      "expected": "ctis-fp/2:da8aac1db498eb0c9db58f889d837168c527bdff04098d86bf7194bcfdd5cbdb"
+    },
+    {
+      "name": "sca purl other version same key",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "pkg:npm/lodash@4.17.21?x=1#sub",
+        "vulnerability_id": "CVE-2021-23337"
+      },
+      "parts": [
+        "pkg:npm/lodash",
+        "CVE-2021-23337"
+      ],
+      "expected": "ctis-fp/2:da8aac1db498eb0c9db58f889d837168c527bdff04098d86bf7194bcfdd5cbdb"
+    },
+    {
+      "name": "sca maven purl",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+        "vulnerability_id": "CVE-2021-44228"
+      },
+      "parts": [
+        "pkg:maven/org.apache.logging.log4j/log4j-core",
+        "CVE-2021-44228"
+      ],
+      "expected": "ctis-fp/2:1504849bc388ab4347a322b000e54dc3513beb987aa5b0915c47034b4781b7e6"
+    },
+    {
+      "name": "sca maven g:a name",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "maven/org.apache.logging.log4j:log4j-core",
+        "vulnerability_id": "CVE-2021-44228"
+      },
+      "parts": [
+        "maven/org.apache.logging.log4j:log4j-core",
+        "CVE-2021-44228"
+      ],
+      "expected": "ctis-fp/2:c2ec68c8ede80ebf7588570f8fe38f2ab98f5aca833276ccdac628477ef46254"
+    },
+    {
+      "name": "sca collision a:b / c",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "a:b",
+        "vulnerability_id": "c"
+      },
+      "parts": [
+        "a:b",
+        "c"
+      ],
+      "expected": "ctis-fp/2:98a302a1b81b236d6d671b480ef73491e88f2171d55d5774f76826ea3f4a4420"
+    },
+    {
+      "name": "sca collision a / b:c",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "a",
+        "vulnerability_id": "b:c"
+      },
+      "parts": [
+        "a",
+        "b:c"
+      ],
+      "expected": "ctis-fp/2:344cb97663ab3042c704d117d77223c9868ddfa85667c2f8ad6ac1e08dcf53af"
+    },
+    {
+      "name": "sca unit separator in part",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "a\u001fb",
+        "vulnerability_id": "c"
+      },
+      "parts": [
+        "a\u001fb",
+        "c"
+      ],
+      "expected": "ctis-fp/2:0bdb1b6f3794c7480f6582ba6e8ebeca510d2a294156b689dc29da478e1e2718"
+    },
+    {
+      "name": "sca unit separator split",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "a",
+        "vulnerability_id": "b\u001fc"
+      },
+      "parts": [
+        "a",
+        "b\u001fc"
+      ],
+      "expected": "ctis-fp/2:f65c3898fd4267ea156d91b8027a13c515ee5752c437c356b2604a3584d0e05d"
+    },
+    {
+      "name": "sca length-prefix lookalike A",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "1:a",
+        "vulnerability_id": "b"
+      },
+      "parts": [
+        "1:a",
+        "b"
+      ],
+      "expected": "ctis-fp/2:babe826071d13dfb654d8c980aeb39a2ba35f688d2e7b0936fc32f6efb9f5881"
+    },
+    {
+      "name": "sca length-prefix lookalike B",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "1",
+        "vulnerability_id": "a:b"
+      },
+      "parts": [
+        "1",
+        "a:b"
+      ],
+      "expected": "ctis-fp/2:9e1876a69fa466c31774dc411961e44856da8765c74f3a638a8c4f3ff29a84ec"
+    },
+    {
+      "name": "sca uppercase purl type",
+      "type": "sca",
+      "input": {
+        "type": "sca",
+        "package_purl": "PKG:NPM/Left-Pad@1.0.0",
+        "vulnerability_id": "GHSA-xxxx-yyyy-zzzz"
+      },
+      "parts": [
+        "pkg:npm/Left-Pad",
+        "GHSA-xxxx-yyyy-zzzz"
+      ],
+      "expected": "ctis-fp/2:2775688668fdb8e90fcbe65423248ec26c7e1c11458c8d34818664bbeb3fc347"
+    },
+    {
+      "name": "secret",
+      "type": "secret",
+      "input": {
+        "type": "secret",
+        "file_path": "deploy/env.sh",
+        "rule_id": "aws-access-token",
+        "secret_digest": "63c81236cb262bbe71f1a369efe443b12f0a43b5993c88f8f17b202c5245f239"
+      },
+      "parts": [
+        "deploy/env.sh",
+        "aws-access-token",
+        "63c81236cb262bbe71f1a369efe443b12f0a43b5993c88f8f17b202c5245f239"
+      ],
+      "expected": "ctis-fp/2:8bed064f521332c2e54e71d80f97992b1390c62355d97f55c3b77f09b0e803d3"
+    },
+    {
+      "name": "secret other secret same place",
+      "type": "secret",
+      "input": {
+        "type": "secret",
+        "file_path": "deploy/env.sh",
+        "rule_id": "aws-access-token",
+        "secret_digest": "fc4ac80e042864f967414816107f511e7a304f822316d03d000d31e8cc2b72fb"
+      },
+      "parts": [
+        "deploy/env.sh",
+        "aws-access-token",
+        "fc4ac80e042864f967414816107f511e7a304f822316d03d000d31e8cc2b72fb"
+      ],
+      "expected": "ctis-fp/2:a9fb6aa0ca0e9707eb5e73a33df4cdd5154604ddbe588c6a1b37c65effdf03f6"
+    },
+    {
+      "name": "secret zero digest is an error",
+      "type": "secret",
+      "input": {
+        "type": "secret",
+        "file_path": "deploy/env.sh",
+        "rule_id": "aws-access-token",
+        "secret_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "error": true
+    },
+    {
+      "name": "misconfig",
+      "type": "misconfig",
+      "input": {
+        "type": "misconfig",
+        "resource_type": "aws_s3_bucket",
+        "resource_name": "logs",
+        "rule_id": "AVD-AWS-0086",
+        "file_path": "main.tf"
+      },
+      "parts": [
+        "aws_s3_bucket",
+        "logs",
+        "AVD-AWS-0086",
+        "main.tf"
+      ],
+      "expected": "ctis-fp/2:de1f3443f5bf62a12f7140c836bfbe87a0d52b031f5be5020c2aaf1a4c8a1044"
+    },
+    {
+      "name": "misconfig names with colons",
+      "type": "misconfig",
+      "input": {
+        "type": "misconfig",
+        "resource_type": "a:b",
+        "resource_name": "c",
+        "rule_id": "r",
+        "file_path": "x.tf"
+      },
+      "parts": [
+        "a:b",
+        "c",
+        "r",
+        "x.tf"
+      ],
+      "expected": "ctis-fp/2:0311310fdb4b17d6d26acfb6144aa6c977fde1d09aa8cd406a67884cba298477"
+    },
+    {
+      "name": "misconfig names with colons shifted",
+      "type": "misconfig",
+      "input": {
+        "type": "misconfig",
+        "resource_type": "a",
+        "resource_name": "b:c",
+        "rule_id": "r",
+        "file_path": "x.tf"
+      },
+      "parts": [
+        "a",
+        "b:c",
+        "r",
+        "x.tf"
+      ],
+      "expected": "ctis-fp/2:b7b2487730ba27221cee38c62c7fb37e46ca95ac4303dbf6c1e927c1f2c4c689"
+    },
+    {
+      "name": "dast",
+      "type": "dast",
+      "input": {
+        "type": "dast",
+        "rule_id": "xss-reflected",
+        "url": "HTTPS://Example.com:443/Search?q=1#frag",
+        "parameter": "q"
+      },
+      "parts": [
+        "xss-reflected",
+        "https://example.com",
+        "/Search",
+        "q"
+      ],
+      "expected": "ctis-fp/2:9c304cf52e412aba230bac22901070bd37b6131787fc2cb8a5f23ae5455bac97"
+    },
+    {
+      "name": "dast path case kept",
+      "type": "dast",
+      "input": {
+        "type": "dast",
+        "rule_id": "xss-reflected",
+        "url": "https://example.com/search",
+        "parameter": "q"
+      },
+      "parts": [
+        "xss-reflected",
+        "https://example.com",
+        "/search",
+        "q"
+      ],
+      "expected": "ctis-fp/2:551637d90b02a65c03eb8c28e4d5abf3c7fdbeb1f01d5cbf3e80ce4fe5b7f2c8"
+    },
+    {
+      "name": "dast port and trailing dot",
+      "type": "dast",
+      "input": {
+        "type": "dast",
+        "rule_id": "t",
+        "url": "http://Example.COM.:8080/a/./b//c/",
+        "parameter": ""
+      },
+      "parts": [
+        "t",
+        "http://example.com:8080",
+        "/a/b/c",
+        ""
+      ],
+      "expected": "ctis-fp/2:02c18e691a15f0bd591c7442352eed20e366063fce78f19ea535b21c8885193b"
+    },
+    {
+      "name": "dast unparsable url is an error",
+      "type": "dast",
+      "input": {
+        "type": "dast",
+        "rule_id": "t",
+        "url": "not a url",
+        "parameter": ""
+      },
+      "error": true
+    },
+    {
+      "name": "container tag only",
+      "type": "container",
+      "input": {
+        "type": "container",
+        "image_ref": "nginx:latest",
+        "package_purl": "pkg:deb/debian/openssl@3.0.1",
+        "vulnerability_id": "CVE-2022-0778"
+      },
+      "parts": [
+        "docker.io/library/nginx",
+        "pkg:deb/debian/openssl",
+        "CVE-2022-0778"
+      ],
+      "expected": "ctis-fp/2:6d5a3d60a17fb6ee87c81155642e53e32d495b744eb0de3a67fb03ec253a1ffa"
+    },
+    {
+      "name": "container other tag same key",
+      "type": "container",
+      "input": {
+        "type": "container",
+        "image_ref": "docker.io/library/nginx:1.25",
+        "package_purl": "pkg:deb/debian/openssl@3.0.2",
+        "vulnerability_id": "CVE-2022-0778"
+      },
+      "parts": [
+        "docker.io/library/nginx",
+        "pkg:deb/debian/openssl",
+        "CVE-2022-0778"
+      ],
+      "expected": "ctis-fp/2:6d5a3d60a17fb6ee87c81155642e53e32d495b744eb0de3a67fb03ec253a1ffa"
+    },
+    {
+      "name": "container digest",
+      "type": "container",
+      "input": {
+        "type": "container",
+        "image_ref": "Registry.Example.com:5000/team/App:v1@sha256:abababababababababababababababababababababababababababababababab",
+        "package_purl": "pkg:apk/alpine/musl@1.2",
+        "vulnerability_id": "CVE-2023-1"
+      },
+      "parts": [
+        "registry.example.com:5000/team/App@sha256:abababababababababababababababababababababababababababababababab",
+        "pkg:apk/alpine/musl",
+        "CVE-2023-1"
+      ],
+      "expected": "ctis-fp/2:b22e280acf31b5b9b170cfa8dc4ecfa22ca08e9e798a089e5eefd7cf48ae0b5d"
+    },
+    {
+      "name": "va",
+      "type": "va",
+      "input": {
+        "type": "va",
+        "asset_value": "Host.Example.com.",
+        "port": 443,
+        "transport": "TCP",
+        "vulnerability_id": "12345"
+      },
+      "parts": [
+        "host.example.com",
+        "443",
+        "tcp",
+        "12345"
+      ],
+      "expected": "ctis-fp/2:a7994b2524845dd23b18a0f59a1dc6fc18f5fc30533b82f0563dad6dacbdb197"
+    },
+    {
+      "name": "va ip",
+      "type": "va",
+      "input": {
+        "type": "va",
+        "asset_value": "192.0.2.10",
+        "port": 22,
+        "transport": "tcp",
+        "vulnerability_id": "CVE-2018-15473"
+      },
+      "parts": [
+        "192.0.2.10",
+        "22",
+        "tcp",
+        "CVE-2018-15473"
+      ],
+      "expected": "ctis-fp/2:a847c525a433aff44b40447a97fdc5215eeddb7725f513ab0911ed9b35d0b93f"
+    },
+    {
+      "name": "va no port",
+      "type": "va",
+      "input": {
+        "type": "va",
+        "asset_value": "192.0.2.10",
+        "port": 0,
+        "transport": "",
+        "vulnerability_id": "CVE-2018-15473"
+      },
+      "parts": [
+        "192.0.2.10",
+        "0",
+        "",
+        "CVE-2018-15473"
+      ],
+      "expected": "ctis-fp/2:bea7ca8743a810868a74bdb5ee3144aa5c5542572d5b7f7c3306b382bc038d12"
+    },
+    {
+      "name": "compliance",
+      "type": "compliance",
+      "input": {
+        "type": "compliance",
+        "framework": "CIS-AWS-1.4",
+        "control_id": "1.5",
+        "resource": "arn:aws:iam::123456789012:root"
+      },
+      "parts": [
+        "CIS-AWS-1.4",
+        "1.5",
+        "arn:aws:iam::123456789012:root"
+      ],
+      "expected": "ctis-fp/2:3ef9f256c7110fcc72517de629005d0ac481930f7bc24e0fd7386a3978a7c580"
+    },
+    {
+      "name": "compliance colons",
+      "type": "compliance",
+      "input": {
+        "type": "compliance",
+        "framework": "a:b",
+        "control_id": "c",
+        "resource": "d"
+      },
+      "parts": [
+        "a:b",
+        "c",
+        "d"
+      ],
+      "expected": "ctis-fp/2:f43d7f4e6a0782f37915a80e986441b32d6474e4c4fae6eaf994bcb87a763ccc"
+    },
+    {
+      "name": "compliance colons shifted",
+      "type": "compliance",
+      "input": {
+        "type": "compliance",
+        "framework": "a",
+        "control_id": "b:c",
+        "resource": "d"
+      },
+      "parts": [
+        "a",
+        "b:c",
+        "d"
+      ],
+      "expected": "ctis-fp/2:16f66dab27082835dfa15cd7d2e7f686dc9df56d0fb29010bfca7b2dfe44691d"
+    },
+    {
+      "name": "web3",
+      "type": "web3",
+      "input": {
+        "type": "web3",
+        "chain_id": 1,
+        "contract_address": "0xAbC0000000000000000000000000000000000001",
+        "rule_id": "SWC-101",
+        "function": "transfer(address,uint256)"
+      },
+      "parts": [
+        "1",
+        "0xabc0000000000000000000000000000000000001",
+        "SWC-101",
+        "transfer(address,uint256)"
+      ],
+      "expected": "ctis-fp/2:c9b4eeeb2200268c3a0312b71fbf7aba6306e17892027e61f0600aa3d5b9aaab"
+    },
+    {
+      "name": "web3 bare address",
+      "type": "web3",
+      "input": {
+        "type": "web3",
+        "chain_id": 1,
+        "contract_address": "aBc0000000000000000000000000000000000001",
+        "rule_id": "SWC-101",
+        "function": "transfer(address,uint256)"
+      },
+      "parts": [
+        "1",
+        "0xabc0000000000000000000000000000000000001",
+        "SWC-101",
+        "transfer(address,uint256)"
+      ],
+      "expected": "ctis-fp/2:c9b4eeeb2200268c3a0312b71fbf7aba6306e17892027e61f0600aa3d5b9aaab"
+    },
+    {
+      "name": "web3 non-hex address keeps case",
+      "type": "web3",
+      "input": {
+        "type": "web3",
+        "chain_id": 0,
+        "contract_address": "So11111111111111111111111111111111111111112",
+        "rule_id": "r",
+        "function": ""
+      },
+      "parts": [
+        "0",
+        "So11111111111111111111111111111111111111112",
+        "r",
+        ""
+      ],
+      "expected": "ctis-fp/2:87cfcd1b49673f727249dbaf1b08e4401a6784b33ed0df144ace0e8467eac724"
+    },
+    {
+      "name": "generic",
+      "type": "generic",
+      "input": {
+        "type": "generic",
+        "rule_id": "r",
+        "file_path": "a.txt",
+        "start_line": 1,
+        "end_line": 2
+      },
+      "parts": [
+        "r",
+        "a.txt",
+        "1",
+        "2"
+      ],
+      "expected": "ctis-fp/2:d0294bf3a3a7f19740df29ee50f4feab2779d69639d73b1d5df5b8ebb0143180"
+    },
+    {
+      "name": "unknown type is an error",
+      "type": "nope",
+      "input": {
+        "type": "nope",
+        "rule_id": "r"
+      },
+      "error": true
+    }
+  ],
+  "description": "Fingerprint recipe v2 (CTIS 2.0). Input members are the snake_case members of the Go fingerprint.V2Input. parts are the normalised parts before length-prefixing; expected is ctis-fp/2: + SHA-256 hex of the canonical input (docs/fingerprints.md). A case with error true must be refused: no fingerprint is produced.",
+  "recipe": "ctis-fp/2"
+}
