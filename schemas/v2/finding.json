@@ -76,6 +76,10 @@
       "description": "Rule name",
       "maxLength": 1024
     },
+    "rule_ref": {
+      "$ref": "report.json#/$defs/DocumentRef",
+      "description": "The rule of the report's rules[] that detected the finding; rule_id is then required and equal to the rule's rule_id"
+    },
     "asset_ref": {
       "$ref": "report.json#/$defs/DocumentRef",
       "description": "The asset of this report the finding is on"
