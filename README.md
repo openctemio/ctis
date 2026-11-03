@@ -11,7 +11,8 @@ This repository holds the standard and its reference implementation:
 - **JSON Schemas**: [`schemas/v2/`](schemas/v2), JSON Schema 2020-12, with immutable versioned `$id`s (`https://schemas.openctem.io/ctis/2.0/report.json`; identifiers, never fetched).
 - **Conformance vectors**: [`conformance/v2/`](conformance/README.md), plain JSON every implementation runs: canonical forms, asset keys, location keys, preferred ids, fingerprints, correlation keys, valid and invalid documents.
 - **Validator CLI**: `ctis`, a single static binary.
-- **Go reference implementation** (root package `github.com/openctemio/ctis/v2`): types, `Decode`, `Validate`, canonical forms, fingerprints (`fingerprint/`), severity mapping (`severity/`), web URLs (`weburl/`), importers (`importer/`), exporters and converters.
+- **Go reference implementation** (root package `github.com/openctemio/ctis/v2`): types, `Decode`, `Validate`, canonical forms, fingerprints (`fingerprint/`), severity mapping (`severity/`), web URLs (`weburl/`), importers (`importer/`) and converters. Zero dependencies outside the standard library.
+- **Interoperability adapters** (one Go module per standard format, `github.com/openctemio/ctis/v2/interop/<format>`): SARIF, CycloneDX, SPDX, CSAF, OpenVEX and OCSF, as declarative mapping files per upstream version with lossless passthrough, vendored upstream schemas and conformance vectors ([docs/interop.md](docs/interop.md)).
 - **Examples**: [`examples/`](examples), validated in CI.
 
 The current specification version is **2.0**. Upgrading from 1.x: [docs/migration-2.0.md](docs/migration-2.0.md). History: [CHANGELOG.md](CHANGELOG.md).
@@ -86,7 +87,7 @@ Every object sets `additionalProperties: false` except the `properties` bags (op
 `ctis` checks a document the way a strict receiver does: the version must be one this release implements, unknown members are refused, and `Report.Validate` must pass. It reads only the files you name (or `-` for standard input) and never fetches a URL.
 
 ```bash
-go install github.com/openctemio/ctis/v2/cmd/ctis@latest   # or download a release binary
+go install github.com/openctemio/ctis/v2/cmd/ctis@latest   # once cmd/ctis is tagged; or download a release binary
 ctis validate report.ctis.json             # exit 0 valid, 1 invalid, 2 usage or I/O error
 ctis validate --json a.json b.json         # one JSON object per file
 ctis validate --max-size 1048576 -         # standard input, at most 1 MiB (default 64 MiB)
@@ -118,7 +119,7 @@ A port is a `service` asset (`host:port/transport`) linked from its host by an `
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 2.0: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, CycloneDX, SPDX, osv-scanner, CSAF, OpenVEX, SARIF 2.1.0, the ZAP report, generic bug-bounty reports, and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 2.0: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, osv-scanner, the ZAP report, generic bug-bounty reports, and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. The standard formats CycloneDX, SPDX, CSAF, OpenVEX and SARIF 2.1.0 are read through the same `Parse` once their adapter module is imported (`import _ "github.com/openctemio/ctis/v2/interop/cyclonedx"`). `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})
@@ -132,11 +133,11 @@ The `importer/mapping` package turns the JSON, JSON Lines, CSV or XML output of 
 
 ## Exporters
 
-`ToSARIF`, `ToCycloneDX` and `ToOCSF` write a document as SARIF 2.1.0, a CycloneDX 1.6 BOM with its vulnerabilities (VDR/VEX), and OCSF 1.3.0 Vulnerability and Compliance Finding events. Output is deterministic, needs no network and never carries a raw secret. Round trips against the importers are tested; the mapping and the accepted losses per format are in [docs/exporters.md](docs/exporters.md).
+The adapters `sarif.Export`, `cyclonedx.Export` and `ocsf.Export` write a document as SARIF 2.1.0, a CycloneDX 1.6 BOM with its vulnerabilities (VDR/VEX), and OCSF 1.3.0 Vulnerability and Compliance Finding events. Output is deterministic, needs no network and never carries a raw secret. Round trips against the importers are tested; the mapping and the accepted losses per format are in [docs/exporters.md](docs/exporters.md).
 
 ## Converters
 
-`ctis.FromSARIF` converts a SARIF log; `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports` convert subdomain, DNS, port, HTTP probe and crawl results into the 2.0 asset graph (domain names, addresses, services with `exposes`, web origins with their certificate, endpoints).
+`sarif.Import` (module `interop/sarif`) converts a SARIF log; `ctis.ConvertReconToCTIS` and `ctis.MergeReconReports` convert subdomain, DNS, port, HTTP probe and crawl results into the 2.0 asset graph (domain names, addresses, services with `exposes`, web origins with their certificate, endpoints).
 
 ## Web URLs
 
@@ -176,5 +177,6 @@ Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
 - Specification text and other prose (`docs/`, `proposals/`): [Creative Commons Attribution 4.0 International](LICENSE-docs).
 - Schemas, examples, conformance vectors and code: [Apache License 2.0](LICENSE). See also [NOTICE](NOTICE).
 - Patent commitment for implementers: [PATENTS.md](PATENTS.md).
+- Vendored upstream schemas (`interop/*/schemas/`): their own licences, see [NOTICE](NOTICE) and `interop/upstreams.json`.
 
 Governance and the proposal process: [GOVERNANCE.md](GOVERNANCE.md), [proposals/README.md](proposals/README.md).

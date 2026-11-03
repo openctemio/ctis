@@ -102,7 +102,7 @@ func ImportVectors(t *testing.T, dir string, format importer.Format, version str
 			if v.Expect != "" {
 				// The report, and the VEX statements a VEX document gives.
 				CompareJSON(t, filepath.Join(dir, v.Expect), struct {
-					Report *ctis.Report             `json:"report"`
+					Report *ctis.Report            `json:"report"`
 					VEX    []importer.VEXStatement `json:"vex,omitempty"`
 				}{first.Report, first.VEX})
 			}

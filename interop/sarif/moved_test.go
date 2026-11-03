@@ -199,7 +199,7 @@ func TestFromSARIF_RuleLevelSeverityFallback(t *testing.T) {
 
 	report, err := Import(sarif, nil)
 	if err != nil {
-		t.Fatalf("FromSARIF: %v", err)
+		t.Fatalf("Import: %v", err)
 	}
 	if len(report.Findings) != 3 {
 		t.Fatalf("expected 3 findings, got %d", len(report.Findings))

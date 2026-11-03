@@ -87,3 +87,23 @@ conformance vectors and the CHANGELOG together. `go test ./...` fails when the s
 and the Go types disagree, when an example does not validate, or when the generated
 field reference in `docs/spec.md` is stale (refresh it with
 `go test -run TestSpecFieldReference -update`).
+
+## Go version
+
+Each module's `go` directive is the minimum its code and dependencies need,
+never newer than the oldest Go the consumers build with (the sensor SDK, the
+platform API and the sensor). CI enforces the ceiling with
+`.github/scripts/check-go-directive.sh`; raise its floor only after every
+consumer builds with that Go.
+
+## Modules and the interoperability adapters
+
+The repository holds several Go modules: the core (`.`), one module per
+standard-format adapter (`interop/<format>`) and the command (`cmd/ctis`).
+CI builds, tests and lints every one of them
+(`.github/scripts/modules.sh`); each depends on the standard library and the
+core module only. A change to a standard format's mapping changes that
+adapter only: its mapping files (`interop/<format>/<version>/`), its vectors
+(`conformance/interop/<format>/<version>/`) and its `CHANGELOG.md`, released
+with a tag `interop/<format>/vX.Y.Z`. How to add an upstream version is in
+[docs/interop.md](docs/interop.md).

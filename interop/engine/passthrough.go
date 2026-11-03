@@ -129,7 +129,6 @@ type Passthrough struct {
 func (p *Passthrough) Version() string { return p.version }
 
 type recordData struct {
-	name string
 	Unmapped
 	sets map[int]json.RawMessage
 }

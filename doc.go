@@ -24,8 +24,11 @@
 //	})
 //	if err := r.Validate(); err != nil { ... }
 //
-// Converting tool output: FromSARIF for SARIF 2.1.0 logs, ConvertReconToCTIS
-// and MergeReconReports for reconnaissance results.
+// Converting tool output: ConvertReconToCTIS and MergeReconReports for
+// reconnaissance results; package importer for exported files of scanners
+// and products. The standard formats (SARIF, CycloneDX, SPDX, CSAF, OpenVEX,
+// OCSF) are read and written by the interoperability adapters, one Go module
+// each: github.com/openctemio/ctis/v2/interop/<format> (docs/interop.md).
 //
 // Versioning: a report's Version is the specification version MAJOR.MINOR.
 // Receivers read every minor of their major (newer minors with unknown

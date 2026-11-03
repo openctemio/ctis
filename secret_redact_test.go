@@ -84,7 +84,7 @@ func TestContainsSecret(t *testing.T) {
 }
 
 // A raw value that is also part of the mask word is not masked again
-// inside the mask (found by FuzzFromSARIF: "REDAREDACTED").
+// inside the mask (found by the SARIF fuzzer: "REDAREDACTED").
 func TestRedactDoesNotRemaskTheMask(t *testing.T) {
 	for _, raw := range []string{"CTED", "REDA", "ACTED", "****"} {
 		f := Finding{Type: FindingTypeSecret, Title: "found " + raw,

@@ -274,15 +274,21 @@ The absence rule is normative:
 
 ## 9. Interoperability
 
-CTIS converts to and from the formats tools already speak (SARIF, CycloneDX, SPDX, OSV, CSAF, OpenVEX, OCSF) without letting their shapes into the core:
+CTIS converts to and from the formats tools already speak (SARIF, CycloneDX, SPDX, CSAF, OpenVEX, OCSF) without letting their shapes into the core:
 
-1. **The core models CTEM concepts only.** No core member exists to mirror an external format.
-2. **Adapters are versioned and declarative.** Each format is an adapter: a small package plus mapping data per upstream version, with named transforms from a fixed registry. Several upstream versions load side by side and are chosen by the version the input declares; a new upstream version is normally new mapping data plus vectors.
-3. **Lossless passthrough.** What an adapter cannot map is kept under `extensions["<format>"]` (`{"version": "<upstream version>", "unmapped": {<JSON pointer>: value}}`, bounded), and the reverse adapter writes it back.
-4. **Independent adapter versions.** An upstream update releases its adapter only; the core version changes only when the CTEM model changes.
-5. **Round trips are tested.** Every adapter and version has vectors (import, export, compare) with its accepted losses listed per fixture.
+1. **The core models CTEM concepts only.** No core member exists to mirror an external format. Standard-format code is not part of the core module.
+2. **Adapters are versioned and declarative.** Each format is an adapter: its own module (`interop/<format>`) with one mapping file per direction and upstream version (`interop/<format>/<version>/{import,export}.json`). A mapping lists every member of the format with what keeps it, a named Go hook for what is not field to field, or the reason it is dropped. It also holds value tables and copy rules with transforms from a fixed registry. Several upstream versions load side by side; the version the document declares chooses one. A new upstream version is normally a new mapping directory plus vectors.
+3. **Lossless passthrough.** What a mapping does not list is kept under `extensions["org.ctis.interop.<format>"]` as `{"version": "<upstream version>", "unmapped": {<JSON pointer>: value}}`: on the report, or on the record it belongs to. The reverse adapter writes it back where its output has no member and its mapping does not own the place. Passthrough is data only:
+   - it is never interpreted, never placed into a core member, and never overrides a mapped member;
+   - it is bounded per object (64 members and 16 KiB by default, at most 256 and 32 KiB) and per document;
+   - members below a deliberately ignored field are never kept;
+   - credential-named members are dropped at any depth, and so are URL-like members whose scheme is other than http or https;
+   - secrets are masked as in every other member.
+4. **Independent adapter versions.** An upstream update releases its adapter only (tag `interop/<format>/vX.Y.Z`); the core version changes only when the CTEM model changes.
+5. **Round trips are tested.** Every adapter and version has vectors (`conformance/interop/<format>/<version>/`): upstream samples, the expected CTIS, round trips with their accepted losses listed per vector, and the members passthrough must keep and write back.
+6. **Upstream is watched.** The official schema of every upstream version an adapter follows is vendored and checked by sha256 (`interop/upstreams.json`). A scheduled job proposes each new upstream release as a change: the vendored schema, a schema diff and a copy of the latest mapping.
 
-The exporters of this module and their accepted losses are listed in [exporters.md](exporters.md); the importers in [importers/](importers).
+The details, including how to add an upstream version, are in [interop.md](interop.md). The exporters and their accepted losses are listed in [exporters.md](exporters.md); the importers in [importers/](importers).
 
 ## 10. Naming rules
 

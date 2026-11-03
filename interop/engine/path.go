@@ -128,12 +128,6 @@ func PathKey(v string) string {
 	return v
 }
 
-// step is one step of a pointer: a member name or an array index.
-type step struct {
-	key   string
-	index int // -1 for a member
-}
-
 // parsePointer splits an RFC 6901 pointer into steps; ok is false for a
 // malformed or over-long pointer. Numeric tokens are indexes when the parent
 // is an array; parsePointer keeps both readings (key and index).
