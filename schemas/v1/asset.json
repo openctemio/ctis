@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/asset.json",
   "title": "CTIS Asset",
-  "description": "Asset schema for CTEM Ingest Schema",
+  "description": "Asset schema for the CTEM Interchange Schema",
   "type": "object",
   "additionalProperties": false,
   "required": ["type", "value"],
@@ -77,12 +77,60 @@
       "description": "Technologies the asset runs, as a fingerprinting tool identified them (1.5)",
       "items": {"$ref": "#/$defs/Technology"}
     },
+    "environment": {
+      "$ref": "#/$defs/Environment"
+    },
+    "owners": {
+      "type": "array",
+      "maxItems": 20,
+      "description": "Who owns the asset (2.0)",
+      "items": {"$ref": "#/$defs/AssetOwner"}
+    },
+    "first_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the producer first observed the asset (2.0)"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the producer last observed the asset (2.0)"
+    },
+    "state": {
+      "type": "string",
+      "enum": ["active", "gone"],
+      "description": "State of the asset (2.0). gone only on an authoritative signal named by state_reason; every other absence is not seen"
+    },
+    "state_reason": {
+      "type": "string",
+      "enum": ["name_gone", "resource_deleted", "inventory_removed"],
+      "description": "The authoritative signal behind state gone (2.0)"
+    },
     "properties": {
       "type": "object",
       "additionalProperties": true
+    },
+    "extensions": {
+      "$ref": "report.json#/$defs/Extensions"
     }
   },
   "$defs": {
+    "Environment": {
+      "type": "string",
+      "enum": ["production", "staging", "development", "test", "unknown"],
+      "description": "Deployment environment (2.0); unknown is the fallback"
+    },
+    "AssetOwner": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One owner of the asset (2.0)",
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["team", "person", "group"]},
+        "ref": {"type": "string", "minLength": 1, "maxLength": 256, "x-ctis-pii": true, "description": "Name, handle or e-mail of the owner; personal data when kind is person"},
+        "role": {"type": "string", "enum": ["technical", "business", "security"]}
+      }
+    },
     "Technology": {
       "type": "object",
       "additionalProperties": false,
@@ -137,6 +185,18 @@
         "nft_collection",
         "defi_protocol",
         "blockchain",
+        "package",
+        "container_image",
+        "identity",
+        "saas_application",
+        "endpoint_device",
+        "iot_device",
+        "ot_device",
+        "network_device",
+        "autonomous_system",
+        "cloud_resource",
+        "kubernetes_workload",
+        "ai_model",
         "unclassified"
       ],
       "description": "Asset type. Use unclassified when no type fits. (The deprecated value other was removed in 1.3: the Go types never accepted it; OpenCTEM still files it as unclassified.)"
@@ -286,7 +346,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "provider": {"type": "string", "enum": ["aws", "gcp", "azure", "alibaba", "oracle"]},
+        "provider": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Cloud provider, an open token (2.0). Known values: aws, gcp, azure, alibaba, oracle, oci"},
         "account_id": {"type": "string"},
         "region": {"type": "string"},
         "zone": {"type": "string"},
@@ -373,6 +433,7 @@
         },
         "regulatory_owner": {
           "type": "string",
+          "x-ctis-pii": true,
           "description": "Regulatory owner email/username"
         }
       }

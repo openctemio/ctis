@@ -78,7 +78,7 @@
     },
     "detection_tool": {
       "type": "string",
-      "enum": ["slither", "mythril", "securify", "manticore", "echidna", "foundry", "aderyn", "wake", "4naly3er", "solhint", "mythx", "certora", "custom"]
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: slither, mythril, securify, manticore, echidna, foundry, aderyn, wake, 4naly3er, solhint, mythx, certora, custom"
     },
     "detection_confidence": {
       "type": "string",
@@ -256,7 +256,7 @@
       "properties": {
         "oracle_type": {
           "type": "string",
-          "enum": ["chainlink", "uniswap_twap", "uniswap_spot", "band", "tellor", "custom"]
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: chainlink, uniswap_twap, uniswap_spot, band, tellor, custom"
         },
         "oracle_address": {
           "type": "string",
@@ -286,7 +286,7 @@
       "properties": {
         "provider": {
           "type": "string",
-          "enum": ["aave", "dydx", "uniswap", "balancer", "compound", "maker"]
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: aave, dydx, uniswap, balancer, compound, maker"
         },
         "attack_type": {
           "type": "string",

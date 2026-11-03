@@ -1,6 +1,6 @@
 # CTIS 1.6 specification
 
-CTIS (CTEM Ingest Schema) is the JSON format security tools use to send assets, findings and dependencies to a CTEM platform such as OpenCTEM. This document is normative. The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as described in RFC 2119.
+CTIS (CTEM Interchange Schema) is the JSON format security tools and platforms use to exchange assets, findings and dependencies for continuous threat exposure management. This document is normative. The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as described in RFC 2119.
 
 The format has three descriptions, and they are kept identical by tests:
 
@@ -49,14 +49,35 @@ Spec versions 1.3 to 1.5 were not tagged as module releases of their own; v1.6.0
 
 Reports produced before 1.3 often carry `"1.0"` regardless of the fields they use. Receivers MUST NOT infer the field set from the version.
 
+Members marked **(2.0)** in this document and in the schema are the additive half of CTIS 2.0, which is being cut now: extensions (section 4.14), asset context (4.15), finding validation, provenance and threat signals (4.16), completeness and absence (4.17), open vocabularies, and version-gated decoding (2.2). They are optional, so a report without them is unchanged. Until the cut sets `version` to `2.0`, a report that uses them still declares `1.6`.
+
 ### 2.2 Compatibility rule
 
 - A **minor** release only adds optional members or enum values, or loosens a constraint. It never removes or renames a member, and never makes an optional member required.
-- A **major** release may break anything. It gets a new schema directory (`schemas/v2`) and a new Go module path (`github.com/openctemio/ctis/v2`).
-- A receiver MUST accept a report whose major equals its own, whatever the minor (`ctis.IsCompatibleVersion`). It MUST reject other majors.
-- Receivers decode strictly: a member the receiver does not know is an error, not something to drop (section 3.2). So a newer minor is compatible only if the producer does not use members newer than the receiver's minor. The same holds for enum values: OpenCTEM checks asset and finding types, severities, statuses and criticalities against its own enums, so a new enum value is refused by an older receiver just like a new member.
-- Therefore a producer MUST NOT send members introduced after the receiver's minor, unless it knows the receiver ignores unknown members. When it cannot know, it SHOULD stay within the members of the oldest receiver it talks to.
-- **Rollout order:** upgrade receivers first, then producers. For OpenCTEM this means the API before the sensors.
+- A **major** release may break anything. It gets a new schema directory (`schemas/v2`) and a new Go module path (`github.com/openctemio/ctis/v2`). There is no conversion between majors: a receiver reads only its own major.
+
+A receiver applies the rule by the minor the document declares, compared with its own (**version-gated must-ignore**):
+
+- **Same or older minor:** the receiver MUST reject an unknown member and an unknown enum value. Decoding is strict, so a typo such as `"sevrity"` is an error, not something to drop (section 3.2).
+- **Newer minor of the same major:** the receiver MUST ignore members it does not know, and MUST map an enum value it does not know to the member's documented fallback. An enum without a fallback loses the value: the member is removed when it is optional; otherwise the nearest enclosing optional member, or the array item that holds it, is removed (a finding of an unknown `type` is dropped; a target of `metadata.targets` with an unknown `state` or `class` is dropped, so it never counts as done). The receiver SHOULD record what it ignored, mapped or removed.
+- **Another major:** the receiver MUST reject the document.
+
+The fallbacks:
+
+| Enum | Fallback |
+|---|---|
+| `severity` | `unknown` |
+| asset `type`, `metadata.targets[].kind` | `unclassified` |
+| `environment` | `unknown` |
+| `endpoints[].kind` | `other` |
+| `endpoints[].auth` | `unknown` |
+| every other enum | none: the value is removed as described above |
+
+Open vocabularies (`native.scheme`, `technical.cloud.provider` and the web3 vendor members) take any token of the form `^[a-z0-9][a-z0-9_.-]{0,63}$`; their known values are listed next to the member, and a receiver that does not know a value keeps it as a string.
+
+`ctis.Decode(r io.Reader) (Report, Unknown, error)` implements the rule. `Unknown.Entries` lists each ignored member, mapped or lost enum value, removed member and dropped array item as a JSON Pointer into the document as received, at most 1,000 entries (`Unknown.Omitted` counts the rest). `ctis.EnumFallback` returns the fallback of an enum type. Decode checks shape only; receivers still run `Report.Validate`.
+
+**Rollout order:** a producer SHOULD stay within the members of the oldest receiver it talks to when it needs every member read; anything newer is ignored, not refused. Upgrade receivers first, then producers. For OpenCTEM this means the API before the sensors.
 
 The Go module version follows the specification: module `v1.MINOR.x` implements CTIS `1.MINOR`. Patch releases change code, tests and docs, never the format. The release workflow refuses a tag whose `MAJOR.MINOR` differs from `ctis.SchemaVersion`.
 
@@ -88,9 +109,10 @@ Definitions live under `$defs`. Draft-07 does not define that keyword, but every
 Every object in the schema sets `"additionalProperties": false`, except the free-form bags:
 
 - `properties` (report, metadata, tool, asset, finding, dependency) accepts any JSON;
+- `extensions` (2.0, section 4.14) accepts objects keyed by a reverse-DNS namespace;
 - maps with typed values: `partial_fingerprints`, `vendor_severity`, `whois`, `languages`, `technical.cloud.tags`, `technical.service.details`.
 
-This matches how receivers decode. OpenCTEM decodes into the Go types with unknown members rejected, so a typo such as `"sevrity"` fails at the schema exactly as it fails at ingest, instead of passing one and failing the other. Producer-specific data belongs in `properties`.
+This matches how receivers decode a document of their own minor: unknown members are rejected, so a typo such as `"sevrity"` fails at the schema exactly as it fails at ingest, instead of passing one and failing the other. Producer-specific data belongs in `extensions` under the producer's namespace; `properties` is an opaque bag that receivers SHOULD NOT give meaning to.
 
 ### 3.3 Report.Validate
 
@@ -102,7 +124,8 @@ Schema validation checks shape. `Report.Validate()` (Go) checks what the schema 
 - `finding.asset_ref` names an asset `id` of the same report;
 - ranges: confidence 0-100, rank 0-100, `cvss_score` 0-10, `epss_score` 0-1, `epss_percentile` 0-1, `vpr_score` 0-10, and none of them NaN or infinite;
 - enum members (type, severity, status, criticality) and required strings;
-- the interoperability members (section 4.10): their enums, score ranges per system, VEX consistency, typed vulnerability ids, and their size limits (section 7).
+- the interoperability members (section 4.10): their enums, score ranges per system, VEX consistency, typed vulnerability ids, and their size limits (section 7);
+- the 2.0 members (sections 4.14 to 4.17): extension namespaces and size, `dependency_ref` and `dependencies[].asset_ref` naming an item of the report, owners, `state: gone` with a `state_reason`, validation, threat signals, CAPEC ids, target state and class fit, segment bounds, and `ended_at` not before `started_at`.
 
 Producers SHOULD run `Validate` before sending; receivers SHOULD run it at their ingest boundary.
 
@@ -191,7 +214,7 @@ These members tie a report to the capability it answers and type what was untype
 
 - `metadata.capability` is the capability the report answers, as `id@major` (`scan.ports@1`). It is the producer's claim. A receiver that bound the report to a command (section 4.9) MUST use the command's capability and treat this value as a hint; it MUST NOT widen what the report may create because of it.
 - `asset.technologies[]` is what a fingerprinting tool identified: `name` (required), `version`, `cpe` (CPE 2.3), `categories` and `confidence` (0-100). It replaces the untyped `properties.technologies` list; producers SHOULD send the typed member only to receivers that accept 1.5 (section 2.2) and MAY keep the property for older receivers.
-- `relationships[]` are typed edges between two different assets of the same report, named by their `id`: `subdomain_of`, `resolves_to`, `cname_of`, `exposes`, `serves_certificate`, `hosted_by`. Both ends MUST be assets of the report. They are optional: a receiver may still derive these relationships from technical members, and SHOULD accept an edge only when the capability allows its type.
+- `relationships[]` are typed edges between two different assets of the same report, named by their `id`: `subdomain_of`, `resolves_to`, `cname_of`, `exposes`, `serves_certificate`, `hosted_by`, and (2.0) `contains`, `runs_on`, `depends_on`, `deployed_from`, `member_of`, `routes_to`, `has_access_to`. Each type has one direction, read as "from <type> to", and no inverse duplicate. An edge MAY carry `first_seen_at`, `last_seen_at` and `confidence` (0-100). Both ends MUST be assets of the report. They are optional: a receiver may still derive these relationships from technical members, and SHOULD accept an edge only when the capability allows its type.
 - `finding.attack[]` lists the MITRE ATT&CK techniques the finding enables an adversary to use (`T1190`, `T1595.002`), at most 20. It is a producer hint for reporting and coverage; receivers validate the id format and do not prioritize on it alone. The technique a *capability* emulates is a property of the capability, not of the report.
 - `finding.evidence` is capped at 64 KiB by OpenCTEM (section 7). Producers SHOULD put larger evidence in an attachment and keep a short excerpt in `evidence`.
 
@@ -224,6 +247,47 @@ These members describe the web surface: which methods and paths an origin serves
   - query, form and JSON members named like a credential;
   - every repetition of these values elsewhere in the evidence (a curl command repeating the cookie).
 - The Go module builds items from what tools capture. It caps them and marks these values: `HTTPExchangeFromRaw` (raw HTTP text), `HTTPExchangeFromHAR` (a HAR 1.2 entry), `CurlEvidence`, `MarkSensitive` and `FitEvidenceItem`.
+
+### 4.14 Extensions (2.0)
+
+`extensions` is allowed on the report, `metadata`, assets, findings, dependencies, endpoints and relationships. It is an object keyed by a reverse-DNS namespace (`io.openctem`, `com.example.scanner`; at least two labels, lowercase, at most 128 characters), each value an object whose members the namespace defines.
+
+- A namespace MAY publish a JSON Schema. A receiver validates a namespace it knows and ignores one it does not.
+- At most 32 namespaces and 64 KiB serialized per `extensions` object.
+- `properties` stays an opaque bag: receivers SHOULD NOT give meaning to its keys. Data a receiver interprets belongs in a typed member or in a namespace.
+- Experimental members MAY ship under `org.ctis.experimental` before they become typed members.
+- [`schemas/extensions/io.openctem/1.json`](../schemas/extensions/io.openctem/1.json) documents the OpenCTEM keys (informative): `capability`, `import_scope`, `candidate_exposure`, `candidate_unverified`, `bounty_report`, `web_content`.
+
+### 4.15 Asset context (2.0)
+
+- `environment`: `production`, `staging`, `development`, `test`, `unknown`.
+- `owners[]` (at most 20): `kind` (`team`, `person`, `group`), `ref` (a name, handle or e-mail; personal data) and `role` (`technical`, `business`, `security`).
+- `first_seen_at`, `last_seen_at`: when the producer first and last observed the asset.
+- `state` (`active`, `gone`) and `state_reason`. See section 4.17.
+- Asset types with no earlier equivalent: `package` (value: a versionless purl), `container_image` (value: the canonical image reference), `identity`, `saas_application`, `endpoint_device`, `iot_device`, `ot_device`, `network_device`, `autonomous_system`, `cloud_resource` (value: the canonical cloud id), `kubernetes_workload`, `ai_model`.
+- `dependencies[].asset_ref` names the asset the component was found in (a repository, an image, a host).
+
+### 4.16 Finding validation, provenance and threat signals (2.0)
+
+- Finding types `exposure` (something reachable that should not be), `weakness` (a code or design weakness without an advisory id), `malware` (malicious code or package) and `license` (a license policy violation). Severity `unknown` says the source gave none that maps.
+- `finding.validation` says whether and how the finding was shown to be exploitable: `status` (`exploited`, `not_exploited`, `blocked`, `detected`, `not_reproducible`, `not_tested`), `method` (`pentest`, `bas`, `automated_exploit`, `retest`, `manual_review`), `validated_at`, `validator` (personal data), `evidence_refs[]` (the `content_sha256` of an evidence item or an attachment id) and `notes`. A pentest or bug-bounty report is a finding with `metadata.source_type: manual` and `validation`, not a type of its own.
+- `finding.tool` has the shape of `report.tool` and overrides it for that finding, in merged or imported reports.
+- `finding.dependency_ref` names the dependency of the report the finding affects.
+- `vulnerability.capec_ids` lists CAPEC attack patterns (`CAPEC-66`).
+- `vulnerability.threat_signals[]` (at most 16) are assertions with a source and a date: `type` (`kev`, `exploited_in_wild`, `public_exploit`, `ransomware_use`, `weaponized`), `source`, `as_of`, `ref` (an external id or URL, never fetched) and `due_on` (a date-only remediation due date). Receivers SHOULD prefer their own threat intelligence and MUST NOT embed copied catalog text.
+
+### 4.17 Completeness and absence (2.0)
+
+- `metadata.started_at` and `metadata.ended_at` bound the work that produced the report.
+- `metadata.targets[]` says how each target of the work ended, in the vocabulary of the `outcome` package: `target`, `kind` (an asset type), `state` (`done`, `failed`, `skipped`, `unfinished`), `class` and `cause` (`target`, `sensor`, `platform`). `done` and `unfinished` take no class or cause; `failed` takes `unreachable`, `timeout`, `tool_error`, `egress_refused`, `name_gone`, `resolver_failed`, `sensor_network_fault`, `rate_limited`, `edge_challenged` or `edge_blocked`; `skipped` takes `refused`, `excluded`, `edge_challenged` or `edge_blocked`.
+- `metadata.segment` (`index` from 0, `count` up to 10,000) places a document in a result split over several documents that share one `metadata.id`. A receiver applies the absence rule below only when it holds every segment.
+
+The absence rule is normative:
+
+- An asset or finding seen earlier on target T is **gone** only when a report with `coverage_type: full` lists T in `metadata.targets` with `state: done` and does not contain the item.
+- Every other absence means **not seen**: a partial or incremental report, a target that failed, was skipped or is unfinished, a target the report does not list, or a missing segment.
+- An asset MAY carry `state: gone` only on an authoritative signal, named by `state_reason`: `name_gone` (an authoritative NXDOMAIN or NODATA answer), `resource_deleted` (the provider's API reports the resource deleted) or `inventory_removed` (the authoritative inventory no longer lists it).
+- A report is a set of observations at its timestamp, never a patch. There are no partial-update semantics: a member left out says nothing about the stored value.
 
 ## 5. Fingerprints
 
@@ -329,6 +393,13 @@ The interoperability and contract members (sections 4.10 and 4.11) carry their l
 | `endpoints` | 200,000 entries; `origin`, `path`, `template`, `parent` 2,048 bytes; 100 `params`, names of 128 bytes; `content_type` 255 |
 | `finding.web` | `url` 2,048 bytes, redacted; parameter name 128 bytes |
 | `finding.evidence_items` | 20 items of at most 256 KiB serialized; each body and `text` 64 KiB; 100 headers of 8 KiB; 20 `extracted` of 1 KiB; 50 `match`; 200 `sensitive` spans; `data` 64 KiB |
+| `extensions` (2.0) | 32 namespaces of at most 128 characters; 64 KiB serialized per object |
+| `asset.owners` (2.0) | 20 entries; `ref` 256 characters |
+| `finding.validation` (2.0) | `validator` 256, `notes` 4096 characters; 20 `evidence_refs` of 128 |
+| `vulnerability.threat_signals`, `capec_ids` (2.0) | 16 signals, `source` 64, `ref` 2048 characters; 32 CAPEC ids |
+| `metadata.targets` (2.0) | 100,000 entries; `target` 2,048 bytes, unique |
+| `metadata.segment` (2.0) | `count` 1 to 10,000 |
+| `dependency_ref`, `dependencies[].asset_ref` (2.0) | 255 characters, naming an item of the report |
 
 Producers SHOULD split larger results into several reports (or v2 segments) and SHOULD keep text within these caps, since a cut value may lose what made it useful.
 
@@ -358,7 +429,8 @@ A CTIS report is untrusted input from the credential that sent it. The rules of 
 - **Nothing in a report chooses the tenant, the deduplication key, the channel or the capability.** Receivers take the tenant and channel from the authenticated credential and recompute every key they deduplicate on (sections 4.9, 4.10, 4.12). A report carries no tenant identifier.
 - **URLs are data, never fetched.** A receiver MUST NOT dereference any URL of a report (`$schema`, `references`, `hosted_viewer_uri`, `info_url`, `work_item_uris`, `native.raw_ref`, advisory and evidence URLs) as part of ingest. A receiver that renders one as a link MUST allow only `http` and `https` (and `mailto` for e-mail members): the schema format `uri` alone admits other schemes, such as `javascript:`.
 - **Text is plain text.** Titles, messages, descriptions, evidence and every other string are shown as plain text, escaped for the output medium. No member is HTML or Markdown. Receivers SHOULD remove bidirectional control characters from text they display and SHOULD show non-ASCII host names in their A-label form next to the Unicode form.
-- **Personal data.** `author`, `author_email`, `suppression.suppressed_by`, `compliance.regulatory_owner` and the identity of a reviewer are personal data. Producers SHOULD send them only when the receiver uses them; receivers SHOULD be able to erase them on request.
+- **Personal data.** `author`, `author_email`, `suppression.suppressed_by`, `compliance.regulatory_owner`, `owners[].ref` and `validation.validator` are personal data, marked `"x-ctis-pii": true` in the schema. Producers SHOULD send them only when the receiver uses them; receivers SHOULD be able to erase them on request.
+- **Extensions are untrusted too.** A receiver validates a namespace it knows against that namespace's schema, bounds every one (section 7), and never lets a namespace choose a tenant, a key, a channel or a capability.
 - **Secret fingerprints.** A fingerprint input that derives from a secret MUST be a keyed hash (HMAC) under a key the producer holds, or the masked value (section 5.2). An unkeyed hash of a short or low-entropy secret can be reversed by trying candidates.
 - **Resource limits.** Receivers enforce the limits of section 7 and bound decompression, nesting depth and the size of every string before parsing the content further.
 - **Integrity.** The channel (TLS, mutual TLS for sensors) authenticates a report in transit. A report stored or relayed MAY be signed as a whole, for example in a DSSE envelope over its exact bytes; a receiver MAY require a signature for a channel.
@@ -371,7 +443,7 @@ Generated from `schemas/v1`. "Required" marks members the schema requires; every
 
 ### CTIS Report (`report.json`)
 
-CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into OpenCTEM. Normative field semantics: docs/spec.md in https://github.com/openctemio/ctis
+CTEM Interchange Schema (CTIS) - Standard format for exchanging assets, findings and dependencies between security tools and platforms. Normative field semantics: docs/spec.md in https://github.com/openctemio/ctis
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
@@ -379,12 +451,13 @@ CTEM Ingest Schema (CTIS) - Standard format for ingesting security data into Ope
 | `assets` | array of `asset.json` |  |  | Discovered assets |
 | `dependencies` | array of `dependency.json` |  |  | Software dependencies (SBOM) |
 | `endpoints` | array of `endpoint.json` |  |  | Methods and paths web origins serve, as a tool saw them (1.6); parameters are named, never valued |
+| `extensions` | `Extensions` |  |  |  |
 | `findings` | array of `finding.json` |  |  | Security findings |
 | `metadata` | `ReportMetadata` | yes |  |  |
 | `properties` | `Properties` |  |  |  |
 | `relationships` | array of `Relationship` |  |  | Typed relationships between two assets of this report, named by their ids (1.5) |
 | `tool` | `Tool` |  |  |  |
-| `version` | string | yes | pattern `^1\.(0\|[1-9][0-9]{0,3})$` | CTIS specification version as MAJOR.MINOR. Receivers accept any minor of their own major; a producer must not send fields newer than the receiver's minor (docs/spec.md, Versioning). The default is the version this schema describes. |
+| `version` | string | yes | pattern `^1\.(0\|[1-9][0-9]{0,3})$` | CTIS specification version as MAJOR.MINOR. Receivers decode a document of their own or an older minor strictly, ignore unknown members and map unknown enum values to their fallback in a document of a newer minor, and refuse another major (docs/spec.md section 2.2). The default is the version this schema describes. |
 
 #### BranchInfo
 
@@ -400,9 +473,15 @@ Git branch context for CI/CD scans. Used for branch-aware finding lifecycle mana
 | `pull_request_url` | string (uri) |  |  | PR/MR URL if this is a pull request scan |
 | `repository_url` | string |  |  | Repository URL for context. Format: domain/owner/repo (e.g., github.com/org/repo) |
 
+#### Extensions
+
+Namespaced producer data (2.0): keys are reverse-DNS namespaces (io.openctem, com.example.scanner), values objects that namespace defines. A receiver validates a namespace it knows and ignores one it does not. At most 32 namespaces and 64 KiB serialized (the size is checked by Validate).
+
+Type: map of object (free-form). 
+
 #### Properties
 
-Custom properties
+Custom properties: an opaque bag. Receivers SHOULD NOT give meaning to its keys; namespaced data goes in extensions (2.0)
 
 Type: object (free-form). 
 
@@ -412,13 +491,19 @@ A typed edge between two different assets of the report
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
+| `confidence` | integer |  | minimum 0; maximum 100 | How sure the producer is of the edge, 0-100 (2.0) |
+| `extensions` | `Extensions` |  |  |  |
+| `first_seen_at` | string (date-time) |  |  | When the producer first observed the edge (2.0) |
 | `from_ref` | string | yes | minLength 1; maxLength 255 | Id of the source asset in this report |
+| `last_seen_at` | string (date-time) |  |  | When the producer last observed the edge (2.0) |
 | `to_ref` | string | yes | minLength 1; maxLength 255 | Id of the target asset in this report |
 | `type` | `RelationshipType` | yes |  |  |
 
 #### RelationshipType
 
-Type: string. one of: subdomain_of, resolves_to, cname_of, exposes, serves_certificate, hosted_by
+One direction per type, read as from <type> to; no inverse duplicates
+
+Type: string. one of: subdomain_of, resolves_to, cname_of, exposes, serves_certificate, hosted_by, contains, runs_on, depends_on, deployed_from, member_of, routes_to, has_access_to
 
 #### ReportMetadata
 
@@ -430,11 +515,16 @@ Report metadata
 | `capability` | string |  | pattern `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+@[1-9][0-9]{0,2}$`; maxLength 128 | The capability this report answers, as id@major (scan.ports@1). A producer claim; receivers that bound the report to a command use the command's capability (1.5) |
 | `coverage_type` | string |  | one of: full, incremental, partial | Coverage type: full (complete scan), incremental (diff scan), partial (specific directories) |
 | `duration_ms` | integer |  | minimum 0 | Scan duration in milliseconds |
+| `ended_at` | string (date-time) |  |  | When the work that produced the report ended (2.0) |
+| `extensions` | `Extensions` |  |  |  |
 | `id` | string |  |  | Unique report/scan identifier |
 | `properties` | `Properties` |  |  |  |
 | `scope` | `Scope` |  |  |  |
+| `segment` | `Segment` |  |  |  |
 | `source_ref` | string |  |  | External reference (job ID, scan ID) |
 | `source_type` | string |  | one of: scanner, collector, integration, manual | Type of data source |
+| `started_at` | string (date-time) |  |  | When the work that produced the report started (2.0) |
+| `targets` | array of `TargetOutcome` |  |  | How each target of the work ended (2.0). An item seen earlier on target T is gone only when a coverage_type full report lists T with state done and omits it |
 | `timestamp` | string (date-time) | yes |  | When the report was generated (ISO 8601) |
 
 #### Scope
@@ -447,6 +537,27 @@ Target scope of the scan/collection
 | `includes` | array of string |  |  | Included targets |
 | `name` | string |  |  | Scope name or identifier |
 | `type` | string |  | one of: domain, network, repository, cloud_account, blockchain | Scope type |
+
+#### Segment
+
+This document's place in a result split over count documents that share one metadata.id (2.0). index is zero-based.
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `count` | integer | yes | minimum 1; maximum 10000 |  |
+| `index` | integer | yes | minimum 0; maximum 9999 |  |
+
+#### TargetOutcome
+
+How one target of the work ended (2.0), in the vocabulary of the outcome package: done and unfinished take no class or cause; failed and skipped need a class of their own
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `cause` | string |  | one of: target, sensor, platform |  |
+| `class` | string |  | one of: unreachable, timeout, tool_error, egress_refused, name_gone, resolver_failed, sensor_network_fault, rate_limited, edge_challenged, edge_blocked, refused, excluded |  |
+| `kind` | `AssetType` |  |  |  |
+| `state` | string | yes | one of: done, failed, skipped, unfinished |  |
+| `target` | string | yes | minLength 1; maxLength 2048 | The target as the work was given it (a name, an address, a range, a URL) |
 
 #### Tool
 
@@ -463,7 +574,7 @@ Tool that generated this report
 
 ### CTIS Asset (`asset.json`)
 
-Asset schema for CTEM Ingest Schema
+Asset schema for the CTEM Interchange Schema
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
@@ -472,14 +583,21 @@ Asset schema for CTEM Ingest Schema
 | `criticality` | `Criticality` |  |  |  |
 | `description` | string |  |  | Asset description |
 | `discovered_at` | string (date-time) |  |  | When asset was discovered |
+| `environment` | `Environment` |  |  |  |
+| `extensions` | `Extensions` |  |  |  |
+| `first_seen_at` | string (date-time) |  |  | When the producer first observed the asset (2.0) |
 | `id` | string |  |  | Unique identifier within the report |
 | `identifiers` | `AssetIdentifiers` |  |  |  |
 | `identity_hints` | `IdentityHints` |  |  |  |
 | `is_internet_accessible` | boolean |  |  | Is the asset directly accessible from the internet (CTEM) |
+| `last_seen_at` | string (date-time) |  |  | When the producer last observed the asset (2.0) |
 | `name` | string |  |  | Human-readable name |
+| `owners` | array of `AssetOwner` |  |  | Who owns the asset (2.0) |
 | `properties` | object (free-form) |  |  |  |
 | `related_assets` | array of string |  |  | Related asset IDs within this report |
 | `services` | array of `ServiceInfo` |  |  | Services running on this asset (CTEM) |
+| `state` | string |  | one of: active, gone | State of the asset (2.0). gone only on an authoritative signal named by state_reason; every other absence is not seen |
+| `state_reason` | string |  | one of: name_gone, resource_deleted, inventory_removed | The authoritative signal behind state gone (2.0) |
 | `tags` | array of string |  |  | Categorization tags |
 | `technical` | `AssetTechnical` |  |  |  |
 | `technologies` | array of `Technology` |  |  | Technologies the asset runs, as a fingerprinting tool identified them (1.5) |
@@ -511,6 +629,16 @@ Identifiers that stay the same when the asset is renamed or readdressed. In orde
 | `scm_repo_id` | string |  |  | Repository ID assigned by the source-code host (GitHub repository ID, GitLab project ID) |
 | `serial_number` | string |  |  | Hardware serial number |
 
+#### AssetOwner
+
+One owner of the asset (2.0)
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `kind` | string | yes | one of: team, person, group |  |
+| `ref` | string | yes | minLength 1; maxLength 256 | Name, handle or e-mail of the owner; personal data when kind is person |
+| `role` | string |  | one of: technical, business, security |  |
+
 #### AssetTechnical
 
 Type-specific technical details
@@ -529,7 +657,7 @@ Type-specific technical details
 
 Asset type. Use unclassified when no type fits. (The deprecated value other was removed in 1.3: the Go types never accepted it; OpenCTEM still files it as unclassified.)
 
-Type: string. one of: domain, subdomain, ip_address, certificate, website, web_application, api, mobile_app, service, repository, cloud_account, compute, storage, database, serverless, container_registry, host, server, container, kubernetes, kubernetes_cluster, kubernetes_namespace, network, vpc, subnet, load_balancer, firewall, iam_user, iam_role, service_account, http_service, open_port, discovered_url, smart_contract, wallet, token, nft_collection, defi_protocol, blockchain, unclassified
+Type: string. one of: domain, subdomain, ip_address, certificate, website, web_application, api, mobile_app, service, repository, cloud_account, compute, storage, database, serverless, container_registry, host, server, container, kubernetes, kubernetes_cluster, kubernetes_namespace, network, vpc, subnet, load_balancer, firewall, iam_user, iam_role, service_account, http_service, open_port, discovered_url, smart_contract, wallet, token, nft_collection, defi_protocol, blockchain, package, container_image, identity, saas_application, endpoint_device, iot_device, ot_device, network_device, autonomous_system, cloud_resource, kubernetes_workload, ai_model, unclassified
 
 #### CertificateTechnical
 
@@ -556,7 +684,7 @@ Type: string. one of: domain, subdomain, ip_address, certificate, website, web_a
 |---|---|---|---|---|
 | `account_id` | string |  |  |  |
 | `arn` | string |  |  |  |
-| `provider` | string |  | one of: aws, gcp, azure, alibaba, oracle |  |
+| `provider` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Cloud provider, an open token (2.0). Known values: aws, gcp, azure, alibaba, oracle, oci |
 | `region` | string |  |  |  |
 | `resource_id` | string |  |  |  |
 | `resource_type` | string |  |  |  |
@@ -588,6 +716,12 @@ Type: string. one of: critical, high, medium, low, info
 | `registered_at` | string (date-time) |  |  |  |
 | `registrar` | string |  |  |  |
 | `whois` | map of string |  |  |  |
+
+#### Environment
+
+Deployment environment (2.0); unknown is the fallback
+
+Type: string. one of: production, staging, development, test, unknown
 
 #### Geolocation
 
@@ -710,7 +844,7 @@ Technical details for network services (SSH, SMTP, FTP, DNS, HTTP, database serv
 
 ### CTIS Finding (`finding.json`)
 
-Security finding schema for CTEM Ingest Schema
+Security finding schema for the CTEM Interchange Schema
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
@@ -729,10 +863,12 @@ Security finding schema for CTEM Ingest Schema
 | `confidence` | integer |  | minimum 0; maximum 100 | Confidence score (0-100) |
 | `correlation_id` | string |  |  | Groups logically identical results across runs |
 | `data_flow` | `DataFlow` |  |  |  |
+| `dependency_ref` | string |  | minLength 1; maxLength 255 | Id of the dependency of this report the finding affects (2.0) |
 | `description` | string |  |  | Detailed description |
 | `evidence` | string |  |  | Scanner raw proof/output for this finding (e.g. Nessus plugin_output) |
 | `evidence_items` | array of `evidence-item.json` |  |  | Typed evidence of the finding (1.6); sensitive values only inside marked spans |
 | `exposure` | `FindingExposure` |  |  |  |
+| `extensions` | `Extensions` |  |  |  |
 | `fingerprint` | string |  |  | Producer-computed identity of this finding for deduplication, stable across scans. Send a lowercase hex SHA-256 (64 characters); OpenCTEM ignores values that are not hex of at least 16 characters and computes its own. See docs/spec.md, Fingerprints, for the recipe per finding type. |
 | `first_seen_at` | string (date-time) |  |  |  |
 | `hosted_viewer_uri` | string (uri) |  |  | URI to view this finding in a hosted viewer |
@@ -767,7 +903,9 @@ Security finding schema for CTEM Ingest Schema
 | `suppression` | `Suppression` |  |  |  |
 | `tags` | array of string |  |  |  |
 | `title` | string | yes |  | Short title |
+| `tool` | `Tool` |  |  |  |
 | `type` | `FindingType` | yes |  |  |
+| `validation` | `FindingValidation` |  |  |  |
 | `vex` | `VEX` |  |  |  |
 | `vulnerability` | `VulnerabilityDetails` |  |  |  |
 | `vulnerability_class` | array of string |  |  | Vulnerability classes (e.g., SQL Injection, XSS) |
@@ -929,9 +1067,22 @@ Type: string. one of: open, resolved, suppressed, false_positive, accepted_risk,
 
 #### FindingType
 
-Finding type
+Finding type. 2.0 adds exposure (reachable and should not be), weakness (no advisory id), malware and license. No fallback: a receiver drops a finding of a type it does not know from a newer-minor document
 
-Type: string. one of: vulnerability, secret, misconfiguration, compliance, web3
+Type: string. one of: vulnerability, secret, misconfiguration, compliance, web3, exposure, weakness, malware, license
+
+#### FindingValidation
+
+Whether and how the finding was shown to be exploitable (2.0): pentest, attack simulation, retest, manual review
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `evidence_refs` | array of string |  | items: pattern `^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$` | Evidence of the validation: the content_sha256 of an evidence item (sha256:<hex>) or an attachment id |
+| `method` | string |  | one of: pentest, bas, automated_exploit, retest, manual_review |  |
+| `notes` | string |  | maxLength 4096 |  |
+| `status` | string | yes | one of: exploited, not_exploited, blocked, detected, not_reproducible, not_tested |  |
+| `validated_at` | string (date-time) |  |  |  |
+| `validator` | string |  | maxLength 256 | Who validated: a person, team or tool name; personal data |
 
 #### FixRegex
 
@@ -984,7 +1135,7 @@ The finding as the source tool names it. The normalized values stay in severity,
 | `family` | string |  | maxLength 256 | Tool family or category of the check |
 | `instance_id` | string |  | maxLength 256 | Tool id of this occurrence (DefectDojo unique_id_from_tool, a detection id) |
 | `raw_ref` | string |  | maxLength 1024 | Where the raw record can be found again (a URL into the source, a locator in the imported file). Receivers never fetch it. |
-| `scheme` | string |  | one of: nessus, qualys, defectdojo, sarif, other | Vocabulary of the native values |
+| `scheme` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Vocabulary of the native values, an open token (2.0). Known values: nessus, qualys, defectdojo, sarif, other |
 | `severity` | string |  | maxLength 64 | Severity exactly as the tool reported it ("4", "5", "High", "error") |
 | `status` | string |  | maxLength 64 | Status exactly as the tool reported it ("Re-Opened", "fixed", "risk_accepted") |
 | `vuln_id` | string |  | maxLength 256 | Tool id of the vulnerability or check: Nessus plugin ID, Qualys QID, DefectDojo vuln_id_from_tool, SARIF rule id |
@@ -1067,9 +1218,9 @@ Secret-specific details
 
 #### Severity
 
-Severity level
+Severity level. unknown (2.0): the source gave none that maps; also the fallback for an unknown value
 
-Type: string. one of: critical, high, medium, low, info
+Type: string. one of: critical, high, medium, low, info, unknown
 
 #### SourceLifecycle
 
@@ -1117,6 +1268,18 @@ Finding suppression information (follows SARIF suppression: kind + status)
 | `suppressed_at` | string (date-time) |  |  |  |
 | `suppressed_by` | string |  |  | Who suppressed (user/email) |
 
+#### ThreatSignal
+
+A threat assertion by a named source at a date (2.0). Receivers SHOULD prefer their own intelligence
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `as_of` | string (date-time) |  |  | When the source asserted it |
+| `due_on` | string |  | pattern `^[0-9]{4}-(0[1-9]\|1[0-2])-(0[1-9]\|[12][0-9]\|3[01])$` | Remediation due date (YYYY-MM-DD), such as a KEV due date |
+| `ref` | string |  | maxLength 2048 | External reference (catalog id or URL); never fetched |
+| `source` | string | yes | minLength 1; maxLength 64 | Who asserts it (a catalog, a feed, the producer) |
+| `type` | string | yes | one of: kev, exploited_in_wild, public_exploit, ransomware_use, weaponized |  |
+
 #### VEX
 
 Exploitability statement (CSAF / OpenVEX vocabulary). not_affected needs a justification or a statement; a justification is only for not_affected.
@@ -1151,6 +1314,7 @@ Vulnerability-specific details
 | `affected_version_range` | string |  |  | Affected version range, e.g. ">=1.0.0, <1.2.5" |
 | `asvs` | `ASVSInfo` |  |  |  |
 | `avd_id` | string |  | pattern `^AVD-[A-Z]+-\d+$` | Aqua Vulnerability Database ID |
+| `capec_ids` | array of string |  | items: pattern `^CAPEC-[1-9][0-9]{0,5}$` | CAPEC attack pattern ids (2.0) |
 | `cpe` | string |  |  |  |
 | `cve_id` | string |  | pattern `^CVE-\d{4}-\d+$` | CVE identifier |
 | `cve_ids` | array of string |  | items: pattern `^CVE-\d{4}-\d+$` | All CVEs for this finding (network scanners group multiple per plugin) |
@@ -1179,6 +1343,7 @@ Vulnerability-specific details
 | `published_at` | string (date-time) |  |  | Vulnerability published date |
 | `purl` | string |  |  | Package URL (purl spec) |
 | `severity_source` | string |  |  | Source of severity rating (nvd, ghsa, redhat, etc.) |
+| `threat_signals` | array of `ThreatSignal` |  |  | Threat assertions with source and date (2.0) |
 | `vendor_severity` | map of integer |  |  | Per-vendor severity mapping (vendor name -> severity level 1-5) |
 | `vpr_score` | number |  | minimum 0; maximum 10 | Tenable Vulnerability Priority Rating (0-10) |
 | `vuln_status` | string |  | one of: affected, fixed, under_investigation, will_not_fix | Vulnerability status |
@@ -1219,8 +1384,10 @@ Software component or library dependency (SBOM)
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
+| `asset_ref` | string |  | minLength 1; maxLength 255 | Id of the asset of this report the component was found in: a repository, an image, a host (2.0) |
 | `depends_on` | array of string |  |  | IDs of the dependencies this component depends on |
 | `ecosystem` | string |  |  | Package ecosystem (npm, pypi, maven, gomod, etc.) |
+| `extensions` | `Extensions` |  |  |  |
 | `id` | string |  |  | Unique identifier for the dependency within the report; other dependencies reference it in depends_on |
 | `licenses` | array of string |  |  | List of licenses |
 | `location` | `FindingLocation` |  |  |  |
@@ -1266,7 +1433,7 @@ Web3-specific technical details for smart contracts, wallets, tokens, and DeFi p
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
-| `auditor` | string | yes | one of: trail_of_bits, openzeppelin, consensys_diligence, certik, hacken, peckshield, slowmist, quantstamp, cyfrin |  |
+| `auditor` | string | yes | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Open token (vendor neutral since 2.0). Known values: trail_of_bits, openzeppelin, consensys_diligence, certik, hacken, peckshield, slowmist, quantstamp, cyfrin |
 | `critical_count` | integer |  | minimum 0 |  |
 | `date` | string (date-time) |  |  |  |
 | `high_count` | integer |  | minimum 0 |  |
@@ -1291,7 +1458,7 @@ DeFi protocol-specific details
 |---|---|---|---|---|
 | `audit_reports` | array of `AuditReport` |  |  |  |
 | `audited` | boolean |  |  |  |
-| `bug_bounty_platform` | string |  | one of: immunefi, hackerone, code4rena, sherlock, hats |  |
+| `bug_bounty_platform` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Open token (vendor neutral since 2.0). Known values: immunefi, hackerone, code4rena, sherlock, hats |
 | `core_contracts` | array of `CoreContract` |  |  |  |
 | `governance_token` | string |  | pattern `^0x[a-fA-F0-9]{40}$` |  |
 | `has_bug_bounty` | boolean |  |  |  |
@@ -1315,7 +1482,7 @@ NFT collection-specific details
 | `floor_price` | string |  |  |  |
 | `floor_price_usd` | number |  | minimum 0 |  |
 | `holder_count` | integer |  | minimum 0 |  |
-| `marketplaces` | array of string |  | items: one of: opensea, blur, looksrare, x2y2, rarible, foundation |  |
+| `marketplaces` | array of string |  | items: pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` |  |
 | `max_supply` | integer |  | minimum 0 |  |
 | `metadata_storage` | string |  | one of: ipfs, arweave, centralized, onchain |  |
 | `name` | string |  |  |  |
@@ -1404,7 +1571,7 @@ Token-specific details
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
-| `dex` | string | yes | one of: uniswap_v2, uniswap_v3, sushiswap, pancakeswap, curve, balancer |  |
+| `dex` | string | yes | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Open token (vendor neutral since 2.0). Known values: uniswap_v2, uniswap_v3, sushiswap, pancakeswap, curve, balancer |
 | `liquidity_usd` | number |  | minimum 0 |  |
 | `pair_address` | string | yes | pattern `^0x[a-fA-F0-9]{40}$` |  |
 | `quote_token` | string | yes |  |  |
@@ -1422,7 +1589,7 @@ Wallet-specific details
 | `last_tx_at` | string (date-time) |  |  |  |
 | `nft_count` | integer |  | minimum 0 |  |
 | `owners` | array of string |  | items: pattern `^0x[a-fA-F0-9]{40}$` |  |
-| `provider` | string |  | one of: metamask, ledger, safe, argent, coinbase, rainbow, trustwallet |  |
+| `provider` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Open token (vendor neutral since 2.0). Known values: metamask, ledger, safe, argent, coinbase, rainbow, trustwallet |
 | `required_signatures` | integer |  | minimum 1 |  |
 | `token_balances` | array of `TokenBalance` |  |  |  |
 | `total_owners` | integer |  | minimum 1 |  |
@@ -1444,7 +1611,7 @@ Web3/Smart contract vulnerability-specific details
 | `chain_id` | integer |  |  | EVM Chain ID |
 | `contract_address` | string |  | pattern `^0x[a-fA-F0-9]{40}$` |  |
 | `detection_confidence` | string |  | one of: high, medium, low |  |
-| `detection_tool` | string |  | one of: slither, mythril, securify, manticore, echidna, foundry, aderyn, wake, 4naly3er, solhint, mythx, certora, custom |  |
+| `detection_tool` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Open token (vendor neutral since 2.0). Known values: slither, mythril, securify, manticore, echidna, foundry, aderyn, wake, 4naly3er, solhint, mythx, certora, custom |
 | `estimated_impact_usd` | number |  | minimum 0 |  |
 | `exploitable_on_mainnet` | boolean |  |  |  |
 | `flash_loan` | `FlashLoanIssue` |  |  |  |
@@ -1481,7 +1648,7 @@ Flash loan attack vulnerability details
 | `attack_steps` | array of string |  |  |  |
 | `attack_type` | string |  | one of: price_manipulation, governance_attack, collateral_theft, arbitrage, liquidation |  |
 | `potential_profit_usd` | number |  | minimum 0 |  |
-| `provider` | string |  | one of: aave, dydx, uniswap, balancer, compound, maker |  |
+| `provider` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Open token (vendor neutral since 2.0). Known values: aave, dydx, uniswap, balancer, compound, maker |
 | `required_capital_usd` | number |  | minimum 0 |  |
 
 #### GasIssue
@@ -1504,7 +1671,7 @@ Oracle manipulation vulnerability details
 | `manipulation_method` | string |  | one of: flash_loan, sandwich, time_manipulation, multi_block |  |
 | `missing_checks` | array of string |  | items: one of: staleness_check, min_answer_check, max_answer_check, sequencer_check, deviation_check |  |
 | `oracle_address` | string |  | pattern `^0x[a-fA-F0-9]{40}$` |  |
-| `oracle_type` | string |  | one of: chainlink, uniswap_twap, uniswap_spot, band, tellor, custom |  |
+| `oracle_type` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Open token (vendor neutral since 2.0). Known values: chainlink, uniswap_twap, uniswap_spot, band, tellor, custom |
 | `price_impact_percent` | number |  | minimum 0 |  |
 
 #### ReentrancyIssue

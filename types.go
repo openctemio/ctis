@@ -36,8 +36,13 @@ type Report struct {
 	// saw them (1.6). Names of parameters only, never values.
 	Endpoints []Endpoint `json:"endpoints,omitempty"`
 
-	// Custom properties
+	// Custom properties. Receivers SHOULD NOT give meaning to keys in
+	// properties; namespaced data goes in Extensions (2.0).
 	Properties Properties `json:"properties,omitempty"`
+
+	// Extensions holds namespaced producer data, keyed by a reverse-DNS
+	// namespace (2.0, section 4.14).
+	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // ReportMetadata contains metadata about the report.
@@ -75,8 +80,23 @@ type ReportMetadata struct {
 	// the command's capability and treats this as a hint.
 	Capability string `json:"capability,omitempty"`
 
+	// When the work that produced the report started and ended (2.0).
+	StartedAt *time.Time `json:"started_at,omitempty"`
+	EndedAt   *time.Time `json:"ended_at,omitempty"`
+
+	// How each target of the work ended (2.0). With coverage_type full, a
+	// target in state done is what lets a receiver call an item gone.
+	Targets []TargetOutcome `json:"targets,omitempty"`
+
+	// Segment places this document in a result split over several
+	// documents that share one metadata.id (2.0).
+	Segment *Segment `json:"segment,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
+
+	// Namespaced producer data (2.0).
+	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // BranchInfo contains git branch context for CI/CD scans.
@@ -206,8 +226,26 @@ type Asset struct {
 	// them (1.5). Replaces the untyped properties.technologies list.
 	Technologies []Technology `json:"technologies,omitempty"`
 
+	// Deployment environment of the asset (2.0).
+	Environment Environment `json:"environment,omitempty"`
+
+	// Who owns the asset (2.0). The refs are personal data.
+	Owners []AssetOwner `json:"owners,omitempty"`
+
+	// When the producer first and last observed the asset (2.0).
+	FirstSeenAt *time.Time `json:"first_seen_at,omitempty"`
+	LastSeenAt  *time.Time `json:"last_seen_at,omitempty"`
+
+	// State of the asset (2.0). gone only on an authoritative signal,
+	// named by StateReason.
+	State       AssetState       `json:"state,omitempty"`
+	StateReason AssetStateReason `json:"state_reason,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
+
+	// Namespaced producer data (2.0).
+	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // AssetIdentifiers holds identifiers that stay the same when an asset is
@@ -1159,8 +1197,23 @@ type Finding struct {
 	// sensitive list; receivers mask those before display or forwarding.
 	EvidenceItems []EvidenceItem `json:"evidence_items,omitempty"`
 
+	// Tool overrides the report's tool for this finding, in merged or
+	// imported reports (2.0).
+	Tool *Tool `json:"tool,omitempty"`
+
+	// Validation is whether and how the finding was shown to be
+	// exploitable (2.0): pentest, attack simulation, retest.
+	Validation *FindingValidation `json:"validation,omitempty"`
+
+	// DependencyRef names the dependency of this report the finding
+	// affects (2.0).
+	DependencyRef string `json:"dependency_ref,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
+
+	// Namespaced producer data (2.0).
+	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // FindingExposure contains CTEM exposure information for a finding.
@@ -1627,6 +1680,14 @@ type VulnerabilityDetails struct {
 	// vendor). cve_id and cve_ids stay as they are; producers that send
 	// both keep them consistent.
 	IDs []VulnerabilityID `json:"ids,omitempty"`
+
+	// CAPEC attack pattern ids ("CAPEC-66") (2.0).
+	CAPECIDs []string `json:"capec_ids,omitempty"`
+
+	// Threat signals asserted by a named source at a date (2.0): KEV
+	// listing, exploitation in the wild, public exploit. Receivers SHOULD
+	// prefer their own intelligence.
+	ThreatSignals []ThreatSignal `json:"threat_signals,omitempty"`
 }
 
 // VulnDataSource contains information about the vulnerability data source.
@@ -2194,6 +2255,22 @@ const (
 	AssetTypeBlockchain    AssetType = "blockchain"
 
 	// ==========================================================================
+	// CTIS 2.0: types with no equivalent before
+	// ==========================================================================
+	AssetTypePackage            AssetType = "package"             // Software package (identity: versionless purl)
+	AssetTypeContainerImage     AssetType = "container_image"     // Container image (identity: digest)
+	AssetTypeIdentity           AssetType = "identity"            // Human or machine identity
+	AssetTypeSaaSApplication    AssetType = "saas_application"    // SaaS application tenant
+	AssetTypeEndpointDevice     AssetType = "endpoint_device"     // Laptop, desktop, phone
+	AssetTypeIoTDevice          AssetType = "iot_device"          // IoT device
+	AssetTypeOTDevice           AssetType = "ot_device"           // Operational technology device
+	AssetTypeNetworkDevice      AssetType = "network_device"      // Router, switch, access point
+	AssetTypeAutonomousSystem   AssetType = "autonomous_system"   // BGP autonomous system
+	AssetTypeCloudResource      AssetType = "cloud_resource"      // Cloud resource by provider id
+	AssetTypeKubernetesWorkload AssetType = "kubernetes_workload" // Deployment, StatefulSet, Job, Pod
+	AssetTypeAIModel            AssetType = "ai_model"            // Machine learning model
+
+	// ==========================================================================
 	// Unclassified Assets
 	// ==========================================================================
 	AssetTypeUnclassified AssetType = "unclassified" // Assets that have not been classified yet
@@ -2250,6 +2327,19 @@ func AllAssetTypes() []AssetType {
 		AssetTypeDeFiProtocol,
 		AssetTypeToken,
 		AssetTypeBlockchain,
+		// CTIS 2.0
+		AssetTypePackage,
+		AssetTypeContainerImage,
+		AssetTypeIdentity,
+		AssetTypeSaaSApplication,
+		AssetTypeEndpointDevice,
+		AssetTypeIoTDevice,
+		AssetTypeOTDevice,
+		AssetTypeNetworkDevice,
+		AssetTypeAutonomousSystem,
+		AssetTypeCloudResource,
+		AssetTypeKubernetesWorkload,
+		AssetTypeAIModel,
 		// Unclassified
 		AssetTypeUnclassified,
 	}
@@ -2274,6 +2364,12 @@ const (
 	FindingTypeMisconfiguration FindingType = "misconfiguration"
 	FindingTypeCompliance       FindingType = "compliance"
 	FindingTypeWeb3             FindingType = "web3" // Smart contract vulnerabilities
+
+	// CTIS 2.0.
+	FindingTypeExposure FindingType = "exposure" // Something reachable that should not be
+	FindingTypeWeakness FindingType = "weakness" // Code or design weakness without an advisory id
+	FindingTypeMalware  FindingType = "malware"  // Malicious code or package
+	FindingTypeLicense  FindingType = "license"  // License policy violation
 )
 
 // AllFindingTypes returns all valid finding types.
@@ -2284,6 +2380,10 @@ func AllFindingTypes() []FindingType {
 		FindingTypeMisconfiguration,
 		FindingTypeCompliance,
 		FindingTypeWeb3,
+		FindingTypeExposure,
+		FindingTypeWeakness,
+		FindingTypeMalware,
+		FindingTypeLicense,
 	}
 }
 
@@ -2306,6 +2406,10 @@ const (
 	SeverityMedium   Severity = "medium"
 	SeverityLow      Severity = "low"
 	SeverityInfo     Severity = "info"
+	// SeverityUnknown: the source gave no severity, or one that maps to
+	// none of the others (2.0). Also the fallback for a severity a receiver
+	// does not know in a newer-minor document.
+	SeverityUnknown Severity = "unknown"
 )
 
 // AllSeverities returns all valid severities.
@@ -2316,6 +2420,7 @@ func AllSeverities() []Severity {
 		SeverityMedium,
 		SeverityLow,
 		SeverityInfo,
+		SeverityUnknown,
 	}
 }
 
@@ -2350,6 +2455,9 @@ func (s Severity) Score() float64 {
 		return 2.5
 	case SeverityInfo:
 		return 0.0
+	case SeverityUnknown:
+		// Same fail-safe as an unrecognized value: surface it.
+		return 5.0
 	default:
 		return 5.0
 	}

@@ -1,8 +1,10 @@
 package ctis
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Contract members (CTIS 1.5, spec section 4.11): the capability a report
@@ -82,11 +84,36 @@ const (
 	// RelHostedBy: from (a service or address) is hosted by to (a provider
 	// or a host).
 	RelHostedBy RelationshipType = "hosted_by"
+
+	// Relationship types added in 2.0. Each reads "from <type> to".
+
+	// RelContains: from (a cluster, account, network, image) contains to.
+	RelContains RelationshipType = "contains"
+	// RelRunsOn: from (a workload, container, service) runs on to (a host,
+	// cluster, cloud resource).
+	RelRunsOn RelationshipType = "runs_on"
+	// RelDependsOn: from (an application, package) depends on to (a
+	// package, service).
+	RelDependsOn RelationshipType = "depends_on"
+	// RelDeployedFrom: from (a workload, image) is deployed from to (a
+	// repository, image).
+	RelDeployedFrom RelationshipType = "deployed_from"
+	// RelMemberOf: from (an identity, host) is a member of to (a group,
+	// network, account).
+	RelMemberOf RelationshipType = "member_of"
+	// RelRoutesTo: from (a load balancer, gateway, origin) routes traffic
+	// to to.
+	RelRoutesTo RelationshipType = "routes_to"
+	// RelHasAccessTo: from (an identity) has access to to (a resource).
+	RelHasAccessTo RelationshipType = "has_access_to"
 )
 
 // AllRelationshipTypes returns every relationship type.
 func AllRelationshipTypes() []RelationshipType {
-	return []RelationshipType{RelSubdomainOf, RelResolvesTo, RelCnameOf, RelExposes, RelServesCertificate, RelHostedBy}
+	return []RelationshipType{
+		RelSubdomainOf, RelResolvesTo, RelCnameOf, RelExposes, RelServesCertificate, RelHostedBy,
+		RelContains, RelRunsOn, RelDependsOn, RelDeployedFrom, RelMemberOf, RelRoutesTo, RelHasAccessTo,
+	}
 }
 
 // IsValid reports whether t is a known relationship type.
@@ -105,6 +132,15 @@ type Relationship struct {
 	Type    RelationshipType `json:"type"`
 	FromRef string           `json:"from_ref"`
 	ToRef   string           `json:"to_ref"`
+
+	// When the producer first and last observed the edge, and how sure it
+	// is, 0-100 (2.0).
+	FirstSeenAt *time.Time `json:"first_seen_at,omitempty"`
+	LastSeenAt  *time.Time `json:"last_seen_at,omitempty"`
+	Confidence  int        `json:"confidence,omitempty"`
+
+	// Namespaced producer data (2.0).
+	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // validateContractReport checks the 1.5 report-level members.
@@ -135,6 +171,13 @@ func validateContractReport(r *Report, assetIDs map[string]bool, add func(string
 		if rel.FromRef != "" && rel.FromRef == rel.ToRef {
 			add("relationships[%d]: an asset cannot relate to itself", i)
 		}
+		if rel.Confidence < 0 || rel.Confidence > 100 {
+			add("relationships[%d]: confidence %d is outside 0-100", i, rel.Confidence)
+		}
+		if seenOrder(rel.FirstSeenAt, rel.LastSeenAt) {
+			add("relationships[%d]: last_seen_at is before first_seen_at", i)
+		}
+		validateExtensions(fmt.Sprintf("relationships[%d].extensions", i), rel.Extensions, add)
 	}
 }
 

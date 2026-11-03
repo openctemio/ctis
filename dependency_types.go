@@ -45,8 +45,15 @@ type Dependency struct {
 	// All locations where this dependency is defined
 	Locations []DependencyLocation `json:"locations,omitempty"`
 
+	// AssetRef names the asset of this report the component was found in
+	// (2.0): a repository, a container image, a host.
+	AssetRef string `json:"asset_ref,omitempty"`
+
 	// Custom properties
 	Properties Properties `json:"properties,omitempty"`
+
+	// Namespaced producer data (2.0).
+	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // DependencyLocation represents a location where a dependency is defined.

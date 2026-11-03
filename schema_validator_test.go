@@ -32,12 +32,15 @@ var supportedKeywords = map[string]bool{
 	"type": true, "required": true, "properties": true, "additionalProperties": true,
 	"items": true, "enum": true, "const": true, "pattern": true,
 	"minimum": true, "maximum": true, "minLength": true, "maxLength": true,
-	"maxItems": true, "maxProperties": true,
+	"maxItems": true, "maxProperties": true, "propertyNames": true,
 	"format": true,
+	// x-ctis-pii marks a member holding personal data (an annotation).
+	"x-ctis-pii": true,
 }
 
 var annotationKeywords = map[string]bool{
 	"title": true, "description": true, "default": true, "examples": true,
+	"x-ctis-pii": true,
 }
 
 type schemaSet struct {
@@ -222,6 +225,11 @@ func (s *schemaSet) validate(v any, node map[string]any, file, path string, errs
 			}
 		}
 		props, _ := node["properties"].(map[string]any)
+		if pn, ok := node["propertyNames"].(map[string]any); ok {
+			for k := range val {
+				s.validate(k, pn, file, path+"/"+k+" (name)", errs)
+			}
+		}
 		keys := make([]string, 0, len(val))
 		for k := range val {
 			keys = append(keys, k)

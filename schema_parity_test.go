@@ -47,6 +47,24 @@ var goEnums = map[reflect.Type][]string{
 	reflect.TypeOf(EndpointAuth("")):         stringsOf(AllEndpointAuths()),
 	reflect.TypeOf(ParamLocation("")):        stringsOf(AllParamLocations()),
 	reflect.TypeOf(RelationshipType("")):     stringsOf(AllRelationshipTypes()),
+	reflect.TypeOf(Environment("")):          stringsOf(AllEnvironments()),
+	reflect.TypeOf(OwnerKind("")):            stringsOf(AllOwnerKinds()),
+	reflect.TypeOf(OwnerRole("")):            stringsOf(AllOwnerRoles()),
+	reflect.TypeOf(AssetState("")):           stringsOf(AllAssetStates()),
+	reflect.TypeOf(AssetStateReason("")):     stringsOf(AllAssetStateReasons()),
+	reflect.TypeOf(ValidationStatus("")):     stringsOf(AllValidationStatuses()),
+	reflect.TypeOf(ValidationMethod("")):     stringsOf(AllValidationMethods()),
+	reflect.TypeOf(ThreatSignalType("")):     stringsOf(AllThreatSignalTypes()),
+	reflect.TypeOf(TargetState("")):          stringsOf(AllTargetStates()),
+	reflect.TypeOf(TargetClass("")):          stringsOf(AllTargetClasses()),
+	reflect.TypeOf(TargetCause("")):          stringsOf(AllTargetCauses()),
+}
+
+// openEnums are Go enum types whose schema member is an open token
+// (OpenTokenPattern): the Go constants are the known values, and every one
+// of them must match the pattern.
+var openEnums = map[reflect.Type]bool{
+	reflect.TypeOf(NativeScheme("")): true,
 }
 
 func stringsOf[T ~string](in []T) []string {
@@ -159,8 +177,8 @@ func checkKeywords(t *testing.T, file, path string, node map[string]any) {
 			for name, child := range v.(map[string]any) {
 				checkKeywords(t, file, path+"/"+k+"/"+name, child.(map[string]any))
 			}
-		case "items":
-			checkKeywords(t, file, path+"/items", v.(map[string]any))
+		case "items", "propertyNames":
+			checkKeywords(t, file, path+"/"+k, v.(map[string]any))
 		case "additionalProperties":
 			if m, ok := v.(map[string]any); ok {
 				checkKeywords(t, file, path+"/additionalProperties", m)
@@ -232,6 +250,17 @@ func (w *parityWalker) compare(path string, gt reflect.Type, node map[string]any
 			return
 		}
 		w.enumsSeen[gt] = true
+		if openEnums[gt] {
+			if node["pattern"] != OpenTokenPattern || node["enum"] != nil {
+				w.t.Errorf("%s: open vocabulary %s needs pattern %s and no enum", path, gt.Name(), OpenTokenPattern)
+			}
+			for _, v := range values {
+				if !IsOpenToken(v) {
+					w.t.Errorf("%s: known value %q of %s is not an open token", path, v, gt.Name())
+				}
+			}
+			return
+		}
 		if d := enumDiff(enumValues(node), values); d != "" {
 			w.t.Errorf("%s: enum of %s differs: %s", path, gt.Name(), d)
 		}
