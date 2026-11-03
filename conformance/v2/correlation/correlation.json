@@ -1,0 +1,228 @@
+{
+  "recipe": "ctis-ck/1",
+  "description": "Correlation key: ctis-ck/1: + SHA-256 hex of the length-prefixed parts [ctis-ck, asset key, preferred vulnerability id or rule:<tool>/<rule_id>, LocationKey] joined with 0x1F (docs/fingerprints.md). Each case gives the finding as a partial CTIS finding object, the tool name, and the two intermediate parts. Expected values come from an independent implementation.",
+  "cases": [
+    {
+      "name": "cve on a package",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "trivy",
+      "finding": {
+        "rule_id": "CVE-2021-23337",
+        "vulnerability": {
+          "cve_ids": [
+            "CVE-2021-23337"
+          ],
+          "purl": "pkg:npm/lodash@4.17.20"
+        }
+      },
+      "vulnerability_id": "CVE-2021-23337",
+      "location_key": "pkg:npm/lodash",
+      "expected": "ctis-ck/1:3524f01306433545716e121c3d1cd764a29b1718f06ea84e5c188dd3f334b7b5"
+    },
+    {
+      "name": "same cve, other tool, same key",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "grype",
+      "finding": {
+        "rule_id": "GHSA-35jh-r3h4-6jhm",
+        "vulnerability": {
+          "cve_ids": [
+            "cve-2021-23337"
+          ],
+          "purl": "pkg:npm/lodash@4.17.21"
+        }
+      },
+      "vulnerability_id": "CVE-2021-23337",
+      "location_key": "pkg:npm/lodash",
+      "expected": "ctis-ck/1:3524f01306433545716e121c3d1cd764a29b1718f06ea84e5c188dd3f334b7b5"
+    },
+    {
+      "name": "smallest cve is preferred",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "trivy",
+      "finding": {
+        "vulnerability": {
+          "cve_ids": [
+            "CVE-2021-10000",
+            "CVE-2021-9999"
+          ],
+          "package": "lodash",
+          "ecosystem": "npm"
+        }
+      },
+      "vulnerability_id": "CVE-2021-9999",
+      "location_key": "pkg:npm/lodash",
+      "expected": "ctis-ck/1:da912484a1089050afe096eb7ce6fa74cd2ceca9b4242aa73b955c705da0fe7b"
+    },
+    {
+      "name": "same cve on another asset differs",
+      "asset_key": "7c2d1c33-1b1d-5d6e-9a53-6a4f3b6b1c22",
+      "tool": "trivy",
+      "finding": {
+        "vulnerability": {
+          "cve_ids": [
+            "CVE-2021-23337"
+          ],
+          "purl": "pkg:npm/lodash@4.17.20"
+        }
+      },
+      "vulnerability_id": "CVE-2021-23337",
+      "location_key": "pkg:npm/lodash",
+      "expected": "ctis-ck/1:60aa84bd5e2dd0ae840e1c332b0276ef43c947fcb9213e897e2eb0d817835c64"
+    },
+    {
+      "name": "rule fallback on a web url",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "nuclei",
+      "finding": {
+        "rule_id": "xss-reflected",
+        "web": {
+          "url": "HTTPS://Example.com:443/Search?q=1"
+        }
+      },
+      "vulnerability_id": "rule:nuclei/xss-reflected",
+      "location_key": "url:https://example.com/Search",
+      "expected": "ctis-ck/1:462d5e460997dbcd48871281b4fa4ee0fc1f4767cb5f542c792a3daf0cb6053b"
+    },
+    {
+      "name": "rule fallback, another tool differs",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "zap",
+      "finding": {
+        "rule_id": "xss-reflected",
+        "web": {
+          "url": "https://example.com/Search"
+        }
+      },
+      "vulnerability_id": "rule:zap/xss-reflected",
+      "location_key": "url:https://example.com/Search",
+      "expected": "ctis-ck/1:a596766e0fa642237ed3c726621ecf08e80f94e9f27bc135ee6b0023a6fc4d45"
+    },
+    {
+      "name": "rule id is trimmed",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "nuclei",
+      "finding": {
+        "rule_id": "  xss-reflected ",
+        "web": {
+          "url": "https://example.com/Search"
+        }
+      },
+      "vulnerability_id": "rule:nuclei/xss-reflected",
+      "location_key": "url:https://example.com/Search",
+      "expected": "ctis-ck/1:462d5e460997dbcd48871281b4fa4ee0fc1f4767cb5f542c792a3daf0cb6053b"
+    },
+    {
+      "name": "web url path case is kept",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "nuclei",
+      "finding": {
+        "rule_id": "xss-reflected",
+        "web": {
+          "url": "https://example.com/search"
+        }
+      },
+      "vulnerability_id": "rule:nuclei/xss-reflected",
+      "location_key": "url:https://example.com/search",
+      "expected": "ctis-ck/1:6dc8c48f1cd641cba633abb967d3e414fc00ffa4671ba6bb6ded93ccabc7f97a"
+    },
+    {
+      "name": "file location keeps case",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "semgrep",
+      "finding": {
+        "rule_id": "java.sqli",
+        "location": {
+          "path": "./Src\\Main.java"
+        }
+      },
+      "vulnerability_id": "rule:semgrep/java.sqli",
+      "location_key": "file:Src/Main.java",
+      "expected": "ctis-ck/1:042dad207440eb4d32f0a41831f1a0ce918a09d83927276896c3cedf1a05ac4a"
+    },
+    {
+      "name": "network location",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "nessus",
+      "finding": {
+        "rule_id": "12345",
+        "network": {
+          "port": 443,
+          "protocol": "TCP"
+        }
+      },
+      "vulnerability_id": "rule:nessus/12345",
+      "location_key": "net:443/tcp",
+      "expected": "ctis-ck/1:55e0b8434b416cd05358ec61739ecb7fddbb8385b08442fbd5a78b09a08f2fa3"
+    },
+    {
+      "name": "network host only",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "nessus",
+      "finding": {
+        "rule_id": "12345",
+        "network": {}
+      },
+      "vulnerability_id": "rule:nessus/12345",
+      "location_key": "net:host",
+      "expected": "ctis-ck/1:458a4d6178476cb08e19a69a5136f777216f424aac955a816723281835a36a3b"
+    },
+    {
+      "name": "misconfiguration resource",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "trivy",
+      "finding": {
+        "rule_id": "AVD-AWS-0086",
+        "misconfiguration": {
+          "resource_type": "aws_s3_bucket",
+          "resource_name": "logs"
+        }
+      },
+      "vulnerability_id": "rule:trivy/AVD-AWS-0086",
+      "location_key": "resource:aws_s3_bucket/logs",
+      "expected": "ctis-ck/1:2975b935659047858edac772ea7bce0af286b3e65ab4f5d70fbfe002355f67b3"
+    },
+    {
+      "name": "no location part",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "manual",
+      "finding": {
+        "rule_id": "policy-1"
+      },
+      "vulnerability_id": "rule:manual/policy-1",
+      "location_key": "",
+      "expected": "ctis-ck/1:341a9615fb5a37439098a012c50c37e330cb4a3dc968d9feaa284b44179bb13c"
+    },
+    {
+      "name": "no vulnerability id and no rule",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "manual",
+      "finding": {},
+      "vulnerability_id": "rule:manual/",
+      "location_key": "",
+      "expected": "ctis-ck/1:c29c22e6ffe234c6d8f38d869b25494ce4b778cc2538c1729a69682a571051a8"
+    },
+    {
+      "name": "tool and rule with colons and slashes",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "a:b/c",
+      "finding": {
+        "rule_id": "d:e"
+      },
+      "vulnerability_id": "rule:a:b/c/d:e",
+      "location_key": "",
+      "expected": "ctis-ck/1:8b9321946a47b56d12bbb3b30da0bdddd38dbace2e4ce764e57e5658c5b0032b"
+    },
+    {
+      "name": "tool and rule shifted",
+      "asset_key": "0b8f5a4e-65a2-5a0e-8d0e-2c1f0e8f3a11",
+      "tool": "a",
+      "finding": {
+        "rule_id": "b/c:d:e"
+      },
+      "vulnerability_id": "rule:a/b/c:d:e",
+      "location_key": "",
+      "expected": "ctis-ck/1:5c7ecb42280a91db5b0f961db0ac76e2b73625e066a9d635fcf01ccb0c586002"
+    }
+  ]
+}

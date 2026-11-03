@@ -39,3 +39,7 @@ A failing vector is a bug in the implementation or a deliberate difference that 
 ## Adding vectors
 
 Add a case to the matching file, or a document plus its manifest entry (a test fails when an example is missing from the manifest). Fingerprint values are frozen: a new recipe gets its own file (`fingerprint-v2.json`) when it exists, and v1 values never change.
+
+## v2 (CTIS 2.0, in progress)
+
+`v2/fingerprint/` (recipe `ctis-fp/2`, secret digest) and `v2/correlation/` (`ctis-ck/1`) are run by Go tests in `fingerprint/` and in the root package; the `ctis conformance` runner does not read them yet. The text is `docs/fingerprints.md`.

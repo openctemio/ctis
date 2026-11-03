@@ -8,6 +8,13 @@ linters:
     - unconvert
     - gocritic
 
+  exclusions:
+    rules:
+      # Recipe v1 is deprecated but still emitted by the importers until they
+      # move to recipe v2 with the 2.0 cut.
+      - linters: [staticcheck]
+        text: 'SA1019: github.com/openctemio/ctis/fingerprint\.Generate'
+
 formatters:
   enable:
     - gofmt

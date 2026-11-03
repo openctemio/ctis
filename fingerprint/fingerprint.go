@@ -1,9 +1,14 @@
 // Package fingerprint provides unified fingerprint generation algorithms
 // for deduplication of security findings across SDK and Backend.
 //
-// IMPORTANT: This package is shared between sdk and api.
-// Any changes to fingerprint algorithms must be backward compatible
-// or coordinated across both projects.
+// Recipe v2 ("ctis-fp/2", CTIS 2.0) is the recipe to use: see V2Generate,
+// the V2SAST ... V2Generic functions and docs/fingerprints.md.
+//
+// Recipe v1 ("ctis-fp/1": Generate, the Generate* helpers, Hash-based
+// outputs) is kept only so stored data can be migrated: a receiver that holds
+// v1 values computes the old and the new value of a finding to carry its
+// state over. v1 outputs are frozen (TestRecipeV1Pinned) and no new producer
+// should emit them.
 package fingerprint
 
 import (
@@ -127,6 +132,8 @@ type Input struct {
 //   - Secret: file + rule + location + secret hash (same secret in same place)
 //   - Misconfig: resource + rule (same misconfiguration on same resource)
 //   - Generic: rule + file + location + message (fallback)
+//
+// Deprecated: recipe v1; use V2Generate (v2).
 func Generate(input Input) string {
 	var data string
 
@@ -232,6 +239,8 @@ func Generate(input Input) string {
 
 // GenerateSAST creates a fingerprint for SAST/code vulnerability findings.
 // This is a convenience function for the common SAST case.
+//
+// Deprecated: recipe v1; use V2SAST (v2).
 func GenerateSAST(filePath, ruleID string, startLine, endLine int) string {
 	return Generate(Input{
 		Type:      TypeSAST,
@@ -251,6 +260,8 @@ func GenerateSAST(filePath, ruleID string, startLine, endLine int) string {
 // It returns "" when snippet is empty: without the code the key would merge
 // every match of the rule in the file, so callers must fall back to
 // GenerateSAST.
+//
+// Deprecated: recipe v1; use V2SASTContent (v2).
 func GenerateSASTStable(filePath, ruleID, logicalLocation, snippet string) string {
 	if strings.TrimSpace(snippet) == "" {
 		return ""
@@ -271,6 +282,8 @@ func normalizeSnippet(s string) string {
 
 // GenerateSCA creates a fingerprint for SCA/dependency vulnerability findings.
 // This is a convenience function for the common SCA case.
+//
+// Deprecated: recipe v1; use V2SCA (v2).
 func GenerateSCA(packageName, packageVersion, vulnID string) string {
 	return Generate(Input{
 		Type:            TypeSCA,
@@ -282,6 +295,8 @@ func GenerateSCA(packageName, packageVersion, vulnID string) string {
 
 // GenerateSecret creates a fingerprint for secret detection findings.
 // This is a convenience function for the common secret case.
+//
+// Deprecated: recipe v1; use V2Secret (v2).
 func GenerateSecret(filePath, ruleID string, startLine int, secretValue string) string {
 	return Generate(Input{
 		Type:        TypeSecret,
@@ -293,6 +308,8 @@ func GenerateSecret(filePath, ruleID string, startLine int, secretValue string) 
 }
 
 // GenerateMisconfiguration creates a fingerprint for misconfiguration findings.
+//
+// Deprecated: recipe v1; use V2Misconfiguration (v2).
 func GenerateMisconfiguration(resourceType, resourceName, ruleID, filePath string) string {
 	return Generate(Input{
 		Type:         TypeMisconfiguration,
@@ -305,6 +322,8 @@ func GenerateMisconfiguration(resourceType, resourceName, ruleID, filePath strin
 
 // GenerateGeneric creates a fingerprint for generic findings.
 // Use this when the finding type doesn't fit other categories.
+//
+// Deprecated: recipe v1; use V2Generic (v2).
 func GenerateGeneric(ruleID, filePath string, startLine, endLine int, message string) string {
 	return Generate(Input{
 		Type:      TypeGeneric,
@@ -321,6 +340,8 @@ func GenerateGeneric(ruleID, filePath string, startLine, endLine int, message st
 // targetHost is the hostname being scanned.
 // targetPath is the URL path where the finding was detected.
 // parameter is the affected parameter name (not value).
+//
+// Deprecated: recipe v1; use V2Web (v2).
 func GenerateDAST(templateID, targetHost, targetPath, parameter string) string {
 	return Generate(Input{
 		Type:       TypeDAST,
@@ -336,6 +357,8 @@ func GenerateDAST(templateID, targetHost, targetPath, parameter string) string {
 // packageName is the vulnerable package name.
 // packageVersion is the installed package version.
 // vulnID is the CVE or other vulnerability identifier.
+//
+// Deprecated: recipe v1; use V2Container (v2).
 func GenerateContainer(imageTarget, packageName, packageVersion, vulnID string) string {
 	return Generate(Input{
 		Type:            TypeContainer,
@@ -351,6 +374,8 @@ func GenerateContainer(imageTarget, packageName, packageVersion, vulnID string) 
 // chainID is the blockchain chain ID (e.g., 1 for Ethereum mainnet).
 // swcID is the SWC registry ID (e.g., "SWC-101").
 // functionSignature is the affected function (e.g., "transfer(address,uint256)").
+//
+// Deprecated: recipe v1; use V2Web3 (v2).
 func GenerateWeb3(contractAddress string, chainID int, swcID, functionSignature string) string {
 	return Generate(Input{
 		Type:              TypeWeb3,
@@ -491,6 +516,8 @@ func DetectType(input Input) Type {
 
 // GenerateAuto automatically detects the type and generates a fingerprint.
 // Use this when you're not sure which specific generator to use.
+//
+// Deprecated: recipe v1; use V2Auto (v2).
 func GenerateAuto(input Input) string {
 	if input.Type == "" {
 		input.Type = DetectType(input)
