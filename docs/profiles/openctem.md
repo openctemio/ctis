@@ -1,32 +1,59 @@
 # OpenCTEM receiver profile
 
-Status: informative. This document describes how OpenCTEM, one receiver of CTIS, applies the [specification](../spec.md). It does not change the meaning of any member. Other receivers publish their own profile.
+Status: informative. This document describes how OpenCTEM, one receiver of CTIS, applies the [specification](../spec.md) to CTIS 2.0 documents. It does not change the meaning of any member. Other receivers publish their own profile.
 
-## 1. Where the specification names OpenCTEM behaviour
+## 1. Versions
 
-These parts of the specification describe OpenCTEM today. They move here in full when the specification is made receiver-neutral ([proposals-2.0.md](../proposals-2.0.md), item P1):
+OpenCTEM accepts CTIS 2.x only. A 1.x document is rejected with an error that names the upgrade: sensors, connectors and CI integrations are upgraded together with the platform. Newer 2.x minors are decoded with version-gated must-ignore (`ctis.Decode`).
 
-- section 4.7: how OpenCTEM derives a report's detection technique from `tool.capabilities`;
-- section 4.9: how OpenCTEM binds a report to the command that produced it (the v2 URL path or the `X-OpenCTEM-Command-ID` header), and why `metadata.id` must equal the report ID it assigned;
-- section 4.11: `metadata.capability` refers to the OpenCTEM capability taxonomy;
-- section 5.1: OpenCTEM uses a producer fingerprint only when it is hexadecimal and at least 16 characters long;
-- section 7: the request, report and text limits OpenCTEM enforces.
+## 2. Binding a document to a job
 
-## 2. What OpenCTEM stores
+A CTIS document carries no receiver key. OpenCTEM binds a document to the job or command that produced it through the transport, never through the document:
 
-CTIS carries more than OpenCTEM persists today. As of October 2026, these members are accepted and validated but not stored or not used. Producers MAY send them; they are informational until the platform reads them:
+- the sensor protocol v2 delivers results at `/commands/{command_id}/results/{delivery_id}`; the command id and the delivery id are OpenCTEM's own identifiers and stay in the URL path and OpenCTEM's records;
+- the v1 path carries the command in the `X-OpenCTEM-Command-ID` header;
+- the request media type is `application/vnd.ctis+json; version=2.0`.
 
-- `finding.evidence`, `vulnerability.vpr_score`
-- `finding.first_seen_at`, `finding.last_seen_at` (imported findings start their age at import time)
-- `finding.status`, `finding.suppression`
-- `vulnerability.cve_ids` beyond the first CVE (used for network deduplication only)
-- `asset.related_assets`, `asset.services`
-- `finding.category`, `author`, `author_email`, `commit_date`
-- `vulnerability.cvss_version`, `cvss_source`, `severity_source`, `vendor_severity`, `dependency_path`, `layer`, `avd_id`, `vuln_status`
-- `vulnerability.in_cisa_kev`, `epss_score`, `epss_percentile` (deliberately: OpenCTEM takes KEV and EPSS from its own threat-intelligence feeds)
-- `remediation.fix_available`, `remediation.auto_fixable`
-- `data_flow.tainted`, `taint_type`, `vulnerability_type`, `call_path`
-- `metadata.source_ref`, `scope.includes`, `scope.excludes`, `branch.pull_request_*`
-- `tool.vendor`, `tool.info_url`, `dependency.uid`
+`metadata.id` is the producer's UUIDv7. OpenCTEM uses it only as the idempotency key of a delivery, scoped to the credential that sent it: a retry with the same `metadata.id` from the same credential is recognised as a retry. OpenCTEM never uses it as one of its own record ids, and never reads an asset, finding, scan or tenant id from a document. It resolves natural keys (asset keys from canonical values, recomputed fingerprints) to its own UUIDs at ingest.
+
+## 3. Capability, technique and channel
+
+- The capability a document answers is the capability of the command OpenCTEM bound it to. A producer MAY state it in `metadata.extensions["io.openctem"].capability` (`id@major`, for example `scan.ports@1`); OpenCTEM treats it as a hint and never widens what the document may create because of it. The capability taxonomy is in the `github.com/openctemio/contract` module.
+- The detection technique comes from `finding.technique`, else the first of `tool.techniques`.
+- The channel comes from the authenticated credential (a sensor key, an integration token, a user upload); `metadata.channel` is a hint.
+
+## 4. The io.openctem namespace
+
+[`schemas/extensions/io.openctem/2.json`](../../schemas/extensions/io.openctem/2.json) defines the keys OpenCTEM reads under `extensions["io.openctem"]`: `capability` (metadata), `import_scope`, `candidate_exposure` and `candidate_unverified` (assets from importers), `bounty_report` (findings from disclosure reports; `researcher` is personal data) and `web_content` (web origins). OpenCTEM gives no meaning to `properties`.
+
+## 5. Asset types
+
+OpenCTEM keeps its stored asset model and maps the 2.0 wire types to it: `domain_name` to domain or subdomain (by the public-suffix apex), `web_origin` to an http service, `service` to service, `host` to host, `identity` with its kind to identity, `ip_range` to network, `kubernetes_cluster` to kubernetes. Asset natural keys are (tenant, stored type, canonical value).
+
+## 6. Fingerprints
+
+OpenCTEM computes its own fingerprints (recipe `ctis-fp/2`) and a composite with its asset id; a producer's `fingerprint` is a hint used only when it is a `ctis-fp/2:` value. Stored findings were migrated from recipe v1 with the deprecated v1 functions of the `fingerprint` package; the old values stay as aliases so triage carries over.
+
+## 7. Limits
+
+| Limit | Value |
+|---|---|
+| Findings or assets per document | 100,000 |
+| Findings or assets per segment | 10,000 |
+| Request body (v2, compressed / decompressed) | 16 MiB / 64 MiB |
+| JSON nesting depth | 64 |
+| Tags per asset | 50 |
+| Request body of a CI run upload | 50 MB |
+
+OpenCTEM cuts long text members (title 500, description 32 KiB, message 8 KiB, snippets 16 KiB characters) and appends `…[truncated]` rather than refusing a document.
+
+## 8. What OpenCTEM stores
+
+OpenCTEM validates every member. These are accepted but not stored, or used only as hints, as of the 2.0 cut:
+
+- `finding.status`, `finding.suppression` (hints; OpenCTEM keeps its own lifecycle)
+- `first_seen_at`, `last_seen_at` of imported findings (imported findings start their age at import time)
+- `vulnerability.threat_signals`, EPSS scores (OpenCTEM takes KEV and EPSS from its own threat-intelligence feeds)
+- `data_flow.taint_type`, `call_path`
+- `branch.pull_request_*`, `tool.vendor`, `tool.info_url`, `dependency.source_id`
 - `finding.partial_fingerprints`
-
