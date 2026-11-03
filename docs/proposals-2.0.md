@@ -6,9 +6,9 @@ The record has two parts. Items marked **1.7** are additive, so they fit a minor
 
 **Decision (maintainers, 2026-11-03).** The plan is adopted:
 
-- 1.6.x patch releases fix the defects found in the review and add conformance vectors and a validator CLI;
-- 1.7 adds the items marked 1.7, additive only;
-- 2.0 is one breaking release, done early while CTIS has no outside implementers. There are no aliases on the wire. The Go module ships a receiver-side 1.x to 2.0 upgrader that receivers may run for one release train, so producers can move over without a flag day;
+- a 1.6.x patch release fixes the defects found in the review and adds conformance vectors and a validator CLI. It is the last 1.x release;
+- the items marked 1.7 are not released as a separate minor: they ship inside 2.0, so producers and receivers change once;
+- 2.0 is cut now, as one breaking release, while CTIS has no outside implementers. There are no aliases on the wire and no 1.x intake after the cut: producers and receivers move to 2.0 together;
 - contributions to this repository are made under the Developer Certificate of Origin (P10).
 
 ## P1. Receiver-neutral specification (1.7, text only)
@@ -149,7 +149,7 @@ Version 2.0 also gives every member a size limit in the schema, restricts URL me
 
 ## P9. Interoperability
 
-The Go module gains exporters to SARIF, CycloneDX (vulnerability and VEX) and OCSF, next to its importers. Each format gets round-trip fixtures that list the losses it accepts. Conformance vectors (canonical forms, keys, fingerprints, the 1.x to 2.0 upgrade) live in `conformance/`, and implementations in other languages run the same files.
+The Go module gains exporters to SARIF, CycloneDX (vulnerability and VEX) and OCSF, next to its importers. Each format gets round-trip fixtures that list the losses it accepts. Conformance vectors (canonical forms, keys, fingerprints, valid and invalid documents) live in `conformance/`, and implementations in other languages run the same files.
 
 ## P10. Governance
 

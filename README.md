@@ -1,6 +1,6 @@
-# CTIS: CTEM Ingest Schema
+# CTIS: CTEM Interchange Schema
 
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Code: Apache-2.0](https://img.shields.io/badge/code-Apache_2.0-blue.svg)](LICENSE) [![Spec: CC BY 4.0](https://img.shields.io/badge/spec-CC_BY_4.0-lightgrey.svg)](LICENSE-docs)
 [![CI](https://github.com/openctemio/ctis/actions/workflows/ci.yml/badge.svg)](https://github.com/openctemio/ctis/actions/workflows/ci.yml)
 
 CTIS is the JSON format security tools use to send assets, findings and dependencies (SBOM) to a CTEM platform such as [OpenCTEM](https://openctem.io). Product documentation: <https://docs.openctem.io>. This repository is the single source of truth for:
@@ -327,6 +327,8 @@ Details: [docs/spec.md, section 2](docs/spec.md#2-versioning-and-compatibility).
 
 ## Contributing
 
+Contributions are made under the Developer Certificate of Origin (`git commit -s`); format changes go through a [proposal](proposals/README.md). See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 Every change to the format updates the schema, the Go types, the examples and the CHANGELOG together. `go test ./...` fails when the schema and the Go types disagree, when an example does not validate, or when the generated field reference in `docs/spec.md` is stale (refresh it with `go test -run TestSpecFieldReference -update`). The design record of the 1.4 to 1.6 additions, with the status of each proposal, is [docs/proposals-1.4.md](docs/proposals-1.4.md).
 
 ## Security
@@ -335,4 +337,8 @@ Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+- Specification text and other prose (`docs/`, `proposals/`): [Creative Commons Attribution 4.0 International](LICENSE-docs).
+- Schemas, examples, conformance vectors and code: [Apache License 2.0](LICENSE). See also [NOTICE](NOTICE).
+- Patent commitment for implementers: [PATENTS.md](PATENTS.md).
+
+Governance and the proposal process: [GOVERNANCE.md](GOVERNANCE.md), [proposals/README.md](proposals/README.md).

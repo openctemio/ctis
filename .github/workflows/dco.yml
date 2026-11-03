@@ -1,0 +1,42 @@
+name: DCO
+
+# Developer Certificate of Origin check (CONTRIBUTING.md). Every commit of a
+# pull request carries a "Signed-off-by:" trailer naming its author.
+#
+# Safety: the checker script comes from the base commit, never from the pull
+# request, so a pull request cannot change the check it is judged by. Commit
+# messages are read through the API as data and parsed in Python; nothing from
+# them reaches a shell. The token is read-only.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dco:
+    name: dco
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Check sign-offs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # Only the pull request that adds the checker meets a base without it.
+          if [ ! -f .github/scripts/dco-check.py ]; then
+            echo "::notice::the base commit has no DCO checker yet"; exit 0
+          fi
+          gh api --paginate "repos/$REPO/pulls/$PR/commits" --jq '.[]' | jq -s . > commits.json
+          python3 .github/scripts/dco-check.py < commits.json
