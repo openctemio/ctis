@@ -4,6 +4,13 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Changed: governance, licences and contributions
+
+- Contributions are made under the Developer Certificate of Origin (`git commit -s`), checked by the `dco` workflow; the contributor license agreement no longer applies to this repository.
+- The specification text and other prose (`docs/`, `proposals/`) are licensed under CC BY 4.0 (`LICENSE-docs`); schemas, examples, conformance vectors and code stay under Apache-2.0.
+- New: `GOVERNANCE.md` (scope, roles, decisions, versioning and support), `PATENTS.md` (patent commitment for implementers), `MAINTAINERS.md`, and the proposal process in `proposals/`.
+- Removed two stray files from the repository root.
+
 ## [1.6.6] - 2026-10-31
 
 Patch release: more edge protection signatures. The format does not change.

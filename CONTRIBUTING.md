@@ -4,47 +4,86 @@ Thank you for helping. Open an issue to discuss a larger change first, keep each
 request to one concern, and include tests where the change is code. Security issues go
 to the address in [SECURITY.md](SECURITY.md), not to a public issue.
 
-## Contributor License Agreement
+A change to the format itself (a new member, a new enum value, a new rule, anything
+that changes what a valid document is or what it means) starts as a proposal; see
+[proposals/README.md](proposals/README.md). How decisions are made is in
+[GOVERNANCE.md](GOVERNANCE.md).
 
-Every outside contribution is accepted under the OpenCTEM Contributor License
-Agreement (CLA). It keeps your copyright with you and grants the project a
-license that lets it offer OpenCTEM under its open source license and under
-other terms (for example a commercial license). A summary is in
-[CLA.md](CLA.md); the full texts are the
-[Individual CLA](https://docs.openctem.io/legal/cla/) and the
-[Corporate CLA](https://docs.openctem.io/legal/cla-corporate/).
+## Developer Certificate of Origin
 
-### How to sign
+Contributions to this repository are made under the
+[Developer Certificate of Origin 1.1](https://developercertificate.org/) (DCO). There
+is no contributor license agreement to sign. By adding a `Signed-off-by` line to a
+commit you certify the following:
 
-1. Make sure the e-mail address of your commits is
-   [added to your GitHub account](https://github.com/settings/emails). The
-   check can only match commits that are linked to a GitHub account.
-2. Open your pull request. If a commit author has not accepted the CLA yet,
-   the `cla` check fails and comments on the pull request.
-3. Read the agreement and post this comment on the pull request:
+```text
+Developer Certificate of Origin
+Version 1.1
 
-   ```text
-   I have read the CLA Document and I hereby sign the CLA
-   ```
+Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
 
-   The check re-runs and passes. You sign once; the signature covers every
-   repository of the `openctemio` organization and your earlier
-   contributions. Post `recheck` to run the check again.
-4. If you contribute as part of your job and your employer has rights in your
-   work, your employer signs the [Corporate CLA](CLA-CORPORATE.md) as well.
+Everyone is permitted to copy and distribute verbatim copies of this
+license document, but changing it is not allowed.
 
-The maintainer and the dependency bots are on the check's allowlist. A
-maintainer who opens a pull request with someone else's commits makes sure
-those authors have signed; the check also runs then for every commit linked
-to another GitHub account.
 
-### What is recorded
+Developer's Certificate of Origin 1.1
 
-Your acceptance is recorded in a private repository that only the maintainer
-can read: your GitHub username and numeric account id, the id and time of
-your signing comment, and the repository and pull request where you signed.
-No e-mail address is stored. The signing comment itself stays public on the
-pull request. The record is kept for as long as the project distributes your
-contribution, because it is the evidence of the license. To see or correct
-your record, or to ask for its removal, write to info@openctem.io; anything
-not needed as evidence of the license is removed.
+By making a contribution to this project, I certify that:
+
+(a) The contribution was created in whole or in part by me and I
+    have the right to submit it under the open source license
+    indicated in the file; or
+
+(b) The contribution is based upon previous work that, to the best
+    of my knowledge, is covered under an appropriate open source
+    license and I have the right under that license to submit that
+    work with modifications, whether created in whole or in part
+    by me, under the same open source license (unless I am
+    permitted to submit under a different license), as indicated
+    in the file; or
+
+(c) The contribution was provided directly to me by some other
+    person who certified (a), (b) or (c) and I have not modified
+    it.
+
+(d) I understand and agree that this project and the contribution
+    are public and that a record of the contribution (including all
+    personal information I submit with it, including my sign-off) is
+    maintained indefinitely and may be redistributed consistent with
+    this project or the open source license(s) involved.
+```
+
+### How to sign off
+
+Add the trailer with `git commit -s`. It uses the name and e-mail address of your git
+configuration:
+
+```text
+Signed-off-by: Jane Doe <jane@example.org>
+```
+
+The address must be the commit's author address. The `dco` check fails on a commit
+without a matching sign-off and lists it. To fix the commits of a branch, run
+`git rebase --signoff <base>` and push again. Merge commits and commits made by
+dependency bots are not checked.
+
+## Licences of contributions
+
+Your contribution is licensed under the licence of the files it changes (see
+[README.md, License](README.md#license)):
+
+- the specification text and other prose under `docs/` and `proposals/`: Creative
+  Commons Attribution 4.0 International ([LICENSE-docs](LICENSE-docs));
+- schemas, examples, conformance vectors and code: Apache License 2.0
+  ([LICENSE](LICENSE)), whose section 5 applies to contributions.
+
+Contributing also makes the patent commitment in [PATENTS.md](PATENTS.md) for your
+contribution to the specification.
+
+## Changes to the format
+
+Every change to the format updates the schema, the Go types, the examples, the
+conformance vectors and the CHANGELOG together. `go test ./...` fails when the schema
+and the Go types disagree, when an example does not validate, or when the generated
+field reference in `docs/spec.md` is stale (refresh it with
+`go test -run TestSpecFieldReference -update`).
