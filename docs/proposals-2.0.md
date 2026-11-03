@@ -149,7 +149,7 @@ Version 2.0 also gives every member a size limit in the schema, restricts URL me
 
 ## P9. Interoperability
 
-The Go module gains exporters to SARIF, CycloneDX (vulnerability and VEX) and OCSF, next to its importers. Each format gets round-trip fixtures that list the losses it accepts. Conformance vectors (canonical forms, keys, fingerprints, the 1.x to 2.0 upgrade) live in `conformance/`, and implementations in other languages run the same files.
+The Go module gains exporters to SARIF, CycloneDX (vulnerability and VEX) and OCSF, next to its importers. Each format gets round-trip fixtures that list the losses it accepts. Conformance vectors (canonical forms, keys, fingerprints, valid and invalid documents) live in `conformance/`, and implementations in other languages run the same files.
 
 ## P10. Governance
 
