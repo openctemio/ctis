@@ -394,8 +394,9 @@ func sarifSuppressionsOf(f *Finding) []SARIFSuppression {
 // sarifCodeFlowOf writes the data flow as one thread flow, steps in index
 // order, each marked with its role.
 func sarifCodeFlowOf(df *DataFlow) *sarifOutCodeFlow {
-	steps := make([]DataFlowLocation, 0, len(df.Sources)+len(df.Intermediates)+len(df.Sanitizers)+len(df.Sinks))
-	steps = append(steps, df.Sources...)
+	// Built by appending: the input is bounded by Validate, and a summed
+	// capacity would be computed from untrusted lengths.
+	steps := append([]DataFlowLocation(nil), df.Sources...)
 	steps = append(steps, df.Intermediates...)
 	steps = append(steps, df.Sanitizers...)
 	steps = append(steps, df.Sinks...)
