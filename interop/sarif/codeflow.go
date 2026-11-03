@@ -1,6 +1,8 @@
-package ctis
+package sarif
 
 import (
+	"github.com/openctemio/ctis/v2"
+
 	"encoding/json"
 	"sort"
 	"strings"
@@ -44,9 +46,9 @@ type sarifThreadFlowLocation struct {
 }
 
 type sarifFlowLocation struct {
-	PhysicalLocation *SARIFPhysicalLocation `json:"physicalLocation"`
-	LogicalLocations []SARIFLogicalLocation `json:"logicalLocations"`
-	Message          *SARIFMessage          `json:"message"`
+	PhysicalLocation *PhysicalLocation `json:"physicalLocation"`
+	LogicalLocations []LogicalLocation `json:"logicalLocations"`
+	Message          *Message          `json:"message"`
 }
 
 // sarifRoots returns the absolute locations a run's originalUriBaseIds name,
@@ -67,7 +69,7 @@ func sarifRoots(raw json.RawMessage) []string {
 		if json.Unmarshal(b, &al) != nil {
 			continue
 		}
-		if p, abs := flowPath(al.URI); abs && p != "" && p != "/" {
+		if p, abs := ctis.FlowPath(al.URI); abs && p != "" && p != "/" {
 			roots = append(roots, p)
 		}
 		if len(roots) >= maxSARIFCodeFlows {
@@ -84,7 +86,7 @@ func sarifRoots(raw json.RawMessage) []string {
 }
 
 // sarifDataFlow maps a result's codeFlows to a data flow, or nil.
-func sarifDataFlow(raw json.RawMessage, roots []string) *DataFlow {
+func sarifDataFlow(raw json.RawMessage, roots []string) *ctis.DataFlow {
 	if len(raw) == 0 {
 		return nil
 	}
@@ -126,14 +128,14 @@ const (
 	roleSink
 )
 
-func sarifThreadFlowToDataFlow(raws []json.RawMessage, roots []string) *DataFlow {
+func sarifThreadFlowToDataFlow(raws []json.RawMessage, roots []string) *ctis.DataFlow {
 	type step struct {
-		loc  DataFlowLocation
+		loc  ctis.DataFlowLocation
 		role flowRole
 	}
 	var steps []step
 	for _, r := range raws {
-		if len(steps) >= MaxDataFlowSteps {
+		if len(steps) >= ctis.MaxDataFlowSteps {
 			break
 		}
 		var tfl sarifThreadFlowLocation
@@ -174,33 +176,33 @@ func sarifThreadFlowToDataFlow(raws []json.RawMessage, roots []string) *DataFlow
 	if !hasSource && first >= 0 {
 		steps[first].role = roleSource
 	}
-	df := &DataFlow{}
+	df := &ctis.DataFlow{}
 	for i, s := range steps {
 		l := s.loc
 		l.Index = i
 		switch s.role {
 		case roleSource:
-			l.Type = DataFlowLocationSource
+			l.Type = ctis.DataFlowLocationSource
 			df.Sources = append(df.Sources, l)
 		case roleSink:
-			l.Type = DataFlowLocationSink
+			l.Type = ctis.DataFlowLocationSink
 			df.Sinks = append(df.Sinks, l)
 		case roleSanitizer:
-			l.Type = DataFlowLocationSanitizer
+			l.Type = ctis.DataFlowLocationSanitizer
 			l.TaintState = "sanitized"
 			df.Sanitizers = append(df.Sanitizers, l)
 		default:
-			l.Type = DataFlowLocationPropagator
+			l.Type = ctis.DataFlowLocationPropagator
 			df.Intermediates = append(df.Intermediates, l)
 		}
 	}
-	return NormalizeDataFlow(df, roots...)
+	return ctis.NormalizeDataFlow(df, roots...)
 }
 
 // sarifFlowStep reads one threadFlowLocation's location. A location with no
 // file, line, snippet or message says nothing and is skipped.
-func sarifFlowStep(fl *sarifFlowLocation) (DataFlowLocation, bool) {
-	var l DataFlowLocation
+func sarifFlowStep(fl *sarifFlowLocation) (ctis.DataFlowLocation, bool) {
+	var l ctis.DataFlowLocation
 	if pl := fl.PhysicalLocation; pl != nil {
 		if pl.ArtifactLocation != nil {
 			l.Path = pl.ArtifactLocation.URI

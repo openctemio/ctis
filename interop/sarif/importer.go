@@ -1,4 +1,4 @@
-package importer
+package sarif
 
 import (
 	"encoding/json"
@@ -7,17 +7,21 @@ import (
 	"strings"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/importer"
 )
 
-// SARIF 2.1.0. The conversion is the module's FromSARIF; this file adds the
+// SARIF 2.1.0. The conversion is the module's Import; this file adds the
 // importer's guards around it (size, depth, string and record limits,
 // UTF-8, line numbers) and chooses the asset: Options.Repository, else the
 // repository the log names in versionControlProvenance, else the default
 // asset. The mapping is spec_sarif.go.
 
 func init() {
-	parsers[FormatSARIF] = parseSARIF
-	tools[FormatSARIF] = ctis.Tool{Name: "sarif"}
+	importer.Register(importer.FormatSARIF, importer.Adapter{
+		Parse: parseSARIF,
+		Tool:  ctis.Tool{Name: "sarif"},
+		Spec:  importSpec(),
+	})
 }
 
 type sarifView struct {
@@ -51,101 +55,101 @@ func sarifProvenance(v *sarifView) *ctis.Asset {
 	return nil
 }
 
-func parseSARIF(b *Builder, r io.Reader) error {
-	data, err := readAll(r, FormatSARIF, b.lim)
+func parseSARIF(b *importer.Builder, r io.Reader) error {
+	data, err := b.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	doc, err := scanJSON(data, FormatSARIF, b.lim, b.obs, "/runs[]/results[]")
+	doc, err := b.ScanJSON(data, "/runs[]/results[]")
 	if err != nil {
 		return err
 	}
 	var view sarifView
-	if err := doc.decode(&view); err != nil {
+	if err := doc.Decode(&view); err != nil {
 		return err
 	}
 	if v := strings.TrimSpace(view.Version); v != "" && v != "2.1.0" {
-		return &ParseError{Format: FormatSARIF, Msg: fmt.Sprintf("SARIF version %q is not read; want 2.1.0", line(v, 16)), Err: ErrUnknownFormat}
+		return &importer.ParseError{Format: importer.FormatSARIF, Msg: fmt.Sprintf("SARIF version %q is not read; want 2.1.0", line(v, 16)), Err: importer.ErrUnknownFormat}
 	}
 	results := 0
 	for _, run := range view.Runs {
 		results += len(run.Results)
 	}
-	b.res.Stats.Records = results
-	if results > b.lim.MaxFindings {
-		return b.tooMany("results", b.lim.MaxFindings)
+	b.Result().Stats.Records = results
+	if results > b.Limits().MaxFindings {
+		return b.TooMany("results", b.Limits().MaxFindings)
 	}
-	if results == 0 && b.opts.Repository == "" {
-		if len(view.Runs) > 0 && b.opts.ToolName == "" {
+	if results == 0 && b.Options().Repository == "" {
+		if len(view.Runs) > 0 && b.Options().ToolName == "" {
 			if name := line(view.Runs[0].Tool.Driver.Name, capShort); name != "" {
-				b.res.Report.Tool = &ctis.Tool{Name: name}
+				b.Result().Report.Tool = &ctis.Tool{Name: name}
 			}
 		}
 		return nil
 	}
-	if len(view.Runs) > 0 && b.opts.ToolName == "" {
+	if len(view.Runs) > 0 && b.Options().ToolName == "" {
 		if name := line(view.Runs[0].Tool.Driver.Name, capShort); name != "" {
-			b.res.Report.Tool = &ctis.Tool{Name: name}
+			b.Result().Report.Tool = &ctis.Tool{Name: name}
 		}
 	}
-	asset := b.codeAsset(sarifProvenance(&view))
+	asset := b.CodeAsset(sarifProvenance(&view))
 	if c, err := ctis.CanonicalAssetValue(asset.Type, asset.Value); err == nil {
 		asset.Value = c
 	}
-	opts := ctis.DefaultConvertOptions()
+	opts := DefaultOptions()
 	opts.AssetType, opts.AssetValue, opts.AssetID = asset.Type, asset.Value, asset.ID
-	switch b.opts.ToolType {
+	switch b.Options().ToolType {
 	case "sast", "sca", "secret", "iac", "web3":
-		opts.ToolType = b.opts.ToolType
+		opts.ToolType = b.Options().ToolType
 	}
-	if c := b.opts.DefaultConfidence; c >= 1 && c <= 100 {
+	if c := b.Options().DefaultConfidence; c >= 1 && c <= 100 {
 		opts.DefaultConfidence = c
 	}
-	if b.opts.Repository != "" && b.opts.Branch != "" {
-		opts.Branch, opts.CommitSHA = line(b.opts.Branch, capShort), line(b.opts.CommitSHA, 128)
+	if b.Options().Repository != "" && b.Options().Branch != "" {
+		opts.Branch, opts.CommitSHA = line(b.Options().Branch, capShort), line(b.Options().CommitSHA, 128)
 	}
-	rep, err := ctis.FromSARIF(data, opts)
+	rep, err := Import(data, opts)
 	if err != nil {
-		return &ParseError{Format: FormatSARIF, Msg: err.Error(), Err: ErrMalformed}
+		return &importer.ParseError{Format: importer.FormatSARIF, Msg: err.Error(), Err: importer.ErrMalformed}
 	}
-	if rep.Tool != nil && rep.Tool.Name != "" && b.opts.ToolName == "" {
-		b.res.Report.Tool = rep.Tool
-	} else if opts.ToolType != "" && rep.Tool != nil && b.res.Report.Tool != nil {
+	if rep.Tool != nil && rep.Tool.Name != "" && b.Options().ToolName == "" {
+		b.Result().Report.Tool = rep.Tool
+	} else if opts.ToolType != "" && rep.Tool != nil && b.Result().Report.Tool != nil {
 		// A named tool keeps the techniques its type states.
-		b.res.Report.Tool.Techniques = rep.Tool.Techniques
+		b.Result().Report.Tool.Techniques = rep.Tool.Techniques
 	}
-	b.res.Report.Metadata.Branch = rep.Metadata.Branch
-	assetID, err := b.asset(asset)
+	b.Result().Report.Metadata.Branch = rep.Metadata.Branch
+	assetID, err := b.Asset(asset)
 	if err != nil {
 		return err
 	}
 	if assetID == "" && asset.Type == ctis.AssetTypeRepository {
 		asset.Type, asset.ID = ctis.AssetTypeUnclassified, ""
-		if assetID, err = b.asset(asset); err != nil {
+		if assetID, err = b.Asset(asset); err != nil {
 			return err
 		}
 	}
 	if assetID == "" {
-		b.res.Stats.Skipped += results
+		b.Result().Stats.Skipped += results
 		return nil
 	}
 	asset.ID = assetID
 	for i := range rep.Findings {
-		if err := b.tick(); err != nil {
+		if err := b.Tick(); err != nil {
 			return err
 		}
 		f := rep.Findings[i]
 		if strings.TrimSpace(f.Title) == "" {
 			// No message, no rule: nothing names what was found.
-			b.issue(Issue{Path: "/runs/results", Message: "result without a message or a rule: skipped"})
-			b.res.Stats.Skipped++
+			b.Issue(importer.Issue{Path: "/runs/results", Message: "result without a message or a rule: skipped"})
+			b.Result().Stats.Skipped++
 			continue
 		}
 		f.AssetRef = asset.ID
-		if err := b.finding(f); err != nil {
+		if err := b.Finding(f); err != nil {
 			return err
 		}
 	}
-	b.res.Stats.Skipped += results - len(rep.Findings) // results FromSARIF did not convert
+	b.Result().Stats.Skipped += results - len(rep.Findings) // results Import did not convert
 	return nil
 }

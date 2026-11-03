@@ -1,6 +1,8 @@
-package ctis
+package sarif
 
 import (
+	"github.com/openctemio/ctis/v2"
+
 	"encoding/json"
 	"strings"
 	"testing"
@@ -23,16 +25,18 @@ func unredactedGitleaks(t *testing.T) []byte {
 	return []byte(b)
 }
 
-// Secret scanners put the raw secret in the SARIF snippet. FromSARIF copied it
+// Secret scanners put the raw secret in the SARIF snippet. Import copied it
 // into location.snippet, so the live credential was in the CTIS report.
 func TestFromSARIF_SecretSnippetIsMasked(t *testing.T) {
-	opts := DefaultConvertOptions()
+	opts := DefaultOptions()
 	opts.AssetValue = "github.com/example/shop"
-	report, err := FromSARIF(unredactedGitleaks(t), opts)
+	report, err := Import(unredactedGitleaks(t), opts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertReportValid(t, loadSchemaSet(t), report)
+	if err := report.Validate(); err != nil {
+		t.Fatalf("not valid CTIS: %v", err)
+	}
 	if err := report.Validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +55,7 @@ func TestFromSARIF_SecretSnippetIsMasked(t *testing.T) {
 	want := []string{"AKIA********", "REDACTED"}
 	for i, w := range want {
 		f := report.Findings[i]
-		if f.Type != FindingTypeSecret {
+		if f.Type != ctis.FindingTypeSecret {
 			t.Errorf("finding %d type = %q, want secret", i, f.Type)
 		}
 		if got := f.Location.Snippet; got != w {
@@ -93,9 +97,9 @@ func TestFromSARIF_SecretRedactionCases(t *testing.T) {
 			log := `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"` + tc.tool + `","rules":[{"id":"r","properties":{"tags":[` + tc.ruleTags + `]}}]}},
 			  "results":[{"ruleId":"r","message":{"text":"found ` + strings.Trim(string(snippet), `"`) + `"},
 			    "locations":[{"physicalLocation":{"artifactLocation":{"uri":"a.env"},"region":{"startLine":1,"snippet":{"text":` + string(snippet) + `}}}}]}]}]}`
-			opts := DefaultConvertOptions()
+			opts := DefaultOptions()
 			opts.ToolType = tc.toolType
-			report, err := FromSARIF([]byte(log), opts)
+			report, err := Import([]byte(log), opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -107,21 +111,5 @@ func TestFromSARIF_SecretRedactionCases(t *testing.T) {
 				t.Errorf("title %q still holds the secret", f.Title)
 			}
 		})
-	}
-}
-
-func TestMaskSecret(t *testing.T) {
-	for in, want := range map[string]string{
-		"":                     "REDACTED",
-		"abc":                  "REDACTED",
-		"0123456789abcde":      "REDACTED", // 15
-		"0123456789abcdef":     "0123********",
-		"  0123456789abcdef  ": "0123********",
-		"ключключключключключ":   "ключ********", // runes, not bytes
-		strings.Repeat("x", 1e5): "xxxx********",
-	} {
-		if got := maskSecret(in); got != want {
-			t.Errorf("maskSecret(%.20q) = %q, want %q", in, got, want)
-		}
 	}
 }

@@ -1,7 +1,10 @@
-package ctis
+package sarif
 
 import (
+	"github.com/openctemio/ctis/v2"
+
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -19,19 +22,19 @@ import (
 // SARIF Types (for parsing tool output)
 // =============================================================================
 
-// SARIFLog is the root SARIF document.
-type SARIFLog struct {
-	Version string     `json:"version"`
-	Schema  string     `json:"$schema,omitempty"`
-	Runs    []SARIFRun `json:"runs"`
+// Log is the root SARIF document.
+type Log struct {
+	Version string `json:"version"`
+	Schema  string `json:"$schema,omitempty"`
+	Runs    []Run  `json:"runs"`
 }
 
-// SARIFRun represents a single run of a tool.
-type SARIFRun struct {
-	Tool        SARIFTool         `json:"tool"`
-	Results     []SARIFResult     `json:"results"`
-	Artifacts   []SARIFArtifact   `json:"artifacts,omitempty"`
-	Invocations []SARIFInvocation `json:"invocations,omitempty"`
+// Run represents a single run of a tool.
+type Run struct {
+	Tool        Tool         `json:"tool"`
+	Results     []Result     `json:"results"`
+	Artifacts   []Artifact   `json:"artifacts,omitempty"`
+	Invocations []Invocation `json:"invocations,omitempty"`
 	// OriginalURIBaseIDs maps a uriBaseId to the absolute location it stood
 	// for on the scanning machine (SARIF 2.1.0 section 3.14.14). Only used
 	// to make the absolute paths of a taint trace repository-relative; kept
@@ -39,97 +42,97 @@ type SARIFRun struct {
 	OriginalURIBaseIDs json.RawMessage `json:"originalUriBaseIds,omitempty"`
 }
 
-// SARIFTool describes the tool.
-type SARIFTool struct {
-	Driver SARIFDriver `json:"driver"`
+// Tool describes the tool.
+type Tool struct {
+	Driver Driver `json:"driver"`
 }
 
-// SARIFDriver contains tool metadata.
-type SARIFDriver struct {
-	Name            string      `json:"name"`
-	Version         string      `json:"version,omitempty"`
-	SemanticVersion string      `json:"semanticVersion,omitempty"`
-	InformationURI  string      `json:"informationUri,omitempty"`
-	Rules           []SARIFRule `json:"rules,omitempty"`
+// Driver contains tool metadata.
+type Driver struct {
+	Name            string `json:"name"`
+	Version         string `json:"version,omitempty"`
+	SemanticVersion string `json:"semanticVersion,omitempty"`
+	InformationURI  string `json:"informationUri,omitempty"`
+	Rules           []Rule `json:"rules,omitempty"`
 }
 
-// SARIFRule describes a rule/check.
-type SARIFRule struct {
-	ID                   string           `json:"id"`
-	Name                 string           `json:"name,omitempty"`
-	ShortDescription     *SARIFMessage    `json:"shortDescription,omitempty"`
-	FullDescription      *SARIFMessage    `json:"fullDescription,omitempty"`
-	HelpURI              string           `json:"helpUri,omitempty"`
-	Help                 *SARIFMessage    `json:"help,omitempty"`
-	DefaultConfiguration *SARIFRuleConfig `json:"defaultConfiguration,omitempty"`
-	Properties           map[string]any   `json:"properties,omitempty"`
+// Rule describes a rule/check.
+type Rule struct {
+	ID                   string         `json:"id"`
+	Name                 string         `json:"name,omitempty"`
+	ShortDescription     *Message       `json:"shortDescription,omitempty"`
+	FullDescription      *Message       `json:"fullDescription,omitempty"`
+	HelpURI              string         `json:"helpUri,omitempty"`
+	Help                 *Message       `json:"help,omitempty"`
+	DefaultConfiguration *RuleConfig    `json:"defaultConfiguration,omitempty"`
+	Properties           map[string]any `json:"properties,omitempty"`
 }
 
-// SARIFRuleConfig holds rule configuration.
-type SARIFRuleConfig struct {
+// RuleConfig holds rule configuration.
+type RuleConfig struct {
 	Level string `json:"level,omitempty"`
 }
 
-// SARIFResult represents a finding.
-type SARIFResult struct {
+// Result represents a finding.
+type Result struct {
 	RuleID string `json:"ruleId,omitempty"`
 	// RuleIndex is the index of the rule in tool.driver.rules. Nil when the
 	// result does not carry one (SARIF's default is -1, "absent").
-	RuleIndex           *int                     `json:"ruleIndex,omitempty"`
-	Rule                *SARIFReportingReference `json:"rule,omitempty"`
-	Level               string                   `json:"level,omitempty"`
-	Message             SARIFMessage             `json:"message"`
-	Locations           []SARIFLocation          `json:"locations,omitempty"`
-	Fingerprints        map[string]string        `json:"fingerprints,omitempty"`
-	PartialFingerprints map[string]string        `json:"partialFingerprints,omitempty"`
-	CorrelationGUID     string                   `json:"correlationGuid,omitempty"`
-	BaselineState       string                   `json:"baselineState,omitempty"`
+	RuleIndex           *int                `json:"ruleIndex,omitempty"`
+	Rule                *ReportingReference `json:"rule,omitempty"`
+	Level               string              `json:"level,omitempty"`
+	Message             Message             `json:"message"`
+	Locations           []Location          `json:"locations,omitempty"`
+	Fingerprints        map[string]string   `json:"fingerprints,omitempty"`
+	PartialFingerprints map[string]string   `json:"partialFingerprints,omitempty"`
+	CorrelationGUID     string              `json:"correlationGuid,omitempty"`
+	BaselineState       string              `json:"baselineState,omitempty"`
 	// Kind is the evaluation state of the result: notApplicable, pass, fail,
 	// review, open or informational (SARIF 2.1.0 section 3.27.9).
 	Kind string `json:"kind,omitempty"`
 	// Suppressions are the result's suppressions (SARIF 2.1.0 section
 	// 3.27.23), e.g. a nosemgrep comment or a CodeQL alert suppression.
-	Suppressions []SARIFSuppression `json:"suppressions,omitempty"`
-	Properties   map[string]any     `json:"properties,omitempty"`
+	Suppressions []Suppression  `json:"suppressions,omitempty"`
+	Properties   map[string]any `json:"properties,omitempty"`
 	// WebRequest and WebResponse are the HTTP exchange of a web result
 	// (SARIF 2.1.0 sections 3.46 and 3.47).
-	WebRequest  *SARIFWebRequest  `json:"webRequest,omitempty"`
-	WebResponse *SARIFWebResponse `json:"webResponse,omitempty"`
+	WebRequest  *WebRequest  `json:"webRequest,omitempty"`
+	WebResponse *WebResponse `json:"webResponse,omitempty"`
 	// CodeFlows are the result's taint paths (SARIF 2.1.0 section 3.36),
 	// mapped to the finding's data_flow (sarif_codeflow.go). Kept raw and
 	// read leniently: a malformed trace never fails the result.
 	CodeFlows json.RawMessage `json:"codeFlows,omitempty"`
 }
 
-// SARIFWebRequest is a SARIF webRequest object (section 3.46).
-type SARIFWebRequest struct {
+// WebRequest is a SARIF webRequest object (section 3.46).
+type WebRequest struct {
 	Protocol string            `json:"protocol,omitempty"`
 	Version  string            `json:"version,omitempty"`
 	Target   string            `json:"target,omitempty"`
 	Method   string            `json:"method,omitempty"`
 	Headers  map[string]string `json:"headers,omitempty"`
-	Body     *SARIFContent     `json:"body,omitempty"`
+	Body     *Content          `json:"body,omitempty"`
 }
 
-// SARIFWebResponse is a SARIF webResponse object (section 3.47).
-type SARIFWebResponse struct {
+// WebResponse is a SARIF webResponse object (section 3.47).
+type WebResponse struct {
 	Protocol           string            `json:"protocol,omitempty"`
 	Version            string            `json:"version,omitempty"`
 	StatusCode         int               `json:"statusCode,omitempty"`
 	ReasonPhrase       string            `json:"reasonPhrase,omitempty"`
 	Headers            map[string]string `json:"headers,omitempty"`
-	Body               *SARIFContent     `json:"body,omitempty"`
+	Body               *Content          `json:"body,omitempty"`
 	NoResponseReceived bool              `json:"noResponseReceived,omitempty"`
 }
 
-// SARIFContent is a SARIF artifactContent object: text, or base64 binary.
-type SARIFContent struct {
+// Content is a SARIF artifactContent object: text, or base64 binary.
+type Content struct {
 	Text   string `json:"text,omitempty"`
 	Binary string `json:"binary,omitempty"`
 }
 
-// SARIFSuppression is one SARIF suppression object (section 3.35).
-type SARIFSuppression struct {
+// Suppression is one SARIF suppression object (section 3.35).
+type Suppression struct {
 	// Kind is inSource or external.
 	Kind string `json:"kind,omitempty"`
 	// Status is accepted (the default when absent), underReview or rejected.
@@ -137,64 +140,64 @@ type SARIFSuppression struct {
 	Justification string `json:"justification,omitempty"`
 }
 
-// SARIFReportingReference is a result's reference to its rule
+// ReportingReference is a result's reference to its rule
 // (SARIF reportingDescriptorReference).
-type SARIFReportingReference struct {
+type ReportingReference struct {
 	ID    string `json:"id,omitempty"`
 	Index *int   `json:"index,omitempty"`
 }
 
-// SARIFMessage holds text.
-type SARIFMessage struct {
+// Message holds text.
+type Message struct {
 	Text string `json:"text"`
 }
 
-// SARIFLocation represents a code location.
-type SARIFLocation struct {
-	PhysicalLocation *SARIFPhysicalLocation `json:"physicalLocation,omitempty"`
-	LogicalLocations []SARIFLogicalLocation `json:"logicalLocations,omitempty"`
+// Location represents a code location.
+type Location struct {
+	PhysicalLocation *PhysicalLocation `json:"physicalLocation,omitempty"`
+	LogicalLocations []LogicalLocation `json:"logicalLocations,omitempty"`
 }
 
-// SARIFLogicalLocation names the function, method or class of a location.
-type SARIFLogicalLocation struct {
+// LogicalLocation names the function, method or class of a location.
+type LogicalLocation struct {
 	Name               string `json:"name,omitempty"`
 	FullyQualifiedName string `json:"fullyQualifiedName,omitempty"`
 	Kind               string `json:"kind,omitempty"`
 }
 
-// SARIFPhysicalLocation contains file/region info.
-type SARIFPhysicalLocation struct {
-	ArtifactLocation *SARIFArtifactLocation `json:"artifactLocation,omitempty"`
-	Region           *SARIFRegion           `json:"region,omitempty"`
+// PhysicalLocation contains file/region info.
+type PhysicalLocation struct {
+	ArtifactLocation *ArtifactLocation `json:"artifactLocation,omitempty"`
+	Region           *Region           `json:"region,omitempty"`
 }
 
-// SARIFArtifactLocation contains file path.
-type SARIFArtifactLocation struct {
+// ArtifactLocation contains file path.
+type ArtifactLocation struct {
 	URI       string `json:"uri"`
 	URIBaseId string `json:"uriBaseId,omitempty"`
 }
 
-// SARIFRegion contains line/column info.
-type SARIFRegion struct {
-	StartLine   int           `json:"startLine,omitempty"`
-	EndLine     int           `json:"endLine,omitempty"`
-	StartColumn int           `json:"startColumn,omitempty"`
-	EndColumn   int           `json:"endColumn,omitempty"`
-	Snippet     *SARIFSnippet `json:"snippet,omitempty"`
+// Region contains line/column info.
+type Region struct {
+	StartLine   int      `json:"startLine,omitempty"`
+	EndLine     int      `json:"endLine,omitempty"`
+	StartColumn int      `json:"startColumn,omitempty"`
+	EndColumn   int      `json:"endColumn,omitempty"`
+	Snippet     *Snippet `json:"snippet,omitempty"`
 }
 
-// SARIFSnippet contains code snippet.
-type SARIFSnippet struct {
+// Snippet contains code snippet.
+type Snippet struct {
 	Text string `json:"text"`
 }
 
-// SARIFArtifact represents a scanned file.
-type SARIFArtifact struct {
-	Location SARIFArtifactLocation `json:"location"`
+// Artifact represents a scanned file.
+type Artifact struct {
+	Location ArtifactLocation `json:"location"`
 }
 
-// SARIFInvocation contains execution details.
-type SARIFInvocation struct {
+// Invocation contains execution details.
+type Invocation struct {
 	ExecutionSuccessful bool   `json:"executionSuccessful"`
 	CommandLine         string `json:"commandLine,omitempty"`
 }
@@ -203,10 +206,10 @@ type SARIFInvocation struct {
 // SARIF to CTIS Conversion
 // =============================================================================
 
-// ConvertOptions configures SARIF to CTIS conversion.
-type ConvertOptions struct {
+// Options configures SARIF to CTIS conversion.
+type Options struct {
 	// Asset to associate findings with
-	AssetType  AssetType
+	AssetType  ctis.AssetType
 	AssetValue string
 	AssetID    string
 
@@ -216,24 +219,28 @@ type ConvertOptions struct {
 
 	// Branch information for branch-aware finding lifecycle
 	// Provides full CI/CD context for auto-resolve and expiry features
-	BranchInfo *BranchInfo
+	BranchInfo *ctis.BranchInfo
 
 	// Default confidence
 	DefaultConfidence int
 
 	// Tool type hints (for finding type detection)
 	ToolType string // "sast", "sca", "secret", "iac", "web3"
+
+	// NoPassthrough leaves out the members the mapping does not list;
+	// by default they are kept under extensions["org.ctis.interop.sarif"].
+	NoPassthrough bool
 }
 
-// DefaultConvertOptions returns default conversion options.
-func DefaultConvertOptions() *ConvertOptions {
-	return &ConvertOptions{
-		AssetType:         AssetTypeRepository,
+// DefaultOptions returns default conversion options.
+func DefaultOptions() *Options {
+	return &Options{
+		AssetType:         ctis.AssetTypeRepository,
 		DefaultConfidence: 90,
 	}
 }
 
-// FromSARIF converts a SARIF 2.1.0 log to a CTIS report.
+// Import converts a SARIF 2.1.0 log to a CTIS report.
 //
 // Every run is converted. The report's tool is the first run's driver; when
 // the log has more than one run, each finding names its run's tool in
@@ -243,7 +250,7 @@ func DefaultConvertOptions() *ConvertOptions {
 //   - severity: the GitHub "security-severity" score (result, then rule) via
 //     severity.FromCVSS; else the result level, else the rule's default level;
 //     else medium (SARIF's default level is warning).
-//   - type: ConvertOptions.ToolType; else the rule's tags (vulnerability,
+//   - type: Options.ToolType; else the rule's tags (vulnerability,
 //     misconfiguration, secret, as Trivy writes them); else a CVE/GHSA rule
 //     id means vulnerability; else the tool name.
 //   - CWE: rule properties "cwe" (string or array) and tags such as
@@ -257,28 +264,41 @@ func DefaultConvertOptions() *ConvertOptions {
 //
 // The converter asserts no business context: the asset it creates has no
 // criticality.
-func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
+func Import(data []byte, opts *Options) (*ctis.Report, error) {
 	if opts == nil {
-		opts = DefaultConvertOptions()
+		opts = DefaultOptions()
 	}
 
-	var sarif SARIFLog
+	var sarif Log
 	if err := json.Unmarshal(data, &sarif); err != nil {
 		return nil, fmt.Errorf("parse sarif: %w", err)
 	}
+	m, err := importSet.Select(data)
+	if err != nil {
+		return nil, fmt.Errorf("sarif: version %q: %w", truncateUTF8(sarif.Version, 16), err)
+	}
+	// One pass over the document: the members the mapping does not list
+	// (kept under extensions) and the values of its set rules.
+	pt, err := m.Collect(data)
+	if err != nil {
+		return nil, fmt.Errorf("parse sarif: %w", err)
+	}
 
-	report := NewReport()
+	report := ctis.NewReport()
+	if !opts.NoPassthrough {
+		m.Store(&report.Extensions, pt.DocExtension())
+	}
 
 	if len(sarif.Runs) == 0 {
 		return report, nil
 	}
 
 	first := sarif.Runs[0].Tool.Driver
-	report.Tool = &Tool{
+	report.Tool = &ctis.Tool{
 		Name:    first.Name,
 		Version: first.Version,
 	}
-	if IsWebURL(first.InformationURI) {
+	if ctis.IsWebURL(first.InformationURI) {
 		report.Tool.InfoURL = first.InformationURI
 	}
 	if report.Tool.Version == "" {
@@ -293,12 +313,12 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 	}
 	assetType, assetValue := opts.AssetType, opts.AssetValue
 	if assetValue == "" || !assetType.IsValid() {
-		assetType, assetValue = AssetTypeUnclassified, "sarif:"+first.Name
+		assetType, assetValue = ctis.AssetTypeUnclassified, "sarif:"+first.Name
 	}
-	report.Assets = append(report.Assets, Asset{
+	report.Assets = append(report.Assets, ctis.Asset{
 		ID:    assetID,
 		Type:  assetType,
-		Value: NormalizeAssetName(assetType, assetValue),
+		Value: ctis.NormalizeAssetName(assetType, assetValue),
 	})
 
 	// Set branch info for branch-aware finding lifecycle
@@ -306,7 +326,7 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 		report.Metadata.Branch = opts.BranchInfo
 	} else if opts.Branch != "" {
 		// Fallback: create minimal BranchInfo from legacy fields
-		report.Metadata.Branch = &BranchInfo{
+		report.Metadata.Branch = &ctis.BranchInfo{
 			Name:      opts.Branch,
 			CommitSHA: opts.CommitSHA,
 		}
@@ -318,19 +338,28 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 		run := &sarif.Runs[ri]
 		driver := run.Tool.Driver
 		roots := sarifRoots(run.OriginalURIBaseIDs)
-		ruleMap := make(map[string]*SARIFRule, len(driver.Rules))
+		ruleMap := make(map[string]*Rule, len(driver.Rules))
 		for i := range driver.Rules {
 			ruleMap[driver.Rules[i].ID] = &driver.Rules[i]
 		}
 
-		for _, result := range run.Results {
+		for j, result := range run.Results {
 			n++
 			rule, ruleID := lookupRule(&result, driver.Rules, ruleMap)
-			finding := convertSARIFResult(&result, rule, ruleID, driver.Name, roots, opts)
+			ptr := fmt.Sprintf("/runs/%d/results/%d", ri, j)
+			// The set rules of the mapping and the kept members apply
+			// before the secret masking, which then covers them too.
+			prep := func(f *ctis.Finding) {
+				_ = pt.Apply(ptr, f)
+				if !opts.NoPassthrough {
+					m.Store(&f.Extensions, pt.RecordExtension(ptr, nil))
+				}
+			}
+			finding := convertSARIFResult(&result, rule, ruleID, driver.Name, roots, opts, prep)
 			finding.ID = fmt.Sprintf("finding-%d", n)
 			finding.AssetRef = assetID
 			if multiRun {
-				finding.Tool = &Tool{Name: driver.Name, Version: driver.Version}
+				finding.Tool = &ctis.Tool{Name: driver.Name, Version: driver.Version}
 			}
 			report.Findings = append(report.Findings, finding)
 		}
@@ -342,7 +371,7 @@ func FromSARIF(data []byte, opts *ConvertOptions) (*Report, error) {
 
 // lookupRule finds the rule a result refers to: by ruleId, else rule.id,
 // else the rule index.
-func lookupRule(result *SARIFResult, rules []SARIFRule, byID map[string]*SARIFRule) (*SARIFRule, string) {
+func lookupRule(result *Result, rules []Rule, byID map[string]*Rule) (*Rule, string) {
 	id := result.RuleID
 	if id == "" && result.Rule != nil {
 		id = result.Rule.ID
@@ -366,8 +395,8 @@ func lookupRule(result *SARIFResult, rules []SARIFRule, byID map[string]*SARIFRu
 	return nil, id
 }
 
-func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName string, roots []string, opts *ConvertOptions) Finding {
-	finding := Finding{
+func convertSARIFResult(result *Result, rule *Rule, ruleID, toolName string, roots []string, opts *Options, prep func(*ctis.Finding)) ctis.Finding {
+	finding := ctis.Finding{
 		Type:       detectResultType(rule, ruleID, toolName, opts.ToolType),
 		Title:      result.Message.Text,
 		Severity:   sarifSeverity(result, rule),
@@ -381,7 +410,7 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 		finding.Title = ruleID
 	}
 
-	var vuln VulnerabilityDetails
+	var vuln ctis.VulnerabilityDetails
 	if rule != nil {
 		if rule.ShortDescription != nil {
 			finding.Description = rule.ShortDescription.Text
@@ -393,15 +422,8 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 			finding.References = append(finding.References, rule.HelpURI)
 		}
 		if precision, ok := rule.Properties["precision"].(string); ok {
-			switch precision {
-			case "very-high":
-				finding.Confidence = 95
-			case "high":
-				finding.Confidence = 85
-			case "medium":
-				finding.Confidence = 70
-			case "low":
-				finding.Confidence = 50
+			if c, ok := imp.Lookup("precision_confidence", precision); ok {
+				finding.Confidence, _ = strconv.Atoi(c)
 			}
 		}
 		vuln.CWEIDs = sarifCWEs(rule.Properties)
@@ -421,9 +443,9 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 	if len(result.Locations) > 0 {
 		loc := result.Locations[0]
 		if loc.PhysicalLocation != nil || len(loc.LogicalLocations) > 0 {
-			finding.Location = &FindingLocation{Branch: branch}
+			finding.Location = &ctis.FindingLocation{Branch: branch}
 			if commit != "" {
-				finding.Location.Commit = &CommitInfo{SHA: commit}
+				finding.Location.Commit = &ctis.CommitInfo{SHA: commit}
 			}
 		}
 		if pl := loc.PhysicalLocation; pl != nil {
@@ -442,7 +464,7 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 		}
 		if len(loc.LogicalLocations) > 0 {
 			ll := loc.LogicalLocations[0]
-			finding.Location.LogicalLocation = &LogicalLocation{
+			finding.Location.LogicalLocation = &ctis.LogicalLocation{
 				Name:               ll.Name,
 				FullyQualifiedName: ll.FullyQualifiedName,
 				Kind:               ll.Kind,
@@ -457,40 +479,30 @@ func convertSARIFResult(result *SARIFResult, rule *SARIFRule, ruleID, toolName s
 			finding.PartialFingerprints[k] = v
 		}
 	}
-	finding.CorrelationID = result.CorrelationGUID
-	finding.BaselineState = sarifBaselineState(result.BaselineState)
-	finding.Kind = sarifKind(result.Kind)
+	// correlationGuid, baselineState and kind are set rules of the
+	// mapping (prep).
 	finding.Suppression, finding.Status = sarifSuppression(result.Suppressions)
 	var ruleProps map[string]any
 	if rule != nil {
 		ruleProps = rule.Properties
 	}
 	finding.Tags = sarifTags(result.Properties, ruleProps)
-	if ex, ok := sarifHTTPExchange(result.WebRequest, result.WebResponse); ok {
-		finding.EvidenceItems = []EvidenceItem{ex}
+	if ex, ok := httpExchange(result.WebRequest, result.WebResponse); ok {
+		finding.EvidenceItems = []ctis.EvidenceItem{ex}
 	}
 	finding.DataFlow = sarifDataFlow(result.CodeFlows, roots)
-	if finding.Type == FindingTypeSecret || isSecretTool(strings.ToLower(toolName)) {
+	if prep != nil {
+		prep(&finding)
+	}
+	if finding.Type == ctis.FindingTypeSecret || isSecretTool(strings.ToLower(toolName)) {
 		redactSecretFinding(&finding)
 	}
 	return finding
 }
 
-// redactedSecret replaces a secret, or a code line holding one, that is too
-// short to show any of it.
-const redactedSecret = "REDACTED"
-
-// secretPrefixLen is how many leading characters of a secret maskSecret keeps,
-// enough to recognise its kind (AKIA, ghp_, xoxb) and never enough to use it.
-const secretPrefixLen = 4
-
-// minMaskedPrefixLen is the shortest secret maskSecret shows a prefix of.
-// Shorter ones (passwords, PINs) are hidden entirely.
-const minMaskedPrefixLen = 16
-
 // redactSecretFinding keeps a secret scanner's raw match out of the CTIS
 // report. Secret scanners put the matched secret in the SARIF region snippet
-// (gitleaks and betterleaks do unless run with --redact), and FromSARIF copied
+// (gitleaks and betterleaks do unless run with --redact), and Import copied
 // it into location.snippet, so the live credential travelled in the report and
 // was stored wherever the report was. The snippet is masked, and the raw value
 // and every secret-looking word of it are masked in every other field
@@ -500,8 +512,8 @@ const minMaskedPrefixLen = 16
 // The masked value is not written to secret.masked_value: receivers fingerprint
 // secret findings by it (spec section 5.2), and setting it would change the
 // identity of every finding already ingested from a SARIF secret scan.
-func redactSecretFinding(f *Finding) {
-	redactSecrets(f, true, isRedacted)
+func redactSecretFinding(f *ctis.Finding) {
+	ctis.RedactSecretFindingWith(f, true, isRedacted)
 }
 
 // isRedacted reports whether a scanner already fully redacted the snippet:
@@ -510,28 +522,10 @@ func redactSecretFinding(f *Finding) {
 // "...") is masked again.
 func isRedacted(s string) bool {
 	t := strings.TrimSpace(s)
-	return strings.EqualFold(t, redactedSecret) || strings.Trim(t, "*•") == ""
+	return strings.EqualFold(t, ctis.RedactedSecret) || strings.Trim(t, "*•") == ""
 }
 
-// MaskSecretMatch masks a secret scanner's raw match the way FromSARIF does:
-// the first 4 characters of a secret of 16 characters or more followed by
-// asterisks, else "REDACTED". The masked form does not reveal the length.
-// Converters of other secret-scanner formats use it so every report masks
-// a match the same way.
-func MaskSecretMatch(s string) string { return maskSecret(s) }
-
-// maskSecret returns the first secretPrefixLen characters of a secret of at
-// least minMaskedPrefixLen characters followed by asterisks, or redactedSecret
-// for a shorter one. The masked form does not reveal the secret's length.
-func maskSecret(s string) string {
-	r := []rune(strings.TrimSpace(s))
-	if len(r) < minMaskedPrefixLen {
-		return redactedSecret
-	}
-	return string(r[:secretPrefixLen]) + "********"
-}
-
-// Bounds on the tags FromSARIF carries, so a hostile or broken SARIF log
+// Bounds on the tags Import carries, so a hostile or broken SARIF log
 // cannot inflate every finding with an unbounded tag list.
 const (
 	// maxSARIFTags is the most tags one finding gets.
@@ -580,31 +574,6 @@ func sarifTags(resultProps, ruleProps map[string]any) []string {
 	return out
 }
 
-// sarifKind maps a SARIF result.kind onto the CTIS finding.kind vocabulary.
-// SARIF spells one value in camelCase ("notApplicable"); CTIS uses snake_case
-// ("not_applicable"). Matching ignores case and underscores, so a producer's
-// "NotApplicable" or "not_applicable" also maps. Anything outside the six SARIF
-// values returns "" (left unset): the CTIS schema would reject it, and an
-// absent kind is not defaulted to SARIF's implicit "fail".
-func sarifKind(kind string) string {
-	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(kind), "_", "")) {
-	case "notapplicable":
-		return "not_applicable"
-	case "pass":
-		return "pass"
-	case "fail":
-		return "fail"
-	case "review":
-		return "review"
-	case "open":
-		return "open"
-	case "informational":
-		return "informational"
-	default:
-		return ""
-	}
-}
-
 // maxSuppressionJustification is the longest suppression justification kept,
 // in bytes; longer ones are cut.
 const maxSuppressionJustification = 2048
@@ -616,12 +585,12 @@ const maxSuppressionJustification = 2048
 // with the deciding status: a rejected one, else one under review, else the
 // first accepted one. Status is set to suppressed only for a suppressed
 // result. Kinds and statuses outside SARIF's values are left unset.
-func sarifSuppression(sups []SARIFSuppression) (*Suppression, FindingStatus) {
+func sarifSuppression(sups []Suppression) (*ctis.Suppression, ctis.FindingStatus) {
 	if len(sups) == 0 {
 		return nil, ""
 	}
 	rank := map[string]int{"rejected": 3, "under_review": 2, "accepted": 1}
-	var pick *SARIFSuppression
+	var pick *Suppression
 	pickStatus := ""
 	for i := range sups {
 		st := sarifSuppressionStatus(sups[i].Status)
@@ -632,13 +601,13 @@ func sarifSuppression(sups []SARIFSuppression) (*Suppression, FindingStatus) {
 	if pick == nil {
 		return nil, ""
 	}
-	sup := &Suppression{
+	sup := &ctis.Suppression{
 		Kind:          sarifSuppressionKind(pick.Kind),
 		Status:        pickStatus,
 		Justification: truncateUTF8(cleanSuppressionText(pick.Justification), maxSuppressionJustification),
 	}
 	if pickStatus == "accepted" {
-		return sup, FindingStatusSuppressed
+		return sup, ctis.FindingStatusSuppressed
 	}
 	return sup, ""
 }
@@ -689,17 +658,6 @@ func truncateUTF8(s string, maxBytes int) string {
 	return s[:cut]
 }
 
-// sarifBaselineState maps a SARIF result.baselineState onto CTIS
-// finding.baseline_state (same four values). Unknown values are left unset.
-func sarifBaselineState(state string) string {
-	switch s := strings.ToLower(strings.TrimSpace(state)); s {
-	case "new", "unchanged", "updated", "absent":
-		return s
-	default:
-		return ""
-	}
-}
-
 // sarifFingerprint picks the result fingerprint with the lowest key, so the
 // same log always yields the same value (map iteration order is random).
 // Values longer than 64 characters are SHA-256 hashed to fit receivers that
@@ -733,21 +691,22 @@ func isPlaceholderFingerprint(v string) bool {
 	return strings.EqualFold(strings.TrimSpace(v), "requires login")
 }
 
-// sarifSeverity applies the precedence documented on FromSARIF.
-func sarifSeverity(result *SARIFResult, rule *SARIFRule) Severity {
+// sarifSeverity applies the precedence documented on Import.
+func sarifSeverity(result *Result, rule *Rule) ctis.Severity {
 	if score, ok := securitySeverity(result.Properties); ok {
-		return Severity(severity.FromCVSS(score))
+		return ctis.Severity(severity.FromCVSS(score))
 	}
 	if rule != nil {
 		if score, ok := securitySeverity(rule.Properties); ok {
-			return Severity(severity.FromCVSS(score))
+			return ctis.Severity(severity.FromCVSS(score))
 		}
 	}
 	level := result.Level
 	if level == "" && rule != nil && rule.DefaultConfiguration != nil {
 		level = rule.DefaultConfiguration.Level
 	}
-	return mapSARIFLevel(level)
+	sev, _ := imp.Lookup("level_severity", level)
+	return ctis.Severity(sev)
 }
 
 // securitySeverity reads the GitHub code scanning "security-severity"
@@ -835,83 +794,67 @@ func stringOrStrings(v any) []string {
 	return nil
 }
 
-// mapSARIFLevel converts SARIF level to CTIS severity.
-func mapSARIFLevel(level string) Severity {
-	switch strings.ToLower(level) {
-	case "error":
-		return SeverityHigh
-	case "warning":
-		return SeverityMedium
-	case "note":
-		return SeverityLow
-	case "none":
-		return SeverityInfo
-	default:
-		return SeverityMedium
-	}
-}
-
 // detectResultType works out one result's finding type, in the order
-// documented on FromSARIF.
-func detectResultType(rule *SARIFRule, ruleID, toolName, toolType string) FindingType {
+// documented on Import.
+func detectResultType(rule *Rule, ruleID, toolName, toolType string) ctis.FindingType {
 	switch toolType {
 	case "secret":
-		return FindingTypeSecret
+		return ctis.FindingTypeSecret
 	case "iac":
-		return FindingTypeMisconfiguration
+		return ctis.FindingTypeMisconfiguration
 	case "web3", "sast":
 		if cveIDPattern.MatchString(ruleID) || ghsaIDPattern.MatchString(ruleID) {
-			return FindingTypeVulnerability
+			return ctis.FindingTypeVulnerability
 		}
-		return FindingTypeWeakness
+		return ctis.FindingTypeWeakness
 	case "sca":
-		return FindingTypeVulnerability
+		return ctis.FindingTypeVulnerability
 	}
 	if rule != nil {
 		for _, tag := range stringOrStrings(rule.Properties["tags"]) {
 			switch strings.ToLower(strings.TrimSpace(tag)) {
 			case "vulnerability":
-				return FindingTypeVulnerability
+				return ctis.FindingTypeVulnerability
 			case "weakness":
-				return FindingTypeWeakness
+				return ctis.FindingTypeWeakness
 			case "misconfiguration":
-				return FindingTypeMisconfiguration
+				return ctis.FindingTypeMisconfiguration
 			case "secret":
-				return FindingTypeSecret
+				return ctis.FindingTypeSecret
 			}
 		}
 	}
 	if cveIDPattern.MatchString(ruleID) || ghsaIDPattern.MatchString(ruleID) {
-		return FindingTypeVulnerability
+		return ctis.FindingTypeVulnerability
 	}
 	return detectFindingType(toolName, toolType)
 }
 
 // detectFindingType determines finding type based on tool name.
-func detectFindingType(toolName string, toolType string) FindingType {
+func detectFindingType(toolName string, toolType string) ctis.FindingType {
 	name := strings.ToLower(toolName)
 
 	// Explicit tool type
 	switch toolType {
 	case "secret":
-		return FindingTypeSecret
+		return ctis.FindingTypeSecret
 	case "iac":
-		return FindingTypeMisconfiguration
+		return ctis.FindingTypeMisconfiguration
 	case "web3", "sast":
-		return FindingTypeWeakness
+		return ctis.FindingTypeWeakness
 	case "sca":
-		return FindingTypeVulnerability
+		return ctis.FindingTypeVulnerability
 	}
 
 	if isSecretTool(name) {
-		return FindingTypeSecret
+		return ctis.FindingTypeSecret
 	}
 
 	// Web3 scanners
 	web3Tools := []string{"slither", "mythril", "securify", "manticore", "echidna", "aderyn"}
 	for _, t := range web3Tools {
 		if strings.Contains(name, t) {
-			return FindingTypeWeakness
+			return ctis.FindingTypeWeakness
 		}
 	}
 
@@ -919,7 +862,7 @@ func detectFindingType(toolName string, toolType string) FindingType {
 	iacTools := []string{"trivy", "checkov", "tfsec", "terrascan", "kics"}
 	for _, t := range iacTools {
 		if strings.Contains(name, t) {
-			return FindingTypeMisconfiguration
+			return ctis.FindingTypeMisconfiguration
 		}
 	}
 
@@ -927,11 +870,11 @@ func detectFindingType(toolName string, toolType string) FindingType {
 	// recognised before this point).
 	for _, t := range sastToolNames {
 		if strings.Contains(name, t) {
-			return FindingTypeWeakness
+			return ctis.FindingTypeWeakness
 		}
 	}
 
-	return FindingTypeVulnerability
+	return ctis.FindingTypeVulnerability
 }
 
 // secretToolNames are secret scanners, matched as substrings of the lowercased
@@ -956,33 +899,80 @@ var sastToolNames = []string{
 }
 
 // detectTechniques determines the detection techniques of a SARIF tool.
-func detectTechniques(toolName string, toolType string) []Technique {
+func detectTechniques(toolName string, toolType string) []ctis.Technique {
 	name := strings.ToLower(toolName)
 
 	switch toolType {
 	case "secret":
-		return []Technique{TechniqueSecret}
+		return []ctis.Technique{ctis.TechniqueSecret}
 	case "iac":
-		return []Technique{TechniqueIaC}
+		return []ctis.Technique{ctis.TechniqueIaC}
 	case "sca":
-		return []Technique{TechniqueSCA}
+		return []ctis.Technique{ctis.TechniqueSCA}
 	case "sast", "web3":
-		return []Technique{TechniqueSAST}
+		return []ctis.Technique{ctis.TechniqueSAST}
 	}
 
 	if isSecretTool(name) {
-		return []Technique{TechniqueSecret}
+		return []ctis.Technique{ctis.TechniqueSecret}
 	}
 	if strings.Contains(name, "slither") || strings.Contains(name, "mythril") {
-		return []Technique{TechniqueSAST}
+		return []ctis.Technique{ctis.TechniqueSAST}
 	}
 	if strings.Contains(name, "trivy") || strings.Contains(name, "checkov") {
-		return []Technique{TechniqueSCA, TechniqueIaC}
+		return []ctis.Technique{ctis.TechniqueSCA, ctis.TechniqueIaC}
 	}
 	for _, t := range sastToolNames {
 		if strings.Contains(name, t) {
-			return []Technique{TechniqueSAST}
+			return []ctis.Technique{ctis.TechniqueSAST}
 		}
 	}
 	return nil
+}
+
+// httpExchange builds an http_exchange evidence item from a result's
+// webRequest and webResponse (ctis.HTTPExchange caps and marks it).
+func httpExchange(req *WebRequest, resp *WebResponse) (ctis.EvidenceItem, bool) {
+	var rq, rs *ctis.HTTPMessageParts
+	if req != nil {
+		rq = &ctis.HTTPMessageParts{
+			Method:      req.Method,
+			Target:      req.Target,
+			HTTPVersion: httpProtocol(req.Protocol, req.Version),
+			Headers:     req.Headers,
+			Body:        contentText(req.Body),
+		}
+	}
+	if resp != nil && !resp.NoResponseReceived {
+		rs = &ctis.HTTPMessageParts{
+			Status:      resp.StatusCode,
+			Reason:      resp.ReasonPhrase,
+			HTTPVersion: httpProtocol(resp.Protocol, resp.Version),
+			Headers:     resp.Headers,
+			Body:        contentText(resp.Body),
+		}
+	}
+	return ctis.HTTPExchange(rq, rs)
+}
+
+func httpProtocol(protocol, version string) string {
+	if protocol == "" || version == "" {
+		return ""
+	}
+	return strings.ToUpper(protocol) + "/" + version
+}
+
+// contentText is the body of an artifactContent: its text, else its base64
+// binary decoded. A content object without either is an empty body.
+func contentText(c *Content) *string {
+	if c == nil {
+		return nil
+	}
+	s := c.Text
+	if s == "" {
+		if raw, err := base64.StdEncoding.DecodeString(c.Binary); err == nil {
+			s = string(raw)
+		}
+	}
+	return &s
 }

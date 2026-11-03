@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/openctemio/ctis/v2/interop/engine"
 )
 
 // capReader reads at most limit bytes from r and fails with ErrTooLarge,
@@ -227,21 +229,7 @@ func (x *xmlReader) Token() (xml.Token, error) {
 }
 
 // pathKey bounds a key value used in a path and keeps it printable.
-func pathKey(v string) string {
-	v = strings.Map(func(r rune) rune {
-		if r < 0x20 || r == 0x7f || r == '/' || r == '[' || r == ']' {
-			return '_'
-		}
-		return r
-	}, v)
-	if len(v) > 128 {
-		v = v[:128]
-		for !utf8.ValidString(v) {
-			v = v[:len(v)-1]
-		}
-	}
-	return v
-}
+func pathKey(v string) string { return engine.PathKey(v) }
 
 func attrValue(t xml.StartElement, name string) string {
 	for _, a := range t.Attr {

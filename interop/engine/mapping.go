@@ -86,6 +86,10 @@ type Mapping struct {
 	Title  string `json:"title"`
 	Source string `json:"source,omitempty"`
 
+	// VersionPointer (import) points to the member that declares the
+	// document's version; the passthrough records that version.
+	VersionPointer string `json:"version_pointer,omitempty"`
+
 	// Detect: every predicate must hold for a document of this version
 	// (import only).
 	Detect []Predicate `json:"detect,omitempty"`
@@ -107,6 +111,11 @@ type Mapping struct {
 	// Hooks are the Go functions of the adapter this mapping relies on.
 	Hooks []string `json:"hooks,omitempty"`
 
+	// ReemitFrom (export) lists the other upstream versions whose
+	// passthrough this mapping writes back: a later version that keeps the
+	// members of an earlier one.
+	ReemitFrom []string `json:"reemit_from,omitempty"`
+
 	// Passthrough lowers the default passthrough limits.
 	Passthrough *Limits `json:"passthrough,omitempty"`
 
@@ -125,6 +134,8 @@ type Predicate struct {
 	Matches *string  `json:"matches,omitempty"`
 	// Absent: the member is not there (or null).
 	Absent bool `json:"absent,omitempty"`
+	// OrAbsent: the test also holds when the member is not there.
+	OrAbsent bool `json:"or_absent,omitempty"`
 
 	re *regexp.Regexp
 }
@@ -270,6 +281,19 @@ func (m *Mapping) check(opts LoadOptions) error {
 	}
 	if m.Direction == Export && len(m.Detect) > 0 {
 		return mappingErr("detect is for import mappings")
+	}
+	if m.Direction == Import && len(m.ReemitFrom) > 0 {
+		return mappingErr("reemit_from is for export mappings")
+	}
+	for _, v := range m.ReemitFrom {
+		if !versionRE.MatchString(v) {
+			return mappingErr("reemit_from %q is not a dotted version", short(v))
+		}
+	}
+	if m.VersionPointer != "" {
+		if toks, ok := parsePointer(m.VersionPointer); !ok || len(toks) == 0 || m.Direction != Import {
+			return mappingErr("version_pointer %q (an import mapping's pointer to a member)", short(m.VersionPointer))
+		}
 	}
 	if len(m.Detect) > MaxDetect {
 		return mappingErr("more than %d detect predicates", MaxDetect)
@@ -454,6 +478,9 @@ func (p *Predicate) check() error {
 	}
 	if n != 1 {
 		return errors.New("exactly one of equals, in, prefix, matches and absent")
+	}
+	if p.OrAbsent && p.Absent {
+		return errors.New("or_absent goes with a test, not with absent")
 	}
 	return nil
 }

@@ -1,6 +1,8 @@
-package ctis
+package sarif
 
 import (
+	"github.com/openctemio/ctis/v2"
+
 	"encoding/json"
 	"strings"
 	"testing"
@@ -14,16 +16,16 @@ func TestFromSARIF_Suppressions(t *testing.T) {
 		sups        string
 		wantKind    string
 		wantStatus  string
-		wantFinding FindingStatus
+		wantFinding ctis.FindingStatus
 	}{
 		{"none", ``, "", "", ""},
 		{"empty list", `[]`, "", "", ""},
-		{"inSource, status absent means accepted", `[{"kind":"inSource"}]`, "in_source", "accepted", FindingStatusSuppressed},
-		{"external accepted", `[{"kind":"external","status":"accepted","justification":"baseline"}]`, "external", "accepted", FindingStatusSuppressed},
+		{"inSource, status absent means accepted", `[{"kind":"inSource"}]`, "in_source", "accepted", ctis.FindingStatusSuppressed},
+		{"external accepted", `[{"kind":"external","status":"accepted","justification":"baseline"}]`, "external", "accepted", ctis.FindingStatusSuppressed},
 		{"under review is not suppressed", `[{"kind":"external","status":"underReview"}]`, "external", "under_review", ""},
 		{"rejected wins over accepted", `[{"kind":"inSource"},{"kind":"external","status":"rejected"}]`, "external", "rejected", ""},
 		{"under review wins over accepted", `[{"kind":"inSource","status":"accepted"},{"kind":"external","status":"under_review"}]`, "external", "under_review", ""},
-		{"unknown kind left unset", `[{"kind":"bogus"}]`, "", "accepted", FindingStatusSuppressed},
+		{"unknown kind left unset", `[{"kind":"bogus"}]`, "", "accepted", ctis.FindingStatusSuppressed},
 		{"unknown status ignored", `[{"kind":"inSource","status":"maybe"}]`, "", "", ""},
 	}
 	for _, tc := range cases {
@@ -33,11 +35,13 @@ func TestFromSARIF_Suppressions(t *testing.T) {
 				sup = `,"suppressions":` + tc.sups
 			}
 			log := `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep"}},"results":[{"ruleId":"r","message":{"text":"m"}` + sup + `}]}]}`
-			r, err := FromSARIF([]byte(log), nil)
+			r, err := Import([]byte(log), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
-			assertReportValid(t, loadSchemaSet(t), r)
+			if err := r.Validate(); err != nil {
+				t.Fatalf("not valid CTIS: %v", err)
+			}
 			f := r.Findings[0]
 			if f.Status != tc.wantFinding {
 				t.Errorf("status = %q, want %q", f.Status, tc.wantFinding)
@@ -60,7 +64,7 @@ func TestFromSARIF_SuppressionJustificationHostile(t *testing.T) {
 	just := "ok\x1b[31m\x00\nnext " + strings.Repeat("é", 5000)
 	b, _ := json.Marshal(just)
 	log := `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"x"}},"results":[{"ruleId":"r","message":{"text":"m"},"suppressions":[{"kind":"external","justification":` + string(b) + `}]}]}]}`
-	r, err := FromSARIF([]byte(log), nil)
+	r, err := Import([]byte(log), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +83,7 @@ func TestFromSARIF_SuppressionJustificationHostile(t *testing.T) {
 // Semgrep OSS writes "requires login" as every result's matchBasedId; it is
 // not a fingerprint.
 func TestFromSARIF_PlaceholderFingerprintIgnored(t *testing.T) {
-	r, err := FromSARIF(readTestdata(t, "sarif/semgrep-suppressed.sarif"), nil)
+	r, err := Import(readTestdata(t, "sarif/semgrep-suppressed.sarif"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

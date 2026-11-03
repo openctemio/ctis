@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/interop/engine"
 )
 
 // The standard formats (SARIF, CycloneDX, SPDX, CSAF, OpenVEX) are read by
@@ -160,4 +161,28 @@ func (d *JSONDoc) Decode(v any) error { return d.d.decode(v) }
 // its line and column.
 func (d *JSONDoc) IssueAt(path string, i int, pointer, msg string) Issue {
 	return d.d.issueAt(path, i, pointer, msg)
+}
+
+// SpecFromMapping is the spec of an interoperability import mapping
+// (interop/<format>/<version>/import.json): its fields with their targets
+// and reasons, its notes as rules.
+func SpecFromMapping(m *engine.Mapping) Spec {
+	s := Spec{
+		Format:        Format(m.Format),
+		Title:         m.Title,
+		SourceVersion: m.Source,
+		Rules:         append([]string(nil), m.Notes...),
+		Origin:        fmt.Sprintf("`interop/%s/%s/%s.json`; regenerate with `go test ./... -run TestMappingDocs -update` in `interop/%s`", m.Format, m.Version, m.Direction, m.Format),
+	}
+	for _, f := range m.Fields {
+		target := f.Target
+		if target == "" && f.Set != "" {
+			target = f.Record + "." + f.Set
+		}
+		if target == "" && f.Hook != "" {
+			target = "hook " + f.Hook
+		}
+		s.Fields = append(s.Fields, Field{Path: f.Path, Target: target, Ignored: f.Ignored})
+	}
+	return s
 }

@@ -1,7 +1,12 @@
-package ctis
+// Package interoptest holds the test helpers the interoperability adapters
+// (interop/<format>, nested modules of this repository) share: golden files,
+// round-trip comparison with declared losses, field coverage of mapping
+// files. It is internal and only imported by tests.
+package interoptest
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,12 +16,8 @@ import (
 	"testing"
 )
 
-// Round-trip test helpers, shared by the exporter tests of this package and
-// of package ctis_test (the CycloneDX test reads its output back with the
-// importer, which imports this package).
-
 // exportLosses is a fixture's sidecar of documented accepted losses:
-// testdata/export/<format>/<fixture>.losses.json. Each member is a path into
+// testdata/export/<fixture>.losses.json. Each member is a path into
 // the report JSON ("findings[].references", "dependencies[].properties.uid")
 // that the round trip does not preserve; the comparison drops it on both
 // sides. docs/exporters.md lists the same losses per format.
@@ -28,10 +29,10 @@ type exportLosses struct {
 	} `json:"losses"`
 }
 
-// ExportRoundTripDiff compares two reports (or any JSON values) after
+// RoundTripDiff compares two reports (or any JSON values) after
 // dropping the accepted losses listed in the sidecar file (relative to
 // testdata/export; "" for none) and reports the differing paths.
-func ExportRoundTripDiff(t *testing.T, want, got any, sidecar string) []string {
+func RoundTripDiff(t *testing.T, want, got any, sidecar string) []string {
 	t.Helper()
 	var members []string
 	if sidecar != "" {
@@ -196,15 +197,15 @@ func diffTree(path string, a, b any, out *[]string) {
 	}
 }
 
-// ExportCheckGolden is checkGolden for raw bytes (an exporter's output),
-// usable from package ctis_test.
-func ExportCheckGolden(t *testing.T, name string, got []byte) {
+// CheckGolden compares raw bytes (an exporter's output) with the golden file
+// testdata/<name>; -update rewrites it.
+func CheckGolden(t *testing.T, name string, got []byte) {
 	t.Helper()
 	if len(got) == 0 || got[len(got)-1] != '\n' {
 		got = append(append([]byte(nil), got...), '\n')
 	}
 	path := filepath.Join("testdata", name)
-	if *updateGolden {
+	if *Update {
 		if err := os.WriteFile(path, got, 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -219,23 +220,6 @@ func ExportCheckGolden(t *testing.T, name string, got []byte) {
 	}
 }
 
-func TestExportDropMember(t *testing.T) {
-	v := map[string]any{"a": []any{map[string]any{"b": 1, "c": 2}}, "d": map[string]any{"e": 3}, "f": []any{1}}
-	v2 := dropMember(v, []string{"a[]", "b"}).(map[string]any)
-	v2 = dropMember(v2, []string{"d", "e"}).(map[string]any)
-	v2 = dropMember(v2, []string{"f[]"}).(map[string]any)
-	v2 = dropMember(v2, []string{"missing", "x"}).(map[string]any)
-	v2 = dropMember(v2, []string{"a", "x"}).(map[string]any)
-	v2["g"] = []any{map[string]any{"s": map[string]any{"t": "x"}}, map[string]any{"s": map[string]any{"t": "y"}}}
-	v2 = dropMember(v2, []string{"g[s.t=x]"}).(map[string]any)
-	v2 = dropMember(v2, []string{"d[s=x]"}).(map[string]any)
-	got, _ := json.Marshal(v2)
-	if string(got) != `{"a":[{"c":2}],"d":{},"g":[{"s":{"t":"y"}}]}` {
-		t.Fatalf("dropMember: %s", got)
-	}
-	var diffs []string
-	diffTree("", map[string]any{"x": []any{1, 2}}, map[string]any{"x": []any{1}}, &diffs)
-	if len(diffs) != 1 {
-		t.Fatalf("diffTree: %v", diffs)
-	}
-}
+// Update is the -update flag of the adapters' tests: rewrite the golden
+// files instead of comparing.
+var Update = flag.Bool("update", false, "rewrite the golden files")

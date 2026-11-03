@@ -1,6 +1,14 @@
-package ctis
+package sarif
 
 import (
+	"fmt"
+	"strconv"
+
+	"github.com/openctemio/ctis/v2/internal/exportkit"
+	"github.com/openctemio/ctis/v2/interop/engine"
+
+	"github.com/openctemio/ctis/v2"
+
 	"encoding/json"
 	"sort"
 	"strings"
@@ -10,7 +18,7 @@ import (
 
 // CTIS to SARIF 2.1.0.
 //
-// One report is one run. Mapping (FromSARIF reads every member back):
+// One report is one run. Mapping (Import reads every member back):
 //   - tool -> run.tool.driver (name, version, informationUri); the rules
 //     catalog run.tool.driver.rules[] is built from the findings: one rule
 //     per rule_id, its members taken from the first finding of that rule,
@@ -49,9 +57,9 @@ type sarifOutLog struct {
 }
 
 type sarifOutRun struct {
-	Tool                     SARIFTool     `json:"tool"`
+	Tool                     Tool          `json:"tool"`
 	VersionControlProvenance []sarifOutVCS `json:"versionControlProvenance,omitempty"`
-	Results                  []SARIFResult `json:"results"`
+	Results                  []Result      `json:"results"`
 }
 
 type sarifOutVCS struct {
@@ -73,13 +81,31 @@ type sarifOutThreadFlowLocation struct {
 	Kinds    []string          `json:"kinds,omitempty"`
 }
 
-// ToSARIF converts a report to a SARIF 2.1.0 log (JSON). See the mapping
-// above and docs/exporters.md for what SARIF cannot carry.
-func ToSARIF(r *Report) ([]byte, error) {
-	if r == nil {
-		return nil, errNilReport
+// ExportOptions configure Export. The zero value (or nil) is valid.
+type ExportOptions struct {
+	// NoPassthrough leaves out the SARIF members an import kept under
+	// extensions["org.ctis.interop.sarif"]; by default they are written back
+	// where the exporter writes nothing.
+	NoPassthrough bool
+}
+
+// ErrTooLarge is returned when the encoded output would exceed MaxBytes.
+var ErrTooLarge = exportkit.ErrTooLarge
+
+// MaxBytes is the largest output Export returns.
+const MaxBytes = exportkit.MaxBytes
+
+// Export converts a report to a SARIF 2.1.0 log (JSON). See the mapping
+// above, 2.1.0/export.json and docs/exporters.md for what SARIF cannot
+// carry.
+func Export(r *ctis.Report, opts *ExportOptions) ([]byte, error) {
+	if opts == nil {
+		opts = &ExportOptions{}
 	}
-	driver := SARIFDriver{Name: sarifDefaultDriver}
+	if r == nil {
+		return nil, exportkit.ErrNilReport
+	}
+	driver := Driver{Name: sarifDefaultDriver}
 	if r.Tool != nil {
 		if r.Tool.Name != "" {
 			driver.Name = r.Tool.Name
@@ -89,12 +115,12 @@ func ToSARIF(r *Report) ([]byte, error) {
 	}
 
 	// Findings grouped into runs by their own tool (finding.tool, which
-	// FromSARIF records for a multi-run log), in first-seen order.
+	// Import records for a multi-run log), in first-seen order.
 	var order []string
-	byTool := map[string][]Finding{}
+	byTool := map[string][]ctis.Finding{}
 	toolVersion := map[string]string{}
 	for i := range r.Findings {
-		c, err := exportFinding(&r.Findings[i])
+		c, err := exportkit.Finding(&r.Findings[i])
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +141,7 @@ func ToSARIF(r *Report) ([]byte, error) {
 	}
 	log := sarifOutLog{Schema: sarifSchemaURI, Version: sarifVersion}
 	for i, tool := range order {
-		d := SARIFDriver{Name: tool, Version: toolVersion[tool]}
+		d := Driver{Name: tool, Version: toolVersion[tool]}
 		if tool == driver.Name {
 			d = driver
 		}
@@ -128,14 +154,47 @@ func ToSARIF(r *Report) ([]byte, error) {
 		}
 		log.Runs = append(log.Runs, run)
 	}
-	return marshalExport(log)
+	out, err := exportkit.Marshal(log)
+	if err != nil || opts.NoPassthrough {
+		return out, err
+	}
+	// Members an import kept: the document's, then each result's. A
+	// document member under a run is placed only when there is one run, so
+	// it cannot land on another tool's run.
+	var entries []engine.Entry
+	if _, kept, ok := exp.Kept(r.Extensions); ok {
+		for _, e := range kept {
+			if strings.HasPrefix(e.Pointer, "/runs/") && (len(log.Runs) != 1 || !strings.HasPrefix(e.Pointer, "/runs/0/")) {
+				continue
+			}
+			entries = append(entries, e)
+		}
+	}
+	for i, tool := range order {
+		for k := range byTool[tool] {
+			if _, kept, ok := exp.Kept(byTool[tool][k].Extensions); ok {
+				base := fmt.Sprintf("/runs/%d/results/%d", i, k)
+				for _, e := range kept {
+					entries = append(entries, engine.Entry{Pointer: base + e.Pointer, Value: e.Value})
+				}
+			}
+		}
+	}
+	out, _, err = exp.Reemit(out, entries, "  ")
+	if err != nil {
+		return nil, err
+	}
+	if len(out) > exportkit.MaxBytes {
+		return nil, exportkit.ErrTooLarge
+	}
+	return out, nil
 }
 
 // sarifRunOf writes one run: the rules catalog built from the findings (the
 // first finding of each rule id defines the rule, rules sorted by id) and
 // one result per finding, in order.
-func sarifRunOf(driver SARIFDriver, findings []Finding) (sarifOutRun, error) {
-	rules := map[string]SARIFRule{}
+func sarifRunOf(driver Driver, findings []ctis.Finding) (sarifOutRun, error) {
+	rules := map[string]Rule{}
 	for i := range findings {
 		id := sarifRuleID(&findings[i])
 		if _, ok := rules[id]; !ok {
@@ -152,7 +211,7 @@ func sarifRunOf(driver SARIFDriver, findings []Finding) (sarifOutRun, error) {
 		driver.Rules = append(driver.Rules, rules[id])
 		index[id] = i
 	}
-	run := sarifOutRun{Tool: SARIFTool{Driver: driver}, Results: []SARIFResult{}}
+	run := sarifOutRun{Tool: Tool{Driver: driver}, Results: []Result{}}
 	for i := range findings {
 		f := &findings[i]
 		id := sarifRuleID(f)
@@ -169,7 +228,7 @@ func sarifRunOf(driver SARIFDriver, findings []Finding) (sarifOutRun, error) {
 
 // sarifRuleID is the rule a finding is reported under: its rule_id, else
 // one per finding type.
-func sarifRuleID(f *Finding) string {
+func sarifRuleID(f *ctis.Finding) string {
 	if f.RuleID != "" {
 		return f.RuleID
 	}
@@ -181,73 +240,45 @@ func sarifRuleID(f *Finding) string {
 }
 
 // sarifLevel maps a severity to a SARIF level.
-func sarifLevel(s Severity) string {
-	switch s {
-	case SeverityCritical, SeverityHigh:
-		return "error"
-	case SeverityLow, SeverityInfo:
-		return "note"
-	case SeverityUnknown:
-		return "none"
-	default:
-		return "warning"
-	}
+func sarifLevel(s ctis.Severity) string {
+	l, _ := exp.Lookup("severity_level", string(s))
+	return l
 }
 
 // sarifSecuritySeverity is the security-severity score of a finding: its
 // CVSS score when that bands to its severity, else the middle of the band.
 // An unknown severity has none.
-func sarifSecuritySeverity(f *Finding) (string, bool) {
-	if !f.Severity.IsValid() || f.Severity == SeverityUnknown {
+func sarifSecuritySeverity(f *ctis.Finding) (string, bool) {
+	if !f.Severity.IsValid() || f.Severity == ctis.SeverityUnknown {
 		return "", false
 	}
-	if c, ok := PrimaryCVSS(f); ok && c.Value != nil && *c.Value > 0 && *c.Value <= 10 &&
-		Severity(severity.FromCVSS(*c.Value)) == f.Severity {
-		return formatScore(*c.Value), true
+	if c, ok := ctis.PrimaryCVSS(f); ok && c.Value != nil && *c.Value > 0 && *c.Value <= 10 &&
+		ctis.Severity(severity.FromCVSS(*c.Value)) == f.Severity {
+		return exportkit.FormatScore(*c.Value), true
 	}
-	switch f.Severity {
-	case SeverityCritical:
-		return "9.5", true
-	case SeverityHigh:
-		return "8.0", true
-	case SeverityMedium:
-		return "5.5", true
-	case SeverityLow:
-		return "2.0", true
-	default:
-		return "0.0", true
-	}
+	return exp.Lookup("severity_score", string(f.Severity))
 }
 
-// sarifPrecision is the rule precision FromSARIF maps back to the
+// sarifPrecision is the rule precision Import maps back to the
 // confidence, or "" for a confidence it has no precision for.
 func sarifPrecision(confidence int) string {
-	switch confidence {
-	case 95:
-		return "very-high"
-	case 85:
-		return "high"
-	case 70:
-		return "medium"
-	case 50:
-		return "low"
-	}
-	return ""
+	p, _ := exp.Lookup("confidence_precision", strconv.Itoa(confidence))
+	return p
 }
 
-func sarifRuleOf(f *Finding, id, toolName string) SARIFRule {
-	rule := SARIFRule{ID: id, Name: f.RuleName}
+func sarifRuleOf(f *ctis.Finding, id, toolName string) Rule {
+	rule := Rule{ID: id, Name: f.RuleName}
 	if f.Description != "" {
-		rule.ShortDescription = &SARIFMessage{Text: f.Description}
+		rule.ShortDescription = &Message{Text: f.Description}
 	}
 	if len(f.References) > 0 {
 		rule.HelpURI = f.References[0]
 	}
 	if f.Remediation != nil && f.Remediation.Recommendation != "" {
-		rule.Help = &SARIFMessage{Text: f.Remediation.Recommendation}
+		rule.Help = &Message{Text: f.Remediation.Recommendation}
 	}
 	if f.Severity.IsValid() {
-		rule.DefaultConfiguration = &SARIFRuleConfig{Level: sarifLevel(f.Severity)}
+		rule.DefaultConfiguration = &RuleConfig{Level: sarifLevel(f.Severity)}
 	}
 	props := map[string]any{}
 	if s, ok := sarifSecuritySeverity(f); ok {
@@ -266,10 +297,10 @@ func sarifRuleOf(f *Finding, id, toolName string) SARIFRule {
 		}
 	}
 	// The type comes back from the rule id or tool name; only when it would
-	// not is it written as the rule tag FromSARIF reads.
+	// not is it written as the rule tag Import reads.
 	if detectResultType(nil, id, toolName, "") != f.Type {
 		switch f.Type {
-		case FindingTypeVulnerability, FindingTypeWeakness, FindingTypeMisconfiguration, FindingTypeSecret:
+		case ctis.FindingTypeVulnerability, ctis.FindingTypeWeakness, ctis.FindingTypeMisconfiguration, ctis.FindingTypeSecret:
 			props["tags"] = []string{string(f.Type)}
 		}
 	}
@@ -279,15 +310,15 @@ func sarifRuleOf(f *Finding, id, toolName string) SARIFRule {
 	return rule
 }
 
-func sarifResultOf(f *Finding, ruleID string) (SARIFResult, error) {
+func sarifResultOf(f *ctis.Finding, ruleID string) (Result, error) {
 	title := f.Title
 	if title == "" {
 		title = f.Message
 	}
-	res := SARIFResult{
+	res := Result{
 		RuleID:          ruleID,
 		Level:           sarifLevel(f.Severity),
-		Message:         SARIFMessage{Text: title},
+		Message:         Message{Text: title},
 		CorrelationGUID: f.CorrelationID,
 		BaselineState:   f.BaselineState,
 		Kind:            sarifKindOut(f.Kind),
@@ -303,7 +334,7 @@ func sarifResultOf(f *Finding, ruleID string) (SARIFResult, error) {
 		res.Properties = props
 	}
 	if loc := sarifLocationOf(f.Location); loc != nil {
-		res.Locations = []SARIFLocation{*loc}
+		res.Locations = []Location{*loc}
 	}
 	if f.Fingerprint != "" {
 		res.Fingerprints = map[string]string{sarifFingerprintKey: f.Fingerprint}
@@ -319,7 +350,7 @@ func sarifResultOf(f *Finding, ruleID string) (SARIFResult, error) {
 		if cf := sarifCodeFlowOf(df); cf != nil {
 			b, err := json.Marshal([]sarifOutCodeFlow{*cf})
 			if err != nil {
-				return SARIFResult{}, err
+				return Result{}, err
 			}
 			res.CodeFlows = b
 		}
@@ -330,26 +361,26 @@ func sarifResultOf(f *Finding, ruleID string) (SARIFResult, error) {
 
 // sarifKindOut maps finding.kind to SARIF's spelling.
 func sarifKindOut(kind string) string {
-	if kind == "not_applicable" {
-		return "notApplicable"
+	if k, ok := exp.Lookup("kind_out", kind); ok {
+		return k
 	}
 	return kind
 }
 
-func sarifLocationOf(l *FindingLocation) *SARIFLocation {
+func sarifLocationOf(l *ctis.FindingLocation) *Location {
 	if l == nil {
 		return nil
 	}
-	loc := &SARIFLocation{}
-	region := &SARIFRegion{StartLine: l.StartLine, EndLine: l.EndLine, StartColumn: l.StartColumn, EndColumn: l.EndColumn}
+	loc := &Location{}
+	region := &Region{StartLine: l.StartLine, EndLine: l.EndLine, StartColumn: l.StartColumn, EndColumn: l.EndColumn}
 	if l.Snippet != "" {
-		region.Snippet = &SARIFSnippet{Text: l.Snippet}
+		region.Snippet = &Snippet{Text: l.Snippet}
 	}
 	hasRegion := region.StartLine > 0 || region.EndLine > 0 || region.StartColumn > 0 || region.EndColumn > 0 || region.Snippet != nil
 	if l.Path != "" || hasRegion {
-		pl := &SARIFPhysicalLocation{}
+		pl := &PhysicalLocation{}
 		if l.Path != "" {
-			pl.ArtifactLocation = &SARIFArtifactLocation{URI: l.Path}
+			pl.ArtifactLocation = &ArtifactLocation{URI: l.Path}
 		}
 		if hasRegion {
 			pl.Region = region
@@ -357,7 +388,7 @@ func sarifLocationOf(l *FindingLocation) *SARIFLocation {
 		loc.PhysicalLocation = pl
 	}
 	if ll := l.LogicalLocation; ll != nil && (ll.Name != "" || ll.FullyQualifiedName != "" || ll.Kind != "") {
-		loc.LogicalLocations = []SARIFLogicalLocation{{Name: ll.Name, FullyQualifiedName: ll.FullyQualifiedName, Kind: ll.Kind}}
+		loc.LogicalLocations = []LogicalLocation{{Name: ll.Name, FullyQualifiedName: ll.FullyQualifiedName, Kind: ll.Kind}}
 	}
 	if loc.PhysicalLocation == nil && loc.LogicalLocations == nil {
 		return nil
@@ -368,9 +399,9 @@ func sarifLocationOf(l *FindingLocation) *SARIFLocation {
 // sarifSuppressionsOf writes finding.suppression, or, for a finding
 // suppressed, a false positive or an accepted risk without one, an external
 // accepted suppression naming the status.
-func sarifSuppressionsOf(f *Finding) []SARIFSuppression {
+func sarifSuppressionsOf(f *ctis.Finding) []Suppression {
 	if s := f.Suppression; s != nil {
-		out := SARIFSuppression{Kind: "external", Justification: s.Justification}
+		out := Suppression{Kind: "external", Justification: s.Justification}
 		if s.Kind == "in_source" {
 			out.Kind = "inSource"
 		}
@@ -385,21 +416,21 @@ func sarifSuppressionsOf(f *Finding) []SARIFSuppression {
 		if out.Justification == "" {
 			out.Justification = s.Reason
 		}
-		return []SARIFSuppression{out}
+		return []Suppression{out}
 	}
 	switch f.Status {
-	case FindingStatusSuppressed, FindingStatusFalsePositive, FindingStatusAcceptedRisk:
-		return []SARIFSuppression{{Kind: "external", Status: "accepted", Justification: string(f.Status)}}
+	case ctis.FindingStatusSuppressed, ctis.FindingStatusFalsePositive, ctis.FindingStatusAcceptedRisk:
+		return []Suppression{{Kind: "external", Status: "accepted", Justification: string(f.Status)}}
 	}
 	return nil
 }
 
 // sarifCodeFlowOf writes the data flow as one thread flow, steps in index
 // order, each marked with its role.
-func sarifCodeFlowOf(df *DataFlow) *sarifOutCodeFlow {
+func sarifCodeFlowOf(df *ctis.DataFlow) *sarifOutCodeFlow {
 	// Built by appending: the input is bounded by Validate, and a summed
 	// capacity would be computed from untrusted lengths.
-	steps := append([]DataFlowLocation(nil), df.Sources...)
+	steps := append([]ctis.DataFlowLocation(nil), df.Sources...)
 	steps = append(steps, df.Intermediates...)
 	steps = append(steps, df.Sanitizers...)
 	steps = append(steps, df.Sinks...)
@@ -410,13 +441,13 @@ func sarifCodeFlowOf(df *DataFlow) *sarifOutCodeFlow {
 	tf := sarifOutThreadFlow{}
 	for _, s := range steps {
 		fl := sarifFlowLocation{}
-		region := &SARIFRegion{StartLine: s.Line, EndLine: s.EndLine, StartColumn: s.Column, EndColumn: s.EndColumn}
+		region := &Region{StartLine: s.Line, EndLine: s.EndLine, StartColumn: s.Column, EndColumn: s.EndColumn}
 		if s.Content != "" {
-			region.Snippet = &SARIFSnippet{Text: s.Content}
+			region.Snippet = &Snippet{Text: s.Content}
 		}
-		pl := &SARIFPhysicalLocation{}
+		pl := &PhysicalLocation{}
 		if s.Path != "" {
-			pl.ArtifactLocation = &SARIFArtifactLocation{URI: s.Path}
+			pl.ArtifactLocation = &ArtifactLocation{URI: s.Path}
 		}
 		if region.StartLine > 0 || region.EndLine > 0 || region.StartColumn > 0 || region.EndColumn > 0 || region.Snippet != nil {
 			pl.Region = region
@@ -425,18 +456,18 @@ func sarifCodeFlowOf(df *DataFlow) *sarifOutCodeFlow {
 			fl.PhysicalLocation = pl
 		}
 		if s.Function != "" {
-			fl.LogicalLocations = []SARIFLogicalLocation{{FullyQualifiedName: s.Function}}
+			fl.LogicalLocations = []LogicalLocation{{FullyQualifiedName: s.Function}}
 		}
 		if s.Label != "" {
-			fl.Message = &SARIFMessage{Text: s.Label}
+			fl.Message = &Message{Text: s.Label}
 		}
 		tfl := sarifOutThreadFlowLocation{Location: fl}
 		switch s.Type {
-		case DataFlowLocationSource:
+		case ctis.DataFlowLocationSource:
 			tfl.Kinds = []string{"source"}
-		case DataFlowLocationSink:
+		case ctis.DataFlowLocationSink:
 			tfl.Kinds = []string{"sink"}
-		case DataFlowLocationSanitizer:
+		case ctis.DataFlowLocationSanitizer:
 			tfl.Kinds = []string{"sanitizer"}
 		}
 		tf.Locations = append(tf.Locations, tfl)
@@ -446,28 +477,28 @@ func sarifCodeFlowOf(df *DataFlow) *sarifOutCodeFlow {
 
 // sarifWebOf writes the first http_exchange evidence item as a webRequest
 // and webResponse; values the item marks sensitive are masked.
-func sarifWebOf(items []EvidenceItem) (*SARIFWebRequest, *SARIFWebResponse) {
+func sarifWebOf(items []ctis.EvidenceItem) (*WebRequest, *WebResponse) {
 	for i := range items {
 		it := &items[i]
-		if it.Kind != EvidenceKindHTTPExchange || it.HTTP == nil {
+		if it.Kind != ctis.EvidenceKindHTTPExchange || it.HTTP == nil {
 			continue
 		}
-		var req *SARIFWebRequest
-		var resp *SARIFWebResponse
+		var req *WebRequest
+		var resp *WebResponse
 		if r := it.HTTP.Request; r != nil {
-			req = &SARIFWebRequest{
+			req = &WebRequest{
 				Method: r.Method,
-				Target: maskSensitiveSpans(r.URL, "/http/request/url", it.Sensitive),
+				Target: exportkit.MaskSensitiveSpans(r.URL, "/http/request/url", it.Sensitive),
 			}
 			req.Protocol, req.Version = sarifProtocolOut(r.HTTPVersion)
 			req.Headers = sarifHeadersOut(r.Headers, "/http/request/headers/", it.Sensitive)
-			req.Body = sarifBodyOut(maskSensitiveSpans(r.Body, "/http/request/body", it.Sensitive), r.BodyEncoding)
+			req.Body = sarifBodyOut(exportkit.MaskSensitiveSpans(r.Body, "/http/request/body", it.Sensitive), r.BodyEncoding)
 		}
 		if r := it.HTTP.Response; r != nil {
-			resp = &SARIFWebResponse{StatusCode: r.Status, ReasonPhrase: r.Reason}
+			resp = &WebResponse{StatusCode: r.Status, ReasonPhrase: r.Reason}
 			resp.Protocol, resp.Version = sarifProtocolOut(r.HTTPVersion)
 			resp.Headers = sarifHeadersOut(r.Headers, "/http/response/headers/", it.Sensitive)
-			resp.Body = sarifBodyOut(maskSensitiveSpans(r.Body, "/http/response/body", it.Sensitive), r.BodyEncoding)
+			resp.Body = sarifBodyOut(exportkit.MaskSensitiveSpans(r.Body, "/http/response/body", it.Sensitive), r.BodyEncoding)
 		}
 		return req, resp
 	}
@@ -485,15 +516,15 @@ func sarifProtocolOut(v string) (string, string) {
 
 // sarifHeadersOut writes headers as SARIF's name-to-value map: a header
 // sent twice is joined with ", "; sensitive headers are masked.
-func sarifHeadersOut(hs []EvidenceHeader, ptr string, spans []SensitiveSpan) map[string]string {
+func sarifHeadersOut(hs []ctis.EvidenceHeader, ptr string, spans []ctis.SensitiveSpan) map[string]string {
 	if len(hs) == 0 {
 		return nil
 	}
 	out := make(map[string]string, len(hs))
 	for k, h := range hs {
-		v := maskSensitiveSpans(h.Value, ptr+itoa(k)+"/value", spans)
-		if IsSensitiveHeader(h.Name) && v != "" {
-			v = redactedSecret
+		v := exportkit.MaskSensitiveSpans(h.Value, ptr+strconv.Itoa(k)+"/value", spans)
+		if ctis.IsSensitiveHeader(h.Name) && v != "" {
+			v = ctis.RedactedSecret
 		}
 		if prev, ok := out[h.Name]; ok {
 			v = prev + ", " + v
@@ -503,12 +534,12 @@ func sarifHeadersOut(hs []EvidenceHeader, ptr string, spans []SensitiveSpan) map
 	return out
 }
 
-func sarifBodyOut(body, encoding string) *SARIFContent {
+func sarifBodyOut(body, encoding string) *Content {
 	if body == "" {
 		return nil
 	}
-	if encoding == BodyEncodingBase64 {
-		return &SARIFContent{Binary: body}
+	if encoding == ctis.BodyEncodingBase64 {
+		return &Content{Binary: body}
 	}
-	return &SARIFContent{Text: body}
+	return &Content{Text: body}
 }

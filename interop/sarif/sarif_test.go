@@ -1,17 +1,17 @@
-package ctis
+package sarif
 
 import (
+	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/internal/interoptest"
+
 	"bytes"
 	"encoding/json"
-	"flag"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
-
-var updateGolden = flag.Bool("update", false, "rewrite testdata golden files")
 
 var fixedTime = time.Date(2026, 10, 2, 0, 0, 0, 0, time.UTC)
 
@@ -34,7 +34,7 @@ func checkGolden(t *testing.T, name string, v any) {
 	}
 	got = append(got, '\n')
 	path := filepath.Join("testdata", name)
-	if *updateGolden {
+	if *interoptest.Update {
 		if err := os.WriteFile(path, got, 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -50,20 +50,21 @@ func checkGolden(t *testing.T, name string, v any) {
 }
 
 func TestFromSARIFGolden(t *testing.T) {
-	s := loadSchemaSet(t)
 	for _, tool := range []string{"semgrep", "codeql", "trivy", "kinds", "betterleaks", "semgrep-suppressed"} {
 		t.Run(tool, func(t *testing.T) {
-			opts := DefaultConvertOptions()
+			opts := DefaultOptions()
 			opts.AssetValue = "github.com/example/shop"
 			opts.AssetID = "repo"
-			opts.BranchInfo = &BranchInfo{Name: "main", IsDefaultBranch: true, CommitSHA: "0123456789abcdef0123456789abcdef01234567"}
-			report, err := FromSARIF(readTestdata(t, "sarif/"+tool+".sarif"), opts)
+			opts.BranchInfo = &ctis.BranchInfo{Name: "main", IsDefaultBranch: true, CommitSHA: "0123456789abcdef0123456789abcdef01234567"}
+			report, err := Import(readTestdata(t, "sarif/"+tool+".sarif"), opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 			report.Metadata.GeneratedAt = fixedTime
-			report.Metadata.ID = testReportID
-			assertReportValid(t, s, report)
+			report.Metadata.ID = interoptest.ReportID
+			if err := report.Validate(); err != nil {
+				t.Fatalf("not valid CTIS: %v", err)
+			}
 			if err := report.Validate(); err != nil {
 				t.Fatalf("converter output fails Validate: %v", err)
 			}
@@ -73,11 +74,11 @@ func TestFromSARIFGolden(t *testing.T) {
 }
 
 func TestFromSARIFSemgrep(t *testing.T) {
-	r, err := FromSARIF(readTestdata(t, "sarif/semgrep.sarif"), nil)
+	r, err := Import(readTestdata(t, "sarif/semgrep.sarif"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := r.Tool.Techniques; len(got) != 1 || got[0] != TechniqueSAST {
+	if got := r.Tool.Techniques; len(got) != 1 || got[0] != ctis.TechniqueSAST {
 		t.Errorf("semgrep techniques = %v, want [sast]", got)
 	}
 	sqli := r.Findings[0]
@@ -87,34 +88,34 @@ func TestFromSARIFSemgrep(t *testing.T) {
 	if got := strings.Join(sqli.Vulnerability.OWASPIDs, ","); got != "A01:2017,A03:2021" {
 		t.Errorf("OWASP ids = %q", got)
 	}
-	if sqli.Severity != SeverityMedium {
+	if sqli.Severity != ctis.SeverityMedium {
 		t.Errorf("rule default level warning should give medium, got %s", sqli.Severity)
 	}
 	if len(sqli.Fingerprint) != 64 {
 		t.Errorf("long fingerprint should be hashed to 64 hex chars, got %q", sqli.Fingerprint)
 	}
-	if len(r.Assets) != 1 || r.Assets[0].Type != AssetTypeUnclassified || sqli.AssetRef != r.Assets[0].ID {
+	if len(r.Assets) != 1 || r.Assets[0].Type != ctis.AssetTypeUnclassified || sqli.AssetRef != r.Assets[0].ID {
 		t.Errorf("without a configured asset the findings go on an unclassified one: %v", r.Assets)
 	}
-	if sqli.Type != FindingTypeWeakness {
+	if sqli.Type != ctis.FindingTypeWeakness {
 		t.Errorf("a SAST result without an advisory id is a weakness, got %s", sqli.Type)
 	}
 }
 
 func TestFromSARIFCodeQL(t *testing.T) {
-	r, err := FromSARIF(readTestdata(t, "sarif/codeql.sarif"), nil)
+	r, err := Import(readTestdata(t, "sarif/codeql.sarif"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []struct {
 		rule string
-		sev  Severity
+		sev  ctis.Severity
 		cwes string
 	}{
-		{"js/reflected-xss", SeverityHigh, "CWE-79,CWE-116"},
-		{"js/sql-injection", SeverityHigh, "CWE-89,CWE-90,CWE-943"},
+		{"js/reflected-xss", ctis.SeverityHigh, "CWE-79,CWE-116"},
+		{"js/sql-injection", ctis.SeverityHigh, "CWE-89,CWE-90,CWE-943"},
 		// Found through rule.index: the result has no ruleId.
-		{"js/command-line-injection", SeverityCritical, "CWE-78,CWE-88"},
+		{"js/command-line-injection", ctis.SeverityCritical, "CWE-78,CWE-88"},
 	}
 	if len(r.Findings) != len(want) {
 		t.Fatalf("got %d findings", len(r.Findings))
@@ -140,19 +141,19 @@ func TestFromSARIFCodeQL(t *testing.T) {
 }
 
 func TestFromSARIFTrivy(t *testing.T) {
-	r, err := FromSARIF(readTestdata(t, "sarif/trivy.sarif"), &ConvertOptions{ToolType: ""})
+	r, err := Import(readTestdata(t, "sarif/trivy.sarif"), &Options{ToolType: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []struct {
-		typ FindingType
-		sev Severity
+		typ ctis.FindingType
+		sev ctis.Severity
 		cve string
 	}{
-		{FindingTypeVulnerability, SeverityCritical, "CVE-2021-44228"},
-		{FindingTypeVulnerability, SeverityMedium, ""},
-		{FindingTypeMisconfiguration, SeverityHigh, ""},
-		{FindingTypeSecret, SeverityCritical, ""},
+		{ctis.FindingTypeVulnerability, ctis.SeverityCritical, "CVE-2021-44228"},
+		{ctis.FindingTypeVulnerability, ctis.SeverityMedium, ""},
+		{ctis.FindingTypeMisconfiguration, ctis.SeverityHigh, ""},
+		{ctis.FindingTypeSecret, ctis.SeverityCritical, ""},
 	}
 	for i, w := range want {
 		f := r.Findings[i]
@@ -160,7 +161,7 @@ func TestFromSARIFTrivy(t *testing.T) {
 			t.Errorf("finding %d (%s): %s/%s, want %s/%s", i, f.RuleID, f.Type, f.Severity, w.typ, w.sev)
 		}
 		cve := ""
-		if c := CVEs(f.Vulnerability); len(c) > 0 {
+		if c := ctis.CVEs(f.Vulnerability); len(c) > 0 {
 			cve = c[0]
 		}
 		if cve != w.cve {
@@ -169,16 +170,16 @@ func TestFromSARIFTrivy(t *testing.T) {
 	}
 
 	// ToolType sca forces vulnerability, whatever the tool name says.
-	r, err = FromSARIF(readTestdata(t, "sarif/trivy.sarif"), &ConvertOptions{ToolType: "sca"})
+	r, err = Import(readTestdata(t, "sarif/trivy.sarif"), &Options{ToolType: "sca"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, f := range r.Findings {
-		if f.Type != FindingTypeVulnerability {
+		if f.Type != ctis.FindingTypeVulnerability {
 			t.Errorf("ToolType sca: %s typed %s", f.RuleID, f.Type)
 		}
 	}
-	if r.Tool.Techniques[0] != TechniqueSCA {
+	if r.Tool.Techniques[0] != ctis.TechniqueSCA {
 		t.Errorf("ToolType sca techniques = %v", r.Tool.Techniques)
 	}
 }
@@ -190,7 +191,7 @@ func TestFromSARIFFingerprintDeterministic(t *testing.T) {
 	  {"ruleId":"r","message":{"text":"m"},"fingerprints":{"c/v1":"cccccccccccccccc","a/v1":"aaaaaaaaaaaaaaaa","b/v1":"bbbbbbbbbbbbbbbb","d/v1":"dddddddddddddddd"}}]}]}`)
 	seen := map[string]int{}
 	for i := 0; i < 200; i++ {
-		r, err := FromSARIF(log, nil)
+		r, err := Import(log, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -205,7 +206,7 @@ func TestFromSARIFAllRuns(t *testing.T) {
 	log := []byte(`{"version":"2.1.0","runs":[
 	  {"tool":{"driver":{"name":"gitleaks"}},"results":[{"ruleId":"aws","message":{"text":"key"}}]},
 	  {"tool":{"driver":{"name":"semgrep"}},"results":[{"ruleId":"r1","message":{"text":"a"}},{"ruleId":"r2","message":{"text":"b"}}]}]}`)
-	r, err := FromSARIF(log, nil)
+	r, err := Import(log, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +220,7 @@ func TestFromSARIFAllRuns(t *testing.T) {
 		}
 		ids[f.ID] = true
 	}
-	if r.Findings[0].Type != FindingTypeSecret || r.Findings[1].Type != FindingTypeWeakness {
+	if r.Findings[0].Type != ctis.FindingTypeSecret || r.Findings[1].Type != ctis.FindingTypeWeakness {
 		t.Errorf("type per run: %s, %s", r.Findings[0].Type, r.Findings[1].Type)
 	}
 	if r.Findings[2].Tool == nil || r.Findings[2].Tool.Name != "semgrep" {
@@ -231,11 +232,11 @@ func TestFromSARIFAllRuns(t *testing.T) {
 }
 
 func TestFromSARIFEdgeCases(t *testing.T) {
-	if _, err := FromSARIF([]byte("{"), nil); err == nil {
+	if _, err := Import([]byte("{"), nil); err == nil {
 		t.Error("broken JSON must fail")
 	}
-	r, err := FromSARIF([]byte(`{"version":"2.1.0","runs":[]}`), nil)
-	if err != nil || len(r.Findings) != 0 || r.Version != SchemaVersion {
+	r, err := Import([]byte(`{"version":"2.1.0","runs":[]}`), nil)
+	if err != nil || len(r.Findings) != 0 || r.Version != ctis.SchemaVersion {
 		t.Errorf("empty log: %v %+v", err, r)
 	}
 	// Out-of-range rule index and security-severity are ignored, not trusted.
@@ -244,17 +245,17 @@ func TestFromSARIFEdgeCases(t *testing.T) {
 	  {"ruleIndex":7,"message":{"text":"m"}},
 	  {"ruleId":"r","level":"note","message":{"text":"n"}},
 	  {"ruleId":"r","message":{"text":""},"properties":{"security-severity":3.1}}]}]}`)
-	r, err = FromSARIF(log, nil)
+	r, err = Import(log, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Findings[0].RuleID != "" || r.Findings[0].Severity != SeverityMedium {
+	if r.Findings[0].RuleID != "" || r.Findings[0].Severity != ctis.SeverityMedium {
 		t.Errorf("bad index: %+v", r.Findings[0])
 	}
-	if r.Findings[1].Severity != SeverityLow {
+	if r.Findings[1].Severity != ctis.SeverityLow {
 		t.Errorf("invalid security-severity must fall back to the level: %s", r.Findings[1].Severity)
 	}
-	if r.Findings[2].Severity != SeverityLow || r.Findings[2].Title != "r" {
+	if r.Findings[2].Severity != ctis.SeverityLow || r.Findings[2].Title != "r" {
 		t.Errorf("result security-severity 3.1: %+v", r.Findings[2])
 	}
 	if got := detectTechniques("unknown-tool", ""); len(got) != 0 {
@@ -265,7 +266,7 @@ func TestFromSARIFEdgeCases(t *testing.T) {
 // opengrep SARIF (driver "Opengrep OSS") is code analysis, as semgrep's is.
 func TestDetectTechniques_Opengrep(t *testing.T) {
 	got := detectTechniques("Opengrep OSS", "")
-	if len(got) == 0 || got[0] != TechniqueSAST {
+	if len(got) == 0 || got[0] != ctis.TechniqueSAST {
 		t.Errorf("opengrep techniques = %v", got)
 	}
 }

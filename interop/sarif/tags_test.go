@@ -1,6 +1,8 @@
-package ctis
+package sarif
 
 import (
+	"github.com/openctemio/ctis/v2"
+
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -9,10 +11,10 @@ import (
 )
 
 // SARIF properties.tags (on the result and on its rule) are carried into
-// finding.tags. FromSARIF used to drop them; only the CWE/OWASP ids and the
+// finding.tags. Import used to drop them; only the CWE/OWASP ids and the
 // Trivy type markers inside them were read.
 func TestFromSARIF_TagsFromResultAndRule(t *testing.T) {
-	report, err := FromSARIF(readTestdata(t, "sarif/betterleaks.sarif"), nil)
+	report, err := Import(readTestdata(t, "sarif/betterleaks.sarif"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +40,7 @@ func TestFromSARIF_TagsFromResultAndRule(t *testing.T) {
 func TestFromSARIF_NoTagsLeavesFieldUnset(t *testing.T) {
 	log := []byte(`{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"x","rules":[{"id":"r","properties":{"tags":[1,true,""]}}]}},
 	  "results":[{"ruleId":"r","message":{"text":"m"}},{"ruleId":"other","message":{"text":"n"},"properties":{"tags":{"a":"b"}}}]}]}`)
-	report, err := FromSARIF(log, nil)
+	report, err := Import(log, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +90,7 @@ func TestFromSARIF_TagsHostileInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	report, err := FromSARIF(log, nil)
+	report, err := Import(log, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,23 +118,23 @@ func TestFromSARIF_TagsHostileInput(t *testing.T) {
 // same way: secret findings from a secret-capability tool.
 func TestDetectFindingType_Betterleaks(t *testing.T) {
 	for _, name := range []string{"gitleaks", "betterleaks", "Betterleaks", "betterleaks v1.1.0"} {
-		if got := detectFindingType(name, ""); got != FindingTypeSecret {
+		if got := detectFindingType(name, ""); got != ctis.FindingTypeSecret {
 			t.Errorf("detectFindingType(%q) = %s, want secret", name, got)
 		}
-		if got := detectTechniques(name, ""); !reflect.DeepEqual(got, []Technique{TechniqueSecret}) {
+		if got := detectTechniques(name, ""); !reflect.DeepEqual(got, []ctis.Technique{ctis.TechniqueSecret}) {
 			t.Errorf("detectTechniques(%q) = %q, want [secret]", name, got)
 		}
 	}
-	report, err := FromSARIF(readTestdata(t, "sarif/betterleaks.sarif"), nil)
+	report, err := Import(readTestdata(t, "sarif/betterleaks.sarif"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for i, f := range report.Findings {
-		if f.Type != FindingTypeSecret {
+		if f.Type != ctis.FindingTypeSecret {
 			t.Errorf("finding %d type = %s, want secret", i, f.Type)
 		}
 	}
-	if !reflect.DeepEqual(report.Tool.Techniques, []Technique{TechniqueSecret}) {
+	if !reflect.DeepEqual(report.Tool.Techniques, []ctis.Technique{ctis.TechniqueSecret}) {
 		t.Errorf("tool techniques = %q, want [secret]", report.Tool.Techniques)
 	}
 }
