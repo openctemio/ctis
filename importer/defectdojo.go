@@ -162,7 +162,7 @@ type ddDocument struct {
 
 const ddFindings = "/findings[]"
 
-func parseDefectDojo(b *builder, r io.Reader) error {
+func parseDefectDojo(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatDefectDojo, b.lim)
 	if err != nil {
 		return err
@@ -258,7 +258,7 @@ func ddStatus(f *ddFinding) string {
 
 // ddFinding adds one finding per endpoint host (one when there is none) and
 // returns how many it added.
-func (b *builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int, error) {
+func (b *Builder) ddFinding(d *ddFinding, doc *jsonDoc, i int, ptr string) (int, error) {
 	title := line(d.Title.String(), capTitle)
 	if title == "" {
 		b.issue(doc.issueAt(ddFindings, i, ptr, "finding without a title: skipped"))
@@ -496,7 +496,7 @@ func ddNetwork(ep *ddEndpoint, host string, extraIn map[string]string) (*ctis.Ne
 
 // defaultAsset is the asset of records that name none: Options.DefaultAsset,
 // else an unclassified asset named after the tool.
-func (b *builder) defaultAsset() ctis.Asset {
+func (b *Builder) defaultAsset() ctis.Asset {
 	if a := b.opts.DefaultAsset; a != nil && a.Value != "" {
 		out := *a
 		if out.Type == "" {

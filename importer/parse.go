@@ -8,8 +8,6 @@ import (
 	"io"
 	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/openctemio/ctis/v2"
 	"github.com/openctemio/ctis/v2/fingerprint"
@@ -90,6 +88,10 @@ type Options struct {
 	// import_scope=in_target. Empty: the target domain the bundle names.
 	ScopeDomains []string
 
+	// Observe lists the source field paths the input held in
+	// Result.Fields (a mapping editor shows them next to Result.Unmapped).
+	Observe bool
+
 	// The Qualys KnowledgeBase XML for a Qualys detection file. Optional:
 	// without it, detections keep their QID and results but have no title
 	// beyond the QID, CVEs or CVSS.
@@ -140,6 +142,9 @@ func parse(ctx context.Context, r io.Reader, opts Options) (*Result, []string, e
 	}
 	p, ok := parsers[format]
 	if !ok {
+		if mod, isAdapter := adapterModules[format]; isAdapter {
+			return nil, nil, &ParseError{Format: format, Msg: "this format is read by the adapter module " + mod + "; import it to read " + string(format), Err: ErrUnknownFormat}
+		}
 		return nil, nil, &ParseError{Format: format, Msg: "not a supported format; supported: " + formatList(), Err: ErrUnknownFormat}
 	}
 	b := newBuilder(ctx, format, opts)
@@ -149,7 +154,11 @@ func parse(ctx context.Context, r io.Reader, opts Options) (*Result, []string, e
 	if err := b.guard(); err != nil {
 		return nil, nil, err
 	}
-	return b.finish(), b.obs.paths(), nil
+	res, paths := b.finish(), b.obs.paths()
+	if opts.Observe {
+		res.Fields = paths
+	}
+	return res, paths, nil
 }
 
 func formatList() string {
@@ -161,7 +170,7 @@ func formatList() string {
 }
 
 // parsers are filled by the <format>.go files.
-var parsers = map[Format]func(*builder, io.Reader) error{}
+var parsers = map[Format]func(*Builder, io.Reader) error{}
 
 // companions name the spec of the document read together with the main
 // document of a format (the Qualys KnowledgeBase).
@@ -171,7 +180,7 @@ var companions = map[Format]Format{FormatQualys: FormatQualysKB}
 var tools = map[Format]ctis.Tool{}
 
 // builder collects one Result within the limits.
-type builder struct {
+type Builder struct {
 	ctx    context.Context
 	format Format
 	opts   Options
@@ -184,7 +193,7 @@ type builder struct {
 	ops    int
 }
 
-func newBuilder(ctx context.Context, format Format, opts Options) *builder {
+func newBuilder(ctx context.Context, format Format, opts Options) *Builder {
 	now := opts.Now
 	if now.IsZero() {
 		now = time.Now().UTC()
@@ -208,7 +217,7 @@ func newBuilder(ctx context.Context, format Format, opts Options) *builder {
 		t.Techniques = append([]ctis.Technique(nil), tool.Techniques...)
 		report.Tool = &t
 	}
-	return &builder{
+	return &Builder{
 		ctx:    ctx,
 		format: format,
 		opts:   opts,
@@ -221,7 +230,7 @@ func newBuilder(ctx context.Context, format Format, opts Options) *builder {
 }
 
 // tick checks the context every few thousand operations.
-func (b *builder) tick() error {
+func (b *Builder) tick() error {
 	b.ops++
 	if b.ops%4096 == 0 {
 		if err := b.ctx.Err(); err != nil {
@@ -231,13 +240,13 @@ func (b *builder) tick() error {
 	return nil
 }
 
-func (b *builder) issue(is Issue) {
+func (b *Builder) issue(is Issue) {
 	if len(b.res.Issues) < b.lim.MaxIssues {
 		b.res.Issues = append(b.res.Issues, is)
 	}
 }
 
-func (b *builder) tooMany(what string, limit int) error {
+func (b *Builder) tooMany(what string, limit int) error {
 	return &ParseError{Format: b.format, Msg: fmt.Sprintf("more than %d %s", limit, what), Err: ErrTooLarge}
 }
 
@@ -247,7 +256,7 @@ func (b *builder) tooMany(what string, limit int) error {
 // canonical form is left out with an issue and "" is returned (no error), so
 // the caller skips what depends on it. An empty a.ID is derived from the
 // type and the canonical value.
-func (b *builder) asset(a ctis.Asset) (string, error) {
+func (b *Builder) asset(a ctis.Asset) (string, error) {
 	c, err := ctis.CanonicalAssetValue(a.Type, a.Value)
 	if err != nil {
 		b.issue(Issue{Message: fmt.Sprintf("asset %s %q left out: %s", a.Type, line(a.Value, 200), line(err.Error(), 200))})
@@ -274,7 +283,7 @@ func (b *builder) asset(a ctis.Asset) (string, error) {
 }
 
 // finding adds a finding unless it is below the minimum severity.
-func (b *builder) finding(f ctis.Finding) error {
+func (b *Builder) finding(f ctis.Finding) error {
 	if b.opts.MinSeverity != "" && f.Severity.Score() < b.opts.MinSeverity.Score() {
 		b.res.Stats.Skipped++
 		return nil
@@ -291,7 +300,7 @@ func (b *builder) finding(f ctis.Finding) error {
 }
 
 // finish fills the counts and the unmapped paths.
-func (b *builder) finish() *Result {
+func (b *Builder) finish() *Result {
 	r := b.res
 	r.Stats.Assets = len(r.Report.Assets)
 	r.Stats.Findings = len(r.Report.Findings)
@@ -312,130 +321,4 @@ func (b *builder) finish() *Result {
 		r.Stats.BySeverity = nil
 	}
 	return r
-}
-
-// Text caps, the same as the CTIS receiver caps (spec section 7), so a
-// report never carries more than a receiver keeps.
-const (
-	capTitle       = 500
-	capCategory    = 255
-	capDescription = 32 << 10
-	capEvidence    = 64 << 10
-	capRemediation = 16 << 10
-	capReference   = 2 << 10
-	maxReferences  = 100
-	capTag         = 100
-	maxTags        = 50
-	capShort       = 255
-)
-
-const truncMarker = "…[truncated]"
-
-// text cleans a source text: control characters other than tab, newline and
-// carriage return are removed, the ends are trimmed, and a value longer than
-// limit characters is cut with a marker.
-func text(s string, limit int) string {
-	s = strings.TrimSpace(strings.Map(func(r rune) rune {
-		if r == '\t' || r == '\n' || r == '\r' {
-			return r
-		}
-		if unicode.IsControl(r) || r == utf8.RuneError {
-			return -1
-		}
-		return r
-	}, s))
-	if utf8.RuneCountInString(s) <= limit {
-		return s
-	}
-	runes := []rune(s)
-	return string(runes[:limit-utf8.RuneCountInString(truncMarker)]) + truncMarker
-}
-
-// line cleans a one-line value: like text, and newlines and tabs become
-// spaces.
-func line(s string, limit int) string {
-	return text(strings.Join(strings.Fields(s), " "), limit)
-}
-
-// addRefs appends bounded, distinct references.
-func addRefs(dst []string, refs ...string) []string {
-	for _, r := range refs {
-		r = line(r, capReference)
-		if r == "" || len(dst) >= maxReferences {
-			continue
-		}
-		dup := false
-		for _, d := range dst {
-			if d == r {
-				dup = true
-				break
-			}
-		}
-		if !dup {
-			dst = append(dst, r)
-		}
-	}
-	return dst
-}
-
-// extra stores an unmapped source value on f (bounded by ctis.SetSourceExtra).
-func extra(f *ctis.Finding, key, value string) {
-	value = text(value, ctis.MaxSourceExtraValueLen)
-	if value == "" {
-		return
-	}
-	ctis.SetSourceExtra(f, key, value)
-}
-
-// extras stores key/value pairs in order (see extra).
-func extras(f *ctis.Finding, kv ...string) {
-	for i := 0; i+1 < len(kv); i += 2 {
-		extra(f, kv[i], kv[i+1])
-	}
-}
-
-// addVulnID adds a CVE, GHSA or OSV id to v once (canonical form); an id of
-// another shape is dropped. Use addVendorID for a vendor's own id.
-func addVulnID(v *ctis.VulnerabilityDetails, raw string) {
-	if _, ok := ctis.NormalizeVulnerabilityID(strings.TrimSpace(raw)); !ok {
-		return
-	}
-	v.AddID(raw, "")
-}
-
-// addVendorID adds an id the vendor named source issued (an advisory number,
-// a plugin id the source treats as the vulnerability's) to v.
-func addVendorID(v *ctis.VulnerabilityDetails, raw, source string) {
-	id, ok := ctis.NormalizeVulnerabilityID(strings.TrimSpace(raw))
-	if !ok || len(v.IDs) >= ctis.MaxVulnerabilityIDs {
-		return
-	}
-	if id.Type == ctis.VulnerabilityIDVendor {
-		id.Source = line(source, ctis.MaxScoreSourceLen)
-	}
-	for _, have := range v.IDs {
-		if have.Type == id.Type && strings.EqualFold(have.ID, id.ID) {
-			return
-		}
-	}
-	v.IDs = append(v.IDs, id)
-}
-
-// sourceRef is a bounded source reference.
-func sourceRef(system, id string) ctis.SourceRef {
-	return ctis.SourceRef{System: system, ID: line(id, ctis.MaxSourceRefIDLen)}
-}
-
-// addScore appends a score if there is room and it is valid on its own.
-func addScore(f *ctis.Finding, s ctis.Score) {
-	if len(f.Scores) >= ctis.MaxScores {
-		return
-	}
-	p := probe()
-	p.Assets = []ctis.Asset{{ID: "probe", Type: ctis.AssetTypeHost, Value: "probe.invalid"}}
-	p.Findings = []ctis.Finding{{Type: ctis.FindingTypeVulnerability, Title: "t", Severity: ctis.SeverityInfo, AssetRef: "probe", Scores: []ctis.Score{s}}}
-	if p.Validate() != nil {
-		return
-	}
-	f.Scores = append(f.Scores, s)
 }

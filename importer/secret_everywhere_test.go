@@ -127,7 +127,7 @@ func TestSecretMaskedEverywhere_QualysResults(t *testing.T) {
 // DefectDojo export of a secret scan, a future format) is masked by the
 // builder: snippet, title and every other field.
 func TestSecretMaskedEverywhere_Builder(t *testing.T) {
-	b := &builder{res: &Result{Report: ctis.NewReport()}, lim: DefaultLimits()}
+	b := &Builder{res: &Result{Report: ctis.NewReport()}, lim: DefaultLimits()}
 	b.res.Stats.BySeverity = map[ctis.Severity]int{}
 	f := ctis.Finding{
 		Type: ctis.FindingTypeSecret, Title: "found " + leakToken, Severity: ctis.SeverityHigh,

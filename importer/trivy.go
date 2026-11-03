@@ -137,7 +137,7 @@ type trivyReport struct {
 	Results []trivyResult `json:"Results"`
 }
 
-func parseTrivy(b *builder, r io.Reader) error {
+func parseTrivy(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatTrivy, b.lim)
 	if err != nil {
 		return err
@@ -192,7 +192,7 @@ func parseTrivy(b *builder, r io.Reader) error {
 	return b.bindAll(a)
 }
 
-func (b *builder) trivyRecord(f ctis.Finding, ok bool) error {
+func (b *Builder) trivyRecord(f ctis.Finding, ok bool) error {
 	b.res.Stats.Records++
 	if err := b.tick(); err != nil {
 		return err
@@ -205,7 +205,7 @@ func (b *builder) trivyRecord(f ctis.Finding, ok bool) error {
 	return b.finding(f)
 }
 
-func (b *builder) trivyPackage(p *trivyPackage, file string) error {
+func (b *Builder) trivyPackage(p *trivyPackage, file string) error {
 	name := line(p.Name, capShort)
 	if name == "" {
 		return nil

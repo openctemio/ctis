@@ -108,7 +108,7 @@ type qHost struct {
 	LastVMScanDuration string       `xml:"LAST_VM_SCANNED_DURATION"`
 }
 
-func parseQualys(b *builder, r io.Reader) error {
+func parseQualys(b *Builder, r io.Reader) error {
 	xr := newXMLReader(r, FormatQualys, b.lim, map[string]string{"QDS_FACTOR": "name"}, b.obs)
 	dec := xml.NewTokenDecoder(xr)
 	sawRoot := false
@@ -187,7 +187,7 @@ func qualysTime(s string) string {
 	return ""
 }
 
-func (b *builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error {
+func (b *Builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error {
 	fqdn := strings.ToLower(strings.TrimSuffix(firstNonEmpty(h.DNSFQDN, h.DNS), "."))
 	value := line(firstNonEmpty(fqdn, h.IP, h.IPv6, h.NetBIOS), capShort)
 	if value == "" {
@@ -281,7 +281,7 @@ func (b *builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error
 	return nil
 }
 
-func (b *builder) qualysFinding(d *qDetection, assetID, assetValue string, lineNo int) (ctis.Finding, bool) {
+func (b *Builder) qualysFinding(d *qDetection, assetID, assetValue string, lineNo int) (ctis.Finding, bool) {
 	const p = "/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION"
 	qid := strings.TrimSpace(d.QID)
 	if _, err := strconv.ParseUint(qid, 10, 32); err != nil {
@@ -467,7 +467,7 @@ type qVuln struct {
 
 // qualysKnowledgeBase streams the KnowledgeBase and enriches the findings of
 // every QID the detections named.
-func (b *builder) qualysKnowledgeBase(r io.Reader, byQID map[string][]int) error {
+func (b *Builder) qualysKnowledgeBase(r io.Reader, byQID map[string][]int) error {
 	xr := newXMLReader(r, FormatQualysKB, b.lim, map[string]string{"THREAT_INTEL": "id"}, b.obs)
 	dec := xml.NewTokenDecoder(xr)
 	sawRoot := false
@@ -541,7 +541,7 @@ var qualysThreatSignal = map[string]ctis.ThreatSignalType{
 	"cisa_known_exploited_vulns": ctis.ThreatSignalKEV, "ransomware": ctis.ThreatSignalRansomwareUse,
 }
 
-func (b *builder) qualysEnrich(f *ctis.Finding, v *qVuln) {
+func (b *Builder) qualysEnrich(f *ctis.Finding, v *qVuln) {
 	if t := line(v.Title, capTitle); t != "" {
 		f.Title = t
 		f.RuleName = t

@@ -2,7 +2,6 @@ package importer
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/openctemio/ctis/v2"
 )
@@ -17,19 +16,9 @@ import (
 // dropped. Parse never returns a report that fails ctis.Report.Validate;
 // if one still would, that is a bug and Parse fails instead.
 
-// probeTime is any non-zero time: Validate requires metadata.generated_at.
-var probeTime = time.Unix(1, 0).UTC()
-
-// probeID is a UUIDv7: Validate requires metadata.id.
-const probeID = "0192f0a0-0000-7000-8000-000000000001"
-
-func probe() ctis.Report {
-	return ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{ID: probeID, GeneratedAt: probeTime}}
-}
-
 // guard drops the entities that are not valid CTIS and returns how many it
 // dropped of each kind.
-func (b *builder) guard() error {
+func (b *Builder) guard() error {
 	rep := b.res.Report
 	var droppedAssets, droppedFindings, droppedDeps, droppedStatements int
 	firstErr := map[string]string{}

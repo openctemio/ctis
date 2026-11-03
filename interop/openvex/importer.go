@@ -58,7 +58,7 @@ type openvexDoc struct {
 	Statements  []openvexStatement `json:"statements"`
 }
 
-func parseOpenVEX(b *builder, r io.Reader) error {
+func parseOpenVEX(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatOpenVEX, b.lim)
 	if err != nil {
 		return err

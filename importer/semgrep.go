@@ -176,9 +176,9 @@ type sgEngine struct {
 
 var semgrepEngine = sgEngine{format: FormatSemgrep, name: "semgrep"}
 
-func parseSemgrep(b *builder, r io.Reader) error { return parseSemgrepShape(b, r, semgrepEngine) }
+func parseSemgrep(b *Builder, r io.Reader) error { return parseSemgrepShape(b, r, semgrepEngine) }
 
-func parseSemgrepShape(b *builder, r io.Reader, eng sgEngine) error {
+func parseSemgrepShape(b *Builder, r io.Reader, eng sgEngine) error {
 	data, err := readAll(r, eng.format, b.lim)
 	if err != nil {
 		return err

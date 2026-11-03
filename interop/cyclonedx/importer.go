@@ -147,7 +147,7 @@ type cdxComp struct {
 	dep *ctis.Dependency // nil for the subject
 }
 
-func parseCycloneDX(b *builder, r io.Reader) error {
+func parseCycloneDX(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatCycloneDX, b.lim)
 	if err != nil {
 		return err
@@ -458,7 +458,7 @@ func cdxRatingSystem(method, vector string) (ctis.ScoreSystem, string) {
 	return ctis.ScoreSystemVendor, ""
 }
 
-func (b *builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*cdxComp, docSource string, ensureAsset func() (string, error)) error {
+func (b *Builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*cdxComp, docSource string, ensureAsset func() (string, error)) error {
 	ptr := fmt.Sprintf("/vulnerabilities/%d", idx)
 	vid := line(v.ID, ctis.MaxNativeIDLen)
 	if vid == "" {
@@ -567,7 +567,7 @@ func (b *builder) cdxVuln(doc *jsonDoc, v *cdxVuln, idx int, byRef map[string]*c
 	return nil
 }
 
-func (b *builder) cdxFinding(v *cdxVuln, vid string, ids *ctis.VulnerabilityDetails, c *cdxComponent, ranges []string, assetID, rawRef string) ctis.Finding {
+func (b *Builder) cdxFinding(v *cdxVuln, vid string, ids *ctis.VulnerabilityDetails, c *cdxComponent, ranges []string, assetID, rawRef string) ctis.Finding {
 	name := line(c.Name, capShort)
 	if g := line(c.Group, capShort); g != "" {
 		name = g + "/" + name

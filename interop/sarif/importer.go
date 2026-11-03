@@ -51,7 +51,7 @@ func sarifProvenance(v *sarifView) *ctis.Asset {
 	return nil
 }
 
-func parseSARIF(b *builder, r io.Reader) error {
+func parseSARIF(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatSARIF, b.lim)
 	if err != nil {
 		return err

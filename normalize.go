@@ -3,6 +3,7 @@ package ctis
 import (
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // MaxAssetValueLen bounds asset.value.
@@ -155,4 +156,16 @@ func CanonicalRepository(s string) (string, error) {
 		path = strings.ToLower(path)
 	}
 	return host + "/" + path, nil
+}
+
+// truncateUTF8 cuts s to at most maxBytes bytes on a character boundary.
+func truncateUTF8(s string, maxBytes int) string {
+	if len(s) <= maxBytes {
+		return s
+	}
+	cut := maxBytes
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut]
 }

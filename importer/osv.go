@@ -92,7 +92,7 @@ type osvRecord struct {
 	DatabaseSpecific json.RawMessage `json:"database_specific"`
 }
 
-func parseOSV(b *builder, r io.Reader) error {
+func parseOSV(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatOSV, b.lim)
 	if err != nil {
 		return err
@@ -193,7 +193,7 @@ type osvGroup struct {
 	records     []*osvRecord
 }
 
-func (b *builder) osvFindings(doc *jsonDoc, p *osvPackage, assetID, label string, pkgIdx int, ptr string) error {
+func (b *Builder) osvFindings(doc *jsonDoc, p *osvPackage, assetID, label string, pkgIdx int, ptr string) error {
 	byID := map[string]*osvRecord{}
 	for i := range p.Vulnerabilities {
 		rec := &p.Vulnerabilities[i]
@@ -268,7 +268,7 @@ func osvScores(f *ctis.Finding, sev []osvSeverity, source string) {
 	}
 }
 
-func (b *builder) osvFinding(p *osvPackage, g *osvGroup, assetID string) ctis.Finding {
+func (b *Builder) osvFinding(p *osvPackage, g *osvGroup, assetID string) ctis.Finding {
 	primary := g.records[0]
 	pid := line(primary.ID, ctis.MaxNativeIDLen)
 	name := line(p.Package.Name, capShort)

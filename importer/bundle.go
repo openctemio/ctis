@@ -36,7 +36,7 @@ const (
 )
 
 func init() {
-	parsers[FormatReconFTW] = func(*builder, io.Reader) error {
+	parsers[FormatReconFTW] = func(*Builder, io.Reader) error {
 		return &ParseError{Format: FormatReconFTW, Msg: "a recon results directory holds many files; read it with ParseBundle", Err: ErrUnknownFormat}
 	}
 	t := ctis.Tool{Name: "reconftw", Vendor: "six2dez", InfoURL: "https://github.com/six2dez/reconftw", Techniques: []ctis.Technique{ctis.TechniqueEASM}}
@@ -203,7 +203,7 @@ func ParseBundle(ctx context.Context, files []ArchiveFile, opts Options) (*Resul
 // bundleRun is the state of one ParseBundle.
 type bundleRun struct {
 	ctx   context.Context
-	b     *builder
+	b     *Builder
 	bl    BundleLimits
 	now   time.Time
 	files map[string]ArchiveFile // rel -> file

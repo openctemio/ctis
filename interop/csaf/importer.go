@@ -148,7 +148,7 @@ func csafMergedStatus(ps map[string][]string) []csafStatus {
 	return out
 }
 
-func parseCSAF(b *builder, r io.Reader) error {
+func parseCSAF(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatCSAF, b.lim)
 	if err != nil {
 		return err
@@ -349,7 +349,7 @@ func csafProduct(fpn *csafFullProductName, version string) Product {
 }
 
 // csafTree resolves the product tree into product ids.
-func (b *builder) csafTree(pt *csafProductTree) (*csafProducts, error) {
+func (b *Builder) csafTree(pt *csafProductTree) (*csafProducts, error) {
 	t := &csafProducts{products: map[string]Product{}, groups: map[string][]string{}}
 	if pt == nil {
 		return t, nil

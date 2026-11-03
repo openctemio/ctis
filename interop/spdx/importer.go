@@ -84,7 +84,7 @@ func spdxOrganization(s string) string {
 	return line(rest, capShort)
 }
 
-func parseSPDX(b *builder, r io.Reader) error {
+func parseSPDX(b *Builder, r io.Reader) error {
 	data, err := readAll(r, FormatSPDX, b.lim)
 	if err != nil {
 		return err

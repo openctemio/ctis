@@ -15,9 +15,9 @@ import (
 // repeat it, a commit message or a property can hold it. Masking only the
 // snippet left the live credential in the title of the stored finding.
 // RedactSecretFinding masks every known raw value in every free-text field
-// of the finding, with the masking FromSARIF uses (MaskSecretMatch: at most
-// the first 4 characters of a secret of 16 or more, which is never more
-// than a quarter of it).
+// of the finding, with one masking (MaskSecretMatch: at most the first 4
+// characters of a secret of 16 or more, which is never more than a quarter
+// of it).
 
 // minRedactLen is the shortest raw value masked inside other text. Shorter
 // values would mangle ordinary words and are no secret on their own.
@@ -48,11 +48,20 @@ func RedactSecretFinding(f *Finding, known ...string) {
 	redactSecrets(f, f != nil && f.Type == FindingTypeSecret, isMasked, known...)
 }
 
-// redactSecrets is RedactSecretFinding with the decision whether the snippet
-// and masked value hold the secret made by the caller (FromSARIF decides by
-// the tool too, not only by the finding type), and with the test that says
-// a snippet is already masked: FromSARIF keeps only a fully redacted
-// snippet, a receiver keeps any masked one.
+// RedactSecretFindingWith is RedactSecretFinding with two decisions made by
+// the caller: isSecret says whether the snippet and secret.masked_value hold
+// the secret (a converter may decide by the tool that wrote the finding, not
+// only by its type), and snippetMasked says whether a snippet is already
+// masked (a converter may keep only a fully redacted snippet where a
+// receiver keeps any masked one). A nil snippetMasked uses the receiver's
+// test.
+func RedactSecretFindingWith(f *Finding, isSecret bool, snippetMasked func(string) bool, known ...string) {
+	if snippetMasked == nil {
+		snippetMasked = isMasked
+	}
+	redactSecrets(f, isSecret, snippetMasked, known...)
+}
+
 func redactSecrets(f *Finding, isSecret bool, snippetMasked func(string) bool, known ...string) {
 	if f == nil {
 		return
@@ -99,6 +108,39 @@ func redactSecrets(f *Finding, isSecret bool, snippetMasked func(string) bool, k
 	if masked != nil {
 		*masked = maskedMask
 	}
+}
+
+// RedactedSecret replaces a secret, or a code line holding one, that is too
+// short to show any of it.
+const RedactedSecret = "REDACTED"
+
+// redactedSecret is RedactedSecret.
+const redactedSecret = RedactedSecret
+
+// secretPrefixLen is how many leading characters of a secret maskSecret keeps,
+// enough to recognise its kind (AKIA, ghp_, xoxb) and never enough to use it.
+const secretPrefixLen = 4
+
+// minMaskedPrefixLen is the shortest secret maskSecret shows a prefix of.
+// Shorter ones (passwords, PINs) are hidden entirely.
+const minMaskedPrefixLen = 16
+
+// MaskSecretMatch masks a secret scanner's raw match: the first 4
+// characters of a secret of 16 characters or more followed by asterisks,
+// else "REDACTED". The masked form does not reveal the length. Every
+// converter of a secret scanner's output uses it, so every report masks a
+// match the same way.
+func MaskSecretMatch(s string) string { return maskSecret(s) }
+
+// maskSecret returns the first secretPrefixLen characters of a secret of at
+// least minMaskedPrefixLen characters followed by asterisks, or redactedSecret
+// for a shorter one. The masked form does not reveal the secret's length.
+func maskSecret(s string) string {
+	r := []rune(strings.TrimSpace(s))
+	if len(r) < minMaskedPrefixLen {
+		return redactedSecret
+	}
+	return string(r[:secretPrefixLen]) + "********"
 }
 
 // ContainsSecret reports whether s holds one of the raw values, the check a

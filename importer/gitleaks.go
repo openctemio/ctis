@@ -17,6 +17,6 @@ func init() {
 	tools[FormatGitleaks] = ctis.Tool{Name: "gitleaks", Vendor: "Gitleaks", InfoURL: "https://github.com/gitleaks/gitleaks", Techniques: []ctis.Technique{ctis.TechniqueSecret}}
 }
 
-func parseGitleaks(b *builder, r io.Reader) error {
+func parseGitleaks(b *Builder, r io.Reader) error {
 	return parseLeaks(b, r, FormatGitleaks, "gitleaks")
 }
