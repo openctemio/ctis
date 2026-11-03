@@ -8,6 +8,7 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 - The adapter modules (`github.com/openctemio/ctis/v2/interop/<format>`) and the command module (`github.com/openctemio/ctis/v2/cmd/ctis`) live under `v2/` (`v2/interop/<format>`, `v2/cmd/ctis`), where the Go toolchain looks for a module whose path continues after the `/v2` of the repository's major version; their tags are `v2/interop/<format>/vX.Y.Z` and `v2/cmd/ctis/vX.Y.Z`. The `interop/<format>/v0.1.0` tags pushed with 2.0.0 could not be resolved and were withdrawn. Module paths and import paths are unchanged.
 - A built `ctis` binary committed by mistake is removed and ignored.
+- `v2/cmd/ctis` requires the released core and adapters (no `replace`), so `go install github.com/openctemio/ctis/v2/cmd/ctis@v0.1.0` works; first adapter releases `v2/interop/<format>/v0.1.0`.
 
 ## [2.0.0] - 2026-11-03
 
