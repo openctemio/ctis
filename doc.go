@@ -1,11 +1,13 @@
-// Package ctis defines CTIS, the CTEM Ingest Schema: the JSON format security
-// tools use to send assets, findings and dependencies to a CTEM platform such
-// as OpenCTEM.
+// Package ctis defines CTIS, the CTEM Interchange Schema: the JSON format
+// security tools and platforms use to exchange assets, findings and
+// dependencies for continuous threat exposure management.
 //
 // The Go types in this package, the JSON Schema in schemas/v1 and the field
 // reference in docs/spec.md describe the same format; tests keep them equal.
-// Receivers decode strictly into these types, so a member they do not know is
-// an error.
+// Decode reads a document under the compatibility rule: strictly for this
+// module's minor or an older one (a member it does not know is an error),
+// ignoring unknown members and mapping unknown enum values to their
+// fallback for a newer minor, and refusing another major.
 //
 // Producing a report:
 //

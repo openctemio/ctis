@@ -89,6 +89,9 @@
       "items": {
         "$ref": "#/$defs/EndpointParam"
       }
+    },
+    "extensions": {
+      "$ref": "report.json#/$defs/Extensions"
     }
   },
   "$defs": {

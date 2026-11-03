@@ -375,7 +375,7 @@ func TestValidateInterop(t *testing.T) {
 	}
 
 	bad := map[string]Finding{
-		"native scheme":            {Native: &NativeIdentity{Scheme: "tenable"}},
+		"native scheme":            {Native: &NativeIdentity{Scheme: "Not A Token"}}, // open token since 2.0
 		"native detection type":    {Native: &NativeIdentity{DetectionType: "maybe"}},
 		"native vuln id long":      {Native: &NativeIdentity{VulnID: strings.Repeat("x", MaxNativeIDLen+1)}},
 		"native raw ref long":      {Native: &NativeIdentity{RawRef: strings.Repeat("x", MaxRawRefLen+1)}},

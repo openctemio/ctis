@@ -82,7 +82,9 @@ type NativeIdentity struct {
 	RawRef string `json:"raw_ref,omitempty"`
 }
 
-// NativeScheme names the vocabulary of a finding's native values.
+// NativeScheme names the vocabulary of a finding's native values. since 2.0
+// it is an open vocabulary: any value matching OpenTokenPattern is valid,
+// and the constants below are the known values the Normalize* tables map.
 type NativeScheme string
 
 const (
@@ -93,12 +95,14 @@ const (
 	NativeSchemeOther      NativeScheme = "other"
 )
 
-// AllNativeSchemes returns every valid native scheme.
+// AllNativeSchemes returns the known native schemes.
 func AllNativeSchemes() []NativeScheme {
 	return []NativeScheme{NativeSchemeNessus, NativeSchemeQualys, NativeSchemeDefectDojo, NativeSchemeSARIF, NativeSchemeOther}
 }
 
-// IsValid reports whether s is a recognized native scheme.
+// IsValid reports whether s is a known native scheme. Validate accepts any
+// open token (IsOpenToken); IsValid says whether this module has mapping
+// tables for it.
 func (s NativeScheme) IsValid() bool { return inEnum(s, AllNativeSchemes()) }
 
 // DetectionType says how sure the source is that the issue is present.

@@ -114,7 +114,7 @@
         },
         "provider": {
           "type": "string",
-          "enum": ["metamask", "ledger", "safe", "argent", "coinbase", "rainbow", "trustwallet"]
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: metamask, ledger, safe, argent, coinbase, rainbow, trustwallet"
         },
         "balance": {"type": "string", "description": "Native token balance in wei"},
         "token_balances": {
@@ -188,7 +188,7 @@
       "properties": {
         "dex": {
           "type": "string",
-          "enum": ["uniswap_v2", "uniswap_v3", "sushiswap", "pancakeswap", "curve", "balancer"]
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: uniswap_v2, uniswap_v3, sushiswap, pancakeswap, curve, balancer"
         },
         "pair_address": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
         "quote_token": {"type": "string"},
@@ -224,7 +224,7 @@
         "has_bug_bounty": {"type": "boolean"},
         "bug_bounty_platform": {
           "type": "string",
-          "enum": ["immunefi", "hackerone", "code4rena", "sherlock", "hats"]
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: immunefi, hackerone, code4rena, sherlock, hats"
         },
         "max_bounty_usd": {"type": "number", "minimum": 0},
         "timelock_duration": {"type": "integer", "minimum": 0, "description": "Timelock in seconds"},
@@ -251,7 +251,7 @@
       "properties": {
         "auditor": {
           "type": "string",
-          "enum": ["trail_of_bits", "openzeppelin", "consensys_diligence", "certik", "hacken", "peckshield", "slowmist", "quantstamp", "cyfrin"]
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: trail_of_bits, openzeppelin, consensys_diligence, certik, hacken, peckshield, slowmist, quantstamp, cyfrin"
         },
         "report_url": {"type": "string", "format": "uri"},
         "date": {"type": "string", "format": "date-time"},
@@ -283,7 +283,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["opensea", "blur", "looksrare", "x2y2", "rarible", "foundation"]
+            "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$", "description": "Open token (vendor neutral since 2.0). Known values: opensea, blur, looksrare, x2y2, rarible, foundation"
           }
         },
         "revealed": {"type": "boolean"},

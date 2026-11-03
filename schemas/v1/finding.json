@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/finding.json",
   "title": "CTIS Finding",
-  "description": "Security finding schema for CTEM Ingest Schema",
+  "description": "Security finding schema for the CTEM Interchange Schema",
   "type": "object",
   "additionalProperties": false,
   "required": ["type", "title", "severity"],
@@ -194,10 +194,12 @@
     },
     "author": {
       "type": "string",
+      "x-ctis-pii": true,
       "description": "Git author name"
     },
     "author_email": {
       "type": "string",
+      "x-ctis-pii": true,
       "format": "email",
       "description": "Git author email"
     },
@@ -252,12 +254,59 @@
       "additionalProperties": {"type": "string", "maxLength": 4096},
       "description": "Source fields no CTIS member holds, as strings. At most 64 entries, keys of 128 characters, values of 4096, 32 KiB in all (the total is checked by receivers)."
     },
+    "tool": {
+      "$ref": "report.json#/$defs/Tool"
+    },
+    "validation": {
+      "$ref": "#/$defs/FindingValidation"
+    },
+    "dependency_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Id of the dependency of this report the finding affects (2.0)"
+    },
     "properties": {
       "type": "object",
       "additionalProperties": true
+    },
+    "extensions": {
+      "$ref": "report.json#/$defs/Extensions"
     }
   },
   "$defs": {
+    "FindingValidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Whether and how the finding was shown to be exploitable (2.0): pentest, attack simulation, retest, manual review",
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string", "enum": ["exploited", "not_exploited", "blocked", "detected", "not_reproducible", "not_tested"]},
+        "method": {"type": "string", "enum": ["pentest", "bas", "automated_exploit", "retest", "manual_review"]},
+        "validated_at": {"type": "string", "format": "date-time"},
+        "validator": {"type": "string", "maxLength": 256, "x-ctis-pii": true, "description": "Who validated: a person, team or tool name; personal data"},
+        "evidence_refs": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "Evidence of the validation: the content_sha256 of an evidence item (sha256:<hex>) or an attachment id",
+          "items": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"}
+        },
+        "notes": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "ThreatSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A threat assertion by a named source at a date (2.0). Receivers SHOULD prefer their own intelligence",
+      "required": ["type", "source"],
+      "properties": {
+        "type": {"type": "string", "enum": ["kev", "exploited_in_wild", "public_exploit", "ransomware_use", "weaponized"]},
+        "source": {"type": "string", "minLength": 1, "maxLength": 64, "description": "Who asserts it (a catalog, a feed, the producer)"},
+        "as_of": {"type": "string", "format": "date-time", "description": "When the source asserted it"},
+        "ref": {"type": "string", "maxLength": 2048, "description": "External reference (catalog id or URL); never fetched"},
+        "due_on": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$", "description": "Remediation due date (YYYY-MM-DD), such as a KEV due date"}
+      }
+    },
     "WebLocation": {
       "type": "object",
       "additionalProperties": false,
@@ -288,8 +337,8 @@
       "properties": {
         "scheme": {
           "type": "string",
-          "enum": ["nessus", "qualys", "defectdojo", "sarif", "other"],
-          "description": "Vocabulary of the native values"
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+          "description": "Vocabulary of the native values, an open token (2.0). Known values: nessus, qualys, defectdojo, sarif, other"
         },
         "vuln_id": {"type": "string", "maxLength": 256, "description": "Tool id of the vulnerability or check: Nessus plugin ID, Qualys QID, DefectDojo vuln_id_from_tool, SARIF rule id"},
         "instance_id": {"type": "string", "maxLength": 256, "description": "Tool id of this occurrence (DefectDojo unique_id_from_tool, a detection id)"},
@@ -384,13 +433,13 @@
     },
     "FindingType": {
       "type": "string",
-      "enum": ["vulnerability", "secret", "misconfiguration", "compliance", "web3"],
-      "description": "Finding type"
+      "enum": ["vulnerability", "secret", "misconfiguration", "compliance", "web3", "exposure", "weakness", "malware", "license"],
+      "description": "Finding type. 2.0 adds exposure (reachable and should not be), weakness (no advisory id), malware and license. No fallback: a receiver drops a finding of a type it does not know from a newer-minor document"
     },
     "Severity": {
       "type": "string",
-      "enum": ["critical", "high", "medium", "low", "info"],
-      "description": "Severity level"
+      "enum": ["critical", "high", "medium", "low", "info", "unknown"],
+      "description": "Severity level. unknown (2.0): the source gave none that maps; also the fallback for an unknown value"
     },
     "FindingStatus": {
       "type": "string",
@@ -561,7 +610,7 @@
         },
         "reason": {"type": "string", "description": "Short reason code or phrase (false_positive, test_code, risk_accepted, ...)"},
         "justification": {"type": "string", "description": "Detailed justification"},
-        "suppressed_by": {"type": "string", "description": "Who suppressed (user/email)"},
+        "suppressed_by": {"type": "string", "x-ctis-pii": true, "description": "Who suppressed (user/email)"},
         "suppressed_at": {"type": "string", "format": "date-time"},
         "expires_at": {"type": "string", "format": "date-time", "description": "When suppression expires"}
       }
@@ -679,6 +728,18 @@
           "maxItems": 64,
           "items": {"$ref": "#/$defs/VulnerabilityID"},
           "description": "Every id of the vulnerability with its namespace (CVE, GHSA, OSV, vendor)"
+        },
+        "capec_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "description": "CAPEC attack pattern ids (2.0)",
+          "items": {"type": "string", "pattern": "^CAPEC-[1-9][0-9]{0,5}$"}
+        },
+        "threat_signals": {
+          "type": "array",
+          "maxItems": 16,
+          "description": "Threat assertions with source and date (2.0)",
+          "items": {"$ref": "#/$defs/ThreatSignal"}
         }
       }
     },

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/extensions/io.openctem/1.json",
+  "title": "OpenCTEM extension namespace, revision 1",
+  "description": "Informative. The value of extensions[\"io.openctem\"] on a report, metadata, asset or finding. These keys are what OpenCTEM converters and importers carry in properties today; receivers read both places for one release train, then only this namespace. A receiver that does not know the namespace ignores it.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "capability": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+@[1-9][0-9]{0,2}$",
+      "description": "On metadata: the OpenCTEM capability the report answers, as id@major (scan.ports@1). A producer claim; the receiver uses the capability of the command it bound the report to."
+    },
+    "import_scope": {
+      "type": "string",
+      "enum": ["in_target", "outside_target", "unknown"],
+      "description": "On an asset from an importer: whether the asset belongs to the import's target. The receiver decides scope; the importer never drops an outside asset."
+    },
+    "candidate_exposure": {
+      "type": "string",
+      "enum": ["subdomain_takeover", "storage_bucket", "cloud_asset"],
+      "description": "On an asset: an exposure a tool suspects but did not verify. The receiver verifies before it alerts."
+    },
+    "candidate_unverified": {
+      "type": "boolean",
+      "description": "On an asset with candidate_exposure: true while nobody verified it."
+    },
+    "bounty_report": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "On a finding from a bug-bounty or disclosure report: intake, ref, researcher (personal data), submitted_at, reported_severity, state, weakness, endpoint_path, parameter, url (https only, never fetched), reward and disclosure."
+    },
+    "web_content": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "On a web asset: what a content crawl found (titles, forms, links summary), as the recon converter writes it."
+    }
+  }
+}

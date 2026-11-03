@@ -42,6 +42,10 @@ def main():
         schema = load(path)
         Draft7Validator.check_schema(schema)
         schemas[name] = schema
+    # Namespace schemas of extensions (informative) must be valid too.
+    for path in sorted(glob.glob(os.path.join(ROOT, "schemas", "extensions", "*", "*.json"))):
+        Draft7Validator.check_schema(load(path))
+        print(f"ok      {os.path.relpath(path, ROOT)} (extension schema)")
     missing = EXPECTED - set(schemas)
     if missing:
         print("MISSING schemas:", ", ".join(sorted(missing)))

@@ -11,6 +11,27 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 - New: `GOVERNANCE.md` (scope, roles, decisions, versioning and support), `PATENTS.md` (patent commitment for implementers), `MAINTAINERS.md`, and the proposal process in `proposals/`.
 - Removed two stray files from the repository root.
 
+### Added: the additive half of CTIS 2.0 (ships in 2.0)
+
+Every member is optional, so a report without them is unchanged. `SchemaVersion` stays `1.6` until the 2.0 cut.
+
+- Version-gated decoding (spec section 2.2): `ctis.Decode(r) (Report, Unknown, error)`. A document of the module's minor or an older one decodes strictly; a newer minor of the same major has unknown members ignored and unknown enum values mapped to their fallback (`ctis.EnumFallback`: severity `unknown`, asset type `unclassified`, environment `unknown`, endpoint kind `other`, endpoint auth `unknown`), and loses values without a fallback (the optional member, or the array item that needs it: a finding of an unknown type, a target of an unknown state or class). Each is listed in `Unknown.Entries` as a JSON Pointer, at most 1,000. Another major is refused; there is no conversion between majors.
+- `extensions` on the report, metadata, asset, finding, dependency, endpoint and relationship (`ctis.Extensions`): objects keyed by a reverse-DNS namespace, at most 32 namespaces and 64 KiB. `schemas/extensions/io.openctem/1.json` documents the OpenCTEM keys (informative).
+- Finding types `exposure`, `weakness`, `malware`, `license`; severity `unknown`.
+- `finding.validation` (`ctis.FindingValidation`: status, method, validated_at, validator, evidence_refs, notes), `finding.tool`, `finding.dependency_ref`, `dependencies[].asset_ref`.
+- Relationship types `contains`, `runs_on`, `depends_on`, `deployed_from`, `member_of`, `routes_to`, `has_access_to`, and relationship `first_seen_at`, `last_seen_at`, `confidence`.
+- Asset `environment`, `owners[]` (`ctis.AssetOwner`), `first_seen_at`, `last_seen_at`, `state` and `state_reason` (gone only on an authoritative signal); asset types `package`, `container_image`, `identity`, `saas_application`, `endpoint_device`, `iot_device`, `ot_device`, `network_device`, `autonomous_system`, `cloud_resource`, `kubernetes_workload`, `ai_model`.
+- `metadata.started_at`, `ended_at`, `targets[]` (`ctis.TargetOutcome`, the `outcome` vocabulary) and `segment`, with the normative absence rule (spec section 4.17).
+- `vulnerability.capec_ids` and `vulnerability.threat_signals[]` (`ctis.ThreatSignal`, with `due_on`).
+- Schema annotation `"x-ctis-pii": true` on personal-data members (`author`, `author_email`, `suppression.suppressed_by`, `compliance.regulatory_owner`, `owners[].ref`, `validation.validator`).
+- Example `examples/ctem-coverage.json` and invalid examples for a malformed extension namespace, a date-time `due_on` and an unknown target class.
+
+### Changed: open vocabularies and naming (ships in 2.0)
+
+- Open vocabularies (loosened, additive): `native.scheme`, `technical.cloud.provider` and the web3 vendor members (detection tool, oracle type, flash-loan provider, wallet provider, DEX, bug bounty platform, auditor, marketplaces) take any token `^[a-z0-9][a-z0-9_.-]{0,63}$`; known values are listed in each description. `Validate` accepts any token for `native.scheme`; `NativeScheme.IsValid` still says whether the module has mapping tables for it.
+- CTIS is expanded as "CTEM Interchange Schema" in the spec, the package documentation and the schema descriptions; the report schema description is receiver-neutral.
+- The spec states that receivers SHOULD NOT give meaning to `properties`.
+
 ## [1.6.6] - 2026-10-31
 
 Patch release: more edge protection signatures. The format does not change.

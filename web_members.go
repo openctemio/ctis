@@ -145,6 +145,9 @@ type Endpoint struct {
 	// Params are the parameters the endpoint takes: names and hints,
 	// never values.
 	Params []EndpointParam `json:"params,omitempty"`
+
+	// Namespaced producer data (2.0).
+	Extensions Extensions `json:"extensions,omitempty"`
 }
 
 // EndpointParam is one parameter of an endpoint. It has no value member: a

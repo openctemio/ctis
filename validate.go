@@ -34,7 +34,11 @@ const maxValidateProblems = 100
 //   - the contract members (CTIS 1.5): metadata.capability is id@major,
 //     technologies and finding.attack within their limits and formats,
 //     relationships of a known type between two different assets of this
-//     report.
+//     report;
+//   - the coverage members (CTIS 2.0): extensions namespaces and size,
+//     asset environment, owners and state, finding validation, tool,
+//     dependency_ref, threat signals and CAPEC ids, metadata targets and
+//     segment, dependency asset_ref.
 //
 // Validate reports all problems it finds (up to 100) in one error, joined
 // with "; ". It does not modify the report and does no I/O.
@@ -80,6 +84,7 @@ func (r *Report) Validate() error {
 		}
 		validateIdentityHints(i, a.IdentityHints, add)
 		validateTechnologies(i, a.Technologies, add)
+		validateCoverageAsset(i, &r.Assets[i], add)
 		if a.ID != "" {
 			if assetIDs[a.ID] {
 				add("assets[%d]: duplicate id %q", i, a.ID)
@@ -89,6 +94,23 @@ func (r *Report) Validate() error {
 	}
 
 	endpointIDs := validateEndpoints(r, assetIDs, add)
+
+	depIDs := make(map[string]bool, len(r.Dependencies))
+	for i, d := range r.Dependencies {
+		if strings.TrimSpace(d.Name) == "" {
+			add("dependencies[%d]: name is required", i)
+		}
+		if d.ID != "" {
+			if depIDs[d.ID] {
+				add("dependencies[%d]: duplicate id %q", i, d.ID)
+			}
+			depIDs[d.ID] = true
+		}
+		if d.AssetRef != "" && !assetIDs[d.AssetRef] {
+			add("dependencies[%d]: asset_ref %q names no asset in this report", i, truncateForError(d.AssetRef))
+		}
+		validateExtensions(fmt.Sprintf("dependencies[%d].extensions", i), d.Extensions, add)
+	}
 
 	findingIDs := make(map[string]bool, len(r.Findings))
 	for i := range r.Findings {
@@ -139,22 +161,15 @@ func (r *Report) Validate() error {
 		validateFindingTechniques(i, f.Attack, add)
 		validateWebLocation(i, f.Web, endpointIDs, add)
 		validateEvidenceItems(i, f.EvidenceItems, add)
-	}
-
-	depIDs := make(map[string]bool, len(r.Dependencies))
-	for i, d := range r.Dependencies {
-		if strings.TrimSpace(d.Name) == "" {
-			add("dependencies[%d]: name is required", i)
-		}
-		if d.ID != "" {
-			if depIDs[d.ID] {
-				add("dependencies[%d]: duplicate id %q", i, d.ID)
-			}
-			depIDs[d.ID] = true
-		}
+		validateCoverageFinding(i, f, depIDs, add)
 	}
 
 	validateContractReport(r, assetIDs, add)
+	validateCoverageMetadata(&r.Metadata, add)
+	validateExtensions("extensions", r.Extensions, add)
+	for i := range r.Endpoints {
+		validateExtensions(fmt.Sprintf("endpoints[%d].extensions", i), r.Endpoints[i].Extensions, add)
+	}
 
 	if len(problems) > 0 {
 		return fmt.Errorf("invalid CTIS report: %s", strings.Join(problems, "; "))

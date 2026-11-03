@@ -1,0 +1,131 @@
+{
+  "version": "1.6",
+  "metadata": {
+    "id": "0193b1c2-7d4e-7a10-9c3f-2b5d8e6f4a01",
+    "timestamp": "2026-11-03T09:30:00Z",
+    "started_at": "2026-11-03T09:00:00Z",
+    "ended_at": "2026-11-03T09:29:41Z",
+    "source_type": "scanner",
+    "coverage_type": "full",
+    "targets": [
+      {"target": "example.com", "kind": "domain", "state": "done"},
+      {"target": "legacy.example.com", "kind": "domain", "state": "failed", "class": "name_gone", "cause": "target"},
+      {"target": "203.0.113.0/28", "kind": "network", "state": "skipped", "class": "excluded"},
+      {"target": "203.0.113.20", "kind": "ip_address", "state": "unfinished"}
+    ],
+    "segment": {"index": 0, "count": 1},
+    "extensions": {
+      "io.openctem": {"capability": "scan.ports@1"}
+    }
+  },
+  "tool": {"name": "example-scanner", "version": "4.2.0"},
+  "assets": [
+    {
+      "id": "repo",
+      "type": "repository",
+      "value": "github.com/example/shop",
+      "environment": "production",
+      "owners": [
+        {"kind": "team", "ref": "payments", "role": "technical"},
+        {"kind": "person", "ref": "owner@example.com", "role": "business"}
+      ],
+      "first_seen_at": "2026-01-10T00:00:00Z",
+      "last_seen_at": "2026-11-03T09:10:00Z"
+    },
+    {
+      "id": "image",
+      "type": "container_image",
+      "value": "docker.io/example/shop@sha256:9b2a1c6f0e3d4b5a69788796a5b4c3d2e1f00112233445566778899aabbccdd",
+      "environment": "production"
+    },
+    {
+      "id": "workload",
+      "type": "kubernetes_workload",
+      "value": "prod-cluster/shop/deployment/checkout"
+    },
+    {
+      "id": "pkg",
+      "type": "package",
+      "value": "pkg:npm/left-pad"
+    },
+    {
+      "id": "legacy",
+      "type": "domain",
+      "value": "legacy.example.com",
+      "state": "gone",
+      "state_reason": "name_gone",
+      "extensions": {
+        "io.openctem": {"import_scope": "in_target"}
+      }
+    },
+    {
+      "id": "bucket",
+      "type": "cloud_resource",
+      "value": "arn:aws:s3:::example-shop-assets",
+      "technical": {"cloud": {"provider": "aws"}}
+    }
+  ],
+  "relationships": [
+    {"type": "deployed_from", "from_ref": "workload", "to_ref": "image", "confidence": 100},
+    {"type": "contains", "from_ref": "image", "to_ref": "pkg", "first_seen_at": "2026-10-01T00:00:00Z", "last_seen_at": "2026-11-03T09:10:00Z"},
+    {"type": "has_access_to", "from_ref": "workload", "to_ref": "bucket", "confidence": 80}
+  ],
+  "dependencies": [
+    {"id": "dep-left-pad", "name": "left-pad", "version": "1.1.0", "purl": "pkg:npm/left-pad@1.1.0", "asset_ref": "image"}
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "Prototype pollution in left-pad",
+      "severity": "high",
+      "asset_ref": "image",
+      "dependency_ref": "dep-left-pad",
+      "vulnerability": {
+        "cve_id": "CVE-2026-0001",
+        "capec_ids": ["CAPEC-1"],
+        "threat_signals": [
+          {"type": "kev", "source": "kev-catalog", "as_of": "2026-10-20T00:00:00Z", "ref": "CVE-2026-0001", "due_on": "2026-11-10"},
+          {"type": "public_exploit", "source": "example-scanner"}
+        ]
+      },
+      "validation": {
+        "status": "exploited",
+        "method": "pentest",
+        "validated_at": "2026-11-02T15:00:00Z",
+        "validator": "red team",
+        "evidence_refs": ["sha256:4b7c0e5a1d2f3e4d5c6b7a8998877665544332211aabbccddeeff00112233445"],
+        "notes": "Reached the payment config through the polluted prototype."
+      }
+    },
+    {
+      "type": "exposure",
+      "title": "Storage bucket readable by any authenticated cloud user",
+      "severity": "medium",
+      "asset_ref": "bucket",
+      "tool": {"name": "example-cspm", "version": "2.0.1"}
+    },
+    {
+      "type": "weakness",
+      "title": "Missing authorization check on order export",
+      "severity": "unknown",
+      "asset_ref": "repo",
+      "vulnerability": {"cwe_ids": ["CWE-862"]},
+      "extensions": {
+        "com.example.scanner": {"rule_pack": "authz-2026.10"}
+      }
+    },
+    {
+      "type": "malware",
+      "title": "Install script exfiltrates environment variables",
+      "severity": "critical",
+      "asset_ref": "pkg"
+    },
+    {
+      "type": "license",
+      "title": "AGPL-3.0 component in a proprietary image",
+      "severity": "low",
+      "asset_ref": "image",
+      "dependency_ref": "dep-left-pad"
+    }
+  ]
+}
