@@ -238,6 +238,8 @@ type v2Vector struct {
 	Parts    []string        `json:"parts"`
 	Expected string          `json:"expected"`
 	Error    bool            `json:"error"`
+	// Detect leaves the recipe to V2Detect (the input names none).
+	Detect bool `json:"detect"`
 }
 
 func TestV2ConformanceVectors(t *testing.T) {
@@ -263,6 +265,16 @@ func TestV2ConformanceVectors(t *testing.T) {
 		if err := dec.Decode(&in); err != nil {
 			t.Errorf("%s: input: %v", c.Name, err)
 			continue
+		}
+		if c.Detect {
+			if in.Type != "" {
+				t.Errorf("%s: a detect vector names its recipe", c.Name)
+			}
+			auto, aerr := V2Auto(in)
+			in.Type = V2Detect(in)
+			if want, _ := V2Generate(in); aerr != nil || auto != want {
+				t.Errorf("%s: V2Auto %q %v, want %q", c.Name, auto, aerr, want)
+			}
 		}
 		recipe, parts, err := V2Parts(in)
 		got, gerr := V2Generate(in)

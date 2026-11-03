@@ -28,7 +28,9 @@ func TestConformanceVectors(t *testing.T) {
 		"canonical/cidr.json", "canonical/service.json", "canonical/origin.json", "canonical/url.json",
 		"canonical/purl.json", "canonical/image.json", "canonical/cloud.json", "canonical/certificate.json", "canonical/cpe.json",
 		"location-key.json", "preferred-id.json", "fingerprint/fingerprint.json", "fingerprint/secret-digest.json",
-		"correlation/correlation.json", "documents",
+		"correlation/correlation.json", "documents", "canonical/repository.json", "vulnerability-id.json",
+		"weburl/urls.json", "decode/decode.json", "mapping/vectors.json", "interop-engine/path.json",
+		"interop-engine/select.json", "interop-engine/collect.json",
 	} {
 		if suites[want] == 0 {
 			t.Errorf("suite %s ran no vectors", want)

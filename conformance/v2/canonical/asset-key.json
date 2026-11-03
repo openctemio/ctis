@@ -36,6 +36,57 @@
         "value": "docker.io/library/nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "output": "779020a0-0af6-58cb-a8c2-a5b904f64da2"
+    },
+    {
+      "input": {
+        "type": "host",
+        "value": "web01.example.com"
+      },
+      "output": "0ae0322a-2a16-5b2b-82a0-83c2893bd083"
+    },
+    {
+      "input": {
+        "type": "service",
+        "value": "[2001:db8::1]:53/udp"
+      },
+      "output": "745fb947-7ab5-5939-91af-04c0e5d6ba12"
+    },
+    {
+      "input": {
+        "type": "web_origin",
+        "value": "https://example.com"
+      },
+      "output": "1ccb3b9b-88b8-5c4f-8aec-f1f8b3895aec"
+    },
+    {
+      "input": {
+        "type": "web_application",
+        "value": "Billing Portal ü"
+      },
+      "output": "d9471b04-57a4-5cf8-96a2-7ad9e7c9d15e",
+      "note": "the value is hashed as UTF-8 bytes"
+    },
+    {
+      "input": {
+        "type": "autonomous_system",
+        "value": "AS64500"
+      },
+      "output": "5d45adf6-97a2-54ea-874b-e6c51a771e9e"
+    },
+    {
+      "input": {
+        "type": "certificate",
+        "value": "abababababababababababababababababababababababababababababababab"
+      },
+      "output": "15e4741d-fc1c-59ab-9195-7a8b9c100ff5"
+    },
+    {
+      "input": {
+        "type": "unclassified",
+        "value": ""
+      },
+      "output": "e673444c-d9e9-50a2-b825-c62607a65da0",
+      "note": "AssetKey does not check its input: the empty value still hashes (receivers never call it with one)"
     }
   ]
 }

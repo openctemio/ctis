@@ -119,6 +119,186 @@
       "name": "none",
       "vulnerability": {},
       "expected": null
+    },
+    {
+      "name": "ids out of order: the first GHSA wins",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "ghsa",
+            "id": "GHSA-xxxx-xxxx-xxxx"
+          },
+          {
+            "type": "osv",
+            "id": "PYSEC-2021-1"
+          },
+          {
+            "type": "ghsa",
+            "id": "GHSA-jfh8-c2jp-5v3q"
+          },
+          {
+            "type": "ghsa",
+            "id": "GHSA-2234-5678-9cfg"
+          }
+        ]
+      },
+      "expected": {
+        "type": "ghsa",
+        "id": "GHSA-xxxx-xxxx-xxxx"
+      }
+    },
+    {
+      "name": "a malformed declared cve is skipped",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-24-1"
+          },
+          {
+            "type": "vendor",
+            "id": "RHSA-2024:1",
+            "source": "redhat"
+          }
+        ]
+      },
+      "expected": {
+        "type": "vendor",
+        "id": "RHSA-2024:1"
+      }
+    },
+    {
+      "name": "a declared type that contradicts the id is skipped",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "GHSA-jfh8-c2jp-5v3q"
+          },
+          {
+            "type": "osv",
+            "id": "GO-2023-1"
+          }
+        ]
+      },
+      "expected": {
+        "type": "osv",
+        "id": "GO-2023-1"
+      }
+    },
+    {
+      "name": "an osv id declared as vendor stays vendor",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "vendor",
+            "id": "PYSEC-2021-1",
+            "source": "x"
+          },
+          {
+            "type": "vendor",
+            "id": "ALAS-2024-1",
+            "source": "amazon"
+          }
+        ]
+      },
+      "expected": {
+        "type": "vendor",
+        "id": "PYSEC-2021-1"
+      }
+    },
+    {
+      "name": "osv before vendor",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "vendor",
+            "id": "RHSA-2024:1",
+            "source": "redhat"
+          },
+          {
+            "type": "osv",
+            "id": "RUSTSEC-2021-0001"
+          }
+        ]
+      },
+      "expected": {
+        "type": "osv",
+        "id": "RUSTSEC-2021-0001"
+      }
+    },
+    {
+      "name": "a lower-case declared ghsa is canonicalised",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "ghsa",
+            "id": "ghsa-JFH8-C2JP-5V3Q"
+          }
+        ]
+      },
+      "expected": {
+        "type": "ghsa",
+        "id": "GHSA-jfh8-c2jp-5v3q"
+      }
+    },
+    {
+      "name": "year compares numerically, then the sequence",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2023-100000"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2021-99999"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2022-1000"
+          }
+        ]
+      },
+      "expected": {
+        "type": "cve",
+        "id": "CVE-2021-99999"
+      }
+    },
+    {
+      "name": "duplicate ids count once",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "cve-2024-0001"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2024-0001"
+          }
+        ]
+      },
+      "expected": {
+        "type": "cve",
+        "id": "CVE-2024-0001"
+      }
+    },
+    {
+      "name": "a vendor id alone",
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "vendor",
+            "id": "X-1",
+            "source": "x"
+          }
+        ]
+      },
+      "expected": {
+        "type": "vendor",
+        "id": "X-1"
+      }
     }
   ]
 }

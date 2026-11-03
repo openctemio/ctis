@@ -25,6 +25,65 @@
     {
       "input": "javascript:alert(1)",
       "error": true
+    },
+    {
+      "input": "https://example.com:80",
+      "output": "https://example.com:80",
+      "note": "80 is not the https default"
+    },
+    {
+      "input": "https://example.com:0443",
+      "output": "https://example.com",
+      "note": "leading zeros in the port are allowed and dropped with the default port"
+    },
+    {
+      "input": "https://example.com:",
+      "output": "https://example.com",
+      "note": "an empty port is no port"
+    },
+    {
+      "input": "https://example.com:65536",
+      "error": true,
+      "note": "port above 65535"
+    },
+    {
+      "input": "http://user:pw@example.com/",
+      "output": "http://example.com",
+      "note": "user info is dropped"
+    },
+    {
+      "input": "http://192.168.000.001/",
+      "error": true,
+      "note": "a dotted host that is not a canonical IPv4 address is a domain with a numeric top label: refused"
+    },
+    {
+      "input": "http://[::ffff:192.0.2.1]:8080/",
+      "output": "http://192.0.2.1:8080",
+      "note": "a mapped IPv6 host becomes IPv4, without brackets"
+    },
+    {
+      "input": "http://[fe80::1%25eth0]/",
+      "output": "http://[fe80::1]",
+      "note": "the zone of a bracketed host is dropped"
+    },
+    {
+      "input": "http:///path",
+      "error": true,
+      "note": "no host"
+    },
+    {
+      "input": "//example.com",
+      "error": true,
+      "note": "no scheme"
+    },
+    {
+      "input": "https://*.example.com",
+      "error": true,
+      "note": "a wildcard host is refused"
+    },
+    {
+      "input": "HTTP://example.com#frag",
+      "output": "http://example.com"
     }
   ]
 }

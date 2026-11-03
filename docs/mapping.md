@@ -101,7 +101,7 @@ Unknown members are errors everywhere.
 Predicates take a `path` and exactly one of:
 
 - `exists` (`true`/`false`; a JSON `null` does not exist);
-- `equals` (a string, number or boolean, compared as text);
+- `equals` (a string, number or boolean, compared as text: a number in the input is its JSON text as written, so `443` equals `"443"`, and `true`/`false` are those words);
 - `in` (1 to 256 such values);
 - `matches` (an RE2 regular expression of at most 256 bytes, matched against the first 4 KiB of the value).
 
@@ -114,7 +114,7 @@ A target is a dotted path of CTIS JSON member names relative to the record of th
 - An object is set member by member: `location.path`, not `location`. Two targets may not overlap.
 - Lists of strings may be set (`tags`, `vulnerability.cwe_ids`). Lists of objects (`scores`, `owners`, `evidence_items`) may not.
 - Four members of a finding rule are not CTIS members; the applier turns them into CTIS 2.0 members:
-  - `asset_value` and `asset_type` name the finding's asset. The applier makes the value canonical (`ctis.CanonicalAssetValue`), adds the asset to the report once per type and canonical value (ids `asset-1`, `asset-2`, ...) and sets `asset_ref`. Without `asset_type` the type is an address, a web origin or a domain name by the value's form, else `unclassified`. A finding that sets no `asset_value` goes to `Options.DefaultAsset`, else to an `unclassified` asset `mapping-import`. A value with no canonical form skips the finding with an issue.
+  - `asset_value` and `asset_type` name the finding's asset. The applier makes the value canonical (`ctis.CanonicalAssetValue`), adds the asset to the report once per type and canonical value (ids `asset-1`, `asset-2`, ...; the first finding's raw value, cut to 255 bytes, is the asset's `name`) and sets `asset_ref`. `asset_type` is lowercased. Without `asset_type` the type is an address, a web origin or a domain name by the value's form, else `unclassified`. A finding that sets no `asset_value` goes to `Options.DefaultAsset`, else to an `unclassified` asset `mapping-import`. A value with no canonical form skips the finding with an issue.
   - `vulnerability.ids` is a list of raw ids (`CVE-2024-1234`, `GHSA-...`, a vendor advisory number); each becomes a typed `vulnerability.ids` entry.
   - `evidence` is text; it becomes one `raw_text` evidence item.
 - A free-form map takes exactly one key below it: `properties.<key>`, `technical.service.details.<key>`, `source_extra.<key>`.
@@ -151,7 +151,7 @@ It then applies the transforms in this order:
 3. `split`: a string to a list, at a separator of at most 16 bytes. Items are trimmed, empties are dropped, and at most 1000 are kept.
 4. `map`: a table of at most 256 entries. An unmapped value is missing, and an unmapped list item is dropped.
 5. `join`: a list to a string. Objects and empty items are skipped.
-6. `as`: `integer` (whole numbers within ±2^53−1, from a number or a numeric string), `boolean`, or `string`. A value that does not convert is missing.
+6. `as`: `integer` (whole numbers within ±2^53−1, from a number or a numeric string), `boolean` (from a boolean, or the trimmed text `1`, `t`, `T`, `TRUE`, `true`, `True`, `0`, `f`, `F`, `FALSE`, `false`, `False`), or `string` (a number as its JSON text, a boolean as `true` or `false`). A value that does not convert is missing.
 7. `max_bytes`: truncate (1 to 1 MiB) on a UTF-8 boundary.
 
 `default` (a string, number, boolean or list of strings) replaces a missing or empty result. Without one, a missing value leaves the member unset.
@@ -194,7 +194,11 @@ A source object is never a value.
 - Issue messages are one line of at most 300 bytes.
 - The language has no loops, expressions, code, file or network access, so its cost is linear in the input.
 
-## 5. Examples
+## 5. Conformance
+
+[`conformance/v2/mapping/vectors.json`](../conformance/v2/mapping/vectors.json) holds language-neutral vectors (a mapping, an input, options and the expected report and counts) for the samples below and for each predicate, transform, source format and refusal; an implementation runs them through the `mapping_apply` operation of [conformance/PROTOCOL.md](../conformance/PROTOCOL.md).
+
+## 6. Examples
 
 `importer/mapping/testdata/` holds six samples, each with its input and the expected report (`expect.ctis.json`, validated against the CTIS schema in CI):
 

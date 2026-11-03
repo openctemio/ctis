@@ -95,8 +95,8 @@
       "type": "sast",
       "input": {
         "type": "sast",
-        "file_path": "src/caf\u00e9/\u30c6\u30b9\u30c8.py",
-        "rule_id": "r\u00e9gle",
+        "file_path": "src/café/テスト.py",
+        "rule_id": "régle",
         "start_line": 2,
         "end_line": 4
       },
@@ -698,6 +698,417 @@
         "rule_id": "r"
       },
       "error": true
+    },
+    {
+      "name": "detect: a contract address wins",
+      "type": "web3",
+      "detect": true,
+      "input": {
+        "contract_address": "0xABCDEF0123456789abcdef0123456789ABCDEF01",
+        "chain_id": 1,
+        "rule_id": "SWC-107",
+        "image_ref": "nginx",
+        "package_purl": "pkg:npm/a"
+      },
+      "parts": [
+        "1",
+        "0xabcdef0123456789abcdef0123456789abcdef01",
+        "SWC-107",
+        ""
+      ],
+      "expected": "ctis-fp/2:3da615a3a75dc6dcfa2c214ff9adbbc7b8935a7f7bdbcac937ef526953cd2c73"
+    },
+    {
+      "name": "detect: image and package make container",
+      "type": "container",
+      "detect": true,
+      "input": {
+        "image_ref": "nginx:1.25",
+        "package_purl": "pkg:deb/debian/openssl@3",
+        "vulnerability_id": "CVE-2024-0001",
+        "framework": "cis"
+      },
+      "parts": [
+        "docker.io/library/nginx",
+        "pkg:deb/debian/openssl",
+        "CVE-2024-0001"
+      ],
+      "expected": "ctis-fp/2:c235960a4ccb28103d464ecc0b04ce2569f063e840f563ea38d065465e2a8827"
+    },
+    {
+      "name": "detect: an image alone is not container",
+      "type": "sast",
+      "detect": true,
+      "input": {
+        "image_ref": "nginx:1.25",
+        "rule_id": "r",
+        "file_path": "Dockerfile",
+        "start_line": 3
+      },
+      "parts": [
+        "Dockerfile",
+        "r",
+        "3",
+        "0"
+      ],
+      "expected": "ctis-fp/2:23e9a244028c330204f630cf44f3cca52ab7f7a5e5afa7efe51a28f4a14b4750"
+    },
+    {
+      "name": "detect: framework or control makes compliance",
+      "type": "compliance",
+      "detect": true,
+      "input": {
+        "control_id": "1.1",
+        "resource": "acct",
+        "secret_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "parts": [
+        "",
+        "1.1",
+        "acct"
+      ],
+      "expected": "ctis-fp/2:d8debf3a4610a09d55cb95f79cfa34465c05f369d6cbdaad4e2b7e414a54dc5a"
+    },
+    {
+      "name": "detect: a secret digest makes secret",
+      "type": "secret",
+      "detect": true,
+      "input": {
+        "secret_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "file_path": "a.env",
+        "rule_id": "aws-key",
+        "url": "https://e.example/x"
+      },
+      "parts": [
+        "a.env",
+        "aws-key",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "expected": "ctis-fp/2:55ac199c693dc13776846fbf616c5a097cba81677bd0300303cf1432c80411d3"
+    },
+    {
+      "name": "detect: a url makes dast",
+      "type": "dast",
+      "detect": true,
+      "input": {
+        "url": "https://Example.com/a?q=1",
+        "rule_id": "xss",
+        "parameter": "q",
+        "asset_value": "example.com",
+        "port": 443
+      },
+      "parts": [
+        "xss",
+        "https://example.com",
+        "/a",
+        "q"
+      ],
+      "expected": "ctis-fp/2:2d6385d792dfdc7070bdc0bb34f8529229a792f4bec7df9e9a9877e51e15e4af"
+    },
+    {
+      "name": "detect: an asset value with a port makes va",
+      "type": "va",
+      "detect": true,
+      "input": {
+        "asset_value": "Host.Example.",
+        "port": 22,
+        "vulnerability_id": "CVE-2024-0001",
+        "package_purl": "pkg:npm/a"
+      },
+      "parts": [
+        "host.example",
+        "22",
+        "",
+        "CVE-2024-0001"
+      ],
+      "expected": "ctis-fp/2:e1d20d15c41179a941f84102ada8a393ea7793cc347feec360213a4d7a3923a4"
+    },
+    {
+      "name": "detect: an asset value with a transport makes va",
+      "type": "va",
+      "detect": true,
+      "input": {
+        "asset_value": "10.0.0.1",
+        "transport": "UDP",
+        "vulnerability_id": "12345"
+      },
+      "parts": [
+        "10.0.0.1",
+        "0",
+        "udp",
+        "12345"
+      ],
+      "expected": "ctis-fp/2:3128beae55d6e9163ba433d5cb9d1f803e7b6a28d8abf49188727e752ba5bb31"
+    },
+    {
+      "name": "detect: an asset value alone is generic",
+      "type": "generic",
+      "detect": true,
+      "input": {
+        "asset_value": "10.0.0.1",
+        "rule_id": "r"
+      },
+      "parts": [
+        "r",
+        "",
+        "0",
+        "0"
+      ],
+      "expected": "ctis-fp/2:9fec6cc01e9d078b97ba5b9352c66f77d7c94f60b3b9e5100a5a5af03d3490ee"
+    },
+    {
+      "name": "detect: package and vulnerability make sca",
+      "type": "sca",
+      "detect": true,
+      "input": {
+        "package_purl": "pkg:npm/a@1",
+        "vulnerability_id": "CVE-2024-0001",
+        "resource_type": "t"
+      },
+      "parts": [
+        "pkg:npm/a",
+        "CVE-2024-0001"
+      ],
+      "expected": "ctis-fp/2:4cfe987774ff954d1e0940b93a82ef2a4b21cc3613f4832d3b65f97f8d1dedb0"
+    },
+    {
+      "name": "detect: a package alone is not sca",
+      "type": "generic",
+      "detect": true,
+      "input": {
+        "package_purl": "pkg:npm/a@1",
+        "rule_id": "r"
+      },
+      "parts": [
+        "r",
+        "",
+        "0",
+        "0"
+      ],
+      "expected": "ctis-fp/2:9fec6cc01e9d078b97ba5b9352c66f77d7c94f60b3b9e5100a5a5af03d3490ee"
+    },
+    {
+      "name": "detect: resource type or name makes misconfig",
+      "type": "misconfig",
+      "detect": true,
+      "input": {
+        "resource_name": "logs",
+        "rule_id": "r",
+        "file_path": "main.tf",
+        "start_line": 4
+      },
+      "parts": [
+        "",
+        "logs",
+        "r",
+        "main.tf"
+      ],
+      "expected": "ctis-fp/2:b872d880ff7718762d226460e6a748b272f09737dfee3d3031c99fef666c46b4"
+    },
+    {
+      "name": "detect: file, rule and snippet make sast-content",
+      "type": "sast-content",
+      "detect": true,
+      "input": {
+        "file_path": "a.py",
+        "rule_id": "r",
+        "snippet": "  x = 1  ",
+        "start_line": 3
+      },
+      "parts": [
+        "a.py",
+        "r",
+        "",
+        "8ff436def1451285599a1b1ad70800493b8dcafde2912e1a38345633054e4c26"
+      ],
+      "expected": "ctis-fp/2:6cd84218431183f8234f20196b5818a0d402cc5bb500c9eb32f4323f8358b981"
+    },
+    {
+      "name": "detect: a white-space snippet does not count",
+      "type": "sast",
+      "detect": true,
+      "input": {
+        "file_path": "a.py",
+        "rule_id": "r",
+        "snippet": "   ",
+        "start_line": 3
+      },
+      "parts": [
+        "a.py",
+        "r",
+        "3",
+        "0"
+      ],
+      "expected": "ctis-fp/2:97a17ce071d46590dc9ee7f78ae72e7505d47ae94ab3bd551fd80bc39ec76144"
+    },
+    {
+      "name": "detect: file, rule and a start line make sast",
+      "type": "sast",
+      "detect": true,
+      "input": {
+        "file_path": "a.py",
+        "rule_id": "r",
+        "start_line": 3,
+        "end_line": 4
+      },
+      "parts": [
+        "a.py",
+        "r",
+        "3",
+        "4"
+      ],
+      "expected": "ctis-fp/2:7c2f404a9477716fc8c453420ffa1a6ec46ce11214d7630903b6b04098399ab6"
+    },
+    {
+      "name": "detect: no start line is generic",
+      "type": "generic",
+      "detect": true,
+      "input": {
+        "file_path": "a.py",
+        "rule_id": "r"
+      },
+      "parts": [
+        "r",
+        "a.py",
+        "0",
+        "0"
+      ],
+      "expected": "ctis-fp/2:508d4f1fba11f545dc226498a6fd76e641b49480f945699044202c6110be82c6"
+    },
+    {
+      "name": "detect: nothing set is generic",
+      "type": "generic",
+      "detect": true,
+      "input": {},
+      "parts": [
+        "",
+        "",
+        "0",
+        "0"
+      ],
+      "expected": "ctis-fp/2:9e505e323aff018599afc27e2ef9114980cc097bf070db18f5e3f62f2b9d48fc"
+    },
+    {
+      "name": "va: an empty transport and port 0 mean the host",
+      "type": "va",
+      "input": {
+        "type": "va",
+        "asset_value": "10.0.0.1",
+        "vulnerability_id": "CVE-2024-0001"
+      },
+      "parts": [
+        "10.0.0.1",
+        "0",
+        "",
+        "CVE-2024-0001"
+      ],
+      "expected": "ctis-fp/2:e3157dcf21d20a4c367c5b6763822caf045e58254d5843a06dc91370d89bd0ea"
+    },
+    {
+      "name": "web3: a non-hex address keeps its case",
+      "type": "web3",
+      "input": {
+        "type": "web3",
+        "chain_id": 101,
+        "contract_address": "So1anaAddrXYZ",
+        "rule_id": "r",
+        "function": "f()"
+      },
+      "parts": [
+        "101",
+        "So1anaAddrXYZ",
+        "r",
+        "f()"
+      ],
+      "expected": "ctis-fp/2:c37bb0ea6399347843370c39712af8da8b6fa6bf00df92d224488de6e6053454"
+    },
+    {
+      "name": "web3: a bare 40-digit address gets 0x",
+      "type": "web3",
+      "input": {
+        "type": "web3",
+        "chain_id": 1,
+        "contract_address": "ABCDEF0123456789abcdef0123456789ABCDEF01",
+        "rule_id": "SWC-107",
+        "function": "withdraw(uint256)"
+      },
+      "parts": [
+        "1",
+        "0xabcdef0123456789abcdef0123456789abcdef01",
+        "SWC-107",
+        "withdraw(uint256)"
+      ],
+      "expected": "ctis-fp/2:48a152d3e44f1e0f7f9457a0d9a194ed040e8419e714c3da1b035fc4ee7f0582"
+    },
+    {
+      "name": "container: no registry and an upper-case repository",
+      "type": "container",
+      "input": {
+        "type": "container",
+        "image_ref": "Example/App:1@SHA256:ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+        "package_purl": "pkg:apk/alpine/musl@1.2",
+        "vulnerability_id": "CVE-2024-0001"
+      },
+      "parts": [
+        "docker.io/Example/App@sha256:abababababababababababababababababababababababababababababababab",
+        "pkg:apk/alpine/musl",
+        "CVE-2024-0001"
+      ],
+      "expected": "ctis-fp/2:aca9db4306f42e4c1faf3ee2aa9789caa2706c627550e3fb7e93b44ae9284494"
+    },
+    {
+      "name": "sast-content: white space runs collapse before hashing",
+      "type": "sast-content",
+      "input": {
+        "type": "sast-content",
+        "file_path": "a.py",
+        "rule_id": "r",
+        "logical_location": " f ",
+        "snippet": "x =\t1\n\n  + 2 "
+      },
+      "parts": [
+        "a.py",
+        "r",
+        "f",
+        "3697157ceb8eb92db1ce9cb110c128764cba0c457b4bfe0f72a8488d76b434f5"
+      ],
+      "expected": "ctis-fp/2:eaec33b7c2848f453a7a5188cde4f01ec4a2a6a49ba2c7921e9bdf4fe8ab3d31"
+    },
+    {
+      "name": "generic: every part",
+      "type": "generic",
+      "input": {
+        "type": "generic",
+        "rule_id": " r ",
+        "file_path": ".\\a\\\\b.py",
+        "start_line": 1,
+        "end_line": 2
+      },
+      "parts": [
+        "r",
+        "a/b.py",
+        "1",
+        "2"
+      ],
+      "expected": "ctis-fp/2:9981a60158bb39ceb40e96cec2063c7111909f5fd4113610bd06b64aea77ef6a"
+    },
+    {
+      "name": "misconfig: an absolute file path keeps its slash",
+      "type": "misconfig",
+      "input": {
+        "type": "misconfig",
+        "resource_type": "aws_s3_bucket",
+        "resource_name": "logs",
+        "rule_id": "AVD-1",
+        "file_path": "/infra//main.tf"
+      },
+      "parts": [
+        "aws_s3_bucket",
+        "logs",
+        "AVD-1",
+        "/infra/main.tf"
+      ],
+      "expected": "ctis-fp/2:3ee252b4ba9e933bcc4a83f2c931cfb8867ce5047f652891c2285160511b1fbb"
     }
   ],
   "description": "Fingerprint recipe v2 (CTIS 2.0). Input members are the snake_case members of the Go fingerprint.V2Input. parts are the normalised parts before length-prefixing; expected is ctis-fp/2: + SHA-256 hex of the canonical input (docs/fingerprints.md). A case with error true must be refused: no fingerprint is produced.",

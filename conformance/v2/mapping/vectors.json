@@ -1,0 +1,2567 @@
+{
+  "description": "Declarative mappings (openctem.io/mapping/v2, docs/mapping.md): a mapping file and a tool output to the CTIS report and the counts Apply gives, or an error category (mapping: the mapping file is refused; input: the input is refused as a whole). Issues are compared by record and rule; their messages are informative and not part of the vectors. Members ending in _file name a file relative to this directory.",
+  "cases": [
+    {
+      "name": "sample findings-jsonl",
+      "mapping_file": "../../../importer/mapping/testdata/findings-jsonl/mapping.json",
+      "input_file": "../../../importer/mapping/testdata/findings-jsonl/input.jsonl",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "findings-jsonl",
+          "version": "1.0.0"
+        },
+        "observe": true
+      },
+      "expected_report_file": "../../../importer/mapping/testdata/findings-jsonl/expect.ctis.json",
+      "expected_stats": {
+        "records": 4,
+        "assets": 0,
+        "findings": 3,
+        "dependencies": 0,
+        "skipped": 1,
+        "truncated": false,
+        "issues": [
+          {
+            "record": 3,
+            "rule": 0
+          }
+        ],
+        "fields": [
+          "/extracted-results",
+          "/host",
+          "/info/classification/cve-id",
+          "/info/classification/cwe-id",
+          "/info/name",
+          "/info/reference",
+          "/info/severity",
+          "/info/tags",
+          "/ip",
+          "/matched-at",
+          "/port",
+          "/template-id"
+        ],
+        "unmapped": [],
+        "fields_truncated": false
+      }
+    },
+    {
+      "name": "sample generic-csv",
+      "mapping_file": "../../../importer/mapping/testdata/generic-csv/mapping.json",
+      "input_file": "../../../importer/mapping/testdata/generic-csv/input.csv",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "generic-csv",
+          "version": "1.0.0"
+        },
+        "observe": true
+      },
+      "expected_report_file": "../../../importer/mapping/testdata/generic-csv/expect.ctis.json",
+      "expected_stats": {
+        "records": 5,
+        "assets": 0,
+        "findings": 3,
+        "dependencies": 0,
+        "skipped": 1,
+        "truncated": false,
+        "issues": [
+          {
+            "record": 6,
+            "rule": 0
+          }
+        ],
+        "fields": [
+          "/title",
+          "/severity",
+          "/asset",
+          "/asset_type",
+          "/cve",
+          "/description",
+          "/owner"
+        ],
+        "unmapped": [
+          "/owner"
+        ],
+        "fields_truncated": false
+      }
+    },
+    {
+      "name": "sample generic-json",
+      "mapping_file": "../../../importer/mapping/testdata/generic-json/mapping.json",
+      "input_file": "../../../importer/mapping/testdata/generic-json/input.json",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "generic-json",
+          "version": "1.0.0"
+        },
+        "observe": true
+      },
+      "expected_report_file": "../../../importer/mapping/testdata/generic-json/expect.ctis.json",
+      "expected_stats": {
+        "records": 3,
+        "assets": 0,
+        "findings": 2,
+        "dependencies": 0,
+        "skipped": 0,
+        "truncated": false,
+        "fields": [
+          "/asset",
+          "/asset_type",
+          "/cve",
+          "/description",
+          "/extra/scanner",
+          "/references",
+          "/rule_id",
+          "/severity",
+          "/title"
+        ],
+        "unmapped": [
+          "/extra/scanner"
+        ],
+        "issues": [],
+        "fields_truncated": false
+      }
+    },
+    {
+      "name": "sample json-each",
+      "mapping_file": "../../../importer/mapping/testdata/json-each/mapping.json",
+      "input_file": "../../../importer/mapping/testdata/json-each/input.json",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "json-each",
+          "version": "1.0.0"
+        },
+        "observe": true
+      },
+      "expected_report_file": "../../../importer/mapping/testdata/json-each/expect.ctis.json",
+      "expected_stats": {
+        "records": 3,
+        "assets": 1,
+        "findings": 2,
+        "dependencies": 0,
+        "skipped": 1,
+        "truncated": false,
+        "issues": [
+          {
+            "record": 3,
+            "rule": 0
+          }
+        ],
+        "fields": [
+          "/cert/issuer",
+          "/cert/names",
+          "/cert/not_after",
+          "/cert/sha256",
+          "/grade",
+          "/host",
+          "/issues",
+          "/port"
+        ],
+        "unmapped": [],
+        "fields_truncated": false
+      }
+    },
+    {
+      "name": "sample junit-xml",
+      "mapping_file": "../../../importer/mapping/testdata/junit-xml/mapping.json",
+      "input_file": "../../../importer/mapping/testdata/junit-xml/input.xml",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "junit-xml",
+          "version": "1.0.0"
+        },
+        "observe": true
+      },
+      "expected_report_file": "../../../importer/mapping/testdata/junit-xml/expect.ctis.json",
+      "expected_stats": {
+        "records": 5,
+        "assets": 0,
+        "findings": 3,
+        "dependencies": 0,
+        "skipped": 0,
+        "truncated": false,
+        "fields": [
+          "/@classname",
+          "/@name",
+          "/error/#text",
+          "/error/@message",
+          "/failure/#text",
+          "/failure/@message",
+          "/failure/@type",
+          "/skipped"
+        ],
+        "unmapped": [
+          "/skipped"
+        ],
+        "issues": [],
+        "fields_truncated": false
+      }
+    },
+    {
+      "name": "sample naabu-jsonl",
+      "mapping_file": "../../../importer/mapping/testdata/naabu-jsonl/mapping.json",
+      "input_file": "../../../importer/mapping/testdata/naabu-jsonl/input.jsonl",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "naabu-jsonl",
+          "version": "1.0.0"
+        },
+        "observe": true
+      },
+      "expected_report_file": "../../../importer/mapping/testdata/naabu-jsonl/expect.ctis.json",
+      "expected_stats": {
+        "records": 5,
+        "assets": 3,
+        "findings": 0,
+        "dependencies": 0,
+        "skipped": 1,
+        "truncated": false,
+        "issues": [
+          {
+            "record": 6,
+            "rule": -1
+          }
+        ],
+        "fields": [
+          "/host",
+          "/ip",
+          "/msg",
+          "/port",
+          "/protocol",
+          "/timestamp",
+          "/tls"
+        ],
+        "unmapped": [
+          "/msg",
+          "/protocol",
+          "/timestamp",
+          "/tls"
+        ],
+        "fields_truncated": false
+      }
+    },
+    {
+      "name": "jsonl: one finding per line, the asset made canonical and added once",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"WWW.Example.COM.\"}\n{\"t\":\"b\",\"h\":\"www.example.com\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "domain_name",
+            "value": "www.example.com",
+            "name": "WWW.Example.COM."
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 2,
+        "issues": [],
+        "records": 2,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "asset type from the value form: address, origin, domain, else unclassified",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"::ffff:10.0.0.1\"}\n{\"t\":\"b\",\"h\":\"HTTPS://Example.com:443/x\"}\n{\"t\":\"c\",\"h\":\"Example.org\"}\n{\"t\":\"d\",\"h\":\"Billing Portal\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "::ffff:10.0.0.1"
+          },
+          {
+            "id": "asset-2",
+            "type": "web_origin",
+            "value": "https://example.com",
+            "name": "HTTPS://Example.com:443/x"
+          },
+          {
+            "id": "asset-3",
+            "type": "domain_name",
+            "value": "example.org",
+            "name": "Example.org"
+          },
+          {
+            "id": "asset-4",
+            "type": "unclassified",
+            "value": "Billing Portal",
+            "name": "Billing Portal"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-2"
+          },
+          {
+            "type": "vulnerability",
+            "title": "c",
+            "severity": "low",
+            "asset_ref": "asset-3"
+          },
+          {
+            "type": "vulnerability",
+            "title": "d",
+            "severity": "low",
+            "asset_ref": "asset-4"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 4,
+        "issues": [],
+        "records": 4,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "no asset_value: the default unclassified asset mapping-import",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "info"
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "unclassified",
+            "value": "mapping-import",
+            "name": "mapping-import"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "info",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "no asset_value with Options.DefaultAsset",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "info"
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "default_asset": {
+          "id": "scan-target",
+          "type": "host",
+          "value": "web01.example.com"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "host",
+            "value": "web01.example.com"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "info",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "a value with no canonical form skips the finding with an issue",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "asset_type": {
+                "const": "ip_address"
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"not an ip\"}\n{\"t\":\"b\",\"h\":\"10.0.0.1\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [
+          {
+            "record": 1,
+            "rule": 0
+          }
+        ],
+        "records": 2,
+        "skipped": 1,
+        "truncated": false
+      }
+    },
+    {
+      "name": "predicates: exists, equals compares as text, in, matches, all must hold",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            },
+            "when": [
+              {
+                "path": "/port",
+                "equals": 443
+              },
+              {
+                "path": "/state",
+                "in": [
+                  "open",
+                  "filtered"
+                ]
+              },
+              {
+                "path": "/svc",
+                "matches": "^ht+ps?$"
+              },
+              {
+                "path": "/gone",
+                "exists": false
+              }
+            ]
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\",\"port\":\"443\",\"state\":\"open\",\"svc\":\"https\"}\n{\"t\":\"b\",\"h\":\"10.0.0.1\",\"port\":443,\"state\":\"filtered\",\"svc\":\"http\"}\n{\"t\":\"c\",\"h\":\"10.0.0.1\",\"port\":443,\"state\":\"open\",\"svc\":\"ssh\"}\n{\"t\":\"d\",\"h\":\"10.0.0.1\",\"port\":443,\"state\":\"open\",\"svc\":\"https\",\"gone\":null}\n{\"t\":\"e\",\"h\":\"10.0.0.1\",\"port\":443,\"state\":\"open\",\"svc\":\"https\",\"gone\":1}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "d",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 3,
+        "issues": [],
+        "records": 5,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "a predicate on an object or a list is false",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            },
+            "when": {
+              "path": "/o",
+              "equals": "x"
+            }
+          },
+          {
+            "kind": "finding",
+            "set": {
+              "title": {
+                "const": "second rule"
+              },
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            },
+            "when": {
+              "path": "/o",
+              "exists": true
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\",\"o\":{\"x\":1}}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "second rule",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "every rule whose predicate holds emits a record, in rule order",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "asset",
+            "set": {
+              "type": {
+                "const": "ip_address"
+              },
+              "value": "/h"
+            }
+          },
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 1,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "transforms: first, trim, lower, upper",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": {
+                "path": "/titles",
+                "first": true,
+                "trim": true
+              },
+              "severity": {
+                "path": "/sev",
+                "lower": true
+              },
+              "asset_value": "/h",
+              "rule_id": {
+                "path": "/rule",
+                "upper": true,
+                "trim": true
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"titles\":[\"  first  \",\"second\"],\"sev\":\"HIGH\",\"h\":\"10.0.0.1\",\"rule\":\" r-1 \"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "first",
+            "severity": "high",
+            "rule_id": "R-1",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "transforms: split, map (unmapped items dropped), join",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "path": "/sev",
+                "trim": true,
+                "lower": true,
+                "map": {
+                  "crit": "critical",
+                  "hi": "high"
+                }
+              },
+              "asset_value": "/h",
+              "tags": {
+                "path": "/tags",
+                "split": ",",
+                "map": {
+                  "a": "alpha",
+                  "b": "beta"
+                }
+              },
+              "description": {
+                "path": "/lines",
+                "join": " | "
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"x\",\"sev\":\" CRIT \",\"h\":\"10.0.0.1\",\"tags\":\" a, ,b ,c,a\",\"lines\":[\"one\",{\"o\":1},\"\",\"two\"]}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "x",
+            "description": "one | two",
+            "severity": "critical",
+            "asset_ref": "asset-1",
+            "tags": [
+              "alpha",
+              "beta",
+              "alpha"
+            ]
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "an unmapped scalar is missing and the default applies",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "path": "/sev",
+                "map": {
+                  "1": "low"
+                },
+                "default": "unknown"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"x\",\"sev\":\"9\",\"h\":\"10.0.0.1\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "x",
+            "severity": "unknown",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "as integer: numbers and numeric strings, fractions are missing",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "network.port": {
+                "path": "/p",
+                "as": "integer"
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\",\"p\":\"8080\"}\n{\"t\":\"b\",\"h\":\"10.0.0.1\",\"p\":443}\n{\"t\":\"c\",\"h\":\"10.0.0.1\",\"p\":1.5}\n{\"t\":\"d\",\"h\":\"10.0.0.1\",\"p\":\"x\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1",
+            "network": {
+              "port": 8080
+            }
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-1",
+            "network": {
+              "port": 443
+            }
+          },
+          {
+            "type": "vulnerability",
+            "title": "c",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "d",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 4,
+        "issues": [],
+        "records": 4,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "as boolean and as string",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "asset",
+            "set": {
+              "type": {
+                "const": "service"
+              },
+              "value": {
+                "template": "{h}:443/tcp",
+                "vars": {
+                  "h": "/h"
+                }
+              },
+              "technical.service.port": {
+                "const": 443
+              },
+              "technical.service.transport": {
+                "const": "tcp"
+              },
+              "technical.service.is_tls": {
+                "path": "/k",
+                "as": "boolean"
+              },
+              "properties.n": {
+                "path": "/n",
+                "as": "string"
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"h\":\"10.0.0.1\",\"k\":\"true\",\"n\":42}\n{\"h\":\"10.0.0.2\",\"k\":\"x\",\"n\":true}\n{\"h\":\"10.0.0.3\",\"k\":\"yes\",\"n\":1.5}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "service",
+            "value": "10.0.0.1:443/tcp",
+            "technical": {
+              "service": {
+                "port": 443,
+                "transport": "tcp",
+                "is_tls": true
+              }
+            },
+            "properties": {
+              "n": "42"
+            }
+          },
+          {
+            "id": "asset-2",
+            "type": "service",
+            "value": "10.0.0.2:443/tcp",
+            "technical": {
+              "service": {
+                "port": 443,
+                "transport": "tcp"
+              }
+            },
+            "properties": {
+              "n": "true"
+            }
+          },
+          {
+            "id": "asset-3",
+            "type": "service",
+            "value": "10.0.0.3:443/tcp",
+            "technical": {
+              "service": {
+                "port": 443,
+                "transport": "tcp"
+              }
+            },
+            "properties": {
+              "n": "1.5"
+            }
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 3,
+        "dependencies": 0,
+        "findings": 0,
+        "issues": [],
+        "records": 3,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "max_bytes cuts on a UTF-8 boundary",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": {
+                "path": "/t",
+                "max_bytes": 5
+              },
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"abcdé\",\"h\":\"10.0.0.1\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "abcd",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "template: variables filled, a missing variable makes the value missing",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "asset",
+            "set": {
+              "type": {
+                "const": "service"
+              },
+              "value": {
+                "template": "{ip}:{port}/tcp",
+                "vars": {
+                  "ip": "/ip",
+                  "port": "/port"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "input": "{\"ip\":\"192.0.2.1\",\"port\":22}\n{\"ip\":\"192.0.2.2\"}\n{\"ip\":\"2001:DB8::1\",\"port\":\"443\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "service",
+            "value": "192.0.2.1:22/tcp"
+          },
+          {
+            "id": "asset-2",
+            "type": "service",
+            "value": "[2001:db8::1]:443/tcp"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 2,
+        "dependencies": 0,
+        "findings": 0,
+        "issues": [
+          {
+            "record": 2,
+            "rule": 0
+          }
+        ],
+        "records": 3,
+        "skipped": 1,
+        "truncated": false
+      }
+    },
+    {
+      "name": "vulnerability.ids: raw ids become typed ids",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "vulnerability.ids": "/ids"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\",\"ids\":[\"cve-2024-0001\",\"GHSA-JFH8-C2JP-5V3Q\",\"PYSEC-2021-1\",\"RHSA-2024:1234\"]}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1",
+            "vulnerability": {
+              "ids": [
+                {
+                  "type": "cve",
+                  "id": "CVE-2024-0001"
+                },
+                {
+                  "type": "ghsa",
+                  "id": "GHSA-jfh8-c2jp-5v3q"
+                },
+                {
+                  "type": "osv",
+                  "id": "PYSEC-2021-1"
+                },
+                {
+                  "type": "vendor",
+                  "id": "RHSA-2024:1234"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "evidence text becomes one raw_text evidence item",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "evidence": "/e"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\",\"e\":\"HTTP/1.1 200 OK\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1",
+            "evidence_items": [
+              {
+                "kind": "raw_text",
+                "version": 1,
+                "text": "HTTP/1.1 200 OK"
+              }
+            ]
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "control characters: removed from text, turned into spaces elsewhere",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "description": "/d"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\\tb\\u0007c\",\"h\":\"10.0.0.1\",\"d\":\"x\\ty\\u0007z\\nw\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a bc",
+            "description": "x\tyz\nw",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "identity: a finding whose identity members are all empty is skipped",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "rule_id": "/r"
+            }
+          }
+        ],
+        "identity": [
+          "rule_id"
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\",\"r\":\"r-1\"}\n{\"t\":\"b\",\"h\":\"10.0.0.1\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "rule_id": "r-1",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [
+          {
+            "record": 2,
+            "rule": 0
+          }
+        ],
+        "records": 2,
+        "skipped": 1,
+        "truncated": false
+      }
+    },
+    {
+      "name": "json: each names the list of records",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "json",
+        "each": "/data/items",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"data\":{\"items\":[{\"t\":\"a\",\"h\":\"10.0.0.1\"},{\"t\":\"b\",\"h\":\"10.0.0.2\"}]}}",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          },
+          {
+            "id": "asset-2",
+            "type": "ip_address",
+            "value": "10.0.0.2",
+            "name": "10.0.0.2"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-2"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 2,
+        "issues": [],
+        "records": 2,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "json: a top-level list is the records",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "json",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "[{\"t\":\"a\",\"h\":\"10.0.0.1\"},{\"t\":\"b\",\"h\":\"10.0.0.2\"}]",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          },
+          {
+            "id": "asset-2",
+            "type": "ip_address",
+            "value": "10.0.0.2",
+            "name": "10.0.0.2"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-2"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 2,
+        "issues": [],
+        "records": 2,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "jsonl: a line that is not JSON is skipped with an issue",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\"}\nnot json\n\n{\"t\":\"b\",\"h\":\"10.0.0.2\"}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          },
+          {
+            "id": "asset-2",
+            "type": "ip_address",
+            "value": "10.0.0.2",
+            "name": "10.0.0.2"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "low",
+            "asset_ref": "asset-2"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 2,
+        "issues": [
+          {
+            "record": 2,
+            "rule": -1
+          }
+        ],
+        "records": 3,
+        "skipped": 1,
+        "truncated": false
+      }
+    },
+    {
+      "name": "csv: auto delimiter, BOM, quoted cells, empty cells left out",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "csv",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/Title",
+              "severity": {
+                "path": "/Sev",
+                "default": "info"
+              },
+              "asset_value": "/Host"
+            }
+          }
+        ]
+      },
+      "input": "﻿Title;Sev;Host\r\n\"a; with \"\"quote\"\"\";high;10.0.0.1\r\nb;;10.0.0.2\r\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          },
+          {
+            "id": "asset-2",
+            "type": "ip_address",
+            "value": "10.0.0.2",
+            "name": "10.0.0.2"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a; with \"quote\"",
+            "severity": "high",
+            "asset_ref": "asset-1"
+          },
+          {
+            "type": "vulnerability",
+            "title": "b",
+            "severity": "info",
+            "asset_ref": "asset-2"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 2,
+        "issues": [],
+        "records": 2,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "csv: skip_rows, trimmed, empty and repeated column names",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "csv",
+        "csv": {
+          "delimiter": ",",
+          "skip_rows": 1
+        },
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/name",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/column_2",
+              "description": "/name_2"
+            }
+          }
+        ]
+      },
+      "input": "Report generated 2026-10-07\n name ,,name\nfirst,10.0.0.1,second\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "first",
+            "description": "second",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "csv: a cell beyond the header is ignored with an issue",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "csv",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "t,h\na,10.0.0.1,extra\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [
+          {
+            "record": 2,
+            "rule": -1
+          }
+        ],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "xml: attributes, text, repeated elements",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "xml",
+        "each": "//testcase",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/@name",
+              "severity": {
+                "const": "medium"
+              },
+              "asset_value": "/host",
+              "description": "/failure/@message",
+              "tags": "/tag"
+            },
+            "when": {
+              "path": "/failure",
+              "exists": true
+            }
+          }
+        ]
+      },
+      "input": "<?xml version=\"1.0\"?><suite><testcase name=\"t1\"><host>10.0.0.1</host><failure message=\"boom\">trace</failure><tag>a</tag><tag>b</tag></testcase><testcase name=\"t2\"><host>10.0.0.2</host></testcase></suite>",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "t1",
+            "description": "boom",
+            "severity": "medium",
+            "asset_ref": "asset-1",
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "findings": 1,
+        "issues": [],
+        "records": 2,
+        "skipped": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "xml: a document type declaration fails the input",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "xml",
+        "each": "//x",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "<?xml version=\"1.0\"?><!DOCTYPE x [<!ENTITY a \"b\">]><x><t>&a;</t></x>",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "error": {
+        "category": "input"
+      }
+    },
+    {
+      "name": "a version 1 mapping is refused",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v1",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "error": {
+        "category": "mapping"
+      }
+    },
+    {
+      "name": "an unknown member of a mapping is refused",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ],
+        "extra": 1
+      },
+      "input": "",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "error": {
+        "category": "mapping"
+      }
+    },
+    {
+      "name": "a constant fingerprint is refused",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "fingerprint": {
+                "const": "x"
+              }
+            }
+          }
+        ]
+      },
+      "input": "",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "error": {
+        "category": "mapping"
+      }
+    },
+    {
+      "name": "a reference member is not settable",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h",
+              "asset_ref": "/h"
+            }
+          }
+        ]
+      },
+      "input": "",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        }
+      },
+      "error": {
+        "category": "mapping"
+      }
+    },
+    {
+      "name": "observe lists the input fields and the unmapped ones",
+      "mapping": {
+        "apiVersion": "openctem.io/mapping/v2",
+        "source": "jsonl",
+        "records": [
+          {
+            "kind": "finding",
+            "set": {
+              "title": "/t",
+              "severity": {
+                "const": "low"
+              },
+              "asset_value": "/h"
+            }
+          }
+        ]
+      },
+      "input": "{\"t\":\"a\",\"h\":\"10.0.0.1\",\"extra\":{\"deep\":[1,{\"x\":2}]},\"n\":null}\n",
+      "options": {
+        "now": "2026-10-07T08:00:00Z",
+        "report_id": "0192f0a0-0000-7000-8000-000000000001",
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "observe": true
+      },
+      "expected_report": {
+        "version": "2.0",
+        "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+        "metadata": {
+          "id": "0192f0a0-0000-7000-8000-000000000001",
+          "generated_at": "2026-10-07T08:00:00Z",
+          "channel": "scanner"
+        },
+        "tool": {
+          "name": "conformance",
+          "version": "1.0.0"
+        },
+        "assets": [
+          {
+            "id": "asset-1",
+            "type": "ip_address",
+            "value": "10.0.0.1",
+            "name": "10.0.0.1"
+          }
+        ],
+        "findings": [
+          {
+            "type": "vulnerability",
+            "title": "a",
+            "severity": "low",
+            "asset_ref": "asset-1"
+          }
+        ]
+      },
+      "expected_stats": {
+        "assets": 0,
+        "dependencies": 0,
+        "fields": [
+          "/extra/deep",
+          "/extra/deep/x",
+          "/h",
+          "/n",
+          "/t"
+        ],
+        "fields_truncated": false,
+        "findings": 1,
+        "issues": [],
+        "records": 1,
+        "skipped": 0,
+        "truncated": false,
+        "unmapped": [
+          "/extra/deep",
+          "/extra/deep/x",
+          "/n"
+        ]
+      }
+    }
+  ]
+}

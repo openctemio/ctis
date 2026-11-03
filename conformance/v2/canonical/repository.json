@@ -1,0 +1,83 @@
+{
+  "function": "CanonicalRepository",
+  "description": "Repositories: <host>/<owner path>/<name>, no scheme, user info, port, .git or trailing slash; the host a canonical domain name; the path lowercase on github.com, gitlab.com, bitbucket.org and codeberg.org, kept elsewhere.",
+  "vectors": [
+    {
+      "input": "https://github.com/Org/Repo",
+      "output": "github.com/org/repo",
+      "note": "github.com is case-insensitive"
+    },
+    {
+      "input": "https://GitHub.com/Org/Repo.git/",
+      "output": "github.com/org/repo",
+      "note": "the slash, then .git, are removed"
+    },
+    {
+      "input": "git@github.com:Org/Repo.git",
+      "output": "github.com/org/repo",
+      "note": "scp-like syntax"
+    },
+    {
+      "input": "ssh://git@github.com:22/Org/Repo.git",
+      "output": "github.com/org/repo",
+      "note": "the port and user info are dropped"
+    },
+    {
+      "input": "https://ci-bot@github.com/Org/Repo",
+      "output": "github.com/org/repo",
+      "note": "user info is dropped"
+    },
+    {
+      "input": "https://gitlab.com/Group/Sub/Project",
+      "output": "gitlab.com/group/sub/project",
+      "note": "nested groups"
+    },
+    {
+      "input": "https://bitbucket.org/Team/Repo",
+      "output": "bitbucket.org/team/repo"
+    },
+    {
+      "input": "https://codeberg.org/User/Repo",
+      "output": "codeberg.org/user/repo"
+    },
+    {
+      "input": "https://dev.azure.com/Org/Project/_git/Repo",
+      "output": "dev.azure.com/Org/Project/_git/Repo",
+      "note": "other hosts keep the case of the path"
+    },
+    {
+      "input": "https://git.example.com:8443/Team/App.git",
+      "output": "git.example.com/Team/App"
+    },
+    {
+      "input": "github.com/org/repo",
+      "output": "github.com/org/repo",
+      "note": "no scheme"
+    },
+    {
+      "input": "https://bücher.example/Team/App",
+      "output": "xn--bcher-kva.example/Team/App",
+      "note": "the host is a canonical domain name"
+    },
+    {
+      "input": "github.com",
+      "error": true,
+      "note": "no path"
+    },
+    {
+      "input": "https://github.com/org//repo",
+      "error": true,
+      "note": "empty segment"
+    },
+    {
+      "input": "https://github.com/org/re po",
+      "error": true,
+      "note": "space"
+    },
+    {
+      "input": "https://github.com/org/repo?tab=x",
+      "error": true,
+      "note": "a query is not part of a repository"
+    }
+  ]
+}

@@ -34,6 +34,98 @@
     {
       "input": "file:///etc/passwd",
       "error": true
+    },
+    {
+      "input": "https://example.com/a%2fb",
+      "output": "https://example.com/a%2Fb",
+      "note": "an encoded slash stays encoded (uppercase): it is not a separator"
+    },
+    {
+      "input": "https://example.com/%e2%82%ac",
+      "output": "https://example.com/%E2%82%AC"
+    },
+    {
+      "input": "https://example.com/a!b/%7e",
+      "output": "https://example.com/a!b/~",
+      "note": "a path of RFC 3986 characters is kept as written, then escapes are normalised"
+    },
+    {
+      "input": "https://example.com/a b/%41!",
+      "output": "https://example.com/a%20b/A%21",
+      "note": "a path with a character outside RFC 3986 is re-encoded from its decoded form: unreserved and $&+,/:;=@ stay, everything else is %XX"
+    },
+    {
+      "input": "https://example.com/é",
+      "output": "https://example.com/%C3%A9",
+      "note": "non-ASCII is encoded as UTF-8 bytes"
+    },
+    {
+      "input": "https://example.com/a|b",
+      "output": "https://example.com/a%7Cb"
+    },
+    {
+      "input": "https://example.com/a;b=c/d",
+      "output": "https://example.com/a;b=c/d",
+      "note": "matrix parameters are part of the path"
+    },
+    {
+      "input": "https://example.com//a//b",
+      "output": "https://example.com//a//b",
+      "note": "empty segments are kept"
+    },
+    {
+      "input": "https://example.com/a/b/..",
+      "output": "https://example.com/a/",
+      "note": "a final .. leaves a trailing slash"
+    },
+    {
+      "input": "https://example.com/a/../../..",
+      "output": "https://example.com/"
+    },
+    {
+      "input": "https://Example.com/a%2Fb/../c",
+      "output": "https://example.com/c",
+      "note": "an encoded slash is part of a segment that .. removes"
+    },
+    {
+      "input": "https://example.com/%7E%2D%2E%5F",
+      "output": "https://example.com/~-._",
+      "note": "unreserved escapes are decoded"
+    },
+    {
+      "input": "https://example.com/%zz",
+      "error": true,
+      "note": "a malformed escape: not a URL"
+    },
+    {
+      "input": "https://example.com/?",
+      "output": "https://example.com/",
+      "note": "an empty query is dropped"
+    },
+    {
+      "input": "https://example.com/?a=1&&b&=2&a",
+      "output": "https://example.com/?a&b",
+      "note": "empty names and repeats are dropped"
+    },
+    {
+      "input": "https://example.com/p?B=1&a=2&b=3",
+      "output": "https://example.com/p?B&a&b",
+      "note": "names sort by bytes, so upper case first"
+    },
+    {
+      "input": "https://example.com/p?%61=1&a=2",
+      "output": "https://example.com/p?a",
+      "note": "names compare after their escapes are normalised"
+    },
+    {
+      "input": "https://example.com/p?a%3Db=1&c+d=2&%7e=3",
+      "output": "https://example.com/p?a%3Db&c+d&~",
+      "note": "a name keeps reserved escapes and + as written"
+    },
+    {
+      "input": "https://example.com/p#?q=1",
+      "output": "https://example.com/p",
+      "note": "a query inside the fragment is no query"
     }
   ]
 }

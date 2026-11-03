@@ -22,6 +22,49 @@
     {
       "input": "10.0.0.0/33",
       "error": true
+    },
+    {
+      "input": "0.0.0.0/0",
+      "output": "0.0.0.0/0"
+    },
+    {
+      "input": "192.0.2.1/32",
+      "output": "192.0.2.1/32",
+      "note": "a /32 keeps its host"
+    },
+    {
+      "input": "::/0",
+      "output": "::/0"
+    },
+    {
+      "input": "::ffff:192.0.2.1/128",
+      "output": "192.0.2.1/32",
+      "note": "a mapped /128 becomes an IPv4 /32"
+    },
+    {
+      "input": "::ffff:192.0.2.0/96",
+      "output": "0.0.0.0/0",
+      "note": "a mapped /96 becomes 0.0.0.0/0"
+    },
+    {
+      "input": "::ffff:192.0.2.0/95",
+      "output": "::fffe:0:0/95",
+      "note": "a mapped range shorter than /96 stays IPv6, masked"
+    },
+    {
+      "input": "10.0.0.0/08",
+      "error": true,
+      "note": "a leading zero in the prefix length is refused"
+    },
+    {
+      "input": "fe80::1%eth0/64",
+      "error": true,
+      "note": "a zone is refused in a range"
+    },
+    {
+      "input": " 10.1.0.0/16 ",
+      "output": "10.1.0.0/16",
+      "note": "trimmed"
     }
   ]
 }

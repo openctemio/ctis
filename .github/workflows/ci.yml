@@ -120,6 +120,11 @@ jobs:
           go-version: '1.27'
           cache: true
 
+      # The command builds against this commit's core (it may use core
+      # changes not released yet); see the test job.
+      - name: Use this commit's modules
+        run: go work init $(bash .github/scripts/modules.sh)
+
       - name: Run go vet
         run: |
           for m in $(bash .github/scripts/modules.sh); do (cd "$m" && go vet ./...) || exit 1; done
@@ -209,6 +214,22 @@ jobs:
       - name: Conformance vectors
         run: '"$RUNNER_TEMP/ctis" conformance conformance/v2'
 
+      # The language-neutral harness drives the CLI through the conformance
+      # protocol (conformance/PROTOCOL.md), so the protocol is tested too, and
+      # it must walk exactly the vectors the Go runner walks.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Conformance protocol harness
+        run: |
+          set -o pipefail
+          python3 scripts/conformance_harness.py --strict-messages -- "$RUNNER_TEMP/ctis" conformance --serve | tee "$RUNNER_TEMP/harness.txt"
+          go_n=$("$RUNNER_TEMP/ctis" conformance conformance/v2 | awk '/ vectors, /{print $1}')
+          py_n=$(awk '/^cases: /{sub(",", "", $2); print $2}' "$RUNNER_TEMP/harness.txt")
+          echo "Go runner: $go_n vectors, harness: $py_n cases"
+          [ -n "$go_n" ] && [ "$go_n" = "$py_n" ]
+
       - name: Import and export through the adapters
         run: |
           "$RUNNER_TEMP/ctis" import v2/interop/sarif/testdata/importers/semgrep.sarif > "$RUNNER_TEMP/r.ctis.json"
@@ -266,6 +287,11 @@ jobs:
         with:
           go-version: '1.27'
           cache: true
+
+      # The command builds against this commit's core (it may use core
+      # changes not released yet); see the test job.
+      - name: Use this commit's modules
+        run: go work init $(bash .github/scripts/modules.sh)
 
       - name: Build
         run: |

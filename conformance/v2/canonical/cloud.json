@@ -36,6 +36,89 @@
       "function": "CanonicalGCPResourceName",
       "input": "https://compute.googleapis.com/projects/p1",
       "error": true
+    },
+    {
+      "function": "CanonicalARN",
+      "input": "arn:aws-cn:IAM::123456789012:Role/Admin",
+      "output": "arn:aws-cn:iam::123456789012:Role/Admin",
+      "note": "the account and resource keep their case"
+    },
+    {
+      "function": "CanonicalARN",
+      "input": "arn:aws:sns:us-east-1:123:topic:a:b:c",
+      "output": "arn:aws:sns:us-east-1:123:topic:a:b:c",
+      "note": "colons after the fifth belong to the resource"
+    },
+    {
+      "function": "CanonicalARN",
+      "input": " arn:aws:s3:::bucket ",
+      "output": "arn:aws:s3:::bucket",
+      "note": "trimmed"
+    },
+    {
+      "function": "CanonicalARN",
+      "input": "arn::s3:::bucket",
+      "error": true,
+      "note": "empty partition"
+    },
+    {
+      "function": "CanonicalARN",
+      "input": "arn:aws:s3:::",
+      "error": true,
+      "note": "empty resource"
+    },
+    {
+      "function": "CanonicalAzureResourceID",
+      "input": "/SUBSCRIPTIONS/abc/",
+      "output": "/subscriptions/abc"
+    },
+    {
+      "function": "CanonicalAzureResourceID",
+      "input": "/providers/Microsoft.Management/managementGroups/MG1",
+      "output": "/providers/microsoft.management/managementgroups/mg1",
+      "note": "a tenant-level id"
+    },
+    {
+      "function": "CanonicalAzureResourceID",
+      "input": "/subscriptions/abc/resourceGroups/RG/providers/Microsoft.Storage/storageAccounts/SA1///",
+      "output": "/subscriptions/abc/resourcegroups/rg/providers/microsoft.storage/storageaccounts/sa1",
+      "note": "every trailing slash is removed"
+    },
+    {
+      "function": "CanonicalAzureResourceID",
+      "input": "/subscriptions/abc//resourceGroups/x",
+      "error": true,
+      "note": "empty segment"
+    },
+    {
+      "function": "CanonicalGCPResourceName",
+      "input": "//storage.googleapis.com/projects/_/buckets/My-Bucket/",
+      "output": "//storage.googleapis.com/projects/_/buckets/My-Bucket",
+      "note": "the path keeps its case; the trailing slash goes"
+    },
+    {
+      "function": "CanonicalGCPResourceName",
+      "input": "//.googleapis.com/x",
+      "error": true,
+      "note": "no service"
+    },
+    {
+      "function": "CanonicalGCPResourceName",
+      "input": "//compute.googleapis.com/",
+      "error": true,
+      "note": "no path"
+    },
+    {
+      "function": "CanonicalGCPResourceName",
+      "input": "//compute.googleapis.com/a//b",
+      "error": true,
+      "note": "empty segment"
+    },
+    {
+      "function": "CanonicalGCPResourceName",
+      "input": "//compute.example.com/projects/p",
+      "error": true,
+      "note": "not googleapis.com"
     }
   ]
 }

@@ -9,6 +9,21 @@
     {
       "input": "ababababababababababababababababababababababababababababababab",
       "error": true
+    },
+    {
+      "input": "ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab",
+      "output": "abababababababababababababababababababababababababababababababab",
+      "note": "spaces are removed"
+    },
+    {
+      "input": "AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB-AB",
+      "error": true,
+      "note": "hyphens are not separators"
+    },
+    {
+      "input": "ababababababababababababababababababababababababababababababababab",
+      "error": true,
+      "note": "66 hex digits"
     }
   ]
 }

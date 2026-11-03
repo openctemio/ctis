@@ -43,7 +43,7 @@ v2/interop/<format>/<upstream-version>/import.json
 v2/interop/<format>/<upstream-version>/export.json
 ```
 
-A mapping file describes one direction of one upstream version. `apiVersion` is `openctem.io/interop/v1`. The package `interop/engine` loads it strictly: unknown members are errors, and so are hooks the adapter does not register and tables the adapter looks up that are missing. The adapter embeds its mapping directories and loads every version side by side (`engine.LoadFS`).
+A mapping file describes one direction of one upstream version. `apiVersion` is `openctem.io/interop/v1`. The engine is specified normatively in [mapping-engine.md](mapping-engine.md), with vectors in `conformance/v2/interop-engine`; this section summarises it. The package `interop/engine` loads it strictly: unknown members are errors, and so are hooks the adapter does not register and tables the adapter looks up that are missing. The adapter embeds its mapping directories and loads every version side by side (`engine.LoadFS`).
 
 | Member | Meaning |
 |---|---|

@@ -1,0 +1,1115 @@
+{
+  "description": "Version-gated decoding (spec section 2.2, docs/decoding.md) by a 2.0 receiver: the document as received, and either the decoded report (with members it does not know removed and enum fallbacks applied) and the list of what was ignored, mapped, removed or dropped, or an error with its category (version or decode). Entries are JSON Pointers into the received document, listed sorted by path, then kind.",
+  "receiver_version": "2.0",
+  "cases": [
+    {
+      "name": "same minor: an unknown member is refused",
+      "document": {
+        "version": "2.0",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com"
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "vulnerability",
+            "severity": "high",
+            "sevrity": "high"
+          }
+        ]
+      },
+      "error": {
+        "category": "decode"
+      }
+    },
+    {
+      "name": "same minor: an unknown top-level member is refused",
+      "document": {
+        "version": "2.0",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "future": {
+          "x": 1
+        }
+      },
+      "error": {
+        "category": "decode"
+      }
+    },
+    {
+      "name": "newer minor: unknown members are ignored at any depth",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com",
+            "future_member": {
+              "a": [
+                1,
+                2
+              ]
+            }
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "vulnerability",
+            "severity": "high",
+            "new_block": {
+              "k": "v"
+            }
+          }
+        ],
+        "future": {
+          "x": 1
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ],
+          "findings": [
+            {
+              "type": "vulnerability",
+              "title": "t",
+              "severity": "high",
+              "asset_ref": "a1"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/assets/0/future_member",
+            "kind": "member"
+          },
+          {
+            "path": "/findings/0/new_block",
+            "kind": "member"
+          },
+          {
+            "path": "/future",
+            "kind": "member"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: unknown metadata member",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z",
+          "new_field": "x"
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          }
+        },
+        "unknown": [
+          {
+            "path": "/metadata/new_field",
+            "kind": "member"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: unknown severity falls back to unknown",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com"
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "vulnerability",
+            "severity": "urgent"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ],
+          "findings": [
+            {
+              "type": "vulnerability",
+              "title": "t",
+              "severity": "unknown",
+              "asset_ref": "a1"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/findings/0/severity",
+            "kind": "enum_value",
+            "value": "urgent",
+            "fallback": "unknown"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: unknown asset type falls back to unclassified",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "quantum_device",
+            "value": "q-1"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "unclassified",
+              "value": "q-1"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/assets/0/type",
+            "kind": "enum_value",
+            "value": "quantum_device",
+            "fallback": "unclassified"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: unknown target kind falls back to unclassified",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z",
+          "targets": [
+            {
+              "target": "example.com",
+              "kind": "quantum_device",
+              "state": "done"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z",
+            "targets": [
+              {
+                "target": "example.com",
+                "kind": "unclassified",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        "unknown": [
+          {
+            "path": "/metadata/targets/0/kind",
+            "kind": "enum_value",
+            "value": "quantum_device",
+            "fallback": "unclassified"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: unknown environment falls back to unknown",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com",
+            "environment": "preprod"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com",
+              "environment": "unknown"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/assets/0/environment",
+            "kind": "enum_value",
+            "value": "preprod",
+            "fallback": "unknown"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: unknown endpoint kind and auth fall back",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "o1",
+            "type": "web_origin",
+            "value": "https://example.com"
+          }
+        ],
+        "endpoints": [
+          {
+            "origin": "https://example.com",
+            "origin_ref": "o1",
+            "method": "GET",
+            "path": "/x",
+            "kind": "graphql_sub",
+            "auth": "mtls_plus"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "o1",
+              "type": "web_origin",
+              "value": "https://example.com"
+            }
+          ],
+          "endpoints": [
+            {
+              "origin": "https://example.com",
+              "origin_ref": "o1",
+              "method": "GET",
+              "path": "/x",
+              "kind": "other",
+              "auth": "unknown"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/endpoints/0/auth",
+            "kind": "enum_value",
+            "value": "mtls_plus",
+            "fallback": "unknown"
+          },
+          {
+            "path": "/endpoints/0/kind",
+            "kind": "enum_value",
+            "value": "graphql_sub",
+            "fallback": "other"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: unknown network device kind falls back to other",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "n1",
+            "type": "network_device",
+            "value": "sw-1",
+            "technical": {
+              "network_device": {
+                "kind": "optical_switch"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "n1",
+              "type": "network_device",
+              "value": "sw-1",
+              "technical": {
+                "network_device": {
+                  "kind": "other"
+                }
+              }
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/assets/0/technical/network_device/kind",
+            "kind": "enum_value",
+            "value": "optical_switch",
+            "fallback": "other"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: a finding of an unknown type is dropped",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com"
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "quantum_flaw",
+            "severity": "high"
+          },
+          {
+            "asset_ref": "a1",
+            "title": "kept",
+            "type": "vulnerability",
+            "severity": "high"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ],
+          "findings": [
+            {
+              "type": "vulnerability",
+              "title": "kept",
+              "severity": "high",
+              "asset_ref": "a1"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/findings/0",
+            "kind": "dropped"
+          },
+          {
+            "path": "/findings/0/type",
+            "kind": "enum_value",
+            "value": "quantum_flaw"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: an unknown optional enum is removed",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com"
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "vulnerability",
+            "severity": "high",
+            "status": "snoozed"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ],
+          "findings": [
+            {
+              "type": "vulnerability",
+              "title": "t",
+              "severity": "high",
+              "asset_ref": "a1"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/findings/0/status",
+            "kind": "enum_value",
+            "value": "snoozed"
+          },
+          {
+            "path": "/findings/0/status",
+            "kind": "removed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: an unknown channel is removed",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z",
+          "channel": "carrier_pigeon"
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          }
+        },
+        "unknown": [
+          {
+            "path": "/metadata/channel",
+            "kind": "enum_value",
+            "value": "carrier_pigeon"
+          },
+          {
+            "path": "/metadata/channel",
+            "kind": "removed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: a target with an unknown class is dropped",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z",
+          "targets": [
+            {
+              "target": "a.example",
+              "state": "failed",
+              "class": "solar_flare",
+              "cause": "target"
+            },
+            {
+              "target": "b.example",
+              "state": "done"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z",
+            "targets": [
+              {
+                "target": "b.example",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        "unknown": [
+          {
+            "path": "/metadata/targets/0",
+            "kind": "dropped"
+          },
+          {
+            "path": "/metadata/targets/0/class",
+            "kind": "enum_value",
+            "value": "solar_flare"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: a target with an unknown state is dropped",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z",
+          "targets": [
+            {
+              "target": "a.example",
+              "state": "paused"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          }
+        },
+        "unknown": [
+          {
+            "path": "/metadata/targets/0",
+            "kind": "dropped"
+          },
+          {
+            "path": "/metadata/targets/0/state",
+            "kind": "enum_value",
+            "value": "paused"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: an unknown cause is removed",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z",
+          "targets": [
+            {
+              "target": "a.example",
+              "state": "failed",
+              "class": "timeout",
+              "cause": "cosmic"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z",
+            "targets": [
+              {
+                "target": "a.example",
+                "state": "failed",
+                "class": "timeout"
+              }
+            ]
+          }
+        },
+        "unknown": [
+          {
+            "path": "/metadata/targets/0/cause",
+            "kind": "enum_value",
+            "value": "cosmic"
+          },
+          {
+            "path": "/metadata/targets/0/cause",
+            "kind": "removed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: gone without a known reason is not gone",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com",
+            "state": "gone",
+            "state_reason": "vanished"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/assets/0/state",
+            "kind": "removed"
+          },
+          {
+            "path": "/assets/0/state_reason",
+            "kind": "enum_value",
+            "value": "vanished"
+          },
+          {
+            "path": "/assets/0/state_reason",
+            "kind": "removed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: an unknown technique in a list is dropped from the list",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "tool": {
+          "name": "x",
+          "techniques": [
+            "sast",
+            "telepathy",
+            "sca"
+          ]
+        }
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "tool": {
+            "name": "x",
+            "techniques": [
+              "sast",
+              "sca"
+            ]
+          }
+        },
+        "unknown": [
+          {
+            "path": "/tool/techniques/1",
+            "kind": "dropped"
+          },
+          {
+            "path": "/tool/techniques/1",
+            "kind": "enum_value",
+            "value": "telepathy"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: an open vocabulary keeps an unknown token",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com"
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "vulnerability",
+            "severity": "high",
+            "native": {
+              "scheme": "new_scanner",
+              "severity": "7"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ],
+          "findings": [
+            {
+              "type": "vulnerability",
+              "title": "t",
+              "severity": "high",
+              "asset_ref": "a1",
+              "native": {
+                "scheme": "new_scanner",
+                "severity": "7"
+              }
+            }
+          ]
+        },
+        "unknown": []
+      }
+    },
+    {
+      "name": "newer minor: an open vocabulary removes a malformed token",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com"
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "vulnerability",
+            "severity": "high",
+            "native": {
+              "scheme": "Not A Token",
+              "severity": "7"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ],
+          "findings": [
+            {
+              "type": "vulnerability",
+              "title": "t",
+              "severity": "high",
+              "asset_ref": "a1",
+              "native": {
+                "severity": "7"
+              }
+            }
+          ]
+        },
+        "unknown": [
+          {
+            "path": "/findings/0/native/scheme",
+            "kind": "enum_value",
+            "value": "Not A Token"
+          },
+          {
+            "path": "/findings/0/native/scheme",
+            "kind": "removed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "newer minor: a known value is kept",
+      "document": {
+        "version": "2.99",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        },
+        "assets": [
+          {
+            "id": "a1",
+            "type": "domain_name",
+            "value": "example.com"
+          }
+        ],
+        "findings": [
+          {
+            "asset_ref": "a1",
+            "title": "t",
+            "type": "vulnerability",
+            "severity": "critical",
+            "status": "open"
+          }
+        ]
+      },
+      "expected": {
+        "omitted": 0,
+        "report": {
+          "version": "2.99",
+          "metadata": {
+            "id": "019a2b3c-4d5e-7000-8000-000000000001",
+            "generated_at": "2026-11-03T00:00:00Z"
+          },
+          "assets": [
+            {
+              "id": "a1",
+              "type": "domain_name",
+              "value": "example.com"
+            }
+          ],
+          "findings": [
+            {
+              "type": "vulnerability",
+              "title": "t",
+              "severity": "critical",
+              "asset_ref": "a1",
+              "status": "open"
+            }
+          ]
+        },
+        "unknown": []
+      }
+    },
+    {
+      "name": "another major is refused",
+      "document": {
+        "version": "1.6",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        }
+      },
+      "error": {
+        "category": "version"
+      }
+    },
+    {
+      "name": "a later major is refused",
+      "document": {
+        "version": "3.0",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        }
+      },
+      "error": {
+        "category": "version"
+      }
+    },
+    {
+      "name": "a malformed version is refused",
+      "document": {
+        "version": "2.0.0",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        }
+      },
+      "error": {
+        "category": "version"
+      }
+    },
+    {
+      "name": "a version with a leading zero is refused",
+      "document": {
+        "version": "2.01",
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        }
+      },
+      "error": {
+        "category": "version"
+      }
+    },
+    {
+      "name": "a missing version is refused",
+      "document": {
+        "metadata": {
+          "id": "019a2b3c-4d5e-7000-8000-000000000001",
+          "generated_at": "2026-11-03T00:00:00Z"
+        }
+      },
+      "error": {
+        "category": "version"
+      }
+    },
+    {
+      "name": "not JSON",
+      "text": "{\"version\": \"2.0\", ",
+      "error": {
+        "category": "decode"
+      }
+    },
+    {
+      "name": "trailing data after the document",
+      "text": "{\"version\": \"2.0\", \"metadata\": {\"id\": \"019a2b3c-4d5e-7000-8000-000000000001\", \"generated_at\": \"2026-11-03T00:00:00Z\"}} {}",
+      "error": {
+        "category": "decode"
+      }
+    },
+    {
+      "name": "trailing data after a newer-minor document",
+      "text": "{\"version\": \"2.99\", \"metadata\": {\"id\": \"019a2b3c-4d5e-7000-8000-000000000001\", \"generated_at\": \"2026-11-03T00:00:00Z\"}} []",
+      "error": {
+        "category": "decode"
+      }
+    }
+  ]
+}

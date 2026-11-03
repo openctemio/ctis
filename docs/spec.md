@@ -49,11 +49,12 @@ A receiver applies the rule by the minor the document declares, compared with it
 | `environment` | `unknown` |
 | `endpoints[].kind` | `other` |
 | `endpoints[].auth` | `unknown` |
+| `technical.network_device.kind` | `other` |
 | every other enum | none: the value is removed as described above |
 
 Open vocabularies (`native.scheme`, `technical.cloud.provider`, `technical.repository.platform`, compliance frameworks, `technical.http.cdn` and `waf`, the web3 vendor members, `source_refs[].system`) take any token of the form `^[a-z0-9][a-z0-9_.-]{0,63}$`; their known values are listed next to the member, and a receiver keeps an unknown value as a string.
 
-`ctis.Decode(r io.Reader) (Report, Unknown, error)` implements the rule and lists each ignored member, mapped or lost enum value, removed member and dropped array item as a JSON Pointer (at most 1,000 entries). Decode checks shape only; receivers still run `Report.Validate`.
+[decoding.md](decoding.md) gives the steps (vectors in `conformance/v2/decode`). `ctis.Decode(r io.Reader) (Report, Unknown, error)` implements the rule and lists each ignored member, mapped or lost enum value, removed member and dropped array item as a JSON Pointer (at most 1,000 entries). Decode checks shape only; receivers still run `Report.Validate`.
 
 **Rollout:** a producer SHOULD stay within the members of the oldest receiver it talks to when it needs every member read; anything newer is ignored, not refused. Upgrade receivers first, then producers. A major moves producers and receivers together.
 
@@ -102,7 +103,7 @@ A CTIS document is one UTF-8 JSON object (RFC 8259), the **report**. Duplicate m
 - The schemas are JSON Schema 2020-12. `report.json` references the other files by relative `$ref`, so a validator loads all eight (`scripts/validate_schemas.py` shows how).
 - Every object sets `additionalProperties: false` except the bags (`properties`, `extensions`) and the typed maps (`partial_fingerprints`, `source_extra`, `whois`, `languages`, `technical.cloud.tags`, `technical.service.details`). A typo fails at the schema exactly as it fails at a strict receiver.
 - Every string, array and map carries a bound in the schema.
-- `Report.Validate()` (Go) checks what the schema cannot: `metadata.id` is a UUIDv7; ids are unique; every reference resolves within the document; asset values are canonical for their type (section 5); score ranges per system; VEX consistency; target state and class fit; tri-state and cross-member rules. Producers SHOULD run it before sending; receivers MUST run it (or an equivalent) at their ingest boundary.
+- `Report.Validate()` (Go) checks what the schema cannot: `metadata.id` is a UUIDv7; ids are unique; every reference resolves within the document; asset values are canonical for their type (section 5); score ranges per system; VEX consistency; target state and class fit; tri-state and cross-member rules. Producers SHOULD run it before sending; receivers MUST run it (or an equivalent) at their ingest boundary. [validation-rules.md](validation-rules.md) lists these rules one by one, each with an id (`V-REF-006`) and an invalid document in `conformance/v2/documents`.
 
 ## 5. Assets
 
@@ -132,7 +133,7 @@ Each type has one meaning, so two producers that see the same thing produce the 
 
 ### 5.2 Canonical forms
 
-`value` MUST be the canonical form of its type. `ctis.CanonicalAssetValue(type, value)` implements this table; [`conformance/v2/canonical`](../conformance/v2/canonical) holds the vectors.
+`value` MUST be the canonical form of its type. `ctis.CanonicalAssetValue(type, value)` implements this table; [canonical-forms.md](canonical-forms.md) gives each algorithm step by step, and [`conformance/v2/canonical`](../conformance/v2/canonical) holds the vectors.
 
 | Type | Canonical value | Go |
 |---|---|---|
@@ -291,7 +292,7 @@ CTIS converts to and from the formats tools already speak (SARIF, CycloneDX, SPD
 5. **Round trips are tested.** Every adapter and version has vectors (`conformance/interop/<format>/<version>/`): upstream samples, the expected CTIS, round trips with their accepted losses listed per vector, and the members passthrough must keep and write back.
 6. **Upstream is watched.** The official schema of every upstream version an adapter follows is vendored and checked by sha256 (`interop/upstreams.json`). A scheduled job proposes each new upstream release as a change: the vendored schema, a schema diff and a copy of the latest mapping.
 
-The details, including how to add an upstream version, are in [interop.md](interop.md). The exporters and their accepted losses are listed in [exporters.md](exporters.md); the importers in [importers/](importers).
+The details, including how to add an upstream version, are in [interop.md](interop.md); the engine that reads the mapping files (paths, detection, set rules and transforms, passthrough bounds and scrubbing) is specified in [mapping-engine.md](mapping-engine.md). The exporters and their accepted losses are listed in [exporters.md](exporters.md); the importers in [importers/](importers).
 
 ## 10. Naming rules
 

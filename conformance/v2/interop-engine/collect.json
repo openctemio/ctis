@@ -1,0 +1,1964 @@
+{
+  "description": "Passthrough and set rules (docs/mapping-engine.md, sections Set rules and Passthrough): an import mapping, a source document and the record pointers to inspect, to the passthrough of the report (the extension value, or null), the declared version, and per record the extension value and the members the set rules write (dotted names). Kept values are scrubbed: credential-named members and URL-like members with another scheme are dropped.",
+  "cases": [
+    {
+      "name": "unmapped members: absolute on the report, relative on the record",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "specVersion": "1.0",
+        "runId": "r-7",
+        "results": [
+          {
+            "ruleId": " R1 ",
+            "level": "ERROR",
+            "extra": {
+              "a": [
+                1,
+                2
+              ]
+            },
+            "note": "kept"
+          }
+        ]
+      },
+      "records": [
+        "/results/0"
+      ],
+      "expected": {
+        "records": {
+          "/results/0": {
+            "extension": {
+              "unmapped": {
+                "/extra": {
+                  "a": [
+                    1,
+                    2
+                  ]
+                },
+                "/note": "kept"
+              },
+              "version": "1.0"
+            },
+            "set": {
+              "rule_id": "R1",
+              "severity": "high"
+            }
+          }
+        },
+        "report": {
+          "unmapped": {
+            "/runId": "r-7"
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "set rules: transforms and conversions",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "results": [
+          {
+            "ruleId": "R2",
+            "level": " Warning ",
+            "kind": "Not_A-Token Kind",
+            "text": "line\tone\n\ntwo\u0007 three",
+            "score": 42.5,
+            "conf": "77",
+            "viewer": "https://viewer.example/r/1",
+            "upper": "abc"
+          }
+        ]
+      },
+      "records": [
+        "/results/0"
+      ],
+      "expected": {
+        "records": {
+          "/results/0": {
+            "extension": null,
+            "set": {
+              "confidence": 77,
+              "correlation_id": "notatokenkind",
+              "hosted_viewer_uri": "https://viewer.example/r/1",
+              "message": "ABC",
+              "rank": 42.5,
+              "rule_id": "R2",
+              "severity": "medium",
+              "title": "line one two"
+            }
+          }
+        },
+        "report": null,
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "set rules: a rejected value leaves the member unset",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "results": [
+          {
+            "ruleId": {
+              "o": 1
+            },
+            "level": "unheard-of",
+            "conf": "seventy",
+            "score": "x",
+            "viewer": "javascript:alert(1)",
+            "text": null
+          }
+        ]
+      },
+      "records": [
+        "/results/0"
+      ],
+      "expected": {
+        "records": {
+          "/results/0": {
+            "extension": {
+              "unmapped": {
+                "/ruleId/o": 1
+              },
+              "version": "1.0"
+            },
+            "set": {
+              "severity": "info"
+            }
+          }
+        },
+        "report": null,
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "table default and number text",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "results": [
+          {
+            "ruleId": 7,
+            "level": "",
+            "conf": 100.0,
+            "score": "1e1"
+          }
+        ]
+      },
+      "records": [
+        "/results/0"
+      ],
+      "expected": {
+        "records": {
+          "/results/0": {
+            "extension": null,
+            "set": {
+              "confidence": 100,
+              "rank": 10,
+              "rule_id": "7",
+              "severity": "info"
+            }
+          }
+        },
+        "report": null,
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "an ignored member and everything below it are never kept",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "invocations": [
+          {
+            "commandLine": "x",
+            "cwd": "/home"
+          }
+        ],
+        "results": []
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": null,
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "credential-named members are dropped at any depth",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "password": "x",
+        "Authorization": "y",
+        "apiKey": "z",
+        "env": {
+          "A": "1"
+        },
+        "meta": {
+          "token": "t",
+          "ok": "kept",
+          "nested": [
+            {
+              "client_secret": "s",
+              "name": "n"
+            }
+          ]
+        },
+        "commandLine": "c",
+        "arguments": [
+          "a"
+        ]
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "unmapped": {
+            "/meta": {
+              "nested": [
+                {
+                  "name": "n"
+                }
+              ],
+              "ok": "kept"
+            }
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "URL-like members with a scheme other than http or https are dropped",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "helpUri": "javascript:alert(1)",
+        "homeURL": "HTTPS://example.com/",
+        "docsHref": "relative/path",
+        "links": {
+          "downloadUrl": "file:///etc/passwd",
+          "pageUrl": "http://example.com/x",
+          "dataUri": "data:text/plain,hi"
+        },
+        "notAUrlName": "ftp://example.com"
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "unmapped": {
+            "/docsHref": "relative/path",
+            "/homeURL": "HTTPS://example.com/",
+            "/links": {
+              "pageUrl": "http://example.com/x"
+            },
+            "/notAUrlName": "ftp://example.com"
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "the declared version is recorded; a malformed one falls back to the mapping's",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "specVersion": "1.2.3.4",
+        "x": 1
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "unmapped": {
+            "/x": 1
+          },
+          "version": "1.2.3.4"
+        },
+        "version": "1.2.3.4"
+      }
+    },
+    {
+      "name": "a malformed declared version",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": {
+        "kind": "example",
+        "specVersion": "v1",
+        "x": 1
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "unmapped": {
+            "/x": 1
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "max_entries: members over the limit mark the object truncated",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        },
+        "passthrough": {
+          "max_entries": 2
+        }
+      },
+      "document": {
+        "kind": "example",
+        "a": 1,
+        "b": 2,
+        "c": 3,
+        "d": 4
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "truncated": true,
+          "unmapped": {
+            "/a": 1,
+            "/b": 2
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "max_bytes: a member larger than the limit is dropped",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        },
+        "passthrough": {
+          "max_bytes": 64
+        }
+      },
+      "document": {
+        "kind": "example",
+        "small": "x",
+        "big": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "truncated": true,
+          "unmapped": {
+            "/small": "x"
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "max_depth: a value nested deeper than the limit is dropped",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        },
+        "passthrough": {
+          "max_depth": 2
+        }
+      },
+      "document": {
+        "kind": "example",
+        "shallow": {
+          "a": {
+            "b": 1
+          }
+        },
+        "deep": {
+          "a": {
+            "b": {
+              "c": 1
+            }
+          }
+        }
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "truncated": true,
+          "unmapped": {
+            "/shallow": {
+              "a": {
+                "b": 1
+              }
+            }
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "fold: a recursive structure is listed once",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/tree",
+            "target": "(container)"
+          },
+          {
+            "path": "/tree/name",
+            "target": "asset names"
+          },
+          {
+            "path": "/tree/children",
+            "target": "(container)"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        },
+        "fold": [
+          {
+            "from": "/tree/children[]",
+            "to": "/tree"
+          }
+        ]
+      },
+      "document": {
+        "kind": "example",
+        "tree": {
+          "name": "root",
+          "extra": 1,
+          "children": [
+            {
+              "name": "c1",
+              "extra": 2,
+              "children": [
+                {
+                  "name": "c2",
+                  "extra": 3
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": {
+          "unmapped": {
+            "/tree/children/0/children/0/extra": 3,
+            "/tree/children/0/extra": 2,
+            "/tree/extra": 1
+          },
+          "version": "1.0"
+        },
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "a scalar document keeps nothing",
+      "mapping": {
+        "apiVersion": "openctem.io/interop/v1",
+        "format": "example",
+        "version": "1.0",
+        "direction": "import",
+        "namespace": "org.example.interop",
+        "title": "Example 1.0",
+        "detect": [
+          {
+            "pointer": "/kind",
+            "equals": "example"
+          }
+        ],
+        "version_pointer": "/specVersion",
+        "records": [
+          {
+            "name": "result",
+            "path": "/results[]",
+            "kind": "finding"
+          }
+        ],
+        "fields": [
+          {
+            "path": "/kind",
+            "ignored": "detected only"
+          },
+          {
+            "path": "/specVersion",
+            "target": "passthrough version"
+          },
+          {
+            "path": "/results",
+            "target": "(container)"
+          },
+          {
+            "path": "/results[]",
+            "target": "findings[]"
+          },
+          {
+            "path": "/results[]/ruleId",
+            "set": "rule_id",
+            "record": "result",
+            "transform": [
+              "trim"
+            ]
+          },
+          {
+            "path": "/results[]/level",
+            "set": "severity",
+            "record": "result",
+            "transform": [
+              "table:level"
+            ]
+          },
+          {
+            "path": "/results[]/kind",
+            "set": "correlation_id",
+            "record": "result",
+            "transform": [
+              "token"
+            ]
+          },
+          {
+            "path": "/results[]/text",
+            "set": "title",
+            "record": "result",
+            "transform": [
+              "line",
+              "max_bytes:12"
+            ]
+          },
+          {
+            "path": "/results[]/score",
+            "set": "rank",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/conf",
+            "set": "confidence",
+            "record": "result"
+          },
+          {
+            "path": "/results[]/viewer",
+            "set": "hosted_viewer_uri",
+            "record": "result",
+            "transform": [
+              "http_url"
+            ]
+          },
+          {
+            "path": "/results[]/upper",
+            "set": "message",
+            "record": "result",
+            "transform": [
+              "upper"
+            ]
+          },
+          {
+            "path": "/invocations",
+            "ignored": "command lines and environments"
+          }
+        ],
+        "tables": {
+          "level": {
+            "match": "fold",
+            "map": {
+              "error": "high",
+              "warning": "medium",
+              "note": "low"
+            },
+            "default": "info"
+          }
+        }
+      },
+      "document": "just a string",
+      "records": [],
+      "expected": {
+        "records": {},
+        "report": null,
+        "version": "1.0"
+      }
+    }
+  ]
+}

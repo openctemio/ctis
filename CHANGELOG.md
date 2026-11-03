@@ -4,6 +4,19 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+Language-neutral CTIS: every behaviour that was Go code now has normative text and conformance vectors, and one harness tests any implementation through a line protocol, so a binding in another language is generated from the schemas and tested rather than ported by hand. The format, the Go module path and the Go API are unchanged.
+
+### Added
+
+- Normative algorithms: [docs/canonical-forms.md](docs/canonical-forms.md) (every canonical form step by step, the asset key, vulnerability ids and the preferred id, the location key, web URLs and path templates), [docs/decoding.md](docs/decoding.md) (version-gated decoding: what is ignored, mapped, removed or dropped), [docs/validation-rules.md](docs/validation-rules.md) (every rule beyond the schema, with ids such as `V-REF-006`) and [docs/mapping-engine.md](docs/mapping-engine.md) (the interop mapping file format, path grammar, detection, set rules and transform registry, passthrough bounds and scrubbing).
+- Vectors: canonical forms for every asset type with edge cases (simple case mapping, IDNA-lite, IPv4-mapped IPv6, zones, default ports, percent-encoding, purl qualifiers, CPE escaping, ARN, Azure and GCP ids, image digests) and a repository file; vulnerability ids; more preferred-id, location-key and correlation cases; fingerprint recipe detection; web URLs (`weburl/urls.json`, the `weburl` corpus); version-gated decoding (`decode/decode.json`); one invalid document per validation rule (`rule` in the documents manifest); declarative mappings (`mapping/vectors.json`); the interop engine (`interop-engine/`).
+- [conformance/PROTOCOL.md](conformance/PROTOCOL.md): a line protocol (one JSON request per line on standard input, one answer per line) with an operation per vector family; `scripts/conformance_harness.py` (standard library only) walks the vectors, drives any implementation through it and reports per operation; `ctis conformance --serve` implements it with the Go reference, and CI runs the harness against it.
+- [docs/porting.md](docs/porting.md) ("Porting CTIS to a new language") and [`bindings/`](bindings/README.md), reserved for other languages.
+
+### Fixed
+
+- Spec section 2.2 lists the fallback `other` of `technical.network_device.kind`, which decoding has always applied.
+
 ## [2.0.1] - 2026-11-03
 
 2.0 finalisation during the initial conversion; no outside adopters yet. The changes below complete 2.0 rather than open a new minor; every receiver and producer in the conversion moves to this release together.
