@@ -6,9 +6,9 @@ The record has two parts. Items marked **1.7** are additive, so they fit a minor
 
 **Decision (maintainers, 2026-11-03).** The plan is adopted:
 
-- 1.6.x patch releases fix the defects found in the review and add conformance vectors and a validator CLI. 1.6.x stays the maintenance line for producers already deployed;
+- a 1.6.x patch release fixes the defects found in the review and adds conformance vectors and a validator CLI. It is the last 1.x release;
 - the items marked 1.7 are not released as a separate minor: they ship inside 2.0, so producers and receivers change once;
-- 2.0 is cut now, as one breaking release, while CTIS has no outside implementers. There are no aliases on the wire. The Go module ships a receiver-side 1.x to 2.0 upgrader that receivers run for one release train, so deployed producers keep working until they are upgraded;
+- 2.0 is cut now, as one breaking release, while CTIS has no outside implementers. There are no aliases on the wire and no 1.x intake after the cut: producers and receivers move to 2.0 together;
 - contributions to this repository are made under the Developer Certificate of Origin (P10).
 
 ## P1. Receiver-neutral specification (1.7, text only)
