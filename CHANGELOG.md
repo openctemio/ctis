@@ -12,7 +12,9 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 - Output is deterministic (no clock, sorted catalogs), needs no network and is bounded (`MaxExportBytes`). Secret findings are redacted before export and HTTP evidence marked sensitive is masked.
 - Round-trip tests (SARIF and CycloneDX fixtures through the importers and back, OCSF through a test reverse mapper) and golden files under `testdata/export/`; each fixture lists its accepted losses. Mapping and losses: `docs/exporters.md`.
 
-Patch release (1.6.7, proposed): bug fixes in the receiver-side keys and normalisation, conformance vectors, and the `ctis` command line tool. No report format change.
+## [1.6.7] - 2026-11-03
+
+Patch release: bug fixes in the receiver-side keys and normalisation, conformance vectors, and the `ctis` command line tool. No report format change.
 
 ### Fixed: interoperability keys and URL asset names
 
