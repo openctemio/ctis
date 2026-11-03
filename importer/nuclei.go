@@ -426,8 +426,7 @@ func nucleiEvidence(r *nucleiResult) []ctis.EvidenceItem {
 	for i := range items {
 		ptrs[i] = &items[i]
 	}
-	ctis.MarkSensitive(ptrs...)
-	return items
+	return dropIncomplete(items, ctis.MarkSensitive(ptrs...))
 }
 
 // looksSecretValue reports whether an extracted value looks like a

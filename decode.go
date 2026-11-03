@@ -225,6 +225,7 @@ var enumPolicies = map[reflect.Type]enumPolicy{
 	reflect.TypeOf(ComplianceFramework("")):    {values: enumOf(AllComplianceFrameworks), open: true},
 	reflect.TypeOf(TLSVersion("")):             {values: enumOf(AllTLSVersions)},
 	reflect.TypeOf(IdentityKind("")):           {values: enumOf(AllIdentityKinds)},
+	reflect.TypeOf(NetworkDeviceKind("")):      {values: enumOf(AllNetworkDeviceKinds), fallback: string(NetworkDeviceOther)},
 	reflect.TypeOf(PortState("")):              {values: enumOf(AllPortStates)},
 	reflect.TypeOf(Transport("")):              {values: enumOf(AllTransports)},
 	reflect.TypeOf(DependencyRelationship("")): {values: enumOf(AllDependencyRelationships)},

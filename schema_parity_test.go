@@ -66,6 +66,7 @@ var goEnums = map[reflect.Type][]string{
 	reflect.TypeOf(ComplianceFramework("")):    stringsOf(AllComplianceFrameworks()),
 	reflect.TypeOf(TLSVersion("")):             stringsOf(AllTLSVersions()),
 	reflect.TypeOf(IdentityKind("")):           stringsOf(AllIdentityKinds()),
+	reflect.TypeOf(NetworkDeviceKind("")):      stringsOf(AllNetworkDeviceKinds()),
 	reflect.TypeOf(PortState("")):              stringsOf(AllPortStates()),
 	reflect.TypeOf(Transport("")):              stringsOf(AllTransports()),
 	reflect.TypeOf(DependencyRelationship("")): stringsOf(AllDependencyRelationships()),

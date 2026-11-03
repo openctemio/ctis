@@ -420,6 +420,14 @@
             "$ref": "#/$defs/Technique"
           },
           "description": "Detection techniques the tool applies (closed set). A finding may override with its own technique."
+        },
+        "content": {
+          "type": "array",
+          "maxItems": 16,
+          "description": "Content releases the tool ran with: template and rule packs, vulnerability databases",
+          "items": {
+            "$ref": "#/$defs/ToolContent"
+          }
         }
       }
     },
@@ -545,8 +553,44 @@
           },
           "description": "CWE identifiers the rule checks for"
         },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the rule's content as the tool ran it (a template or rule file), lowercase hex"
+        },
+        "content_path": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Path of the rule within the tool's content (plain text; receivers never open it)"
+        },
         "extensions": {
           "$ref": "#/$defs/Extensions"
+        }
+      }
+    },
+    "ToolContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One content release a tool ran with",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Content name, for example a template pack or a vulnerability database"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Release version"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the release, lowercase hex"
         }
       }
     }

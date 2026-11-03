@@ -222,3 +222,66 @@ func FuzzHTTPExchangeFromRaw(f *testing.F) {
 		}
 	})
 }
+
+// Repeating a sensitive value in more places than an item has spans widens
+// the spans to whole strings instead of leaving occurrences unmarked.
+func TestMarkSensitiveWidensAtSpanLimit(t *testing.T) {
+	const secret = "s3cr3tvalue"
+	var req strings.Builder
+	req.WriteString("GET / HTTP/1.1\r\nCookie: sid=" + secret + "\r\n\r\n")
+	for i := 0; i < 300; i++ {
+		req.WriteString(secret + " ")
+	}
+	resp := "HTTP/1.1 200 OK\r\nX-Echo: " + strings.Repeat(secret+",", 300) + "\r\n\r\n" + strings.Repeat(secret+";", 300)
+	it, ok := HTTPExchangeFromRaw(req.String(), resp, "https://a.example")
+	if !ok {
+		t.Fatal("exchange refused")
+	}
+	if got := unmarked(&it, secret); len(got) > 0 {
+		t.Fatalf("unmarked at %v", got)
+	}
+	if len(it.Sensitive) > MaxEvidenceSpans {
+		t.Fatalf("%d spans, at most %d", len(it.Sensitive), MaxEvidenceSpans)
+	}
+}
+
+// An item that would need more whole-string marks than MaxEvidenceSpans is
+// refused, never returned with a value unmarked.
+func TestMarkSensitiveRefusesWhenItCannotMark(t *testing.T) {
+	const secret = "s3cr3tvalue"
+	var req, resp strings.Builder
+	req.WriteString("GET /?q=" + secret + " HTTP/1.1\r\nCookie: sid=" + secret + "\r\n")
+	resp.WriteString("HTTP/1.1 200 OK\r\n")
+	for i := 0; i < MaxEvidenceHeaders; i++ {
+		fmt.Fprintf(&req, "X-R%d: %s\r\n", i, secret)
+		fmt.Fprintf(&resp, "X-S%d: %s\r\n", i, secret)
+	}
+	req.WriteString("\r\n" + secret)
+	resp.WriteString("\r\n" + secret)
+	it, ok := HTTPExchangeFromRaw(req.String(), resp.String(), "https://a.example")
+	if ok {
+		if got := unmarked(&it, secret); len(got) > 0 {
+			t.Fatalf("returned with %s unmarked at %v", secret, got)
+		}
+		return
+	}
+	t.Log("exchange refused")
+}
+
+// MarkSensitive reports an item it cannot mark completely, so the caller
+// drops it.
+func TestMarkSensitiveReportsIncomplete(t *testing.T) {
+	const secret = "s3cr3tvalue"
+	small := EvidenceItem{Kind: "http_exchange", HTTP: &EvidenceHTTP{Request: &EvidenceRequest{Headers: []EvidenceHeader{{Name: "Cookie", Value: "sid=" + secret}}}}}
+	big := EvidenceItem{Kind: "http_exchange", HTTP: &EvidenceHTTP{Request: &EvidenceRequest{Headers: []EvidenceHeader{{Name: "Cookie", Value: "sid=" + secret}}}}}
+	for i := 0; i < MaxEvidenceSpans+10; i++ {
+		big.HTTP.Request.Headers = append(big.HTTP.Request.Headers, EvidenceHeader{Name: fmt.Sprintf("X-%d", i), Value: secret})
+	}
+	inc := MarkSensitive(&small, &big)
+	if len(inc) != 1 || inc[0] != 1 {
+		t.Fatalf("incomplete = %v, want [1]", inc)
+	}
+	if got := unmarked(&small, secret); len(got) > 0 {
+		t.Fatalf("small item unmarked at %v", got)
+	}
+}

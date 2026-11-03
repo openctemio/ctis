@@ -62,7 +62,9 @@ func HTTPExchangeFromRaw(request, response, baseURL string) (EvidenceItem, bool)
 		return EvidenceItem{}, false
 	}
 	FitEvidenceItem(&it)
-	MarkSensitive(&it)
+	if len(MarkSensitive(&it)) > 0 {
+		return EvidenceItem{}, false
+	}
 	return it, true
 }
 
@@ -163,7 +165,9 @@ func HTTPExchangeFromHAR(entry []byte) (EvidenceItem, error) {
 		return EvidenceItem{}, errNoExchange
 	}
 	FitEvidenceItem(&it)
-	MarkSensitive(&it)
+	if len(MarkSensitive(&it)) > 0 {
+		return EvidenceItem{}, errTooManySecrets
+	}
 	return it, nil
 }
 
@@ -172,6 +176,11 @@ type evidenceError string
 func (e evidenceError) Error() string { return string(e) }
 
 const errNoExchange = evidenceError("no HTTP request or response")
+
+// errTooManySecrets: the exchange repeats sensitive values in more strings
+// than an item can mark (MaxEvidenceSpans), so it is dropped, not sent
+// unmarked.
+const errTooManySecrets = evidenceError("too many sensitive values to mark")
 
 func parseRawRequest(raw, baseURL string) (*EvidenceRequest, bool) {
 	head, body, ok := splitHTTPMessage(raw)
@@ -335,8 +344,25 @@ func FitEvidenceItem(it *EvidenceItem) {
 // sensitive headers, of sensitive query, form and JSON members of request
 // URLs and bodies, and for every other place in the items that repeats one
 // of those values (a curl command repeating the Cookie header). Values are
-// marked, never masked; spans already present are kept.
-func MarkSensitive(items ...*EvidenceItem) {
+// marked, never masked; spans already present are kept. When an item would
+// need more than MaxEvidenceSpans spans, its spans are widened to whole
+// strings. It returns the indexes of the items it could still not mark
+// completely (more strings to mark than MaxEvidenceSpans): callers MUST drop
+// those items, never send them unmarked.
+func MarkSensitive(items ...*EvidenceItem) (incomplete []int) {
+	failed := make(map[*EvidenceItem]bool)
+	mark := func(it *EvidenceItem, ptr string, start, end *int, kind string) {
+		if !addSpan(it, ptr, start, end, kind) {
+			failed[it] = true
+		}
+	}
+	defer func() {
+		for i, it := range items {
+			if it != nil && failed[it] {
+				incomplete = append(incomplete, i)
+			}
+		}
+	}()
 	values := map[string]string{} // value -> span kind
 	for _, it := range items {
 		if it == nil || it.HTTP == nil {
@@ -345,24 +371,24 @@ func MarkSensitive(items ...*EvidenceItem) {
 		if r := it.HTTP.Request; r != nil {
 			for k, h := range r.Headers {
 				if IsSensitiveHeader(h.Name) && h.Value != "" {
-					addSpan(it, "/http/request/headers/"+strconv.Itoa(k)+"/value", nil, nil, spanKindOf(h.Name))
+					mark(it, "/http/request/headers/"+strconv.Itoa(k)+"/value", nil, nil, spanKindOf(h.Name))
 					collectHeaderValues(values, h)
 				}
 			}
-			markParams(it, "/http/request/url", queryOf(r.URL), queryOffset(r.URL), values)
-			markParams(it, "/http/request/body", r.Body, 0, values)
+			markParams(it, "/http/request/url", queryOf(r.URL), queryOffset(r.URL), values, mark)
+			markParams(it, "/http/request/body", r.Body, 0, values, mark)
 		}
 		if r := it.HTTP.Response; r != nil {
 			for k, h := range r.Headers {
 				if IsSensitiveHeader(h.Name) && h.Value != "" {
-					addSpan(it, "/http/response/headers/"+strconv.Itoa(k)+"/value", nil, nil, spanKindOf(h.Name))
+					mark(it, "/http/response/headers/"+strconv.Itoa(k)+"/value", nil, nil, spanKindOf(h.Name))
 					collectHeaderValues(values, h)
 				}
 			}
 		}
 	}
 	if len(values) == 0 {
-		return
+		return nil
 	}
 	keys := make([]string, 0, len(values))
 	for v := range values {
@@ -388,12 +414,16 @@ func MarkSensitive(items ...*EvidenceItem) {
 						break
 					}
 					start, end := from+i, from+i+len(v)
-					addSpan(it, ptr, &start, &end, values[v])
+					mark(it, ptr, &start, &end, values[v])
+					if wholeMarked(it, ptr) {
+						break
+					}
 					from = end
 				}
 			}
 		}
 	}
+	return nil
 }
 
 func spanKindOf(header string) string {
@@ -450,7 +480,7 @@ func queryOffset(u string) int {
 
 // markParams marks the values of sensitive members of a query or form
 // string (a=b&c=d) and of a JSON text ("a":"b").
-func markParams(it *EvidenceItem, ptr, s string, offset int, values map[string]string) {
+func markParams(it *EvidenceItem, ptr, s string, offset int, values map[string]string, mark func(*EvidenceItem, string, *int, *int, string)) {
 	if s == "" {
 		return
 	}
@@ -460,7 +490,7 @@ func markParams(it *EvidenceItem, ptr, s string, offset int, values map[string]s
 		if ok && val != "" && IsSensitiveParam(unescapeName(name)) && !strings.ContainsAny(name, "{}\" \n") {
 			start := offset + pos + len(name) + 1
 			end := start + len(val)
-			addSpan(it, ptr, &start, &end, "secret")
+			mark(it, ptr, &start, &end, "secret")
 			values[val] = "secret"
 		}
 		pos += len(pair) + 1
@@ -468,7 +498,7 @@ func markParams(it *EvidenceItem, ptr, s string, offset int, values map[string]s
 	for _, m := range jsonMemberRE.FindAllStringSubmatchIndex(s, -1) {
 		if IsSensitiveParam(s[m[2]:m[3]]) && m[5] > m[4] {
 			start, end := offset+m[4], offset+m[5]
-			addSpan(it, ptr, &start, &end, "secret")
+			mark(it, ptr, &start, &end, "secret")
 			values[s[m[4]:m[5]]] = "secret"
 		}
 	}
@@ -481,16 +511,44 @@ func unescapeName(n string) string {
 	return n
 }
 
-func addSpan(it *EvidenceItem, ptr string, start, end *int, kind string) {
+// addSpan adds a span unless an equal or whole-string span of the pointer
+// exists. When the item is at MaxEvidenceSpans it widens every span to its
+// whole string (one span per pointer) and marks this pointer whole. It
+// reports false only when even that does not fit.
+func addSpan(it *EvidenceItem, ptr string, start, end *int, kind string) bool {
 	for _, s := range it.Sensitive {
-		if s.Pointer == ptr && eqIntPtr(s.Start, start) && eqIntPtr(s.End, end) {
-			return
+		if s.Pointer == ptr && ((s.Start == nil && s.End == nil) || (eqIntPtr(s.Start, start) && eqIntPtr(s.End, end))) {
+			return true
 		}
 	}
-	if len(it.Sensitive) >= MaxEvidenceSpans {
-		return
+	if len(it.Sensitive) < MaxEvidenceSpans {
+		it.Sensitive = append(it.Sensitive, SensitiveSpan{Pointer: ptr, Start: start, End: end, Kind: kind})
+		return true
 	}
-	it.Sensitive = append(it.Sensitive, SensitiveSpan{Pointer: ptr, Start: start, End: end, Kind: kind})
+	widenSpans(it)
+	if wholeMarked(it, ptr) {
+		return true
+	}
+	if len(it.Sensitive) < MaxEvidenceSpans {
+		it.Sensitive = append(it.Sensitive, SensitiveSpan{Pointer: ptr, Kind: kind})
+		return true
+	}
+	return false
+}
+
+// widenSpans replaces the spans of an item by one whole-string span per
+// pointer, keeping the first kind seen and the order of first appearance.
+func widenSpans(it *EvidenceItem) {
+	seen := make(map[string]bool, len(it.Sensitive))
+	out := it.Sensitive[:0]
+	for _, s := range it.Sensitive {
+		if seen[s.Pointer] {
+			continue
+		}
+		seen[s.Pointer] = true
+		out = append(out, SensitiveSpan{Pointer: s.Pointer, Kind: s.Kind})
+	}
+	it.Sensitive = out
 }
 
 func eqIntPtr(a, b *int) bool {
@@ -626,7 +684,9 @@ func sarifHTTPExchange(req *SARIFWebRequest, resp *SARIFWebResponse) (EvidenceIt
 		return EvidenceItem{}, false
 	}
 	FitEvidenceItem(&it)
-	MarkSensitive(&it)
+	if len(MarkSensitive(&it)) > 0 {
+		return EvidenceItem{}, false
+	}
 	return it, true
 }
 
