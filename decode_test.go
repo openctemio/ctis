@@ -214,3 +214,12 @@ func FuzzDecode(f *testing.F) {
 		_, _, _ = decodeAt(raw, SchemaMajor, 6)
 	})
 }
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}

@@ -6,6 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
+	"path"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -218,4 +222,67 @@ func scalarString(tok json.Token) (string, bool) {
 		return "false", true
 	}
 	return "", false
+}
+
+// LoadFS loads the mappings of one direction from an adapter's embedded
+// files: <version>/<direction>.json for every version directory at the root
+// of fsys, sorted by version. A mapping's version must equal its directory.
+// A new upstream version is one more directory.
+func LoadFS(fsys fs.FS, dir Direction, opts LoadOptions) (*Set, error) {
+	entries, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		return nil, mappingErr("%v", err)
+	}
+	var ms []*Mapping
+	for _, e := range entries {
+		if !e.IsDir() || !versionRE.MatchString(e.Name()) {
+			continue
+		}
+		data, err := fs.ReadFile(fsys, path.Join(e.Name(), string(dir)+".json"))
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, mappingErr("%v", err)
+		}
+		m, err := Load(data, opts)
+		if err != nil {
+			return nil, fmt.Errorf("%s/%s.json: %w", e.Name(), dir, err)
+		}
+		if m.Version != e.Name() || m.Direction != dir {
+			return nil, mappingErr("%s/%s.json is %s %s", e.Name(), dir, m.Direction, m.Version)
+		}
+		ms = append(ms, m)
+	}
+	if len(ms) == 0 {
+		return nil, mappingErr("no %s mapping", dir)
+	}
+	sort.Slice(ms, func(i, j int) bool { return versionLess(ms[i].Version, ms[j].Version) })
+	return NewSet(ms...)
+}
+
+// MustLoadFS is LoadFS that panics, for the sets an adapter builds at init.
+func MustLoadFS(fsys fs.FS, dir Direction, opts LoadOptions) *Set {
+	s, err := LoadFS(fsys, dir, opts)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func versionLess(a, b string) bool {
+	as, bs := strings.Split(a, "."), strings.Split(b, ".")
+	for i := 0; i < len(as) || i < len(bs); i++ {
+		var x, y int
+		if i < len(as) {
+			x, _ = strconv.Atoi(as[i])
+		}
+		if i < len(bs) {
+			y, _ = strconv.Atoi(bs[i])
+		}
+		if x != y {
+			return x < y
+		}
+	}
+	return false
 }

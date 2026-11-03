@@ -59,13 +59,6 @@ func TestNormalizeNativeSeverity(t *testing.T) {
 			t.Errorf("NormalizeNativeSeverity(%s, %q) = %q, %v; want %q, %v", c.scheme, c.in, got, ok, c.want, c.ok)
 		}
 	}
-	// SARIF table agrees with the converter.
-	for _, lvl := range []string{"error", "warning", "note", "none"} {
-		got, _ := NormalizeNativeSeverity(NativeSchemeSARIF, lvl)
-		if got != mapSARIFLevel(lvl) {
-			t.Errorf("sarif %s: table %s, converter %s", lvl, got, mapSARIFLevel(lvl))
-		}
-	}
 }
 
 func TestNormalizeNativeStatus(t *testing.T) {

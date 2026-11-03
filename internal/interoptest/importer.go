@@ -109,7 +109,7 @@ func ImporterGolden(t *testing.T, dir string, format importer.Format) {
 			}
 			CompareJSON(t, stem(fx)+".golden.json", res.Report)
 			CompareJSON(t, stem(fx)+".result.json", struct {
-				Format   importer.Format          `json:"format"`
+				Format   importer.Format         `json:"format"`
 				VEX      []importer.VEXStatement `json:"vex,omitempty"`
 				Stats    importer.Stats          `json:"stats"`
 				Issues   []importer.Issue        `json:"issues,omitempty"`

@@ -12,22 +12,14 @@ import (
 // The mapping files of this adapter, one directory per upstream version
 // (docs/interop.md).
 //
-//go:embed 2.3/*.json
+//go:embed [0-9]*/*.json
 var mappingFiles embed.FS
 
 // importHooks are the Go functions of this adapter that the mapping files
 // name for the members that are not field to field.
 var importHooks = []string{"spdx.document", "spdx.packages", "spdx.relationships"}
 
-var importSet = engine.MustSet(load("2.3/import.json", importHooks, nil))
-
-func load(name string, hooks, tables []string) *engine.Mapping {
-	data, err := mappingFiles.ReadFile(name)
-	if err != nil {
-		panic(err)
-	}
-	return engine.MustLoad(data, engine.LoadOptions{Hooks: hooks, Tables: tables})
-}
+var importSet = engine.MustLoadFS(mappingFiles, engine.Import, engine.LoadOptions{Hooks: importHooks})
 
 // Versions lists the upstream SPDX versions this adapter reads.
 func Versions() []string { return importSet.Versions() }

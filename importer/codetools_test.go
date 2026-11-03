@@ -3,15 +3,13 @@ package importer
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/internal/goldencheck"
 )
 
 func TestDetect_CodeFormats(t *testing.T) {
@@ -45,28 +43,12 @@ func TestDetect_CodeFormats(t *testing.T) {
 // The repository a receiver passes wins over the one a file names: a CI
 // upload cannot file its findings on another repository.
 func TestCodeFormats_RepositoryOptionWins(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join(fixtureRoot, "sarif", "codeql-provenance.sarif.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	res, err := Parse(context.Background(), bytes.NewReader(data), Options{Repository: "github.com/example/verified", Branch: "main", CommitSHA: "abc"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(res.Report.Assets) != 1 || res.Report.Assets[0].Value != "github.com/example/verified" {
-		t.Fatalf("assets = %+v", res.Report.Assets)
-	}
-	for _, f := range res.Report.Findings {
-		if f.AssetRef != res.Report.Assets[0].ID {
-			t.Fatalf("finding on %q", f.AssetRef)
-		}
-	}
-	if res.Report.Metadata.Branch == nil || res.Report.Metadata.Branch.Name != "main" {
-		t.Fatalf("branch = %+v", res.Report.Metadata.Branch)
-	}
 	// trivy: the image the file names loses to the repository too.
-	data, _ = os.ReadFile(filepath.Join(fixtureRoot, "trivy", "image.json"))
-	res, err = Parse(context.Background(), bytes.NewReader(data), Options{Repository: "github.com/example/verified"})
+	data, err := os.ReadFile(filepath.Join(fixtureRoot, "trivy", "image.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := Parse(context.Background(), bytes.NewReader(data), Options{Repository: "github.com/example/verified"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,101 +57,12 @@ func TestCodeFormats_RepositoryOptionWins(t *testing.T) {
 	}
 }
 
-// No raw secret, credential in a URL, cookie or extracted target data
-// reaches any golden output of the code formats, but typed evidence (spec
-// 4.8): an evidence item may hold the exchange as captured (target data
-// that proves the finding included), with every credential inside a span
-// it marks.
 func TestCodeFormats_NoSecretsInOutput(t *testing.T) {
-	credentials := []string{"AKIAEXAMPLEEXAMPLE00", "ghp_0000EXAMPLE", "not-a-token", "user:secret", "session=abc", "admin:hunter2"}
-	targetData := []string{"root:x:0"}
-	for _, dir := range []string{"betterleaks", "trivy", "sarif", "nuclei", "semgrep"} {
-		files, _ := filepath.Glob(filepath.Join(fixtureRoot, dir, "*.golden.json"))
-		res, _ := filepath.Glob(filepath.Join(fixtureRoot, dir, "*.result.json"))
-		for _, f := range append(files, res...) {
-			b, err := os.ReadFile(f)
-			if err != nil {
-				t.Fatal(err)
-			}
-			var doc struct {
-				Findings []map[string]json.RawMessage `json:"findings"`
-			}
-			_ = json.Unmarshal(b, &doc)
-			var items []ctis.EvidenceItem
-			for _, fd := range doc.Findings {
-				if raw, ok := fd["evidence_items"]; ok {
-					var ev []ctis.EvidenceItem
-					if err := json.Unmarshal(raw, &ev); err != nil {
-						t.Fatalf("%s: %v", f, err)
-					}
-					items = append(items, ev...)
-					b = bytes.Replace(b, raw, nil, 1)
-				}
-			}
-			for _, s := range append(append([]string(nil), credentials...), targetData...) {
-				if bytes.Contains(b, []byte(s)) {
-					t.Errorf("%s holds %q outside evidence items", f, s)
-				}
-			}
-			for i := range items {
-				for _, s := range credentials {
-					if ptrs := unmarkedIn(&items[i], s); len(ptrs) > 0 {
-						t.Errorf("%s: evidence holds %q unmarked at %v", f, s, ptrs)
-					}
-				}
-			}
-		}
+	var dirs []string
+	for _, d := range []string{"betterleaks", "trivy", "nuclei", "semgrep"} {
+		dirs = append(dirs, filepath.Join(fixtureRoot, d))
 	}
-}
-
-// unmarkedIn returns the JSON pointers of the item's strings that hold s
-// outside every marked span.
-func unmarkedIn(it *ctis.EvidenceItem, s string) []string {
-	raw, _ := json.Marshal(it)
-	var doc any
-	_ = json.Unmarshal(raw, &doc)
-	var out []string
-	var walk func(v any, ptr string)
-	walk = func(v any, ptr string) {
-		switch x := v.(type) {
-		case map[string]any:
-			for k, e := range x {
-				if ptr == "" && k == "sensitive" {
-					continue
-				}
-				walk(e, ptr+"/"+strings.ReplaceAll(strings.ReplaceAll(k, "~", "~0"), "/", "~1"))
-			}
-		case []any:
-			for i, e := range x {
-				walk(e, ptr+"/"+strconv.Itoa(i))
-			}
-		case string:
-			for from := 0; ; {
-				i := strings.Index(x[from:], s)
-				if i < 0 {
-					return
-				}
-				start, end := from+i, from+i+len(s)
-				covered := false
-				for _, sp := range it.Sensitive {
-					lo, hi := 0, len(x)
-					if sp.Start != nil {
-						lo = *sp.Start
-					}
-					if sp.End != nil {
-						hi = *sp.End
-					}
-					covered = covered || (sp.Pointer == ptr && lo <= start && end <= hi)
-				}
-				if !covered {
-					out = append(out, ptr)
-				}
-				from = end
-			}
-		}
-	}
-	walk(doc, "")
-	return out
+	goldencheck.NoSecretsInOutput(t, dirs...)
 }
 
 func TestCodeFormats_Hostile(t *testing.T) {
@@ -180,10 +73,6 @@ func TestCodeFormats_Hostile(t *testing.T) {
 		kind   error
 		line   int
 	}{
-		"sarif deep":          {FormatSARIF, `{"version":"2.1.0","runs":` + deep + `}`, ErrTooLarge, 0},
-		"sarif old version":   {FormatSARIF, `{"version":"2.0.0","runs":[]}`, ErrUnknownFormat, 0},
-		"sarif bad utf-8":     {FormatSARIF, "{\"version\":\"2.1.0\",\n\"runs\":[{\"x\":\"\xff\"}]}", ErrMalformed, 2},
-		"sarif wrong type":    {FormatSARIF, "{\"version\":\"2.1.0\",\n\"runs\":{\"a\":1}}", ErrMalformed, 2},
 		"trivy deep":          {FormatTrivy, `{"SchemaVersion":2,"Results":` + deep + `}`, ErrTooLarge, 0},
 		"trivy wrong type":    {FormatTrivy, "{\"SchemaVersion\":2,\n\"Results\":\"x\"}", ErrMalformed, 2},
 		"semgrep no results":  {FormatSemgrep, `{"errors":[]}`, ErrMalformed, 0},

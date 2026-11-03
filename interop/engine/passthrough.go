@@ -309,6 +309,9 @@ func (m *Mapping) Collect(data []byte) (*Passthrough, error) {
 			stack[n-1].afterValue()
 		}
 	}
+	if len(stack) > 0 {
+		return nil, fmt.Errorf("%w: unexpected end of input", ErrPassthrough)
+	}
 	return p, nil
 }
 
@@ -383,9 +386,37 @@ func scrubRaw(raw []byte, name string, maxDepth int, scrub func(string) string) 
 }
 
 func scrubValue(v any, name string, depth, maxDepth int, scrub func(string) string) (any, bool) {
-	if depth > maxDepth {
+	if tooDeep(v, depth, maxDepth) {
 		return nil, false
 	}
+	return scrubKept(v, name, scrub)
+}
+
+// tooDeep reports a value nested deeper than maxDepth.
+func tooDeep(v any, depth, maxDepth int) bool {
+	if depth > maxDepth {
+		return true
+	}
+	switch t := v.(type) {
+	case map[string]any:
+		for _, c := range t {
+			if tooDeep(c, depth+1, maxDepth) {
+				return true
+			}
+		}
+	case []any:
+		for _, c := range t {
+			if tooDeep(c, depth+1, maxDepth) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// scrubKept drops sensitive members and bad URLs and masks strings; ok is
+// false when the value itself is dropped.
+func scrubKept(v any, name string, scrub func(string) string) (any, bool) {
 	switch t := v.(type) {
 	case map[string]any:
 		for k, c := range t {
@@ -393,11 +424,8 @@ func scrubValue(v any, name string, depth, maxDepth int, scrub func(string) stri
 				delete(t, k)
 				continue
 			}
-			nc, ok := scrubValue(c, k, depth+1, maxDepth, scrub)
+			nc, ok := scrubKept(c, k, scrub)
 			if !ok {
-				if depth+1 > maxDepth {
-					return nil, false
-				}
 				delete(t, k)
 				continue
 			}
@@ -407,14 +435,9 @@ func scrubValue(v any, name string, depth, maxDepth int, scrub func(string) stri
 	case []any:
 		out := t[:0]
 		for _, c := range t {
-			nc, ok := scrubValue(c, name, depth+1, maxDepth, scrub)
-			if !ok {
-				if depth+1 > maxDepth {
-					return nil, false
-				}
-				continue
+			if nc, ok := scrubKept(c, name, scrub); ok {
+				out = append(out, nc)
 			}
-			out = append(out, nc)
 		}
 		return out, true
 	case string:

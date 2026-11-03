@@ -10,7 +10,7 @@ import (
 // The mapping files of this adapter, one directory per upstream version
 // (docs/interop.md).
 //
-//go:embed 2.1.0/*.json
+//go:embed [0-9]*/*.json
 var mappingFiles embed.FS
 
 // Hooks are the Go functions of this adapter that the mapping files name for
@@ -30,20 +30,15 @@ var (
 )
 
 var (
-	importSet = engine.MustSet(load("2.1.0/import.json", importHooks, importTables))
-	exportSet = engine.MustSet(load("2.1.0/export.json", exportHooks, exportTables))
 	// imp and exp are the mappings of the one upstream version.
 	imp = importSet.Latest()
 	exp = exportSet.Latest()
 )
 
-func load(name string, hooks, tables []string) *engine.Mapping {
-	data, err := mappingFiles.ReadFile(name)
-	if err != nil {
-		panic(err)
-	}
-	return engine.MustLoad(data, engine.LoadOptions{Hooks: hooks, Tables: tables})
-}
+var (
+	importSet = engine.MustLoadFS(mappingFiles, engine.Import, engine.LoadOptions{Hooks: importHooks, Tables: importTables})
+	exportSet = engine.MustLoadFS(mappingFiles, engine.Export, engine.LoadOptions{Hooks: exportHooks, Tables: exportTables})
+)
 
 // Versions lists the upstream SARIF versions this adapter reads.
 func Versions() []string { return importSet.Versions() }

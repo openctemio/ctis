@@ -98,3 +98,19 @@ func TestRedactDoesNotRemaskTheMask(t *testing.T) {
 		}
 	}
 }
+
+func TestMaskSecret(t *testing.T) {
+	for in, want := range map[string]string{
+		"":                     "REDACTED",
+		"abc":                  "REDACTED",
+		"0123456789abcde":      "REDACTED", // 15
+		"0123456789abcdef":     "0123********",
+		"  0123456789abcdef  ": "0123********",
+		"ключключключключключ":   "ключ********", // runes, not bytes
+		strings.Repeat("x", 1e5): "xxxx********",
+	} {
+		if got := maskSecret(in); got != want {
+			t.Errorf("maskSecret(%.20q) = %q, want %q", in, got, want)
+		}
+	}
+}

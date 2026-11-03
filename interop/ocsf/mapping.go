@@ -10,7 +10,7 @@ import (
 // (docs/interop.md). OCSF has an export mapping only: this module reads no
 // OCSF events.
 //
-//go:embed 1.3.0/*.json
+//go:embed [0-9]*/*.json
 var mappingFiles embed.FS
 
 // exportHooks are the Go functions of this adapter that the mapping file
@@ -21,17 +21,12 @@ var (
 )
 
 var (
-	exportSet = engine.MustSet(load("1.3.0/export.json", exportHooks, exportTables))
-	exp       = exportSet.Latest()
+	exp = exportSet.Latest()
 )
 
-func load(name string, hooks, tables []string) *engine.Mapping {
-	data, err := mappingFiles.ReadFile(name)
-	if err != nil {
-		panic(err)
-	}
-	return engine.MustLoad(data, engine.LoadOptions{Hooks: hooks, Tables: tables})
-}
+var (
+	exportSet = engine.MustLoadFS(mappingFiles, engine.Export, engine.LoadOptions{Hooks: exportHooks, Tables: exportTables})
+)
 
 // Namespace is the extensions namespace of this adapter.
 const Namespace = "org.ctis.interop.ocsf"
