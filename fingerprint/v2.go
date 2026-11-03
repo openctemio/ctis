@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openctemio/ctis/weburl"
+	"github.com/openctemio/ctis/v2/weburl"
 )
 
 // Recipe v2 (CTIS 2.0) is specified in docs/fingerprints.md. In short, a
