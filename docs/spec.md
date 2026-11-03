@@ -71,13 +71,15 @@ https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/asset.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/finding.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/dependency.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/endpoint.json
+https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/evidence-item.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-asset.json
 https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/web3-finding.json
 ```
 
 `main` always serves the latest 1.x schema. For an immutable copy, replace `main` with a release tag, for example `.../ctis/v1.6.0/schemas/v1/report.json`.
 
-`report.json` references the other five files by relative `$ref`, so a validator needs all six loaded (see the README for Python and Node recipes, and `scripts/validate_schemas.py`).
+`report.json` references the other seven files by relative `$ref`, so a validator needs all eight loaded (see the README for Python and Node recipes, and `scripts/validate_schemas.py`).
 
 Definitions live under `$defs`. Draft-07 does not define that keyword, but every draft-07 validator resolves `#/$defs/...` as a plain JSON pointer, so the schemas work unchanged.
 
@@ -122,7 +124,7 @@ Producers SHOULD run `Validate` before sending; receivers SHOULD run it at their
 - `status` is the producer's view (`open`, `resolved`, `suppressed`, `false_positive`, `accepted_risk`, `in_progress`). Receivers MAY treat it as a hint only; OpenCTEM does today.
 - `suppression` follows SARIF: `kind` is `in_source` (a code comment or annotation) or `external` (a baseline file, a scanner console); `status` is the review state (`accepted`, `under_review`, `rejected`); `reason`, `justification`, `suppressed_by`, `suppressed_at` and `expires_at` describe it. A finding with an accepted suppression SHOULD also carry `status: suppressed`.
 - `first_seen_at` and `last_seen_at` are when the producer first and last observed the finding, not when the report was written.
-- `location` is for code and files. `network` is for findings observed on a host and port: `network.port` is the port (`0` or absent for a host-level finding), `network.protocol` the **transport** (`tcp` or `udp`, never an application protocol), and `network.service` the application protocol on the port (`https`, `ssh`). Producers SHOULD send `protocol` whenever they send `port`: OpenCTEM makes the port and transport part of a network finding's identity and reads an absent transport as `tcp`, so the same check on 53/tcp and 53/udp merges when the transport is left out. Neither is for URLs: until a web location block exists (see `docs/proposals-1.4.md`), DAST tools SHOULD put the URL in `properties` and the host in `asset_value`.
+- `location` is for code and files. `network` is for findings observed on a host and port: `network.port` is the port (`0` or absent for a host-level finding), `network.protocol` the **transport** (`tcp` or `udp`, never an application protocol), and `network.service` the application protocol on the port (`https`, `ssh`). Producers SHOULD send `protocol` whenever they send `port`: OpenCTEM makes the port and transport part of a network finding's identity and reads an absent transport as `tcp`, so the same check on 53/tcp and 53/udp merges when the transport is left out. Neither is for URLs: web findings put the URL in `finding.web` (section 4.12).
 
 ### 4.3 Scores
 
@@ -140,7 +142,7 @@ Producers SHOULD run `Validate` before sending; receivers SHOULD run it at their
 
 ### 4.4 Booleans
 
-Boolean members are optional, and the Go types omit `false`. An absent boolean therefore means "false or unknown", and a receiver cannot tell the two apart. Only `secret.valid` is a tri-state today (absent, `true`, `false`). Making the other CTEM booleans tri-state is proposed for 1.4.
+Boolean members are optional, and the Go types omit `false`. An absent boolean therefore means "false or unknown", and a receiver cannot tell the two apart. Only `secret.valid` is a tri-state today (absent, `true`, `false`). Tri-state booleans for every member are proposed in [proposals-2.0.md](proposals-2.0.md).
 
 ### 4.5 Scan coverage and branches
 
@@ -153,7 +155,7 @@ Every timestamp is an RFC 3339 `date-time` with an offset (`2026-10-02T08:15:00Z
 
 ### 4.7 Tool capabilities
 
-`tool.capabilities` says what the tool does, from the enum in `report.json`. OpenCTEM derives a report's detection technique from the first value it recognises: `sast`, `sca`, `dast`, `secret`, `iac`, `container`, `va`, `easm`, `cspm`, `external`, `import`, `misconfiguration`, `web3`, `subdomain`, `dns`, `portscan`, `crawler`, `tech-detect`. Generic values (`vulnerability`) fall through to the tool name. The technique is per report; a per-finding technique is proposed for 1.4.
+`tool.capabilities` says what the tool does, from the enum in `report.json`. OpenCTEM derives a report's detection technique from the first value it recognises: `sast`, `sca`, `dast`, `secret`, `iac`, `container`, `va`, `easm`, `cspm`, `external`, `import`, `misconfiguration`, `web3`, `subdomain`, `dns`, `portscan`, `crawler`, `tech-detect`. Generic values (`vulnerability`) fall through to the tool name. The technique is per report. `metadata.capability` (section 4.11) names the act a report answers; a per-finding technique is proposed in [proposals-2.0.md](proposals-2.0.md).
 
 ### 4.8 Secrets
 
@@ -330,25 +332,38 @@ The interoperability and contract members (sections 4.10 and 4.11) carry their l
 
 Producers SHOULD split larger results into several reports (or v2 segments) and SHOULD keep text within these caps, since a cut value may lose what made it useful.
 
-## 8. What OpenCTEM stores
+## 8. Receiver profiles
 
-CTIS carries more than OpenCTEM persists today. As of October 2026, these members are accepted and validated but not stored or not used. Producers MAY send them; they are informational until the platform reads them:
+How one receiver applies this specification (its limits beyond section 7, the members it stores, how it binds a report to a job) is not part of the format. It is described in an informative receiver profile, for example [profiles/openctem.md](profiles/openctem.md). A profile may narrow what a receiver accepts; it never changes the meaning of a member.
 
-- `finding.evidence`, `vulnerability.vpr_score`
-- `finding.first_seen_at`, `finding.last_seen_at` (imported findings start their age at import time)
-- `finding.status`, `finding.suppression`
-- `vulnerability.cve_ids` beyond the first CVE (used for network deduplication only)
-- `asset.related_assets`, `asset.services`
-- `finding.category`, `author`, `author_email`, `commit_date`
-- `vulnerability.cvss_version`, `cvss_source`, `severity_source`, `vendor_severity`, `dependency_path`, `layer`, `avd_id`, `vuln_status`
-- `vulnerability.in_cisa_kev`, `epss_score`, `epss_percentile` (deliberately: OpenCTEM takes KEV and EPSS from its own threat-intelligence feeds)
-- `remediation.fix_available`, `remediation.auto_fixable`
-- `data_flow.tainted`, `taint_type`, `vulnerability_type`, `call_path`
-- `metadata.source_ref`, `scope.includes`, `scope.excludes`, `branch.pull_request_*`
-- `tool.vendor`, `tool.info_url`, `dependency.uid`
-- `finding.partial_fingerprints`
+## 9. Naming conventions
 
-## 9. Field reference
+The rules below hold for every member added from now on. Existing members that break a rule keep their name within major version 1; the renames are listed in [proposals-2.0.md](proposals-2.0.md).
+
+1. Members are lower snake_case ASCII.
+2. Enum values are lower snake_case. Values from an external vocabulary keep that vocabulary's spelling: DNS record types, HTTP methods, CVSS vectors, ATT&CK and CWE ids, SPDX license ids, IANA service names.
+3. A timestamp ends in `_at` and is an RFC 3339 date-time with an offset (section 4.6). A date without a time ends in `_on`. External names such as X.509 `not_before` and `not_after` are kept.
+4. A duration names its unit: `_ms`, `_seconds`, `_days`.
+5. A boolean starts with `is_` or `has_`. An absent boolean means unknown.
+6. An array has a plural name; an object a singular one.
+7. A reference to another item of the same report ends in `_ref` or `_refs`. An identifier from outside the report ends in `_id` or `_ids`. A URL ends in `_url`, except the names kept from SARIF (`hosted_viewer_uri`, `work_item_uris`).
+8. A score states its system and version (`scores[]`), never a bare number.
+9. One concept has one name in every object (for example `transport` for tcp or udp).
+10. Product and vendor names do not appear in member names or in closed enums. A list of known values for an open string is documented next to the member instead.
+
+## 10. Security considerations
+
+A CTIS report is untrusted input from the credential that sent it. The rules of sections 4.8 (secrets) and 4.13 (typed evidence) apply; in addition:
+
+- **Nothing in a report chooses the tenant, the deduplication key, the channel or the capability.** Receivers take the tenant and channel from the authenticated credential and recompute every key they deduplicate on (sections 4.9, 4.10, 4.12). A report carries no tenant identifier.
+- **URLs are data, never fetched.** A receiver MUST NOT dereference any URL of a report (`$schema`, `references`, `hosted_viewer_uri`, `info_url`, `work_item_uris`, `native.raw_ref`, advisory and evidence URLs) as part of ingest. A receiver that renders one as a link MUST allow only `http` and `https` (and `mailto` for e-mail members): the schema format `uri` alone admits other schemes, such as `javascript:`.
+- **Text is plain text.** Titles, messages, descriptions, evidence and every other string are shown as plain text, escaped for the output medium. No member is HTML or Markdown. Receivers SHOULD remove bidirectional control characters from text they display and SHOULD show non-ASCII host names in their A-label form next to the Unicode form.
+- **Personal data.** `author`, `author_email`, `suppression.suppressed_by`, `compliance.regulatory_owner` and the identity of a reviewer are personal data. Producers SHOULD send them only when the receiver uses them; receivers SHOULD be able to erase them on request.
+- **Secret fingerprints.** A fingerprint input that derives from a secret MUST be a keyed hash (HMAC) under a key the producer holds, or the masked value (section 5.2). An unkeyed hash of a short or low-entropy secret can be reversed by trying candidates.
+- **Resource limits.** Receivers enforce the limits of section 7 and bound decompression, nesting depth and the size of every string before parsing the content further.
+- **Integrity.** The channel (TLS, mutual TLS for sensors) authenticates a report in transit. A report stored or relayed MAY be signed as a whole, for example in a DSSE envelope over its exact bytes; a receiver MAY require a signature for a channel.
+
+## 11. Field reference
 
 Generated from `schemas/v1`. "Required" marks members the schema requires; every other member is optional.
 

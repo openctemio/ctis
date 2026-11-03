@@ -76,6 +76,9 @@ jobs:
       - name: Customer identifiers (self-test)
         run: bash .github/scripts/check-customer-identifiers.test.sh >/dev/null
 
+      - name: DCO checker (self-test)
+        run: bash .github/scripts/dco-check.test.sh >/dev/null
+
       # Fails when a tracked file names a customer (case-insensitive fixed
       # strings from the CUSTOMER_DENYLIST secret, so the list is never
       # committed) or carries the live LAN range outside tests. Prints only
