@@ -1,0 +1,176 @@
+{
+ "description": "Every document and the result a conforming implementation must reach: valid, or invalid with the problem category (decode, version, validate) and a substring of its message. schema_level false marks a document schemas/v1 alone accepts and only semantic validation refuses. Paths are relative to this file.",
+ "documents": [
+  {
+   "file": "../../../examples/assets-attack-surface.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/compliance.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/contract-members.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/misconfiguration.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/network-vulnerability-interop.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/network-vulnerability.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/sast.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/secret.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/vulnerability-sca.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/web-endpoints-evidence.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/web3.json",
+   "result": "valid"
+  },
+  {
+   "file": "valid/minimal.json",
+   "result": "valid"
+  },
+  {
+   "file": "../../../examples/invalid/asset-type-other.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "invalid type \"other\""
+  },
+  {
+   "file": "../../../examples/invalid/attack-technique-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "attack[0] \"TA0043\" is not an ATT&CK technique id"
+  },
+  {
+   "file": "../../../examples/invalid/capability-ref-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "metadata.capability \"Scan.Ports\" is not a capability reference (id@maj"
+  },
+  {
+   "file": "../../../examples/invalid/endpoint-param-value.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "json: unknown field \"value\""
+  },
+  {
+   "file": "../../../examples/invalid/endpoint-path-query.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "path must start with '/', have no query or fragment, no control charac"
+  },
+  {
+   "file": "../../../examples/invalid/epss-percentile-0-100.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "vulnerability.epss_percentile 97.5 is outside 0-1 (send FIRST's fracti"
+  },
+  {
+   "file": "../../../examples/invalid/evidence-header-name.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: http.request.headers[0].name is not a header name"
+  },
+  {
+   "file": "../../../examples/invalid/evidence-kind-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "evidence_items[0]: invalid kind"
+  },
+  {
+   "file": "../../../examples/invalid/finding-web-param-location.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "web: parameter: invalid location \"body\""
+  },
+  {
+   "file": "../../../examples/invalid/relationship-type-unknown.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "invalid type \"owns\""
+  },
+  {
+   "file": "../../../examples/invalid/score-system-unknown.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "scores[0]: invalid system \"cvss_v3\""
+  },
+  {
+   "file": "../../../examples/invalid/source-extra-not-string.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "cannot unmarshal object"
+  },
+  {
+   "file": "../../../examples/invalid/suppression-state.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "json: unknown field \"state\""
+  },
+  {
+   "file": "../../../examples/invalid/unknown-field.json",
+   "result": "invalid",
+   "category": "decode",
+   "error": "json: unknown field \"sevrity\""
+  },
+  {
+   "file": "../../../examples/invalid/version-major-2.json",
+   "result": "invalid",
+   "category": "version",
+   "error": "unsupported version \"2.0\": this tool implements [1.0 1.1 1.2 1.3 1.4 1"
+  },
+  {
+   "file": "../../../examples/invalid/vex-justification-unknown.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "vex.justification \"not_reachable\" is invalid"
+  },
+  {
+   "file": "../../../examples/invalid/vulnerability-id-malformed.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "vulnerability.ids[0] (\"cve\", \"CVE 2024 1\") is not a valid id of its ty"
+  },
+  {
+   "file": "invalid/dangling-asset-ref.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "asset_ref \"missing\" names no asset in this report",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/duplicate-asset-id.json",
+   "result": "invalid",
+   "category": "validate",
+   "error": "duplicate id \"a\"",
+   "schema_level": false
+  },
+  {
+   "file": "invalid/version-minor-future.json",
+   "result": "invalid",
+   "category": "version",
+   "error": "unsupported version \"1.99\": this tool implements [1.0 1.1 1.2 1.3 1.4 ",
+   "schema_level": false
+  }
+ ]
+}
