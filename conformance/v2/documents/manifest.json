@@ -200,7 +200,7 @@
    "file": "../../../examples/invalid/source-extra-not-string.json",
    "result": "invalid",
    "category": "decode",
-   "error": "json: cannot unmarshal object into Go struct field Finding.findings.so"
+   "error": "cannot unmarshal object"
   },
   {
    "file": "../../../examples/invalid/suppression-state.json",
