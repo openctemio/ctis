@@ -91,7 +91,7 @@ A CTIS document is one UTF-8 JSON object (RFC 8259), the **report**. Duplicate m
 
 ### 3.2 Tool and techniques
 
-`tool` names the producer (`name` required, `version`, `vendor`, `info_url`) and the detection **techniques** it applies, a closed set: `sast`, `sca`, `secret`, `iac`, `container`, `dast`, `va`, `easm`, `cspm`, `bas`, `pentest`, `manual`. The technique (how a finding was found) is a separate axis from the channel (how the data reached the document). A finding MAY override them with its own `tool` (in merged or imported reports) and its own `technique`.
+`tool` names the producer (`name` required, `version`, `vendor`, `info_url`, and `content[]`: the content releases it ran with, such as template packs, rule packs or vulnerability databases, each `{name, version, sha256}`) and the detection **techniques** it applies, a closed set: `sast`, `sca`, `secret`, `iac`, `container`, `dast`, `va`, `easm`, `cspm`, `bas`, `pentest`, `manual`. The technique (how a finding was found) is a separate axis from the channel (how the data reached the document). A finding MAY override them with its own `tool` (in merged or imported reports) and its own `technique`.
 
 ### 3.3 properties
 
@@ -161,7 +161,7 @@ The **asset key** is `uuidv5(9678743b-b91d-59fa-b168-ed192fe9eed3, type + 0x1F +
 ### 5.4 Other asset members
 
 - `identifiers` are values read from the asset itself that survive renames (machine id, cloud resource id, BIOS UUID, serial number, MAC addresses, SCM repository id). Producers MUST NOT guess them. `identity_hints` are remote observations (FQDN, NetBIOS name, MACs, OS CPE, cloud id, the scanner's own agent id), weaker than identifiers.
-- `technical` holds the details of the type: `domain`, `ip_address`, `repository`, `certificate`, `cloud`, `service`, `http` (a web origin's status, title, server, TLS version, redirect, CDN, WAF, JARM, favicon hash and `security_headers`), `identity`, `web3`.
+- `technical` holds the details of the type: `domain`, `ip_address`, `repository`, `certificate`, `cloud`, `service`, `http` (a web origin's status, title, server, TLS version, redirect, CDN, WAF, JARM, favicon hash and `security_headers`), `identity`, `network_device` (`kind`: `router`, `switch`, `firewall`, `load_balancer`, `wireless_access_point`, `vpn_gateway`, `other`; only on `network_device` assets), `web3`.
 - `technologies[]` are what a fingerprinting tool identified.
 - `criticality` (`critical`, `high`, `medium`, `low`) is business context; scanners SHOULD NOT set it.
 - `environment` (`production`, `staging`, `development`, `test`, `unknown`), `owners[]` (`kind`, `ref`, `role`; `ref` is personal data) and `compliance` (framework registry tokens, `data_classification`, `has_pii`, `has_phi`) are context.
@@ -225,7 +225,7 @@ Web3 is a profile, not a type: a smart-contract issue is a `vulnerability` or `w
 
 ### 6.7 Rule catalog
 
-`rules[]` describes each rule or check once: `id` (a document reference, required), `rule_id` (the tool's identifier, required), `name`, `short_description`, `full_description`, `help` (plain text), `help_uri` (http or https, never fetched), `default_severity`, `tags[]`, `cwe_ids[]` and `extensions`. A finding names its rule with `rule_ref`. When `rule_ref` is set, the finding's `rule_id` is required and MUST equal the rule's `rule_id`, so identity (fingerprints, correlation key) never depends on the catalog. A finding's own `severity`, `title` and `description` describe the instance and take precedence over the rule's text. `rule_name` MAY be omitted when `rule_ref` is set; receivers then take the name from the rule. Rule ids are unique within the document, and a `rule_ref` that names no rule makes the document invalid.
+`rules[]` describes each rule or check once: `id` (a document reference, required), `rule_id` (the tool's identifier, required), `name`, `short_description`, `full_description`, `help` (plain text), `help_uri` (http or https, never fetched), `default_severity`, `tags[]`, `cwe_ids[]`, `content_sha256` and `content_path` (which revision of the rule matched: the SHA-256 of the template or rule file as the tool ran it, and its path within the tool's content, plain text that receivers never open) and `extensions`. A finding names its rule with `rule_ref`. When `rule_ref` is set, the finding's `rule_id` is required and MUST equal the rule's `rule_id`, so identity (fingerprints, correlation key) never depends on the catalog. A finding's own `severity`, `title` and `description` describe the instance and take precedence over the rule's text. `rule_name` MAY be omitted when `rule_ref` is set; receivers then take the name from the rule. Rule ids are unique within the document, and a `rule_ref` that names no rule makes the document invalid.
 
 ## 7. Relationships, coverage and absence
 
@@ -336,7 +336,8 @@ Every member carries its bound in the schema; `Validate` refuses a document that
 | `technologies` | 100 entries |
 | `extensions` | 32 namespaces; 64 KiB serialized per object |
 | `owners` | 20; `threat_signals` 16; `capec_ids` 32 |
-| rule `rule_id` / `name` / `short_description` / `full_description` / `help` | 1,024 / 1,024 / 1,024 / 32 KiB / 32 KiB characters; `tags` 64 of 256; `cwe_ids` 32 |
+| rule `rule_id` / `name` / `short_description` / `full_description` / `help` | 1,024 / 1,024 / 1,024 / 32 KiB / 32 KiB characters; `tags` 64 of 256; `cwe_ids` 32; `content_path` 512 |
+| `tool.content` | 16 entries; `name` and `version` 128 characters |
 | `metadata.targets` | 100,000 entries, `target` 2,048 bytes, unique |
 | `metadata.segment.count` | 1 to 10,000 |
 
@@ -446,6 +447,8 @@ A rule or check described once; findings name it by rule_ref and keep an equal r
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
+| `content_path` | string |  | maxLength 512 | Path of the rule within the tool's content (plain text; receivers never open it) |
+| `content_sha256` | string |  | pattern `^[0-9a-f]{64}$` | SHA-256 of the rule's content as the tool ran it (a template or rule file), lowercase hex |
 | `cwe_ids` | array of string |  | items: pattern `^CWE-[1-9][0-9]{0,5}$` | CWE identifiers the rule checks for |
 | `default_severity` | `Severity` |  |  | Severity the tool gives the rule when a finding does not override it |
 | `extensions` | `Extensions` |  |  |  |
@@ -500,11 +503,22 @@ Tool that generated this report
 
 | Field | Type | Required | Constraints | Description |
 |---|---|---|---|---|
+| `content` | array of `ToolContent` |  |  | Content releases the tool ran with: template and rule packs, vulnerability databases |
 | `info_url` | string |  | pattern `^[Hh][Tt][Tt][Pp][Ss]?://[^\s/?#]+[^\s]*$`; maxLength 2048 | Tool information URL (http or https) |
 | `name` | string | yes | maxLength 512 | Tool name |
 | `techniques` | array of `Technique` |  |  | Detection techniques the tool applies (closed set). A finding may override with its own technique. |
 | `vendor` | string |  | maxLength 1024 | Tool vendor/organization |
 | `version` | string |  | maxLength 1024 | Tool version |
+
+#### ToolContent
+
+One content release a tool ran with
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `name` | string | yes | minLength 1; maxLength 128 | Content name, for example a template pack or a vulnerability database |
+| `sha256` | string |  | pattern `^[0-9a-f]{64}$` | SHA-256 of the release, lowercase hex |
+| `version` | string |  | maxLength 128 | Release version |
 
 ### CTIS Asset (`asset.json`)
 
@@ -582,6 +596,7 @@ Type-specific technical details
 | `http` | `HTTPTechnical` |  |  |  |
 | `identity` | `IdentityTechnical` |  |  |  |
 | `ip_address` | `IPAddressTechnical` |  |  |  |
+| `network_device` | `NetworkDeviceTechnical` |  |  |  |
 | `repository` | `RepositoryTechnical` |  |  |  |
 | `service` | `ServiceTechnical` |  |  |  |
 | `web3` | `web3-asset.json` |  |  |  |
@@ -726,6 +741,14 @@ Technical details of an identity asset
 |---|---|---|---|---|
 | `kind` | string | yes | one of: user, service_account, role, group, workload | Kind of identity |
 | `provider` | string |  | pattern `^[a-z0-9][a-z0-9_.-]{0,63}$` | Identity provider, an open token (aws, azure, gcp, okta, ldap) |
+
+#### NetworkDeviceTechnical
+
+Technical details of a network_device asset
+
+| Field | Type | Required | Constraints | Description |
+|---|---|---|---|---|
+| `kind` | string | yes | one of: router, switch, firewall, load_balancer, wireless_access_point, vpn_gateway, other | Kind of network device; other is the fallback |
 
 #### RepositoryTechnical
 

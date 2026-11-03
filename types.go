@@ -211,6 +211,23 @@ type Tool struct {
 	// Detection techniques the tool applies. A finding may override with
 	// its own technique.
 	Techniques []Technique `json:"techniques,omitempty"`
+
+	// Content releases the tool ran with: template and rule packs,
+	// vulnerability databases.
+	Content []ToolContent `json:"content,omitempty"`
+}
+
+// ToolContent is one content release a tool ran with.
+type ToolContent struct {
+	// Content name (required), for example a template pack or a
+	// vulnerability database.
+	Name string `json:"name"`
+
+	// Release version.
+	Version string `json:"version,omitempty"`
+
+	// SHA-256 of the release, lowercase hex.
+	SHA256 string `json:"sha256,omitempty"`
 }
 
 // Technique is a detection technique: how a finding was found. It is a
@@ -410,6 +427,9 @@ type AssetTechnical struct {
 
 	// For identity assets.
 	Identity *IdentityTechnical `json:"identity,omitempty"`
+
+	// For network_device assets.
+	NetworkDevice *NetworkDeviceTechnical `json:"network_device,omitempty"`
 
 	// For web3 assets (web3 profile).
 	Web3 *Web3Technical `json:"web3,omitempty"`
@@ -732,6 +752,36 @@ func AllIdentityKinds() []IdentityKind {
 
 // IsValid reports whether k is a known identity kind.
 func (k IdentityKind) IsValid() bool { return slices.Contains(AllIdentityKinds(), k) }
+
+// NetworkDeviceTechnical holds the technical details of a network_device
+// asset.
+type NetworkDeviceTechnical struct {
+	// Kind (required): router, switch, firewall, load_balancer,
+	// wireless_access_point, vpn_gateway, other.
+	Kind NetworkDeviceKind `json:"kind"`
+}
+
+// NetworkDeviceKind is the kind of a network device.
+type NetworkDeviceKind string
+
+// Network device kinds.
+const (
+	NetworkDeviceRouter              NetworkDeviceKind = "router"
+	NetworkDeviceSwitch              NetworkDeviceKind = "switch"
+	NetworkDeviceFirewall            NetworkDeviceKind = "firewall"
+	NetworkDeviceLoadBalancer        NetworkDeviceKind = "load_balancer"
+	NetworkDeviceWirelessAccessPoint NetworkDeviceKind = "wireless_access_point"
+	NetworkDeviceVPNGateway          NetworkDeviceKind = "vpn_gateway"
+	NetworkDeviceOther               NetworkDeviceKind = "other"
+)
+
+// AllNetworkDeviceKinds returns every network device kind.
+func AllNetworkDeviceKinds() []NetworkDeviceKind {
+	return []NetworkDeviceKind{NetworkDeviceRouter, NetworkDeviceSwitch, NetworkDeviceFirewall, NetworkDeviceLoadBalancer, NetworkDeviceWirelessAccessPoint, NetworkDeviceVPNGateway, NetworkDeviceOther}
+}
+
+// IsValid reports whether k is a known network device kind.
+func (k NetworkDeviceKind) IsValid() bool { return slices.Contains(AllNetworkDeviceKinds(), k) }
 
 // =============================================================================
 // Findings

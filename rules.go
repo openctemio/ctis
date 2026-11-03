@@ -16,6 +16,11 @@ const (
 	MaxRuleTags         = 64
 	MaxRuleTagLen       = 256
 	MaxRuleCWEIDs       = MaxCWEIDs
+	MaxContentPathLen   = 512
+
+	// Bounds on tool.content.
+	MaxToolContent         = 16
+	MaxToolContentFieldLen = 128
 )
 
 // Rule describes a rule or check once. Findings it detected name it with
@@ -52,6 +57,14 @@ type Rule struct {
 
 	// CWE identifiers the rule checks for.
 	CWEIDs []string `json:"cwe_ids,omitempty"`
+
+	// SHA-256 of the rule's content as the tool ran it (a template or rule
+	// file), lowercase hex: which revision of the rule matched.
+	ContentSHA256 string `json:"content_sha256,omitempty"`
+
+	// Path of the rule within the tool's content (plain text; receivers
+	// never open it).
+	ContentPath string `json:"content_path,omitempty"`
 
 	// Namespaced producer data.
 	Extensions Extensions `json:"extensions,omitempty"`
@@ -113,6 +126,13 @@ func validateRules(rules []Rule, add func(string, ...any)) map[string]string {
 				add("%s: cwe_ids[%d] %q is not CWE-<n>", where, j, truncateForError(c))
 			}
 		}
+		if r.ContentSHA256 != "" && !sha256RE.MatchString(r.ContentSHA256) {
+			add("%s: content_sha256 is not lowercase hex SHA-256", where)
+		}
+		checkRuleText(where+".content_path", r.ContentPath, MaxContentPathLen, add)
+		if strings.ContainsAny(r.ContentPath, "\x00\r\n") {
+			add("%s: content_path has a control character", where)
+		}
 		validateExtensions(where+".extensions", r.Extensions, add)
 	}
 	return byID
@@ -145,5 +165,26 @@ func checkRuleText(where, s string, limit int, add func(string, ...any)) {
 		add("%s is not valid UTF-8", where)
 	case utf8.RuneCountInString(s) > limit:
 		add("%s longer than %d characters", where, limit)
+	}
+}
+
+// validateToolContent checks a tool's content releases.
+func validateToolContent(where string, content []ToolContent, add func(string, ...any)) {
+	if len(content) > MaxToolContent {
+		add("%s.content has %d entries, at most %d", where, len(content), MaxToolContent)
+	}
+	for i, c := range content {
+		if i >= MaxToolContent {
+			break
+		}
+		w := fmt.Sprintf("%s.content[%d]", where, i)
+		if strings.TrimSpace(c.Name) == "" {
+			add("%s.name is required", w)
+		}
+		checkRuleText(w+".name", c.Name, MaxToolContentFieldLen, add)
+		checkRuleText(w+".version", c.Version, MaxToolContentFieldLen, add)
+		if c.SHA256 != "" && !sha256RE.MatchString(c.SHA256) {
+			add("%s.sha256 is not lowercase hex SHA-256", w)
+		}
 	}
 }

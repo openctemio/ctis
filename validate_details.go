@@ -170,6 +170,14 @@ func validateAssetTechnical(i int, a *Asset, add func(string, ...any)) {
 	} else if a.Type == AssetTypeIdentity {
 		add("assets[%d]: identity needs technical.identity.kind", i)
 	}
+	if nd := t.NetworkDevice; nd != nil {
+		if a.Type != AssetTypeNetworkDevice {
+			p("network_device is only for network_device assets, not %s", truncateForError(string(a.Type)))
+		}
+		if !nd.Kind.IsValid() {
+			p("network_device.kind %q is invalid", truncateForError(string(nd.Kind)))
+		}
+	}
 }
 
 // ianaServiceRE is the form of an IANA service name (RFC 6335 section 5.1).

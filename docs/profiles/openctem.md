@@ -24,7 +24,7 @@ A CTIS document carries no receiver key. OpenCTEM binds a document to the job or
 
 ## 4. The io.openctem namespace
 
-[`schemas/extensions/io.openctem/2.json`](../../schemas/extensions/io.openctem/2.json) defines the keys OpenCTEM reads under `extensions["io.openctem"]`: `capability` (metadata), `import_scope`, `candidate_exposure` and `candidate_unverified` (assets from importers), `bounty_report` (findings from disclosure reports; `researcher` is personal data) and `web_content` (web origins). OpenCTEM gives no meaning to `properties`.
+[`schemas/extensions/io.openctem/2.json`](../../schemas/extensions/io.openctem/2.json) defines the keys OpenCTEM reads under `extensions["io.openctem"]`: `capability` (metadata), `import_scope`, `candidate_exposure` and `candidate_unverified` (assets from importers), `bounty_report` (findings from disclosure reports; `researcher` is personal data) `web_content` (web origins) and `rule_source` (rules: `tenant` for a rule the tenant authored, `platform` for a platform rule). OpenCTEM gives no meaning to `properties`.
 
 ## 5. Asset types
 

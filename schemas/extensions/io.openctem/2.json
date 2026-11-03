@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.openctem.io/ctis/extensions/io.openctem/2.json",
   "title": "OpenCTEM extension namespace, revision 2",
-  "description": "The value of extensions[\"io.openctem\"] on a report, metadata, asset or finding: data only the OpenCTEM receiver profile defines (docs/profiles/openctem.md). A receiver that does not know the namespace ignores it. Revision 2 is the CTIS 2.0 revision; these keys are no longer read from properties.",
+  "description": "The value of extensions[\"io.openctem\"] on a report, metadata, asset, finding or rule: data only the OpenCTEM receiver profile defines (docs/profiles/openctem.md). A receiver that does not know the namespace ignores it. Revision 2 is the CTIS 2.0 revision; these keys are no longer read from properties.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -103,6 +103,14 @@
           }
         }
       }
+    },
+    "rule_source": {
+      "type": "string",
+      "enum": [
+        "tenant",
+        "platform"
+      ],
+      "description": "On a rule: who authored it in OpenCTEM, a tenant (its own rule) or the platform."
     }
   }
 }
