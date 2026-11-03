@@ -25,7 +25,7 @@ import (
 
 func init() {
 	parsers[FormatZAP] = parseZAP
-	tools[FormatZAP] = ctis.Tool{Name: "zap", Capabilities: []string{"dast"}}
+	tools[FormatZAP] = ctis.Tool{Name: "zap", Techniques: []ctis.Technique{ctis.TechniqueDAST}}
 }
 
 // zapMaxInstances is how many instances of a finding are written into its
@@ -42,7 +42,7 @@ type zapInstance struct {
 	Method    flexStr `json:"method" xml:"method"`
 	Param     flexStr `json:"param" xml:"param"`
 	Attack    flexStr `json:"attack" xml:"attack"`
-	Evidence  flexStr `json:"evidence" xml:"evidence"`
+	Matched   flexStr `json:"evidence" xml:"evidence"`
 	OtherInfo flexStr `json:"otherinfo" xml:"otherinfo"`
 
 	// The HTTP message, JSON and XML names.
@@ -74,7 +74,7 @@ func (in *zapInstance) exchange() (ctis.EvidenceItem, bool) {
 	if !ok {
 		return it, false
 	}
-	if ev := in.Evidence.String(); ev != "" {
+	if ev := in.Matched.String(); ev != "" {
 		if r := it.HTTP.Response; r != nil && r.BodyEncoding == ctis.BodyEncodingText {
 			if i := strings.Index(r.Body, ev); i >= 0 {
 				start, end := i, i+len(ev)
@@ -282,7 +282,7 @@ func (b *builder) zapMeta(version, generated string) {
 
 // zapSiteAsset names a site by its origin (scheme, host and port), without
 // path, query or user info.
-func zapSiteAsset(s *zapSite) (ctis.Asset, string, int, bool) {
+func zapSiteAsset(s *zapSite) (ctis.Asset, string, int, bool) { // asset, scheme, port
 	host := strings.ToLower(strings.TrimSuffix(line(s.Host, capShort), "."))
 	port, _ := strconv.Atoi(s.Port.String())
 	scheme := "http"
@@ -310,13 +310,12 @@ func zapSiteAsset(s *zapSite) (ctis.Asset, string, int, bool) {
 	if (scheme != "http" || port != 80) && (scheme != "https" || port != 443) {
 		origin = scheme + "://" + net.JoinHostPort(host, strconv.Itoa(port))
 	}
-	a := ctis.Asset{ID: "site-" + origin, Type: ctis.AssetTypeWebsite, Value: origin, Name: origin,
-		Properties: ctis.Properties{"host": host, "port": strconv.Itoa(port), "scheme": scheme}}
-	return a, host, port, true
+	a := ctis.Asset{Type: ctis.AssetTypeWebOrigin, Value: origin, Name: origin}
+	return a, scheme, port, true
 }
 
 func (b *builder) zapSite(s *zapSite, lineNo int, ptr string) error {
-	asset, host, port, ok := zapSiteAsset(s)
+	asset, scheme, port, ok := zapSiteAsset(s)
 	if !ok {
 		b.issue(Issue{Line: lineNo, Path: ptr, Message: "site without a host: skipped"})
 		b.res.Stats.Records += len(s.Alerts)
@@ -327,12 +326,17 @@ func (b *builder) zapSite(s *zapSite, lineNo int, ptr string) error {
 	if err != nil {
 		return err
 	}
+	if assetID == "" {
+		b.res.Stats.Records += len(s.Alerts)
+		b.res.Stats.Skipped += len(s.Alerts)
+		return nil
+	}
 	for i := range s.Alerts {
 		b.res.Stats.Records++
 		if err := b.tick(); err != nil {
 			return err
 		}
-		f, ok := b.zapFinding(&s.Alerts[i], assetID, host, port, lineNo, fmt.Sprintf("%s/alerts/%d", ptr, i))
+		f, ok := b.zapFinding(&s.Alerts[i], assetID, scheme, port, lineNo, fmt.Sprintf("%s/alerts/%d", ptr, i))
 		if !ok {
 			b.res.Stats.Skipped++
 			continue
@@ -346,7 +350,7 @@ func (b *builder) zapSite(s *zapSite, lineNo int, ptr string) error {
 	return nil
 }
 
-func (b *builder) zapFinding(a *zapAlert, assetID, host string, port, lineNo int, ptr string) (ctis.Finding, bool) {
+func (b *builder) zapFinding(a *zapAlert, assetID, scheme string, port, lineNo int, ptr string) (ctis.Finding, bool) {
 	title := line(firstNonEmpty(a.Alert.String(), a.Name.String()), capTitle)
 	plugin := line(a.PluginID.String(), capShort)
 	if title == "" || plugin == "" {
@@ -367,7 +371,7 @@ func (b *builder) zapFinding(a *zapAlert, assetID, host string, port, lineNo int
 		RuleName:    title,
 		AssetRef:    assetID,
 		Description: text(qualysHTML(a.Desc.String()), capDescription),
-		Network:     &ctis.NetworkLocation{Host: host, Port: port, Protocol: "tcp", Service: "http"},
+		Network:     &ctis.NetworkLocation{Port: port, Transport: ctis.TransportTCP, AppProtocol: scheme},
 		Native: &ctis.NativeIdentity{
 			Scheme:     ctis.NativeSchemeOther,
 			VulnID:     plugin,
@@ -395,27 +399,21 @@ func (b *builder) zapFinding(a *zapAlert, assetID, host string, port, lineNo int
 		f.Native.DetectionType = ctis.DetectionTypeInfo
 	}
 	if c, err := strconv.Atoi(a.CWEID.String()); err == nil && c > 0 {
-		f.Vulnerability = &ctis.VulnerabilityDetails{CWEID: "CWE-" + strconv.Itoa(c), CWEIDs: []string{"CWE-" + strconv.Itoa(c)}}
+		f.Vulnerability = &ctis.VulnerabilityDetails{CWEIDs: []string{"CWE-" + strconv.Itoa(c)}}
 	}
 	if sol := text(qualysHTML(a.Solution.String()), capRemediation); sol != "" {
 		f.Remediation = &ctis.Remediation{Recommendation: sol}
 	}
 	for _, w := range strings.Fields(qualysHTML(a.Reference.String())) {
-		if validURL(w) {
-			f.References = addRefs(f.References, w)
-		}
+		f.References = addWebRefs(f.References, w)
 	}
 	for _, name := range sortedTagNames(a.TagsJSON) {
 		f.Tags = addTags(f.Tags, name)
-		if validURL(a.TagsJSON[name]) {
-			f.References = addRefs(f.References, a.TagsJSON[name])
-		}
+		f.References = addWebRefs(f.References, a.TagsJSON[name])
 	}
 	for _, t := range a.TagsXML {
 		f.Tags = addTags(f.Tags, t.Name)
-		if validURL(t.Link) {
-			f.References = addRefs(f.References, t.Link)
-		}
+		f.References = addWebRefs(f.References, t.Link)
 	}
 	if n, err := strconv.Atoi(a.Count.String()); err == nil && n > 0 && len(a.Instances) == 0 {
 		f.OccurrenceCount = n
@@ -471,8 +469,9 @@ func (b *builder) zapLocations(f ctis.Finding, instances []zapInstance, lineNo i
 		lf := f
 		lf.Web = g.web
 		lf.OccurrenceCount = len(g.instances)
-		lf.Evidence = zapEvidence(g.instances)
-		lf.EvidenceItems = zapExchanges(g.instances)
+		lf.EvidenceItems = nil
+		rawTextEvidence(&lf, "instances", zapEvidence(g.instances), "")
+		lf.EvidenceItems = append(lf.EvidenceItems, zapExchanges(g.instances)...)
 		if g.web != nil {
 			lf.Message = line(f.Title+" at "+g.web.URL, 8<<10)
 			if p := g.web.Parameter; p != nil {
@@ -552,7 +551,7 @@ func zapEvidence(instances []*zapInstance) string {
 			break
 		}
 		parts := []string{line(in.Method.String(), 16), line(weburl.RedactURL(strings.TrimSpace(in.URI.String())), 2048)}
-		for _, kv := range [][2]string{{"param", in.Param.String()}, {"attack", in.Attack.String()}, {"evidence", in.Evidence.String()}, {"otherinfo", in.OtherInfo.String()}} {
+		for _, kv := range [][2]string{{"param", in.Param.String()}, {"attack", in.Attack.String()}, {"evidence", in.Matched.String()}, {"otherinfo", in.OtherInfo.String()}} {
 			if v := line(kv[1], 1024); v != "" {
 				parts = append(parts, kv[0]+"="+v)
 			}

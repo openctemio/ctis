@@ -17,11 +17,14 @@ import (
 // dropped. Parse never returns a report that fails ctis.Report.Validate;
 // if one still would, that is a bug and Parse fails instead.
 
-// probeTime is any non-zero time: Validate requires metadata.timestamp.
+// probeTime is any non-zero time: Validate requires metadata.generated_at.
 var probeTime = time.Unix(1, 0).UTC()
 
+// probeID is a UUIDv7: Validate requires metadata.id.
+const probeID = "0192f0a0-0000-7000-8000-000000000001"
+
 func probe() ctis.Report {
-	return ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{Timestamp: probeTime}}
+	return ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{ID: probeID, GeneratedAt: probeTime}}
 }
 
 // guard drops the entities that are not valid CTIS and returns how many it
@@ -65,16 +68,17 @@ func (b *builder) guard() error {
 	}
 	for _, f := range rep.Findings {
 		p := probe()
-		if f.AssetRef != "" {
-			a, ok := assetsByID[f.AssetRef]
-			if !ok {
-				droppedFindings++
-				note("finding", fmt.Errorf("its asset %q was not valid", f.AssetRef))
-				continue
-			}
-			p.Assets = []ctis.Asset{a}
+		a, ok := assetsByID[f.AssetRef]
+		if !ok {
+			droppedFindings++
+			note("finding", fmt.Errorf("its asset %q is missing or was not valid", f.AssetRef))
+			continue
 		}
-		p.Findings = []ctis.Finding{f}
+		p.Assets = []ctis.Asset{a}
+		// A dependency_ref is checked against the whole report below.
+		pf := f
+		pf.DependencyRef = ""
+		p.Findings = []ctis.Finding{pf}
 		if err := p.Validate(); err != nil || (f.ID != "" && findingIDs[f.ID]) {
 			droppedFindings++
 			note("finding", err)
@@ -109,12 +113,20 @@ func (b *builder) guard() error {
 	}
 	rep.Endpoints = keptEndpoints
 
-	// Dependencies, one by one, unique ids.
+	// Dependencies, one by one, unique ids. An asset_ref to an asset that
+	// was dropped is cleared; depends_on is checked against the whole report
+	// below.
 	keptDeps := rep.Dependencies[:0]
 	depIDs := map[string]bool{}
 	for _, d := range rep.Dependencies {
+		if d.AssetRef != "" && !assetOK[d.AssetRef] {
+			d.AssetRef = ""
+		}
 		p := probe()
-		p.Dependencies = []ctis.Dependency{d}
+		pd := d
+		pd.DependsOn = nil
+		pd.AssetRef = ""
+		p.Dependencies = []ctis.Dependency{pd}
 		if err := p.Validate(); err != nil || (d.ID != "" && depIDs[d.ID]) {
 			droppedDeps++
 			note("component", err)
@@ -126,13 +138,36 @@ func (b *builder) guard() error {
 		keptDeps = append(keptDeps, d)
 	}
 	rep.Dependencies = keptDeps
+	for i := range rep.Dependencies {
+		d := &rep.Dependencies[i]
+		var keep []string
+		for _, ref := range d.DependsOn {
+			if depIDs[ref] {
+				keep = append(keep, ref)
+			}
+		}
+		d.DependsOn = keep
+	}
+	for i := range rep.Findings {
+		if r := rep.Findings[i].DependencyRef; r != "" && !depIDs[r] {
+			rep.Findings[i].DependencyRef = ""
+		}
+	}
+	keptRels := rep.Relationships[:0]
+	for _, rel := range rep.Relationships {
+		if assetOK[rel.FromRef] && assetOK[rel.ToRef] {
+			keptRels = append(keptRels, rel)
+		}
+	}
+	rep.Relationships = keptRels
 
 	// VEX statements: the statement must be a valid CTIS VEX.
 	keptVEX := b.res.VEX[:0]
 	for _, s := range b.res.VEX {
 		p := probe()
 		v := s.VEX
-		p.Findings = []ctis.Finding{{Type: ctis.FindingTypeVulnerability, Title: "probe", Severity: ctis.SeverityInfo, VEX: &v}}
+		p.Assets = []ctis.Asset{{ID: "probe", Type: ctis.AssetTypeHost, Value: "probe.invalid"}}
+		p.Findings = []ctis.Finding{{Type: ctis.FindingTypeVulnerability, Title: "probe", Severity: ctis.SeverityInfo, AssetRef: "probe", VEX: &v}}
 		if err := p.Validate(); err != nil || len(s.VulnerabilityIDs) == 0 || len(s.Products) == 0 {
 			droppedStatements++
 			note("VEX statement", err)

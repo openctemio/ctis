@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // Options configure Parse. The zero value detects the format and uses the
@@ -23,15 +24,25 @@ type Options struct {
 	// Limits on the input; zero fields take DefaultLimits.
 	Limits Limits
 
-	// Report timestamp. Zero: the time of the parse (UTC).
+	// metadata.generated_at of the report. Zero: the time of the parse
+	// (UTC).
 	Now time.Time
 
-	// metadata.id of the report (an import or scan session id).
+	// metadata.id of the report: a lowercase UUIDv7 (ctis.NewReportID).
+	// Empty: a new one. Anything else fails the parse.
 	ReportID string
 
-	// metadata.source_type of the report. Empty: "manual" (a file someone
+	// metadata.channel of the report. Empty: ChannelManual (a file someone
 	// imports).
-	SourceType string
+	Channel ctis.Channel
+
+	// Key of the HMAC the secret fingerprint recipe needs
+	// (fingerprint.NewSecretDigest), at least 16 bytes. With a key, a secret
+	// finding the importer sees the raw secret of gets a recipe v2
+	// fingerprint over its digest. Without one the fingerprint is left empty
+	// and the receiver computes its own. The key and the secret never enter
+	// the report.
+	SecretKey []byte
 
 	// tool.name of the report. Empty: the format's tool (nessus, qualys,
 	// cyclonedx, ...).
@@ -57,7 +68,7 @@ type Options struct {
 
 	// SARIF only. ToolType is the kind of tool that wrote the log: "sast",
 	// "sca", "secret", "iac" or "web3". It decides the type of every finding
-	// and the tool's capabilities instead of the rule tags and the tool name
+	// and the tool's techniques instead of the rule tags and the tool name
 	// (a scanner runtime that knows what it ran sets it). Other values are
 	// ignored. DefaultConfidence (1 to 100) is the confidence of a result
 	// whose rule states no precision; zero or out of range: 90.
@@ -102,6 +113,15 @@ func parse(ctx context.Context, r io.Reader, opts Options) (*Result, []string, e
 		ctx = context.Background()
 	}
 	opts.Limits = opts.Limits.withDefaults()
+	if opts.ReportID != "" && !ctis.IsReportID(opts.ReportID) {
+		return nil, nil, &ParseError{Msg: "Options.ReportID must be a lowercase UUIDv7 (ctis.NewReportID)", Err: ErrMalformed}
+	}
+	if len(opts.SecretKey) > 0 && len(opts.SecretKey) < fingerprint.MinSecretKeyBytes {
+		return nil, nil, &ParseError{Msg: fmt.Sprintf("Options.SecretKey must be at least %d bytes", fingerprint.MinSecretKeyBytes), Err: ErrMalformed}
+	}
+	if opts.Channel != "" && !opts.Channel.IsValid() {
+		return nil, nil, &ParseError{Msg: fmt.Sprintf("Options.Channel %q is not a CTIS channel", line(string(opts.Channel), 32)), Err: ErrMalformed}
+	}
 	br := bufio.NewReaderSize(r, SniffLen)
 	format := opts.Format
 	if format == "" {
@@ -158,7 +178,9 @@ type builder struct {
 	lim    Limits
 	res    *Result
 	obs    *observer
-	assets map[string]int // asset id -> index
+	assets map[string]int    // asset id -> index
+	byKey  map[string]string // asset key -> asset id
+	rels   map[string]bool
 	ops    int
 }
 
@@ -167,21 +189,23 @@ func newBuilder(ctx context.Context, format Format, opts Options) *builder {
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
-	st := opts.SourceType
-	if st == "" {
-		st = "manual"
+	ch := opts.Channel
+	if ch == "" {
+		ch = ctis.ChannelManual
 	}
 	report := ctis.NewReport()
-	report.Metadata.Timestamp = now
-	report.Metadata.ID = opts.ReportID
-	report.Metadata.SourceType = st
+	report.Metadata.GeneratedAt = now
+	if opts.ReportID != "" {
+		report.Metadata.ID = opts.ReportID
+	}
+	report.Metadata.Channel = ch
 	tool := tools[format]
 	if opts.ToolName != "" {
 		tool.Name = opts.ToolName
 	}
 	if tool.Name != "" {
 		t := tool
-		t.Capabilities = append([]string(nil), tool.Capabilities...)
+		t.Techniques = append([]ctis.Technique(nil), tool.Techniques...)
 		report.Tool = &t
 	}
 	return &builder{
@@ -192,6 +216,7 @@ func newBuilder(ctx context.Context, format Format, opts Options) *builder {
 		res:    &Result{Format: format, Report: report, Stats: Stats{BySeverity: map[ctis.Severity]int{}}},
 		obs:    newObserver(opts.Limits.MaxObservedPaths),
 		assets: map[string]int{},
+		byKey:  map[string]string{},
 	}
 }
 
@@ -216,8 +241,26 @@ func (b *builder) tooMany(what string, limit int) error {
 	return &ParseError{Format: b.format, Msg: fmt.Sprintf("more than %d %s", limit, what), Err: ErrTooLarge}
 }
 
-// asset adds a (or returns the existing) asset by its id.
+// asset adds an asset, or returns the id of the one already there with the
+// same id or the same type and canonical value. The value is made canonical
+// for the type (ctis.CanonicalAssetValue); an asset whose value has no
+// canonical form is left out with an issue and "" is returned (no error), so
+// the caller skips what depends on it. An empty a.ID is derived from the
+// type and the canonical value.
 func (b *builder) asset(a ctis.Asset) (string, error) {
+	c, err := ctis.CanonicalAssetValue(a.Type, a.Value)
+	if err != nil {
+		b.issue(Issue{Message: fmt.Sprintf("asset %s %q left out: %s", a.Type, line(a.Value, 200), line(err.Error(), 200))})
+		return "", nil
+	}
+	a.Value = c
+	key := string(a.Type) + "\x1f" + c
+	if id, ok := b.byKey[key]; ok {
+		return id, nil
+	}
+	if a.ID == "" {
+		a.ID = docRef(string(a.Type), c)
+	}
 	if _, ok := b.assets[a.ID]; ok {
 		return a.ID, nil
 	}
@@ -225,6 +268,7 @@ func (b *builder) asset(a ctis.Asset) (string, error) {
 		return "", b.tooMany("assets", b.lim.MaxAssets)
 	}
 	b.assets[a.ID] = len(b.res.Report.Assets)
+	b.byKey[key] = a.ID
 	b.res.Report.Assets = append(b.res.Report.Assets, a)
 	return a.ID, nil
 }
@@ -350,28 +394,36 @@ func extras(f *ctis.Finding, kv ...string) {
 	}
 }
 
-// addVulnID adds a typed id to v once (canonical form), and keeps cve_ids in
-// step.
+// addVulnID adds a CVE, GHSA or OSV id to v once (canonical form); an id of
+// another shape is dropped. Use addVendorID for a vendor's own id.
 func addVulnID(v *ctis.VulnerabilityDetails, raw string) {
-	id, ok := ctis.NormalizeVulnerabilityID(strings.TrimSpace(raw))
-	if !ok {
+	if _, ok := ctis.NormalizeVulnerabilityID(strings.TrimSpace(raw)); !ok {
 		return
+	}
+	v.AddID(raw, "")
+}
+
+// addVendorID adds an id the vendor named source issued (an advisory number,
+// a plugin id the source treats as the vulnerability's) to v.
+func addVendorID(v *ctis.VulnerabilityDetails, raw, source string) {
+	id, ok := ctis.NormalizeVulnerabilityID(strings.TrimSpace(raw))
+	if !ok || len(v.IDs) >= ctis.MaxVulnerabilityIDs {
+		return
+	}
+	if id.Type == ctis.VulnerabilityIDVendor {
+		id.Source = line(source, ctis.MaxScoreSourceLen)
 	}
 	for _, have := range v.IDs {
 		if have.Type == id.Type && strings.EqualFold(have.ID, id.ID) {
 			return
 		}
 	}
-	if len(v.IDs) >= ctis.MaxVulnerabilityIDs {
-		return
-	}
 	v.IDs = append(v.IDs, id)
-	if id.Type == ctis.VulnerabilityIDCVE {
-		v.CVEIDs = append(v.CVEIDs, id.ID)
-		if v.CVEID == "" {
-			v.CVEID = id.ID
-		}
-	}
+}
+
+// sourceRef is a bounded source reference.
+func sourceRef(system, id string) ctis.SourceRef {
+	return ctis.SourceRef{System: system, ID: line(id, ctis.MaxSourceRefIDLen)}
 }
 
 // addScore appends a score if there is room and it is valid on its own.
@@ -379,8 +431,10 @@ func addScore(f *ctis.Finding, s ctis.Score) {
 	if len(f.Scores) >= ctis.MaxScores {
 		return
 	}
-	probe := ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{Timestamp: time.Unix(1, 0)}, Findings: []ctis.Finding{{Type: ctis.FindingTypeVulnerability, Title: "t", Severity: ctis.SeverityInfo, Scores: []ctis.Score{s}}}}
-	if probe.Validate() != nil {
+	p := probe()
+	p.Assets = []ctis.Asset{{ID: "probe", Type: ctis.AssetTypeHost, Value: "probe.invalid"}}
+	p.Findings = []ctis.Finding{{Type: ctis.FindingTypeVulnerability, Title: "t", Severity: ctis.SeverityInfo, AssetRef: "probe", Scores: []ctis.Score{s}}}
+	if p.Validate() != nil {
 		return
 	}
 	f.Scores = append(f.Scores, s)

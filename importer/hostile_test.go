@@ -186,7 +186,7 @@ func TestXML_Encodings(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := res.Report.Findings[0].Evidence; strings.ContainsRune(got, 0x9b) {
+		if got := evidenceText(res.Report.Findings[0]); strings.ContainsRune(got, 0x9b) {
 			t.Fatalf("evidence kept an escape character: %q", got)
 		}
 	})

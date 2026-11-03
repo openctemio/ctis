@@ -10,6 +10,7 @@ import (
 	"io"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/openctemio/ctis/v2"
 )
@@ -50,6 +51,17 @@ type Options struct {
 	// Tool is copied into report.tool. A mapping never sets it from the
 	// input, so a tool's output cannot claim to be another tool.
 	Tool *ctis.Tool
+
+	// ReportID is metadata.id: a lowercase UUIDv7. Empty: a new one
+	// (ctis.NewReportID). Inject it for reproducible output.
+	ReportID string
+
+	// Channel is metadata.channel. Empty: scanner.
+	Channel ctis.Channel
+
+	// DefaultAsset is the asset of a finding whose rule sets no asset_value.
+	// Nil: an unclassified asset named "mapping-import".
+	DefaultAsset *ctis.Asset
 
 	MaxInputBytes  int64 // whole input; default 64 MiB
 	MaxRecordBytes int   // one JSON Lines line; default 1 MiB
@@ -132,6 +144,7 @@ type applier struct {
 	opts   Options
 	now    time.Time
 	report *ctis.Report
+	assets map[string]string // asset key -> asset id
 	stats  Stats
 	obs    *observer // nil unless Options.Observe
 }
@@ -147,18 +160,31 @@ type applier struct {
 // canceled ctx returns an error and no report.
 func (m *Mapping) Apply(ctx context.Context, r io.Reader, opts Options) (*ctis.Report, Stats, error) {
 	opts = opts.withDefaults()
-	a := &applier{m: m, opts: opts, now: opts.Now().UTC()}
+	if opts.ReportID != "" && !ctis.IsReportID(opts.ReportID) {
+		return nil, Stats{}, errors.New("mapping: Options.ReportID must be a lowercase UUIDv7")
+	}
+	if opts.Channel != "" && !opts.Channel.IsValid() {
+		return nil, Stats{}, errors.New("mapping: Options.Channel is not a CTIS channel")
+	}
+	a := &applier{m: m, opts: opts, now: opts.Now().UTC(), assets: map[string]string{}}
 	if opts.Observe {
 		a.obs = newObserver()
+	}
+	id, ch := opts.ReportID, opts.Channel
+	if id == "" {
+		id = ctis.NewReportID()
+	}
+	if ch == "" {
+		ch = ctis.ChannelScanner
 	}
 	a.report = &ctis.Report{
 		Version:  ctis.SchemaVersion,
 		Schema:   ctis.SchemaURL,
-		Metadata: ctis.ReportMetadata{Timestamp: a.now, SourceType: "scanner"},
+		Metadata: ctis.ReportMetadata{ID: id, GeneratedAt: a.now, Channel: ch},
 	}
 	if opts.Tool != nil {
 		t := *opts.Tool
-		t.Capabilities = append([]string(nil), t.Capabilities...)
+		t.Techniques = append([]ctis.Technique(nil), t.Techniques...)
 		a.report.Tool = &t
 	}
 	lr := &countingReader{r: io.LimitReader(r, opts.MaxInputBytes+1)}
@@ -387,21 +413,41 @@ func (a *applier) emit(r rule, rec any) error {
 		}
 		setPath(tree, s.target, sanitize(v, s.target[len(s.target)-1]))
 	}
+	idEmpty := r.kind == KindFinding && len(a.m.ident) > 0 && identityEmpty(tree, a.m.ident)
+	// The mapping-level members of a finding rule are not CTIS members.
+	var assetType, assetValue, evidence string
+	var vulnIDs []string
+	if r.kind == KindFinding {
+		assetType, assetValue, evidence = popText(tree, TargetAssetType), popText(tree, TargetAssetValue), popText(tree, TargetEvidence)
+		vulnIDs = popIDs(tree)
+	}
 	raw, err := json.Marshal(tree)
 	if err != nil {
 		return err
 	}
-	probe := ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{Timestamp: a.now}}
+	probe := a.probe()
 	switch r.kind {
 	case KindAsset:
 		var as ctis.Asset
 		if err := strictDecode(raw, &as); err != nil {
 			return fmt.Errorf("asset: %s", cleanErr(err))
 		}
+		c, err := ctis.CanonicalAssetValue(as.Type, as.Value)
+		if err != nil {
+			return fmt.Errorf("asset: %s", cleanErr(err))
+		}
+		as.Value = c
+		key := string(as.Type) + "\x1f" + c
+		if _, dup := a.assets[key]; dup {
+			a.stats.Assets++
+			return nil
+		}
+		as.ID = fmt.Sprintf("asset-%d", len(a.report.Assets)+1)
 		probe.Assets = []ctis.Asset{as}
 		if err := probe.Validate(); err != nil {
 			return err
 		}
+		a.assets[key] = as.ID
 		a.report.Assets = append(a.report.Assets, as)
 		a.stats.Assets++
 	case KindFinding:
@@ -409,19 +455,35 @@ func (a *applier) emit(r rule, rec any) error {
 		if err := strictDecode(raw, &f); err != nil {
 			return fmt.Errorf("finding: %s", cleanErr(err))
 		}
-		if len(a.m.ident) > 0 && identityEmpty(tree, a.m.ident) {
+		if idEmpty {
 			return errors.New("finding: every identity member is empty")
 		}
 		if f.Type == "" {
 			f.Type = ctis.FindingTypeVulnerability
 		}
+		for _, id := range vulnIDs {
+			if f.Vulnerability == nil {
+				f.Vulnerability = &ctis.VulnerabilityDetails{}
+			}
+			f.Vulnerability.AddID(id, "")
+		}
+		if evidence != "" {
+			f.EvidenceItems = append(f.EvidenceItems, rawText(evidence))
+		}
 		if f.Type == ctis.FindingTypeSecret {
 			ctis.RedactSecretFinding(&f)
 		}
+		asset, err := a.findingAsset(assetType, assetValue)
+		if err != nil {
+			return err
+		}
+		f.AssetRef = asset.ID
+		probe.Assets = []ctis.Asset{asset}
 		probe.Findings = []ctis.Finding{f}
 		if err := probe.Validate(); err != nil {
 			return err
 		}
+		a.addAsset(asset)
 		a.report.Findings = append(a.report.Findings, f)
 		a.stats.Findings++
 	case KindDependency:
@@ -436,6 +498,116 @@ func (a *applier) emit(r rule, rec any) error {
 		a.stats.Dependencies++
 	}
 	return nil
+}
+
+// probe is a report shell that Validate accepts, to check one record.
+func (a *applier) probe() ctis.Report {
+	return ctis.Report{Version: ctis.SchemaVersion, Metadata: ctis.ReportMetadata{ID: a.report.Metadata.ID, GeneratedAt: a.now}}
+}
+
+// popText removes a member of the tree and returns it as trimmed text.
+func popText(tree map[string]any, key string) string {
+	v, ok := tree[key]
+	if !ok {
+		return ""
+	}
+	delete(tree, key)
+	switch x := v.(type) {
+	case string:
+		return strings.TrimSpace(x)
+	case json.Number:
+		return x.String()
+	case bool, float64, int, int64:
+		return fmt.Sprint(x)
+	}
+	return ""
+}
+
+// popIDs removes vulnerability.ids from the tree and returns its strings.
+func popIDs(tree map[string]any) []string {
+	v, ok := tree["vulnerability"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	list, _ := v["ids"].([]any)
+	delete(v, "ids")
+	if len(v) == 0 {
+		delete(tree, "vulnerability")
+	}
+	var out []string
+	for _, it := range list {
+		if s, ok := it.(string); ok && strings.TrimSpace(s) != "" {
+			out = append(out, strings.TrimSpace(s))
+		}
+	}
+	return out
+}
+
+// rawText is the raw_text evidence item of a finding's evidence text.
+func rawText(s string) ctis.EvidenceItem {
+	if len(s) > ctis.MaxEvidenceTextBytes {
+		cut := ctis.MaxEvidenceTextBytes
+		for cut > 0 && !utf8.RuneStart(s[cut]) {
+			cut--
+		}
+		s = s[:cut]
+	}
+	return ctis.EvidenceItem{Kind: ctis.EvidenceKindRawText, Version: 1, Text: s}
+}
+
+// findingAsset returns the asset a finding is filed on: the asset the rule
+// names by type and value, else Options.DefaultAsset, else an unclassified
+// asset "mapping-import". The type is the rule's, else an address or a
+// domain name by the value's form, else unclassified. The asset is added to
+// the report only when the finding is kept.
+func (a *applier) findingAsset(typ, value string) (ctis.Asset, error) {
+	var as ctis.Asset
+	switch {
+	case value != "":
+		t := ctis.AssetType(strings.ToLower(typ))
+		if typ != "" && !t.IsValid() {
+			return as, fmt.Errorf("finding: asset_type %q is not a CTIS asset type", truncate(typ, 64))
+		}
+		if typ == "" {
+			t = ctis.AssetTypeUnclassified
+			if _, err := ctis.CanonicalIP(value); err == nil {
+				t = ctis.AssetTypeIPAddress
+			} else if _, err := ctis.CanonicalOrigin(value); err == nil {
+				t = ctis.AssetTypeWebOrigin
+			} else if _, err := ctis.CanonicalDomain(value); err == nil {
+				t = ctis.AssetTypeDomainName
+			}
+		}
+		as = ctis.Asset{Type: t, Value: value, Name: truncate(value, 255)}
+	case a.opts.DefaultAsset != nil && a.opts.DefaultAsset.Value != "":
+		as = *a.opts.DefaultAsset
+		if as.Type == "" {
+			as.Type = ctis.AssetTypeUnclassified
+		}
+	default:
+		as = ctis.Asset{Type: ctis.AssetTypeUnclassified, Value: "mapping-import", Name: "mapping-import"}
+	}
+	c, err := ctis.CanonicalAssetValue(as.Type, as.Value)
+	if err != nil {
+		return as, fmt.Errorf("finding: asset: %s", cleanErr(err))
+	}
+	as.Value = c
+	if id, ok := a.assets[string(as.Type)+"\x1f"+c]; ok {
+		as.ID = id
+	} else {
+		as.ID = fmt.Sprintf("asset-%d", len(a.report.Assets)+1)
+	}
+	return as, nil
+}
+
+// addAsset adds an asset the report does not hold yet.
+func (a *applier) addAsset(as ctis.Asset) {
+	key := string(as.Type) + "\x1f" + as.Value
+	if _, ok := a.assets[key]; ok {
+		return
+	}
+	a.assets[key] = as.ID
+	a.report.Assets = append(a.report.Assets, as)
 }
 
 // identityEmpty: none of the identity members got a value.

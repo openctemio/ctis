@@ -1,6 +1,6 @@
-# Declarative mappings (`openctem.io/mapping/v1`)
+# Declarative mappings (`openctem.io/mapping/v2`)
 
-A mapping turns the JSON, JSON Lines, CSV or XML output of a tool, or an export of a product, into a CTIS report without parser code. The package is `github.com/openctemio/ctis/importer/mapping`:
+A mapping turns the JSON, JSON Lines, CSV or XML output of a tool, or an export of a product, into a CTIS report without parser code. The package is `github.com/openctemio/ctis/v2/importer/mapping`:
 
 ```go
 m, err := mapping.Load(mappingJSON)          // strict; refuses anything outside the language
@@ -11,13 +11,15 @@ report, stats, err := m.Apply(ctx, toolStdout, mapping.Options{
 digest := m.Digest()                          // "sha256:<hex>" of the canonical mapping
 ```
 
+A version 1 mapping (`openctem.io/mapping/v1`, written for CTIS 1.x) is refused by `Load`: rewrite it with the CTIS 2.0 member names (`docs/migration-2.0.md`) and set `apiVersion` to `openctem.io/mapping/v2`.
+
 The file is JSON. A tool that keeps its mapping in YAML converts it to JSON first; `Load` is the authority on what is valid.
 
 ## 1. File
 
 ```json
 {
-  "apiVersion": "openctem.io/mapping/v1",
+  "apiVersion": "openctem.io/mapping/v2",
   "source": "jsonl",
   "notes": "free text for readers",
   "records": [
@@ -25,11 +27,11 @@ The file is JSON. A tool that keeps its mapping in YAML converts it to JSON firs
       "when": {"path": "/port", "exists": true},
       "kind": "asset",
       "set": {
-        "type": {"const": "open_port"},
-        "value": {"template": "{ip}:{port}", "vars": {"ip": "/ip", "port": "/port"}},
-        "properties.host": "/ip",
-        "properties.port": {"path": "/port", "as": "integer"},
-        "properties.protocol": {"path": "/protocol", "lower": true, "default": "tcp"}
+        "type": {"const": "service"},
+        "value": {"template": "{ip}:{port}/tcp", "vars": {"ip": "/ip", "port": "/port"}},
+        "technical.service.port": {"path": "/port", "as": "integer"},
+        "technical.service.transport": {"const": "tcp"},
+        "properties.host": "/ip"
       }
     }
   ]
@@ -38,7 +40,7 @@ The file is JSON. A tool that keeps its mapping in YAML converts it to JSON firs
 
 | Member | Meaning |
 |---|---|
-| `apiVersion` | Always `openctem.io/mapping/v1`. |
+| `apiVersion` | Always `openctem.io/mapping/v2`. |
 | `source` | `jsonl`: one JSON value per line. `json`: one document. `csv`: a header row, then one record per row (§1.1). `xml`: one document (§1.2). |
 | `each` | `json`: the path of the list of records. Absent: a top-level list is the records; any other value is one record. `xml` (required): the elements that are records. Not allowed for `jsonl` and `csv`. |
 | `csv` | `csv` only: `delimiter` and `skip_rows` (§1.1). |
@@ -51,7 +53,7 @@ Unknown members are errors everywhere.
 ### 1.1 CSV
 
 ```json
-{"apiVersion": "openctem.io/mapping/v1", "source": "csv", "csv": {"delimiter": "auto", "skip_rows": 0}, "records": [...]}
+{"apiVersion": "openctem.io/mapping/v2", "source": "csv", "csv": {"delimiter": "auto", "skip_rows": 0}, "records": [...]}
 ```
 
 - `delimiter` is `,`, `;`, `\t`, `|` or `auto` (the default). `auto` takes the one of these that occurs most often outside double quotes in the header row; a tie goes to the earlier one in that list, and a header with none is one column. Set it when a header could mislead the count.
@@ -67,7 +69,7 @@ Unknown members are errors everywhere.
 ### 1.2 XML
 
 ```json
-{"apiVersion": "openctem.io/mapping/v1", "source": "xml", "each": "//testcase", "records": [...]}
+{"apiVersion": "openctem.io/mapping/v2", "source": "xml", "each": "//testcase", "records": [...]}
 ```
 
 - `each` is an absolute element path from the root (`/testsuites/testsuite/testcase`) or `//name`: every element of that name at any depth. An element nested in a record is part of it, never a record of its own. Names are local names: namespace prefixes are left out.
@@ -107,13 +109,17 @@ A predicate on an object or a list is false.
 
 ### Targets
 
-A target is a dotted path of CTIS JSON member names relative to the record of the rule's kind: `value`, `technical.certificate.not_after`, `network.port`, `vulnerability.cve_id`. `Load` checks every target against the CTIS types:
+A target is a dotted path of CTIS JSON member names relative to the record of the rule's kind: `value`, `technical.certificate.not_after`, `network.port`, `vulnerability.cwe_ids`. `Load` checks every target against the CTIS types:
 
 - An object is set member by member: `location.path`, not `location`. Two targets may not overlap.
-- Lists of strings may be set (`tags`, `vulnerability.cwe_ids`). Lists of objects may not.
+- Lists of strings may be set (`tags`, `vulnerability.cwe_ids`). Lists of objects (`scores`, `owners`, `evidence_items`) may not.
+- Four members of a finding rule are not CTIS members; the applier turns them into CTIS 2.0 members:
+  - `asset_value` and `asset_type` name the finding's asset. The applier makes the value canonical (`ctis.CanonicalAssetValue`), adds the asset to the report once per type and canonical value (ids `asset-1`, `asset-2`, ...) and sets `asset_ref`. Without `asset_type` the type is an address, a web origin or a domain name by the value's form, else `unclassified`. A finding that sets no `asset_value` goes to `Options.DefaultAsset`, else to an `unclassified` asset `mapping-import`. A value with no canonical form skips the finding with an issue.
+  - `vulnerability.ids` is a list of raw ids (`CVE-2024-1234`, `GHSA-...`, a vendor advisory number); each becomes a typed `vulnerability.ids` entry.
+  - `evidence` is text; it becomes one `raw_text` evidence item.
 - A free-form map takes exactly one key below it: `properties.<key>`, `technical.service.details.<key>`, `source_extra.<key>`.
-- Never settable: report-level members (`metadata`, `tool`, `$schema`), `id`, and the links between records (`asset_ref`, `related_assets`, `depends_on`, `related_locations`, `stacks`, `attachments`, `data_flow`). A tool's output cannot forge references or claim to be another tool.
-- Required: `type` and `value` for an asset, `title` and `severity` for a finding, `name` for a dependency. A constant asset `type` must be a CTIS asset type.
+- Never settable: report-level members (`metadata`, `tool`, `$schema`), `id`, and the links between records (`asset_ref`, `dependency_ref`, `depends_on`, `related_locations`, `stacks`, `attachments`, `data_flow`). A tool's output cannot forge references or claim to be another tool.
+- Required: `type` and `value` for an asset, `title` and `severity` for a finding, `name` for a dependency. A constant asset `type` must be a CTIS 2.0 asset type, and an asset `value` is made canonical for its type (a value with no canonical form skips the record; a later record with the same type and value is the same asset). A mapping builds no relationships: a `service` asset has no `exposes` link.
 - A constant `fingerprint` is refused: every finding of the rule would be one finding.
 - One value set on a list member is a one-item list.
 
@@ -160,7 +166,7 @@ A source object is never a value.
 
 ## 3. Output and checks
 
-- The report has `version`, `$schema`, `metadata.timestamp` (`Options.Now`, UTC), `metadata.source_type: scanner`, and `tool` from `Options.Tool` only.
+- The report has `version`, `$schema`, `metadata.id` (`Options.ReportID`, a UUIDv7; a new one when empty), `metadata.generated_at` (`Options.Now`, UTC), `metadata.channel` (`Options.Channel`, `scanner` by default), and `tool` from `Options.Tool` only.
 - A finding without a `type` is a `vulnerability`.
 - A `secret` finding goes through `ctis.RedactSecretFinding`, so a raw secret mapped into the title, snippet or `secret.masked_value` is masked.
 - Each emitted record is decoded strictly into its CTIS type and validated with `Report.Validate`. A record that fails is skipped, and `Stats.Issues` says why, with the input record number and the rule index.
@@ -192,7 +198,7 @@ A source object is never a value.
 
 `importer/mapping/testdata/` holds six samples, each with its input and the expected report (`expect.ctis.json`, validated against the CTIS schema in CI):
 
-- `naabu-jsonl`: one `open_port` asset per JSON line.
+- `naabu-jsonl`: one `service` asset (`host:port/tcp`) per JSON line.
 - `json-each`: a document with a list of TLS results. Each result gives a certificate asset and, for a weak grade, a misconfiguration finding.
 - `findings-jsonl`: template-scanner matches to vulnerability findings, with CVE, CWE, evidence, tags and network location.
 - `generic-csv`: one finding per row from `title`, `severity`, `asset`, `asset_type`, `cve` and `description` columns. The input has a byte order mark, CRLF line ends, quoted cells with commas, quotes and line breaks, and a formula cell kept as text.

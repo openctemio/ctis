@@ -1,14 +1,29 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "timestamp": "2026-10-07T08:00:00Z",
-    "source_type": "scanner"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-07T08:00:00Z",
+    "channel": "scanner"
   },
   "tool": {
     "name": "generic-json",
     "version": "1.0.0"
   },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "host",
+      "value": "edge-01.example.com",
+      "name": "edge-01.example.com"
+    },
+    {
+      "id": "asset-2",
+      "type": "ip_address",
+      "value": "10.1.2.3",
+      "name": "10.1.2.3"
+    }
+  ],
   "findings": [
     {
       "type": "vulnerability",
@@ -16,10 +31,14 @@
       "description": "HTTP/2 rapid reset",
       "severity": "high",
       "rule_id": "NGX-1",
-      "asset_value": "edge-01.example.com",
-      "asset_type": "host",
+      "asset_ref": "asset-1",
       "vulnerability": {
-        "cve_id": "CVE-2023-44487"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2023-44487"
+          }
+        ]
       },
       "references": [
         "https://nvd.nist.gov/vuln/detail/CVE-2023-44487"
@@ -30,8 +49,7 @@
       "title": "Default credentials",
       "severity": "critical",
       "rule_id": "CRED-7",
-      "asset_value": "10.1.2.3",
-      "asset_type": "ip_address"
+      "asset_ref": "asset-2"
     }
   ]
 }

@@ -14,7 +14,7 @@ import (
 
 func init() {
 	parsers[FormatBetterleaks] = parseBetterleaks
-	tools[FormatBetterleaks] = ctis.Tool{Name: "betterleaks", Vendor: "Betterleaks", InfoURL: "https://github.com/betterleaks/betterleaks", Capabilities: []string{"secret"}}
+	tools[FormatBetterleaks] = ctis.Tool{Name: "betterleaks", Vendor: "Betterleaks", InfoURL: "https://github.com/betterleaks/betterleaks", Techniques: []ctis.Technique{ctis.TechniqueSecret}}
 }
 
 func parseBetterleaks(b *builder, r io.Reader) error {
@@ -48,7 +48,7 @@ func parseLeaks(b *builder, r io.Reader, format Format, tool string) error {
 			b.res.Stats.Skipped++
 			continue
 		}
-		f, ok := leakFinding(&rec, tool)
+		f, ok := leakFinding(&rec, tool, b.opts.SecretKey)
 		if !ok {
 			b.issue(doc.issueAt("/[]", i, ptr, "record without RuleID or File: skipped"))
 			b.res.Stats.Skipped++

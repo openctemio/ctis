@@ -19,7 +19,7 @@ import (
 
 func init() {
 	parsers[FormatNessus] = parseNessus
-	tools[FormatNessus] = ctis.Tool{Name: "nessus", Vendor: "Tenable", Capabilities: []string{"va"}}
+	tools[FormatNessus] = ctis.Tool{Name: "nessus", Vendor: "Tenable", Techniques: []ctis.Technique{ctis.TechniqueVA}}
 }
 
 // xmlField is any child element of a ReportItem, by local name, so the
@@ -163,9 +163,28 @@ func (b *builder) nessusHost(h *nessusHost, lineNo int) error {
 		return nil
 	}
 
-	asset := ctis.Asset{ID: "host-" + value, Type: ctis.AssetTypeHost, Value: value, Name: value}
+	asset := ctis.Asset{Type: ctis.AssetTypeHost, Value: value, Name: value}
 	if net.ParseIP(value) != nil {
 		asset.Type = ctis.AssetTypeIPAddress
+	}
+	if os := line(firstLine(props.get("operating-system")), capShort); os != "" {
+		t := ctis.Technology{Name: os, Categories: []string{"operating-system"}}
+		if c := nessusConfidence(props.get("operating-system-conf")); c > 0 {
+			t.Confidence = c
+		}
+		asset.Technologies = []ctis.Technology{t}
+	}
+	if u := line(props.get("bios-uuid"), ctis.MaxIdentityHintLen); u != "" {
+		asset.Identifiers = &ctis.AssetIdentifiers{BIOSUUID: u}
+	}
+	if t := parseTime(nessusTime(props.get("HOST_START_TIMESTAMP"), props.get("HOST_START"))); t != nil {
+		asset.FirstSeenAt = t
+	}
+	if t := parseTime(nessusTime(props.get("HOST_END_TIMESTAMP"), props.get("HOST_END"))); t != nil {
+		asset.LastSeenAt = t
+	}
+	if asset.FirstSeenAt != nil && asset.LastSeenAt != nil && asset.LastSeenAt.Before(*asset.FirstSeenAt) {
+		asset.FirstSeenAt = nil
 	}
 	ap := ctis.Properties{}
 	setProp := func(k, v string) {
@@ -173,17 +192,9 @@ func (b *builder) nessusHost(h *nessusHost, lineNo int) error {
 			ap[k] = v
 		}
 	}
-	setProp("ip_address", ip)
-	setProp("fqdn", fqdn)
-	setProp("os", firstLine(props.get("operating-system")))
-	setProp("mac_address", props.get("mac-address"))
 	setProp("host_rdns", props.get("host-rdns"))
 	setProp("system_type", props.get("system-type"))
-	setProp("os_confidence", props.get("operating-system-conf"))
 	setProp("os_method", props.get("operating-system-method"))
-	setProp("bios_uuid", props.get("bios-uuid"))
-	setProp("scan_started_at", nessusTime(props.get("HOST_START_TIMESTAMP"), props.get("HOST_START")))
-	setProp("scan_ended_at", nessusTime(props.get("HOST_END_TIMESTAMP"), props.get("HOST_END")))
 	setProp("local_checks_protocol", props.get("local-checks-proto"))
 	if len(ap) > 0 {
 		asset.Properties = ap
@@ -218,6 +229,11 @@ func (b *builder) nessusHost(h *nessusHost, lineNo int) error {
 	if err != nil {
 		return err
 	}
+	if assetID == "" {
+		b.res.Stats.Records += len(h.Items)
+		b.res.Stats.Skipped += len(h.Items)
+		return nil
+	}
 
 	var credentialed *bool
 	switch strings.ToLower(props.get("Credentialed_Scan")) {
@@ -238,6 +254,9 @@ func (b *builder) nessusHost(h *nessusHost, lineNo int) error {
 		if !ok {
 			b.res.Stats.Skipped++
 			continue
+		}
+		if f.Network != nil && f.Network.Port > 0 && f.Network.Transport != "" {
+			b.service(assetID, f.Network.Port, f.Network.Transport, f.Network.AppProtocol)
 		}
 		if err := b.finding(f); err != nil {
 			return err
@@ -376,12 +395,12 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 		Category: line(it.PluginFamily, capCategory),
 		AssetRef: assetID,
 		Native: &ctis.NativeIdentity{
-			Scheme:       ctis.NativeSchemeNessus,
-			VulnID:       line(pluginID, ctis.MaxNativeIDLen),
-			Family:       line(it.PluginFamily, ctis.MaxNativeIDLen),
-			Severity:     line(nativeSev, ctis.MaxNativeValueLen),
-			Credentialed: credentialed,
-			RawRef:       line(fmt.Sprintf("ReportHost[%s]/ReportItem[pluginID=%s,port=%s,protocol=%s]", assetValue, pluginID, it.Port, it.Protocol), ctis.MaxRawRefLen),
+			Scheme:         ctis.NativeSchemeNessus,
+			VulnID:         line(pluginID, ctis.MaxNativeIDLen),
+			Family:         line(it.PluginFamily, ctis.MaxNativeIDLen),
+			Severity:       line(nativeSev, ctis.MaxNativeValueLen),
+			IsCredentialed: credentialed,
+			RawRef:         line(fmt.Sprintf("ReportHost[%s]/ReportItem[pluginID=%s,port=%s,protocol=%s]", assetValue, pluginID, it.Port, it.Protocol), ctis.MaxRawRefLen),
 		},
 	}
 	if sev == ctis.SeverityInfo {
@@ -399,9 +418,7 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 		f.Description = synopsis
 	}
 	f.Message = line(synopsis, 8<<10)
-	if out := redactCredentials(first(v, "plugin_output")); out != "" {
-		f.Evidence = text(out, capEvidence)
-	}
+	rawTextEvidence(&f, "plugin_output", redactCredentials(first(v, "plugin_output")), "")
 
 	// Every plugin result is observed on its host, so every finding carries
 	// a network location: port 0 is a host-level result (Nessus reports it on
@@ -415,7 +432,14 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 	if port == 0 && svc == "general" {
 		svc = ""
 	}
-	f.Network = &ctis.NetworkLocation{Host: assetValue, Port: port, Protocol: strings.ToLower(line(it.Protocol, 16)), Service: svc}
+	f.Network = &ctis.NetworkLocation{Port: port, Transport: transportOf(it.Protocol), AppProtocol: ianaName(svc)}
+	if f.Network.Port == 0 {
+		// A host-level result: no transport either.
+		f.Network.Transport = ""
+	} else if f.Network.Transport == "" {
+		// icmp and the like carry no port.
+		f.Network.Port = 0
+	}
 
 	// Compliance audit results (cm: members).
 	if check := first(v, "compliance-check-name"); check != "" {
@@ -437,15 +461,13 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 			ControlID:          line(firstNonEmpty(first(v, "compliance-control-id"), first(v, "compliance-check-id")), capShort),
 			ControlName:        line(check, capShort),
 			ControlDescription: text(first(v, "compliance-info"), 4<<10),
-			Result:             nessusComplianceResult(first(v, "compliance-result")),
 		}
-		if out := redactCredentials(first(v, "compliance-actual-value")); out != "" {
-			f.Evidence = text(out, capEvidence)
-		}
+		f.Kind = nessusComplianceResult(first(v, "compliance-result"))
+		rawTextEvidence(&f, "compliance-actual-value", redactCredentials(first(v, "compliance-actual-value")), "")
 		if sol := text(first(v, "compliance-solution"), capRemediation); sol != "" {
 			f.Remediation = &ctis.Remediation{Recommendation: sol}
 		}
-		f.References = addRefs(f.References, splitLines(first(v, "compliance-see-also"))...)
+		f.References = addWebRefs(f.References, splitLines(first(v, "compliance-see-also"))...)
 		for _, k := range []string{"compliance-benchmark-name", "compliance-result", "compliance-policy-value", "compliance-audit-file", "compliance-benchmark-profile", "compliance-full-id", "compliance-functional-id", "compliance-reference", "compliance-check-id", "compliance-uname", "compliance-source"} {
 			if k == "compliance-uname" {
 				continue // the account the check ran as
@@ -498,9 +520,6 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 			addAdvisory(&f, id, k)
 		}
 	}
-	if len(vuln.CWEIDs) > 0 {
-		vuln.CWEID = vuln.CWEIDs[0]
-	}
 
 	// Scores: every CVSS version with its vector, VPR, EPSS.
 	type cvss struct{ version, score, vector string }
@@ -525,41 +544,59 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 		if !ok {
 			continue
 		}
-		if vuln.CVSSVersion == "" {
-			vuln.CVSSScore, vuln.CVSSVersion, vuln.CVSSVector, vuln.CVSSSource = val, c.version, line(c.vector, ctis.MaxScoreVectorLen), "vendor"
-		}
 		vc := val
 		addScore(&f, ctis.Score{System: ctis.ScoreSystemCVSS, Version: c.version, Vector: line(c.vector, ctis.MaxScoreVectorLen), Value: &vc, Source: "tenable"})
 	}
 	if val, ok := parseScore(first(v, "vpr_score"), 10); ok {
-		vuln.VPRScore = val
 		vc := val
-		addScore(&f, ctis.Score{System: ctis.ScoreSystemVPR, Value: &vc, Source: "tenable"})
+		addScore(&f, ctis.Score{System: ctis.ScoreSystemVendor, Value: &vc, Source: "tenable"})
 	}
 	if val, ok := parseScore(first(v, "epss_score"), 1); ok {
-		vuln.EPSSScore = val
 		vc := val
 		addScore(&f, ctis.Score{System: ctis.ScoreSystemEPSS, Value: &vc, Source: "tenable"})
 	}
 	if truthy(first(v, "exploit_available")) {
-		vuln.ExploitAvailable = true
+		addSignal(vuln, ctis.ThreatSignalPublicExploit, "tenable", nil)
 	}
-	if m := nessusMaturity(first(v, "exploit_code_maturity")); m != "" {
-		vuln.ExploitMaturity = m
+	switch nessusMaturity(first(v, "exploit_code_maturity")) {
+	case "weaponized":
+		addSignal(vuln, ctis.ThreatSignalWeaponized, "tenable", nil)
+	case "functional", "poc":
+		addSignal(vuln, ctis.ThreatSignalPublicExploit, "tenable", nil)
 	}
-	if first(v, "cisa-known-exploited") != "" || first(v, "cisa_known_exploited") != "" {
-		vuln.InCISAKEV = true
+	if truthy(first(v, "exploited_by_malware")) {
+		addSignal(vuln, ctis.ThreatSignalExploitedInWild, "tenable", nil)
+	}
+	kevDue, kev := "", false
+	for _, k := range []string{"cisa-known-exploited", "cisa_known_exploited"} {
+		if x := first(v, k); x != "" {
+			kev = true
+			if d := nessusDate(x); d != nil {
+				kevDue = d.Format(time.DateOnly)
+			}
+		}
 	}
 	for _, x := range v["xref"] {
-		if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(x)), "CISA-KNOWN-EXPLOITED:") {
-			vuln.InCISAKEV = true
+		if rest, ok := strings.CutPrefix(strings.TrimSpace(x), "CISA-KNOWN-EXPLOITED:"); ok {
+			kev = true
+			if d := nessusDate(rest); d != nil && kevDue == "" {
+				kevDue = d.Format(time.DateOnly)
+			}
+		}
+	}
+	if kev {
+		addSignal(vuln, ctis.ThreatSignalKEV, "cisa", nil)
+		for i := range vuln.ThreatSignals {
+			if vuln.ThreatSignals[i].Type == ctis.ThreatSignalKEV {
+				vuln.ThreatSignals[i].DueOn = kevDue
+			}
 		}
 	}
 	if cpe := firstLine(first(v, "cpe")); cpe != "" {
 		vuln.CPE = line(cpe, capShort)
 	}
 	vuln.PublishedAt = nessusDate(first(v, "vuln_publication_date"))
-	if vuln.CVEID != "" || len(vuln.IDs) > 0 || vuln.CVSSScore > 0 || vuln.VPRScore > 0 || vuln.CPE != "" || vuln.ExploitAvailable || vuln.InCISAKEV || len(vuln.CWEIDs) > 0 || vuln.PublishedAt != nil || vuln.EPSSScore > 0 || vuln.ExploitMaturity != "" {
+	if len(vuln.IDs) > 0 || vuln.CPE != "" || len(vuln.ThreatSignals) > 0 || len(vuln.CWEIDs) > 0 || vuln.PublishedAt != nil {
 		f.Vulnerability = vuln
 	}
 
@@ -570,39 +607,19 @@ func (b *builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 		}
 		patch := nessusDate(first(v, "patch_publication_date"))
 		if sol != "" || patch != nil || f.Remediation != nil {
-			if f.Remediation == nil {
-				f.Remediation = &ctis.Remediation{}
-			}
-			f.Remediation.Recommendation = sol
-			f.Remediation.PatchPublishedAt = patch
+			rem := ensureRemediation(&f)
+			rem.Recommendation = sol
+			rem.PatchPublishedAt = patch
 			if patch != nil {
-				f.Remediation.FixAvailable = true
+				rem.IsFixAvailable = ctis.Bool(true)
 			}
 		}
 		if truthy(first(v, "unsupported_by_vendor")) {
-			if f.Remediation == nil {
-				f.Remediation = &ctis.Remediation{}
-			}
-			f.Remediation.SolutionType = ctis.SolutionTypeUpgrade
+			ensureRemediation(&f).SolutionType = ctis.SolutionTypeUpgrade
 		}
 	}
-	f.References = addRefs(f.References, splitLines(first(v, "see_also"))...)
-
-	// The receiver's established property names for the two CVSS vectors
-	// and the patch date.
-	fp := ctis.Properties{}
-	if s := first(v, "cvss_vector"); s != "" {
-		fp["cvss_v2_vector"] = line(s, ctis.MaxScoreVectorLen)
-	}
-	if s := first(v, "cvss3_vector"); s != "" {
-		fp["cvss_v3_vector"] = line(s, ctis.MaxScoreVectorLen)
-	}
-	if s := first(v, "patch_publication_date"); s != "" {
-		fp["patch_publication_date"] = line(s, 32)
-	}
-	if len(fp) > 0 {
-		f.Properties = fp
-	}
+	f.References = addWebRefs(f.References, splitLines(first(v, "see_also"))...)
+	f.SourceRefs = []ctis.SourceRef{sourceRef("nessus", pluginID)}
 
 	for _, k := range nessusExtra {
 		if vals := v[k]; len(vals) > 0 {
@@ -658,39 +675,13 @@ func appendUnique(dst []string, s string) []string {
 	return append(dst, s)
 }
 
-// addVendorID adds a vendor vulnerability id with its issuer.
-func addVendorID(v *ctis.VulnerabilityDetails, id, source string) {
-	id = strings.TrimSpace(id)
-	n, ok := ctis.NormalizeVulnerabilityID(id)
-	if !ok || len(v.IDs) >= ctis.MaxVulnerabilityIDs {
-		return
-	}
-	if n.Type == ctis.VulnerabilityIDVendor {
-		n.Source = line(source, 64)
-	}
-	for _, have := range v.IDs {
-		if have.Type == n.Type && strings.EqualFold(have.ID, n.ID) {
-			return
-		}
-	}
-	v.IDs = append(v.IDs, n)
-	if n.Type == ctis.VulnerabilityIDCVE {
-		v.CVEIDs = append(v.CVEIDs, n.ID)
-		if v.CVEID == "" {
-			v.CVEID = n.ID
-		}
-	}
-}
-
 // addAdvisory adds a vendor advisory to the finding's remediation.
 func addAdvisory(f *ctis.Finding, id, source string) {
 	id = line(id, ctis.MaxVulnerabilityIDLen)
 	if id == "" {
 		return
 	}
-	if f.Remediation == nil {
-		f.Remediation = &ctis.Remediation{}
-	}
+	ensureRemediation(f)
 	for _, a := range f.Remediation.Advisories {
 		if a.ID == id && a.Source == source {
 			return
@@ -709,7 +700,7 @@ func nessusComplianceResult(s string) string {
 	case "FAILED":
 		return "fail"
 	case "WARNING":
-		return "manual"
+		return "review"
 	case "ERROR", "SKIPPED":
 		return "not_applicable"
 	}
@@ -717,29 +708,42 @@ func nessusComplianceResult(s string) string {
 }
 
 // complianceFramework names the framework of a benchmark in the CTIS
-// vocabulary (pci-dss, hipaa, soc2, cis, nist, iso27001, gdpr, fedramp), or
+// registry (pci_dss, hipaa, soc2, cis, nist_800_53, iso27001, gdpr, fedramp), or
 // returns "" (the benchmark name is kept in source_extra).
-func complianceFramework(benchmark string) string {
+func complianceFramework(benchmark string) ctis.ComplianceFramework {
 	b := strings.ToLower(benchmark)
 	switch {
 	case strings.HasPrefix(b, "cis"):
-		return "cis"
+		return ctis.FrameworkCIS
 	case strings.Contains(b, "pci"):
-		return "pci-dss"
+		return ctis.FrameworkPCIDSS
 	case strings.Contains(b, "hipaa"):
-		return "hipaa"
-	case strings.Contains(b, "nist") || strings.Contains(b, "800-53"):
+		return ctis.FrameworkHIPAA
+	case strings.Contains(b, "800-53"):
+		return ctis.FrameworkNIST80053
+	case strings.Contains(b, "nist") && strings.Contains(b, "csf"):
+		return ctis.FrameworkNISTCSF
+	case strings.Contains(b, "nist"):
 		return "nist"
 	case strings.Contains(b, "iso 27001") || strings.Contains(b, "iso27001"):
-		return "iso27001"
+		return ctis.FrameworkISO27001
 	case strings.Contains(b, "fedramp"):
-		return "fedramp"
+		return ctis.FrameworkFedRAMP
 	case strings.Contains(b, "soc 2") || strings.Contains(b, "soc2"):
-		return "soc2"
+		return ctis.FrameworkSOC2
 	case strings.Contains(b, "gdpr"):
-		return "gdpr"
+		return ctis.FrameworkGDPR
 	}
 	return ""
+}
+
+// nessusConfidence reads the operating-system-conf tag (0 to 100).
+func nessusConfidence(s string) int {
+	n, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil || n < 0 || n > 100 {
+		return 0
+	}
+	return n
 }
 
 // nessusMaturity maps exploit_code_maturity to the CTIS exploit maturity

@@ -61,8 +61,8 @@ func TestGitleaks_NoRawSecretAnywhere(t *testing.T) {
 		}
 	}
 	f := res.Report.Findings
-	if f[0].Secret.SecretType != "aws_key" || f[1].Secret.SecretType != "password" {
-		t.Fatalf("secret types = %q, %q", f[0].Secret.SecretType, f[1].Secret.SecretType)
+	if f[0].Secret.Type != "aws_key" || f[1].Secret.Type != "password" {
+		t.Fatalf("secret types = %q, %q", f[0].Secret.Type, f[1].Secret.Type)
 	}
 }
 
@@ -81,7 +81,7 @@ func TestLeaks_BetterleaksAlias(t *testing.T) {
 		t.Fatalf("formats %s/%s tool %s", g.Format, b.Format, b.Report.Tool.Name)
 	}
 	gf, bf := g.Report.Findings[0], b.Report.Findings[0]
-	if gf.Title != bf.Title || gf.RuleID != bf.RuleID || gf.Secret.SecretType != bf.Secret.SecretType || gf.Location.Path != bf.Location.Path {
+	if gf.Title != bf.Title || gf.RuleID != bf.RuleID || gf.Secret.Type != bf.Secret.Type || gf.Location.Path != bf.Location.Path {
 		t.Fatalf("the two formats map differently: %+v vs %+v", gf, bf)
 	}
 }
@@ -192,7 +192,7 @@ func TestZAP_SingleSiteObjectAndURIUserInfo(t *testing.T) {
 	if v := res.Report.Assets[0].Value; v != "https://a.example.com:8443" {
 		t.Fatalf("asset = %q", v)
 	}
-	if ev := res.Report.Findings[0].Evidence; strings.Contains(ev, "u:p@") {
+	if ev := evidenceText(res.Report.Findings[0]); strings.Contains(ev, "u:p@") {
 		t.Fatalf("user info kept: %q", ev)
 	}
 	if res.Report.Findings[0].Network.Port != 8443 {
@@ -211,8 +211,8 @@ func TestZAP_InstancesAreCapped(t *testing.T) {
 		t.Fatal(err)
 	}
 	f := res.Report.Findings[0]
-	if got := strings.Count(f.Evidence, "\n") + 1; got != zapMaxInstances+1 || !strings.Contains(f.Evidence, "10 more instances") || f.OccurrenceCount != 30 {
-		t.Fatalf("evidence lines %d, count %d: %q", got, f.OccurrenceCount, f.Evidence)
+	if got := strings.Count(evidenceText(f), "\n") + 1; got != zapMaxInstances+1 || !strings.Contains(evidenceText(f), "10 more instances") || f.OccurrenceCount != 30 {
+		t.Fatalf("evidence lines %d, count %d: %q", got, f.OccurrenceCount, evidenceText(f))
 	}
 }
 
@@ -222,11 +222,11 @@ func TestGrype_DefaultAssetAndSources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a := res.Report.Assets[0]; a.Type != ctis.AssetTypeRepository || a.Value != "/src" {
+	if a := res.Report.Assets[0]; a.Type != ctis.AssetTypeUnclassified || a.Value != "/src" {
 		t.Fatalf("asset = %+v", a)
 	}
 	f := res.Report.Findings[0]
-	if f.Severity != ctis.SeverityInfo || f.Scores[0].Source != "ghsa" || f.Vulnerability.CVSSSource != "ghsa" {
+	if f.Severity != ctis.SeverityInfo || f.Scores[0].Source != "ghsa" {
 		t.Fatalf("finding = %+v %+v", f.Severity, f.Scores)
 	}
 	res, err = Parse(context.Background(), strings.NewReader(in), Options{DefaultAsset: &ctis.Asset{Type: ctis.AssetTypeRepository, Value: "github.com/example/app"}})

@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "sbom_created": "2026-09-28T09:30:00Z",
       "sbom_name": "web-frontend",
@@ -15,15 +15,15 @@
   },
   "tool": {
     "name": "spdx",
-    "capabilities": [
+    "techniques": [
       "sca"
     ]
   },
   "assets": [
     {
-      "id": "sbom-pkg:npm/web-frontend@3.1.0",
-      "type": "repository",
-      "value": "pkg:npm/web-frontend@3.1.0",
+      "id": "package-pkg:npm/web-frontend",
+      "type": "package",
+      "value": "pkg:npm/web-frontend",
       "name": "web-frontend",
       "properties": {
         "package_purpose": "application",
@@ -36,8 +36,8 @@
       "id": "SPDXRef-Package-react-18.2.0",
       "name": "react",
       "version": "18.2.0",
-      "ecosystem": "npm",
       "purl": "pkg:npm/react@18.2.0",
+      "source_id": "SPDXRef-Package-react-18.2.0",
       "licenses": [
         "MIT"
       ],
@@ -45,6 +45,7 @@
       "depends_on": [
         "SPDXRef-Package-loose-envify-1.4.0"
       ],
+      "asset_ref": "package-pkg:npm/web-frontend",
       "properties": {
         "checksum_sha512": "2222222222222222222222222222222222222222222222222222222222222222",
         "download_location": "https://registry.npmjs.org/react/-/react-18.2.0.tgz",
@@ -55,12 +56,13 @@
       "id": "SPDXRef-Package-loose-envify-1.4.0",
       "name": "loose-envify",
       "version": "1.4.0",
-      "ecosystem": "npm",
       "purl": "pkg:npm/loose-envify@1.4.0",
+      "source_id": "SPDXRef-Package-loose-envify-1.4.0",
       "licenses": [
         "MIT"
       ],
-      "relationship": "indirect"
+      "relationship": "transitive",
+      "asset_ref": "package-pkg:npm/web-frontend"
     }
   ]
 }

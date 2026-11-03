@@ -1,20 +1,18 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
-    "scope": {
-      "name": "github.com/example/shop"
-    }
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "trivy",
     "vendor": "Aqua Security",
-    "capabilities": [
+    "techniques": [
       "sca",
-      "misconfiguration",
+      "iac",
+      "container",
       "secret"
     ]
   },
@@ -45,22 +43,21 @@
         "end_line": 54
       },
       "vulnerability": {
-        "cve_id": "CVE-2024-45590",
-        "cve_ids": [
-          "CVE-2024-45590"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-45590"
+          }
         ],
         "cwe_ids": [
           "CWE-405"
         ],
-        "cwe_id": "CWE-405",
-        "cvss_version": "3.1",
-        "cvss_score": 7.5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-        "cvss_source": "nvd",
-        "package": "body-parser",
+        "package_name": "body-parser",
         "purl": "pkg:npm/body-parser@1.19.0",
-        "affected_version": "1.19.0",
-        "fixed_version": "1.20.3",
+        "installed_version": "1.19.0",
+        "fixed_versions": [
+          "1.20.3"
+        ],
         "published_at": "2024-09-10T16:15:21.083Z",
         "modified_at": "2026-06-17T07:54:31.697Z",
         "dependency_path": [
@@ -71,27 +68,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "azure": 3,
-          "cbl-mariner": 3,
-          "ghsa": 3,
-          "nvd": 3,
-          "redhat": 3
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2024-45590"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade body-parser to 1.20.3",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-45590",
@@ -102,11 +84,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "90d0c2e54824a92b4cf2c6c248361b85bfe1d3b60ce18ce7e4ff497bb85ea7e4",
+      "fingerprint": "ctis-fp/2:ed10ee475035c9ef2b105f7267ee701e6c8c4914a7dafa4d0826c427ee2930b1",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-45590",
-        "severity": "HIGH"
+        "severity": "HIGH",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -136,12 +119,43 @@
           "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
           "value": 7.5,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "azure"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "cbl-mariner"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "nvd"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "redhat"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "body-parser@1.19.0",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "body-parser@1.19.0"
     },
     {
       "type": "vulnerability",
@@ -156,22 +170,21 @@
         "end_line": 93
       },
       "vulnerability": {
-        "cve_id": "CVE-2024-47764",
-        "cve_ids": [
-          "CVE-2024-47764"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-47764"
+          }
         ],
         "cwe_ids": [
           "CWE-74"
         ],
-        "cwe_id": "CWE-74",
-        "cvss_version": "3.1",
-        "cvss_score": 3.7,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
-        "cvss_source": "redhat",
-        "package": "cookie",
+        "package_name": "cookie",
         "purl": "pkg:npm/cookie@0.4.0",
-        "affected_version": "0.4.0",
-        "fixed_version": "0.7.0",
+        "installed_version": "0.4.0",
+        "fixed_versions": [
+          "0.7.0"
+        ],
         "published_at": "2024-10-04T20:15:07.31Z",
         "modified_at": "2026-06-17T07:57:42.753Z",
         "dependency_path": [
@@ -182,25 +195,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "cbl-mariner": 2,
-          "ghsa": 1,
-          "redhat": 1
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2024-47764"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade cookie to 0.7.0",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-47764",
@@ -211,11 +211,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "37a98845b1f268d55d14c8aaaeba97052f01a4bbc97ebbcc7ec879773142cf3b",
+      "fingerprint": "ctis-fp/2:4e11d7fd12be3de15edeae155c7b27ecc05f363df869f74f9cff20de174ff0ab",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-47764",
-        "severity": "LOW"
+        "severity": "LOW",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -224,12 +225,33 @@
           "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
           "value": 3.7,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "cbl-mariner"
+        },
+        {
+          "system": "vendor",
+          "label": "low",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "low",
+          "source": "redhat"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "cookie@0.4.0",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "cookie@0.4.0"
     },
     {
       "type": "vulnerability",
@@ -244,23 +266,22 @@
         "end_line": 194
       },
       "vulnerability": {
-        "cve_id": "CVE-2024-29041",
-        "cve_ids": [
-          "CVE-2024-29041"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-29041"
+          }
         ],
         "cwe_ids": [
           "CWE-601",
           "CWE-1286"
         ],
-        "cwe_id": "CWE-601",
-        "cvss_version": "3.1",
-        "cvss_score": 6.1,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
-        "cvss_source": "ghsa",
-        "package": "express",
+        "package_name": "express",
         "purl": "pkg:npm/express@4.17.1",
-        "affected_version": "4.17.1",
-        "fixed_version": "4.19.2, 5.0.0-beta.3",
+        "installed_version": "4.17.1",
+        "fixed_versions": [
+          "4.19.2, 5.0.0-beta.3"
+        ],
         "published_at": "2024-03-25T21:15:46.847Z",
         "modified_at": "2026-06-17T07:22:18.493Z",
         "is_direct": true,
@@ -271,26 +292,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "cbl-mariner": 2,
-          "ghsa": 2,
-          "redhat": 3,
-          "ubuntu": 2
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2024-29041"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade express to 4.19.2, 5.0.0-beta.3",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-29041",
@@ -301,11 +308,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "67f2e6590a122e6c9a3041e2258bcd8952990d3f482949b9bcfe2d4348111338",
+      "fingerprint": "ctis-fp/2:1369a5157e8b7c4f0da41d77d5f1a0a20e5164219edc0aa748fd9baa1a2d45cc",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-29041",
-        "severity": "MEDIUM"
+        "severity": "MEDIUM",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -321,12 +329,38 @@
           "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
           "value": 6.1,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "cbl-mariner"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "ubuntu"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "express@4.17.1",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "express@4.17.1"
     },
     {
       "type": "vulnerability",
@@ -341,22 +375,21 @@
         "end_line": 279
       },
       "vulnerability": {
-        "cve_id": "CVE-2021-23337",
-        "cve_ids": [
-          "CVE-2021-23337"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2021-23337"
+          }
         ],
         "cwe_ids": [
           "CWE-94"
         ],
-        "cwe_id": "CWE-94",
-        "cvss_version": "3.1",
-        "cvss_score": 7.2,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
-        "cvss_source": "nvd",
-        "package": "lodash",
+        "package_name": "lodash",
         "purl": "pkg:npm/lodash@4.17.20",
-        "affected_version": "4.17.20",
-        "fixed_version": "4.17.21",
+        "installed_version": "4.17.20",
+        "fixed_versions": [
+          "4.17.21"
+        ],
         "published_at": "2021-02-15T13:15:12.56Z",
         "modified_at": "2026-10-08T22:17:07.363Z",
         "is_direct": true,
@@ -367,27 +400,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "ghsa": 3,
-          "nvd": 3,
-          "redhat": 2,
-          "ruby-advisory-db": 3,
-          "ubuntu": 2
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2021-23337"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade lodash to 4.17.21",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2021-23337",
@@ -398,11 +416,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "9f1db051a46c4baac14700fead4409a55b87a5daeaecc735132329518c73a91b",
+      "fingerprint": "ctis-fp/2:da8aac1db498eb0c9db58f889d837168c527bdff04098d86bf7194bcfdd5cbdb",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2021-23337",
-        "severity": "HIGH"
+        "severity": "HIGH",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -432,12 +451,43 @@
           "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
           "value": 7.2,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "nvd"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "ruby-advisory-db"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "ubuntu"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "lodash@4.17.20",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "lodash@4.17.20"
     },
     {
       "type": "vulnerability",
@@ -452,22 +502,21 @@
         "end_line": 378
       },
       "vulnerability": {
-        "cve_id": "CVE-2024-45296",
-        "cve_ids": [
-          "CVE-2024-45296"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-45296"
+          }
         ],
         "cwe_ids": [
           "CWE-1333"
         ],
-        "cwe_id": "CWE-1333",
-        "cvss_version": "3.1",
-        "cvss_score": 7.5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-        "cvss_source": "ghsa",
-        "package": "path-to-regexp",
+        "package_name": "path-to-regexp",
         "purl": "pkg:npm/path-to-regexp@0.1.7",
-        "affected_version": "0.1.7",
-        "fixed_version": "1.9.0, 0.1.10, 8.0.0, 3.3.0, 6.3.0",
+        "installed_version": "0.1.7",
+        "fixed_versions": [
+          "1.9.0, 0.1.10, 8.0.0, 3.3.0, 6.3.0"
+        ],
         "published_at": "2024-09-09T19:15:13.33Z",
         "modified_at": "2026-06-17T07:53:58.263Z",
         "dependency_path": [
@@ -478,26 +527,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "cbl-mariner": 3,
-          "ghsa": 3,
-          "redhat": 2,
-          "ubuntu": 2
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2024-45296"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade path-to-regexp to 1.9.0, 0.1.10, 8.0.0, 3.3.0, 6.3.0",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-45296",
@@ -508,11 +543,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "5786dcddf0d9cf4e681b60ff3155926c770fbc84ca9b2fc46f72156ed80cdfde",
+      "fingerprint": "ctis-fp/2:1f70d0bfa08fca6d016fd97b123d055c40cecea3b02ea3c1b1821b88d85bd1d8",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-45296",
-        "severity": "HIGH"
+        "severity": "HIGH",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -535,12 +571,38 @@
           "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
           "value": 5.3,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "cbl-mariner"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "ubuntu"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "path-to-regexp@0.1.7",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "path-to-regexp@0.1.7"
     },
     {
       "type": "vulnerability",
@@ -555,22 +617,21 @@
         "end_line": 404
       },
       "vulnerability": {
-        "cve_id": "CVE-2022-24999",
-        "cve_ids": [
-          "CVE-2022-24999"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2022-24999"
+          }
         ],
         "cwe_ids": [
           "CWE-1321"
         ],
-        "cwe_id": "CWE-1321",
-        "cvss_version": "3.1",
-        "cvss_score": 7.5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-        "cvss_source": "nvd",
-        "package": "qs",
+        "package_name": "qs",
         "purl": "pkg:npm/qs@6.7.0",
-        "affected_version": "6.7.0",
-        "fixed_version": "6.10.3, 6.9.7, 6.8.3, 6.7.3, 6.6.1, 6.5.3, 6.4.1, 6.3.3, 6.2.4",
+        "installed_version": "6.7.0",
+        "fixed_versions": [
+          "6.10.3, 6.9.7, 6.8.3, 6.7.3, 6.6.1, 6.5.3, 6.4.1, 6.3.3, 6.2.4"
+        ],
         "published_at": "2022-11-26T22:15:10.153Z",
         "modified_at": "2026-06-17T04:32:55.2Z",
         "dependency_path": [
@@ -581,29 +642,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "alma": 2,
-          "ghsa": 3,
-          "nvd": 3,
-          "oracle-oval": 2,
-          "redhat": 2,
-          "rocky": 2,
-          "ubuntu": 2
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2022-24999"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade qs to 6.10.3, 6.9.7, 6.8.3, 6.7.3, 6.6.1, 6.5.3, 6.4.1, 6.3.3, 6.2.4",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2022-24999",
@@ -614,11 +658,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "4c652147b83cfd48e2840600b9ef572e29e0796c05f562108b2cc949ff47e4f2",
+      "fingerprint": "ctis-fp/2:afc599971a621f3c239a9a7e0333509c7c20083f1bc7ca73a986cf71ac3c5d2a",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2022-24999",
-        "severity": "HIGH"
+        "severity": "HIGH",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -641,12 +686,53 @@
           "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
           "value": 7.5,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "alma"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "high",
+          "source": "nvd"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "oracle-oval"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "rocky"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "ubuntu"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "qs@6.7.0",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "qs@6.7.0"
     },
     {
       "type": "vulnerability",
@@ -661,22 +747,21 @@
         "end_line": 464
       },
       "vulnerability": {
-        "cve_id": "CVE-2024-43799",
-        "cve_ids": [
-          "CVE-2024-43799"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-43799"
+          }
         ],
         "cwe_ids": [
           "CWE-79"
         ],
-        "cwe_id": "CWE-79",
-        "cvss_version": "3.1",
-        "cvss_score": 5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:L",
-        "cvss_source": "ghsa",
-        "package": "send",
+        "package_name": "send",
         "purl": "pkg:npm/send@0.17.1",
-        "affected_version": "0.17.1",
-        "fixed_version": "0.19.0",
+        "installed_version": "0.17.1",
+        "fixed_versions": [
+          "0.19.0"
+        ],
         "published_at": "2024-09-10T15:15:17.727Z",
         "modified_at": "2026-06-17T07:51:44.173Z",
         "dependency_path": [
@@ -687,26 +772,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "cbl-mariner": 2,
-          "ghsa": 1,
-          "nvd": 2,
-          "redhat": 2
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2024-43799"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade send to 0.19.0",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-43799",
@@ -717,11 +788,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "20f22d0f0ec5d8400a3cbc89e290e7d552752e50c67529b2040b405c8a3e172f",
+      "fingerprint": "ctis-fp/2:69e580e1d9ae2f9e4f46f95f5501f71a54b036405d44227e7b30645bb3668fe1",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-43799",
-        "severity": "LOW"
+        "severity": "LOW",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -751,12 +823,38 @@
           "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:L",
           "value": 5,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "cbl-mariner"
+        },
+        {
+          "system": "vendor",
+          "label": "low",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "nvd"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "redhat"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "send@0.17.1",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "send@0.17.1"
     },
     {
       "type": "vulnerability",
@@ -771,22 +869,21 @@
         "end_line": 485
       },
       "vulnerability": {
-        "cve_id": "CVE-2024-43800",
-        "cve_ids": [
-          "CVE-2024-43800"
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2024-43800"
+          }
         ],
         "cwe_ids": [
           "CWE-79"
         ],
-        "cwe_id": "CWE-79",
-        "cvss_version": "3.1",
-        "cvss_score": 5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:L",
-        "cvss_source": "ghsa",
-        "package": "serve-static",
+        "package_name": "serve-static",
         "purl": "pkg:npm/serve-static@1.14.1",
-        "affected_version": "1.14.1",
-        "fixed_version": "1.16.0, 2.1.0",
+        "installed_version": "1.14.1",
+        "fixed_versions": [
+          "1.16.0, 2.1.0"
+        ],
         "published_at": "2024-09-10T15:15:17.937Z",
         "modified_at": "2026-06-17T07:51:44.28Z",
         "dependency_path": [
@@ -797,26 +894,12 @@
           "id": "ghsa",
           "name": "GitHub Security Advisory npm",
           "url": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
-        },
-        "severity_source": "ghsa",
-        "vendor_severity": {
-          "cbl-mariner": 2,
-          "ghsa": 1,
-          "nvd": 2,
-          "redhat": 2
-        },
-        "vuln_status": "fixed",
-        "ids": [
-          {
-            "type": "cve",
-            "id": "CVE-2024-43800"
-          }
-        ]
+        }
       },
       "remediation": {
         "recommendation": "Upgrade serve-static to 1.16.0, 2.1.0",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2024-43800",
@@ -827,11 +910,12 @@
         "trivy",
         "package-lock.json"
       ],
-      "fingerprint": "646b16c84cc6d2a103d0afc56b7c57996f39c805a376bbe97e312c847f8c5edd",
+      "fingerprint": "ctis-fp/2:97012553d94a3ee12e2dfbd0c00b73127b79c88d22287a6b93018d1e0fd14fd1",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-43800",
-        "severity": "LOW"
+        "severity": "LOW",
+        "status": "fixed"
       },
       "scores": [
         {
@@ -861,12 +945,38 @@
           "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:L",
           "value": 5,
           "source": "redhat"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "cbl-mariner"
+        },
+        {
+          "system": "vendor",
+          "label": "low",
+          "source": "ghsa"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "nvd"
+        },
+        {
+          "system": "vendor",
+          "label": "medium",
+          "source": "redhat"
         }
       ],
+      "vex": {
+        "status": "fixed",
+        "source": "trivy"
+      },
       "source_extra": {
         "pkg_id": "serve-static@1.14.1",
+        "severity_source": "ghsa",
         "target": "package-lock.json"
-      }
+      },
+      "dependency_ref": "serve-static@1.14.1"
     }
   ],
   "dependencies": [
@@ -874,8 +984,9 @@
       "id": "express@4.17.1",
       "name": "express",
       "version": "4.17.1",
+      "type": "library",
       "purl": "pkg:npm/express@4.17.1",
-      "uid": "83b522403d48642e",
+      "source_id": "express@4.17.1",
       "relationship": "direct",
       "depends_on": [
         "accepts@1.3.8",
@@ -909,7 +1020,6 @@
         "utils-merge@1.0.1",
         "vary@1.1.2"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -922,10 +1032,10 @@
       "id": "lodash@4.17.20",
       "name": "lodash",
       "version": "4.17.20",
+      "type": "library",
       "purl": "pkg:npm/lodash@4.17.20",
-      "uid": "3923fc3dbb69b556",
+      "source_id": "lodash@4.17.20",
       "relationship": "direct",
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -938,14 +1048,14 @@
       "id": "accepts@1.3.8",
       "name": "accepts",
       "version": "1.3.8",
+      "type": "library",
       "purl": "pkg:npm/accepts@1.3.8",
-      "uid": "cfa96ab53c636ab3",
-      "relationship": "indirect",
+      "source_id": "accepts@1.3.8",
+      "relationship": "transitive",
       "depends_on": [
         "mime-types@2.1.35",
         "negotiator@0.6.3"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -958,10 +1068,10 @@
       "id": "array-flatten@1.1.1",
       "name": "array-flatten",
       "version": "1.1.1",
+      "type": "library",
       "purl": "pkg:npm/array-flatten@1.1.1",
-      "uid": "9fd50abf28fa69b8",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "array-flatten@1.1.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -974,9 +1084,10 @@
       "id": "body-parser@1.19.0",
       "name": "body-parser",
       "version": "1.19.0",
+      "type": "library",
       "purl": "pkg:npm/body-parser@1.19.0",
-      "uid": "bc4880ac99b385c5",
-      "relationship": "indirect",
+      "source_id": "body-parser@1.19.0",
+      "relationship": "transitive",
       "depends_on": [
         "bytes@3.1.0",
         "content-type@1.0.5",
@@ -989,7 +1100,6 @@
         "raw-body@2.4.0",
         "type-is@1.6.18"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1002,10 +1112,10 @@
       "id": "bytes@3.1.0",
       "name": "bytes",
       "version": "3.1.0",
+      "type": "library",
       "purl": "pkg:npm/bytes@3.1.0",
-      "uid": "c3eee1702ab2ec1d",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "bytes@3.1.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1018,13 +1128,13 @@
       "id": "content-disposition@0.5.3",
       "name": "content-disposition",
       "version": "0.5.3",
+      "type": "library",
       "purl": "pkg:npm/content-disposition@0.5.3",
-      "uid": "f064b3d873fd5d60",
-      "relationship": "indirect",
+      "source_id": "content-disposition@0.5.3",
+      "relationship": "transitive",
       "depends_on": [
         "safe-buffer@5.1.2"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1037,10 +1147,10 @@
       "id": "content-type@1.0.5",
       "name": "content-type",
       "version": "1.0.5",
+      "type": "library",
       "purl": "pkg:npm/content-type@1.0.5",
-      "uid": "ef7cc8d509ed8733",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "content-type@1.0.5",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1053,10 +1163,10 @@
       "id": "cookie@0.4.0",
       "name": "cookie",
       "version": "0.4.0",
+      "type": "library",
       "purl": "pkg:npm/cookie@0.4.0",
-      "uid": "45c4ec04a91d2493",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "cookie@0.4.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1069,10 +1179,10 @@
       "id": "cookie-signature@1.0.6",
       "name": "cookie-signature",
       "version": "1.0.6",
+      "type": "library",
       "purl": "pkg:npm/cookie-signature@1.0.6",
-      "uid": "103db5f034b68d77",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "cookie-signature@1.0.6",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1085,13 +1195,13 @@
       "id": "debug@2.6.9",
       "name": "debug",
       "version": "2.6.9",
+      "type": "library",
       "purl": "pkg:npm/debug@2.6.9",
-      "uid": "e4acf17461bfe262",
-      "relationship": "indirect",
+      "source_id": "debug@2.6.9",
+      "relationship": "transitive",
       "depends_on": [
         "ms@2.0.0"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1104,10 +1214,10 @@
       "id": "depd@1.1.2",
       "name": "depd",
       "version": "1.1.2",
+      "type": "library",
       "purl": "pkg:npm/depd@1.1.2",
-      "uid": "eaaec8838a5921df",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "depd@1.1.2",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1120,10 +1230,10 @@
       "id": "destroy@1.0.4",
       "name": "destroy",
       "version": "1.0.4",
+      "type": "library",
       "purl": "pkg:npm/destroy@1.0.4",
-      "uid": "f05462c9ff888c45",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "destroy@1.0.4",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1136,10 +1246,10 @@
       "id": "ee-first@1.1.1",
       "name": "ee-first",
       "version": "1.1.1",
+      "type": "library",
       "purl": "pkg:npm/ee-first@1.1.1",
-      "uid": "d569fda34414d222",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "ee-first@1.1.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1152,10 +1262,10 @@
       "id": "encodeurl@1.0.2",
       "name": "encodeurl",
       "version": "1.0.2",
+      "type": "library",
       "purl": "pkg:npm/encodeurl@1.0.2",
-      "uid": "3361f6344d9819d1",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "encodeurl@1.0.2",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1168,10 +1278,10 @@
       "id": "escape-html@1.0.3",
       "name": "escape-html",
       "version": "1.0.3",
+      "type": "library",
       "purl": "pkg:npm/escape-html@1.0.3",
-      "uid": "b2cd8b5449c6a10a",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "escape-html@1.0.3",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1184,10 +1294,10 @@
       "id": "etag@1.8.1",
       "name": "etag",
       "version": "1.8.1",
+      "type": "library",
       "purl": "pkg:npm/etag@1.8.1",
-      "uid": "dc7dd6c14cc97702",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "etag@1.8.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1200,9 +1310,10 @@
       "id": "finalhandler@1.1.2",
       "name": "finalhandler",
       "version": "1.1.2",
+      "type": "library",
       "purl": "pkg:npm/finalhandler@1.1.2",
-      "uid": "99f285764ccc50c7",
-      "relationship": "indirect",
+      "source_id": "finalhandler@1.1.2",
+      "relationship": "transitive",
       "depends_on": [
         "debug@2.6.9",
         "encodeurl@1.0.2",
@@ -1212,7 +1323,6 @@
         "statuses@1.5.0",
         "unpipe@1.0.0"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1225,10 +1335,10 @@
       "id": "forwarded@0.2.0",
       "name": "forwarded",
       "version": "0.2.0",
+      "type": "library",
       "purl": "pkg:npm/forwarded@0.2.0",
-      "uid": "938ae312c7bc691b",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "forwarded@0.2.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1241,10 +1351,10 @@
       "id": "fresh@0.5.2",
       "name": "fresh",
       "version": "0.5.2",
+      "type": "library",
       "purl": "pkg:npm/fresh@0.5.2",
-      "uid": "2f9f10bb8a762b45",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "fresh@0.5.2",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1257,9 +1367,10 @@
       "id": "http-errors@1.7.2",
       "name": "http-errors",
       "version": "1.7.2",
+      "type": "library",
       "purl": "pkg:npm/http-errors@1.7.2",
-      "uid": "526c5e2301bc794d",
-      "relationship": "indirect",
+      "source_id": "http-errors@1.7.2",
+      "relationship": "transitive",
       "depends_on": [
         "depd@1.1.2",
         "inherits@2.0.3",
@@ -1267,7 +1378,6 @@
         "statuses@1.5.0",
         "toidentifier@1.0.0"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1280,13 +1390,13 @@
       "id": "iconv-lite@0.4.24",
       "name": "iconv-lite",
       "version": "0.4.24",
+      "type": "library",
       "purl": "pkg:npm/iconv-lite@0.4.24",
-      "uid": "744962908cce40c2",
-      "relationship": "indirect",
+      "source_id": "iconv-lite@0.4.24",
+      "relationship": "transitive",
       "depends_on": [
         "safer-buffer@2.1.2"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1299,10 +1409,10 @@
       "id": "inherits@2.0.3",
       "name": "inherits",
       "version": "2.0.3",
+      "type": "library",
       "purl": "pkg:npm/inherits@2.0.3",
-      "uid": "59a9ebe4536565d2",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "inherits@2.0.3",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1315,10 +1425,10 @@
       "id": "ipaddr.js@1.9.1",
       "name": "ipaddr.js",
       "version": "1.9.1",
+      "type": "library",
       "purl": "pkg:npm/ipaddr.js@1.9.1",
-      "uid": "89d79da04504c677",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "ipaddr.js@1.9.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1331,10 +1441,10 @@
       "id": "media-typer@0.3.0",
       "name": "media-typer",
       "version": "0.3.0",
+      "type": "library",
       "purl": "pkg:npm/media-typer@0.3.0",
-      "uid": "cae29ccee18724b",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "media-typer@0.3.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1347,10 +1457,10 @@
       "id": "merge-descriptors@1.0.1",
       "name": "merge-descriptors",
       "version": "1.0.1",
+      "type": "library",
       "purl": "pkg:npm/merge-descriptors@1.0.1",
-      "uid": "b2ff1b11ffd6dc2a",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "merge-descriptors@1.0.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1363,10 +1473,10 @@
       "id": "methods@1.1.2",
       "name": "methods",
       "version": "1.1.2",
+      "type": "library",
       "purl": "pkg:npm/methods@1.1.2",
-      "uid": "5ebf2758f465ca77",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "methods@1.1.2",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1379,10 +1489,10 @@
       "id": "mime@1.6.0",
       "name": "mime",
       "version": "1.6.0",
+      "type": "library",
       "purl": "pkg:npm/mime@1.6.0",
-      "uid": "bbeb8e5f062cb276",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "mime@1.6.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1395,10 +1505,10 @@
       "id": "mime-db@1.52.0",
       "name": "mime-db",
       "version": "1.52.0",
+      "type": "library",
       "purl": "pkg:npm/mime-db@1.52.0",
-      "uid": "a29378b0b950dda4",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "mime-db@1.52.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1411,13 +1521,13 @@
       "id": "mime-types@2.1.35",
       "name": "mime-types",
       "version": "2.1.35",
+      "type": "library",
       "purl": "pkg:npm/mime-types@2.1.35",
-      "uid": "6d6522a15b4c76ea",
-      "relationship": "indirect",
+      "source_id": "mime-types@2.1.35",
+      "relationship": "transitive",
       "depends_on": [
         "mime-db@1.52.0"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1430,10 +1540,10 @@
       "id": "ms@2.0.0",
       "name": "ms",
       "version": "2.0.0",
+      "type": "library",
       "purl": "pkg:npm/ms@2.0.0",
-      "uid": "83c8cab54d51b7e5",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "ms@2.0.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1446,10 +1556,10 @@
       "id": "ms@2.1.1",
       "name": "ms",
       "version": "2.1.1",
+      "type": "library",
       "purl": "pkg:npm/ms@2.1.1",
-      "uid": "bbbb75bb3a5e1125",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "ms@2.1.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1462,10 +1572,10 @@
       "id": "negotiator@0.6.3",
       "name": "negotiator",
       "version": "0.6.3",
+      "type": "library",
       "purl": "pkg:npm/negotiator@0.6.3",
-      "uid": "84430749741c4b75",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "negotiator@0.6.3",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1478,13 +1588,13 @@
       "id": "on-finished@2.3.0",
       "name": "on-finished",
       "version": "2.3.0",
+      "type": "library",
       "purl": "pkg:npm/on-finished@2.3.0",
-      "uid": "5538803fe929b79e",
-      "relationship": "indirect",
+      "source_id": "on-finished@2.3.0",
+      "relationship": "transitive",
       "depends_on": [
         "ee-first@1.1.1"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1497,10 +1607,10 @@
       "id": "parseurl@1.3.3",
       "name": "parseurl",
       "version": "1.3.3",
+      "type": "library",
       "purl": "pkg:npm/parseurl@1.3.3",
-      "uid": "8431f3cbc5167bad",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "parseurl@1.3.3",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1513,10 +1623,10 @@
       "id": "path-to-regexp@0.1.7",
       "name": "path-to-regexp",
       "version": "0.1.7",
+      "type": "library",
       "purl": "pkg:npm/path-to-regexp@0.1.7",
-      "uid": "88e5d9faa08b9b01",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "path-to-regexp@0.1.7",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1529,14 +1639,14 @@
       "id": "proxy-addr@2.0.8",
       "name": "proxy-addr",
       "version": "2.0.8",
+      "type": "library",
       "purl": "pkg:npm/proxy-addr@2.0.8",
-      "uid": "99cd86a1152a762c",
-      "relationship": "indirect",
+      "source_id": "proxy-addr@2.0.8",
+      "relationship": "transitive",
       "depends_on": [
         "forwarded@0.2.0",
         "ipaddr.js@1.9.1"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1549,10 +1659,10 @@
       "id": "qs@6.7.0",
       "name": "qs",
       "version": "6.7.0",
+      "type": "library",
       "purl": "pkg:npm/qs@6.7.0",
-      "uid": "e6c4927f12a39da4",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "qs@6.7.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1565,10 +1675,10 @@
       "id": "range-parser@1.2.1",
       "name": "range-parser",
       "version": "1.2.1",
+      "type": "library",
       "purl": "pkg:npm/range-parser@1.2.1",
-      "uid": "370f19b1445c6d2f",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "range-parser@1.2.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1581,16 +1691,16 @@
       "id": "raw-body@2.4.0",
       "name": "raw-body",
       "version": "2.4.0",
+      "type": "library",
       "purl": "pkg:npm/raw-body@2.4.0",
-      "uid": "e11125bab8282625",
-      "relationship": "indirect",
+      "source_id": "raw-body@2.4.0",
+      "relationship": "transitive",
       "depends_on": [
         "bytes@3.1.0",
         "http-errors@1.7.2",
         "iconv-lite@0.4.24",
         "unpipe@1.0.0"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1603,10 +1713,10 @@
       "id": "safe-buffer@5.1.2",
       "name": "safe-buffer",
       "version": "5.1.2",
+      "type": "library",
       "purl": "pkg:npm/safe-buffer@5.1.2",
-      "uid": "caa42a14d37393cd",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "safe-buffer@5.1.2",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1619,10 +1729,10 @@
       "id": "safer-buffer@2.1.2",
       "name": "safer-buffer",
       "version": "2.1.2",
+      "type": "library",
       "purl": "pkg:npm/safer-buffer@2.1.2",
-      "uid": "77255bac5a4ba9fc",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "safer-buffer@2.1.2",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1635,9 +1745,10 @@
       "id": "send@0.17.1",
       "name": "send",
       "version": "0.17.1",
+      "type": "library",
       "purl": "pkg:npm/send@0.17.1",
-      "uid": "9bc762f5d7db22b8",
-      "relationship": "indirect",
+      "source_id": "send@0.17.1",
+      "relationship": "transitive",
       "depends_on": [
         "debug@2.6.9",
         "depd@1.1.2",
@@ -1653,7 +1764,6 @@
         "range-parser@1.2.1",
         "statuses@1.5.0"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1666,16 +1776,16 @@
       "id": "serve-static@1.14.1",
       "name": "serve-static",
       "version": "1.14.1",
+      "type": "library",
       "purl": "pkg:npm/serve-static@1.14.1",
-      "uid": "9f4931c67764a51",
-      "relationship": "indirect",
+      "source_id": "serve-static@1.14.1",
+      "relationship": "transitive",
       "depends_on": [
         "encodeurl@1.0.2",
         "escape-html@1.0.3",
         "parseurl@1.3.3",
         "send@0.17.1"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1688,10 +1798,10 @@
       "id": "setprototypeof@1.1.1",
       "name": "setprototypeof",
       "version": "1.1.1",
+      "type": "library",
       "purl": "pkg:npm/setprototypeof@1.1.1",
-      "uid": "bdfb3a7c44c1401",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "setprototypeof@1.1.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1704,10 +1814,10 @@
       "id": "statuses@1.5.0",
       "name": "statuses",
       "version": "1.5.0",
+      "type": "library",
       "purl": "pkg:npm/statuses@1.5.0",
-      "uid": "b0881a8c924ad518",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "statuses@1.5.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1720,10 +1830,10 @@
       "id": "toidentifier@1.0.0",
       "name": "toidentifier",
       "version": "1.0.0",
+      "type": "library",
       "purl": "pkg:npm/toidentifier@1.0.0",
-      "uid": "c3cecdc29b6f8ea6",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "toidentifier@1.0.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1736,14 +1846,14 @@
       "id": "type-is@1.6.18",
       "name": "type-is",
       "version": "1.6.18",
+      "type": "library",
       "purl": "pkg:npm/type-is@1.6.18",
-      "uid": "81ccf7be737a75cc",
-      "relationship": "indirect",
+      "source_id": "type-is@1.6.18",
+      "relationship": "transitive",
       "depends_on": [
         "media-typer@0.3.0",
         "mime-types@2.1.35"
       ],
-      "path": "package-lock.json",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1756,10 +1866,10 @@
       "id": "unpipe@1.0.0",
       "name": "unpipe",
       "version": "1.0.0",
+      "type": "library",
       "purl": "pkg:npm/unpipe@1.0.0",
-      "uid": "752ad6a542f1dd5",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "unpipe@1.0.0",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1772,10 +1882,10 @@
       "id": "utils-merge@1.0.1",
       "name": "utils-merge",
       "version": "1.0.1",
+      "type": "library",
       "purl": "pkg:npm/utils-merge@1.0.1",
-      "uid": "e34df1112e32a9f",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "utils-merge@1.0.1",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",
@@ -1788,10 +1898,10 @@
       "id": "vary@1.1.2",
       "name": "vary",
       "version": "1.1.2",
+      "type": "library",
       "purl": "pkg:npm/vary@1.1.2",
-      "uid": "a952b917aec63e41",
-      "relationship": "indirect",
-      "path": "package-lock.json",
+      "source_id": "vary@1.1.2",
+      "relationship": "transitive",
       "locations": [
         {
           "path": "package-lock.json",

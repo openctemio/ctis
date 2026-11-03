@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "sbom_created": "2026-10-02T00:00:00Z",
       "sbom_name": "edge-gateway-image",
@@ -15,15 +15,15 @@
   },
   "tool": {
     "name": "spdx",
-    "capabilities": [
+    "techniques": [
       "sca"
     ]
   },
   "assets": [
     {
-      "id": "sbom-pkg:oci/edge-gateway@sha256%3A3333333333333333333333333333333333333333333333333333333333333333",
-      "type": "container",
-      "value": "pkg:oci/edge-gateway@sha256%3A3333333333333333333333333333333333333333333333333333333333333333",
+      "id": "container_image-docker.io/library/edge-gateway",
+      "type": "container_image",
+      "value": "docker.io/library/edge-gateway",
       "name": "edge-gateway",
       "properties": {
         "package_purpose": "container",
@@ -37,8 +37,8 @@
       "name": "openssl",
       "version": "3.0.13-r0",
       "type": "library",
-      "ecosystem": "apk",
       "purl": "pkg:apk/alpine/openssl@3.0.13-r0?arch=x86_64",
+      "source_id": "SPDXRef-openssl",
       "licenses": [
         "Apache-2.0"
       ],
@@ -46,6 +46,7 @@
       "depends_on": [
         "SPDXRef-zlib"
       ],
+      "asset_ref": "container_image-docker.io/library/edge-gateway",
       "properties": {
         "built_date": "2024-02-01T00:00:00Z",
         "checksum_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
@@ -62,15 +63,16 @@
       "id": "SPDXRef-zlib",
       "name": "zlib",
       "version": "1.3.1-r0",
-      "ecosystem": "apk",
       "purl": "pkg:apk/alpine/zlib@1.3.1-r0",
+      "source_id": "SPDXRef-zlib",
       "licenses": [
         "Zlib"
       ],
       "relationship": "direct",
       "depends_on": [
         "SPDXRef-openssl"
-      ]
+      ],
+      "asset_ref": "container_image-docker.io/library/edge-gateway"
     }
   ]
 }

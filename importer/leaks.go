@@ -40,7 +40,7 @@ type leakRecord struct {
 // (ctis.MaskSecretMatch), and the fingerprint input is the masked value
 // (CTIS spec 5.2). The commit author and e-mail are kept: they say who
 // committed the secret, which is who must rotate it.
-func leakFinding(rec *leakRecord, tool string) (ctis.Finding, bool) {
+func leakFinding(rec *leakRecord, tool string, key []byte) (ctis.Finding, bool) {
 	rule := line(rec.RuleID, capShort)
 	file := line(rec.File, 1024)
 	if rule == "" || file == "" {
@@ -67,17 +67,14 @@ func leakFinding(rec *leakRecord, tool string) (ctis.Finding, bool) {
 			EndLine:     nonNeg(rec.EndLine),
 			StartColumn: nonNeg(rec.StartColumn),
 			EndColumn:   nonNeg(rec.EndColumn),
-			CommitSHA:   line(rec.Commit, 128),
+			Commit:      commitOf(line(rec.Commit, 128), line(rec.Author, capShort), line(rec.Email, capShort), parseTime(rec.Date)),
 		},
 		Secret: &ctis.SecretDetails{
-			SecretType: leakSecretType(rule),
-			Service:    leakService(rule),
+			Type:    leakSecretType(rule),
+			Service: leakService(rule),
 		},
 		Native: &ctis.NativeIdentity{Scheme: ctis.NativeSchemeOther, VulnID: rule},
 	}
-	f.Author = line(rec.Author, capShort)
-	f.AuthorEmail = line(rec.Email, capShort)
-	f.CommitDate = parseTime(rec.Date)
 	if rec.Entropy > 0 && rec.Entropy < 1e6 {
 		f.Secret.Entropy = rec.Entropy
 	}
@@ -88,10 +85,17 @@ func leakFinding(rec *leakRecord, tool string) (ctis.Finding, bool) {
 			f.Location.Snippet = text(maskIn(m, raw), 16<<10)
 		}
 	}
+	// The source's own fingerprint is kept as a partial fingerprint; the
+	// CTIS fingerprint (recipe v2) needs the HMAC digest of the secret, which
+	// only a producer holding a key can make. Without a key it stays empty
+	// and the receiver computes its own.
 	if fp := line(rec.Fingerprint, 512); fp != "" && !containsSecret(fp, raw) {
-		f.Fingerprint = fp
-	} else {
-		f.Fingerprint = fingerprint.GenerateSecret(rec.File, rec.RuleID, rec.StartLine, fingerprintMask(raw))
+		f.PartialFingerprints = map[string]string{leaksFingerprintKey: fp}
+	}
+	if len(key) > 0 && raw != "" {
+		if d, err := fingerprint.NewSecretDigest(key, []byte(raw)); err == nil {
+			f.Fingerprint = fingerprint.V2Secret(rec.File, rec.RuleID, d)
+		}
 	}
 	f.Tags = addTags(nil, tool, "secret")
 	for _, t := range rec.Tags {
@@ -105,6 +109,10 @@ func leakFinding(rec *leakRecord, tool string) (ctis.Finding, bool) {
 	ctis.RedactSecretFinding(&f, rec.Secret, rec.Match)
 	return f, true
 }
+
+// leaksFingerprintKey is the partial fingerprint key of the fingerprint a
+// leaks report carries (commit:file:rule:line).
+const leaksFingerprintKey = "leaksFingerprint/v1"
 
 func nonNeg(n int) int {
 	if n < 0 {
@@ -127,25 +135,6 @@ func maskIn(s, raw string) string {
 		return s
 	}
 	return strings.ReplaceAll(s, raw, ctis.MaskSecretMatch(raw))
-}
-
-// fingerprintMask is the masked secret that goes into a secret finding's
-// fingerprint: at most a quarter of the secret, at most 4 characters at
-// either end, nothing of a secret under 12 characters. It is the masking
-// the sensor's scanners and the SDK use for the same input, so a secret
-// imported from a file and the same secret found by a sensor key alike.
-func fingerprintMask(secret string) string {
-	r := []rune(secret)
-	n := len(r)
-	if n < 12 {
-		return "****"
-	}
-	show := n / 4
-	if show > 8 {
-		show = 8
-	}
-	head, tail := (show+1)/2, show/2
-	return string(r[:head]) + "****" + string(r[n-tail:])
 }
 
 // leakSeverity infers a severity from the rule id (leak reports carry

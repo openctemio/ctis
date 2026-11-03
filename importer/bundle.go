@@ -39,7 +39,7 @@ func init() {
 	parsers[FormatReconFTW] = func(*builder, io.Reader) error {
 		return &ParseError{Format: FormatReconFTW, Msg: "a recon results directory holds many files; read it with ParseBundle", Err: ErrUnknownFormat}
 	}
-	t := ctis.Tool{Name: "reconftw", Vendor: "six2dez", InfoURL: "https://github.com/six2dez/reconftw", Capabilities: []string{"subdomain", "http_probe", "crawler", "easm"}}
+	t := ctis.Tool{Name: "reconftw", Vendor: "six2dez", InfoURL: "https://github.com/six2dez/reconftw", Techniques: []ctis.Technique{ctis.TechniqueEASM}}
 	tools[FormatReconFTW] = t
 	tools[formatReconFTWv3] = t
 }
@@ -272,7 +272,7 @@ func parseBundle(ctx context.Context, files []ArchiveFile, opts Options) (*Resul
 	}
 
 	b := newBuilder(ctx, FormatReconFTW, opts)
-	now := b.res.Report.Metadata.Timestamp
+	now := b.res.Report.Metadata.GeneratedAt
 	r := &bundleRun{
 		ctx: ctx, b: b, bl: bl, now: now,
 		files:   map[string]ArchiveFile{},
@@ -324,10 +324,8 @@ func parseBundle(ctx context.Context, files []ArchiveFile, opts Options) (*Resul
 	}
 	b.res.Report.Tool.Version = version
 	b.res.Layout = layout
-	b.res.Report.Metadata.SourceType = firstNonEmpty(opts.SourceType, "manual")
 	if r.domain != "" {
-		b.res.Report.Metadata.Scope = &ctis.Scope{Name: r.domain, Type: "domain"}
-		b.res.Report.Metadata.SourceRef = "reconftw:" + r.domain
+		b.res.Report.Metadata.SourceRefs = []ctis.SourceRef{{System: "reconftw", ID: r.domain}}
 	}
 	r.scope = opts.ScopeDomains
 	if len(r.scope) == 0 && r.domain != "" {
@@ -533,7 +531,7 @@ func (r *bundleRun) readReport() error {
 		r.b.res.Report.Properties["reconftw_mode"] = m
 	}
 	if t := parseTime(rep.GeneratedAt); t != nil && t.Before(r.now) {
-		r.b.res.Report.Metadata.Timestamp = *t
+		r.b.res.Report.Metadata.GeneratedAt = *t
 		r.now = *t
 	}
 	return nil
@@ -939,26 +937,6 @@ func storageProvider(host string) string {
 	return "unknown"
 }
 
-var idCleanRE = regexp.MustCompile(`[^a-z0-9]+`)
-
-// newID returns an asset id unused in the report.
-func (r *bundleRun) newID(prefix, value string) string {
-	base := prefix + "-" + strings.Trim(idCleanRE.ReplaceAllString(strings.ToLower(value), "-"), "-")
-	if len(base) > 100 {
-		base = base[:100]
-	}
-	id := base
-	for i := 2; r.b.assetExists(id); i++ {
-		id = base + "-" + strconv.Itoa(i)
-	}
-	return id
-}
-
-func (b *builder) assetExists(id string) bool {
-	_, ok := b.assets[id]
-	return ok
-}
-
 // assemble turns what the files held into assets and endpoints.
 func (r *bundleRun) assemble() error {
 	b := r.b
@@ -982,7 +960,7 @@ func (r *bundleRun) assemble() error {
 		Subdomains: r.subs, OpenPorts: r.ports, LiveHosts: live,
 	}, &ctis.ReconConverterOptions{
 		DiscoverySource: "import:reconftw", DiscoveryTool: "reconftw",
-		DefaultConfidence: 60, GroupByDomain: true, GroupByIP: true,
+		DefaultConfidence: 60,
 	})
 	if err != nil {
 		return &ParseError{Format: b.format, Msg: "convert: " + err.Error(), Err: ErrMalformed}
@@ -992,23 +970,24 @@ func (r *bundleRun) assemble() error {
 			return err
 		}
 	}
+	for _, rel := range rep.Relationships {
+		b.relate(rel.Type, rel.FromRef, rel.ToRef)
+	}
 	rp := &b.res.Report.Assets
-	find := func(t ...ctis.AssetType) func(string) int {
+	find := func(t ctis.AssetType) func(string) int {
 		return func(v string) int {
 			for i := range *rp {
-				for _, tt := range t {
-					if (*rp)[i].Type == tt && (*rp)[i].Value == v {
-						return i
-					}
+				if (*rp)[i].Type == t && (*rp)[i].Value == v {
+					return i
 				}
 			}
 			return -1
 		}
 	}
-	findIP, findHost, findSvc := find(ctis.AssetTypeIPAddress), find(ctis.AssetTypeDomain, ctis.AssetTypeSubdomain), find(ctis.AssetTypeHTTPService)
-	base := func(prefix, value string, t ctis.AssetType) ctis.Asset {
+	findIP, findHost, findOrigin := find(ctis.AssetTypeIPAddress), find(ctis.AssetTypeDomainName), find(ctis.AssetTypeWebOrigin)
+	base := func(value string, t ctis.AssetType) ctis.Asset {
 		return ctis.Asset{
-			ID: r.newID(prefix, value), Type: t, Value: value, Name: value, Confidence: 60,
+			Type: t, Value: value, Name: value, Confidence: 60,
 			Properties: ctis.Properties{"discovery_source": "import:reconftw", "discovery_tool": "reconftw"},
 		}
 	}
@@ -1016,7 +995,7 @@ func (r *bundleRun) assemble() error {
 		if findIP(ip) >= 0 {
 			continue
 		}
-		a := base("import-ip", ip, ctis.AssetTypeIPAddress)
+		a := base(ip, ctis.AssetTypeIPAddress)
 		ver := 4
 		if strings.Contains(ip, ":") {
 			ver = 6
@@ -1029,29 +1008,25 @@ func (r *bundleRun) assemble() error {
 	for ip, c := range r.cdn {
 		i := findIP(ip)
 		if i < 0 {
-			a := base("import-ip", ip, ctis.AssetTypeIPAddress)
-			if _, err := b.asset(a); err != nil {
+			if _, err := b.asset(base(ip, ctis.AssetTypeIPAddress)); err != nil {
 				return err
 			}
 			i = findIP(ip)
 		}
-		p := (*rp)[i].Properties
-		if p == nil {
-			p = ctis.Properties{}
-			(*rp)[i].Properties = p
+		if i < 0 {
+			continue
 		}
-		p["cdn"], p["hosted_by"] = c.provider, c.provider
+		(*rp)[i].Extensions.Set(ctis.OpenCTEMNamespace, "cdn", c.provider)
 		if c.kind != "" {
-			p["cdn_type"] = c.kind
+			(*rp)[i].Extensions.Set(ctis.OpenCTEMNamespace, "cdn_type", c.kind)
 		}
 	}
 	for host, label := range r.takeover {
 		if i := findHost(host); i >= 0 {
-			p := (*rp)[i].Properties
-			p["candidate_exposure"] = "subdomain_takeover"
-			p["candidate_unverified"] = true
+			(*rp)[i].Extensions.Set(ctis.OpenCTEMNamespace, "candidate_exposure", "subdomain_takeover")
+			(*rp)[i].Extensions.Set(ctis.OpenCTEMNamespace, "candidate_unverified", true)
 			if label != "" {
-				p["candidate_detail"] = label
+				(*rp)[i].Extensions.Set(ctis.OpenCTEMNamespace, "candidate_detail", label)
 			}
 		}
 	}
@@ -1059,32 +1034,41 @@ func (r *bundleRun) assemble() error {
 		if findStorage(*rp, c.host) >= 0 {
 			continue
 		}
-		a := base("import-storage", c.host, ctis.AssetTypeStorage)
-		a.Properties["candidate_exposure"] = c.kind
-		a.Properties["candidate_unverified"] = true
-		a.Properties["storage_provider"] = c.provider
+		a := base(c.host, ctis.AssetTypeStorage)
+		a.Extensions.Set(ctis.OpenCTEMNamespace, "candidate_exposure", c.kind)
+		a.Extensions.Set(ctis.OpenCTEMNamespace, "candidate_unverified", true)
+		a.Extensions.Set(ctis.OpenCTEMNamespace, "storage_provider", c.provider)
 		if c.label != "" {
-			a.Properties["candidate_detail"] = c.label
+			a.Extensions.Set(ctis.OpenCTEMNamespace, "candidate_detail", c.label)
 		}
 		if _, err := b.asset(a); err != nil {
 			return err
 		}
 	}
 	for u, name := range r.wafs {
-		if i := findSvc(u); i >= 0 {
-			(*rp)[i].Properties["waf"] = name
+		o, err := ctis.CanonicalOrigin(u)
+		if err != nil {
+			continue
+		}
+		if i := findOrigin(o); i >= 0 {
+			if tok := tokenOf(name); tok != "" {
+				a := &(*rp)[i]
+				if a.Technical == nil {
+					a.Technical = &ctis.AssetTechnical{}
+				}
+				if a.Technical.HTTP == nil {
+					a.Technical.HTTP = &ctis.HTTPTechnical{}
+				}
+				a.Technical.HTTP.WAF = tok
+			}
 		}
 	}
 
 	// Endpoints.
 	origins := map[string]string{}
 	for _, a := range *rp {
-		if a.Type == ctis.AssetTypeHTTPService {
-			if u, err := weburl.Parse(a.Value); err == nil {
-				if _, ok := origins[u.Origin()]; !ok {
-					origins[u.Origin()] = a.ID
-				}
-			}
+		if a.Type == ctis.AssetTypeWebOrigin {
+			origins[a.Value] = a.ID
 		}
 	}
 	eps := ctis.ConvertEndpoints(r.urls)
@@ -1137,25 +1121,17 @@ func (r *bundleRun) readNuclei(rel string) error {
 	}
 	byOld := map[string]string{}
 	for _, a := range sub.Report.Assets {
-		oldID, id := a.ID, ""
-		for _, e := range b.res.Report.Assets {
-			if e.Value == a.Value && (e.Type == a.Type || (a.Type == ctis.AssetTypeDomain && e.Type == ctis.AssetTypeSubdomain)) {
-				id = e.ID
-				break
-			}
-		}
-		if id == "" {
-			a.ID = r.newID("import-host", a.Value)
-			if a.Properties == nil {
-				a.Properties = ctis.Properties{}
-			}
-			a.Properties["discovery_source"], a.Properties["discovery_tool"] = "import:reconftw", "reconftw"
-			if _, err := b.asset(a); err != nil {
-				return err
-			}
-			id = a.ID
+		oldID := a.ID
+		a.ID = ""
+		a.Properties = ctis.Properties{"discovery_source": "import:reconftw", "discovery_tool": "reconftw"}
+		id, err := b.asset(a)
+		if err != nil {
+			return err
 		}
 		byOld[oldID] = id
+	}
+	for _, rel := range sub.Report.Relationships {
+		b.relate(rel.Type, byOld[rel.FromRef], byOld[rel.ToRef])
 	}
 	for _, f := range sub.Report.Findings {
 		f.AssetRef = byOld[f.AssetRef]
@@ -1174,23 +1150,19 @@ func (r *bundleRun) readNuclei(rel string) error {
 func (r *bundleRun) stamp() {
 	for i := range r.b.res.Report.Assets {
 		a := &r.b.res.Report.Assets[i]
-		if a.DiscoveredAt == nil || a.DiscoveredAt.After(r.now) {
-			t := r.now
-			a.DiscoveredAt = &t
-		}
-		if a.Type == ctis.AssetTypeCertificate {
-			continue
-		}
+		first, last := r.now, r.now
+		a.FirstSeenAt, a.LastSeenAt = &first, &last
 		host := a.Value
-		if a.Type == ctis.AssetTypeHTTPService {
+		switch a.Type {
+		case ctis.AssetTypeDomainName, ctis.AssetTypeIPAddress, ctis.AssetTypeHost, ctis.AssetTypeStorage:
+		case ctis.AssetTypeWebOrigin:
 			if u, err := weburl.Parse(a.Value); err == nil {
 				host = u.Host
 			}
+		default:
+			continue
 		}
-		if a.Properties == nil {
-			a.Properties = ctis.Properties{}
-		}
-		a.Properties["import_scope"] = r.scopeOf(host)
+		a.Extensions.Set(ctis.OpenCTEMNamespace, "import_scope", r.scopeOf(host))
 	}
 }
 

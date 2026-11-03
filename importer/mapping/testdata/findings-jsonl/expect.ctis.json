@@ -1,27 +1,47 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "timestamp": "2026-10-07T08:00:00Z",
-    "source_type": "scanner"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-07T08:00:00Z",
+    "channel": "scanner"
   },
   "tool": {
     "name": "findings-jsonl",
     "version": "1.0.0"
   },
+  "assets": [
+    {
+      "id": "asset-1",
+      "type": "web_origin",
+      "value": "https://a.example.com",
+      "name": "https://a.example.com"
+    },
+    {
+      "id": "asset-2",
+      "type": "web_origin",
+      "value": "https://b.example.com",
+      "name": "https://b.example.com"
+    },
+    {
+      "id": "asset-3",
+      "type": "web_origin",
+      "value": "https://d.example.com",
+      "name": "https://d.example.com"
+    }
+  ],
   "findings": [
     {
       "type": "vulnerability",
       "title": "Git config exposed",
       "severity": "medium",
       "rule_id": "git-config",
-      "asset_value": "https://a.example.com",
+      "asset_ref": "asset-1",
       "network": {
         "host": "192.0.2.10",
         "port": 443,
-        "protocol": "tcp"
+        "transport": "tcp"
       },
-      "evidence": "[core]\nbare = false",
       "vulnerability": {
         "cwe_ids": [
           "CWE-200"
@@ -34,6 +54,13 @@
         "exposure",
         "git"
       ],
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "text": "[core]\nbare = false"
+        }
+      ],
       "properties": {
         "matched_at": "https://a.example.com/.git/config"
       }
@@ -43,14 +70,19 @@
       "title": "Path traversal",
       "severity": "critical",
       "rule_id": "CVE-2021-41773",
-      "asset_value": "https://b.example.com",
+      "asset_ref": "asset-2",
       "network": {
         "host": "192.0.2.11",
         "port": 443,
-        "protocol": "tcp"
+        "transport": "tcp"
       },
       "vulnerability": {
-        "cve_id": "CVE-2021-41773",
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2021-41773"
+          }
+        ],
         "cwe_ids": [
           "CWE-22"
         ]
@@ -64,9 +96,9 @@
       "title": "Odd severity",
       "severity": "info",
       "rule_id": "odd-severity",
-      "asset_value": "https://d.example.com",
+      "asset_ref": "asset-3",
       "network": {
-        "protocol": "tcp"
+        "transport": "tcp"
       }
     }
   ]

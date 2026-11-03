@@ -1,16 +1,16 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "semgrep",
     "version": "1.149.0",
     "vendor": "Semgrep, Inc.",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -24,18 +24,16 @@
   ],
   "findings": [
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "User input flows into a SQL string.",
       "message": "User input flows into a SQL string.",
       "severity": "high",
       "confidence": 70,
-      "impact": "high",
-      "likelihood": "medium",
       "category": "security",
-      "vulnerability_class": [
+      "vulnerability_classes": [
         "SQL Injection"
       ],
-      "subcategory": [
+      "subcategories": [
         "vuln"
       ],
       "rule_id": "python.flask.security.injection.tainted-sql-string",
@@ -53,14 +51,14 @@
         "cwe_ids": [
           "CWE-89"
         ],
-        "cwe_id": "CWE-89",
         "owasp_ids": [
-          "A03:2021 - Injection"
+          "A03:2021"
         ]
       },
       "remediation": {
         "recommendation": "Apply the suggested fix code.",
-        "fix_available": true,
+        "is_fix_available": true,
+        "is_auto_fixable": true,
         "fix_code": "cur.execute(\"SELECT * FROM t WHERE id = %s\", (request.args['id'],))",
         "fix_regex": {
           "regex": "f\"(.*)\"",
@@ -77,7 +75,10 @@
         "flask",
         "semgrep"
       ],
-      "fingerprint": "0123456789abcdef",
+      "fingerprint": "ctis-fp/2:932be4b15b3256e6780478ffe88d50ad710318df1bb94d29f003685d7fc4ca5f",
+      "partial_fingerprints": {
+        "matchBasedId/v1": "0123456789abcdef"
+      },
       "data_flow": {
         "sources": [
           {
@@ -108,7 +109,7 @@
             "type": "sink"
           }
         ],
-        "tainted": true
+        "is_tainted": true
       },
       "suppression": {
         "kind": "in_source",
@@ -123,6 +124,8 @@
       },
       "source_extra": {
         "engine_kind": "OSS",
+        "impact": "HIGH",
+        "likelihood": "MEDIUM",
         "rule_license": "Semgrep Rules License v1.0",
         "rule_source": "https://semgrep.dev/r/python.flask.security.injection.tainted-sql-string",
         "validation_state": "NO_VALIDATOR"

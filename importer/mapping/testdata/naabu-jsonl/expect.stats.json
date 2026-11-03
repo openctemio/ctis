@@ -23,6 +23,7 @@
   ],
   "unmapped": [
     "/msg",
+    "/protocol",
     "/timestamp",
     "/tls"
   ]

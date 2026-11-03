@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "bom_serial_number": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
       "bom_timestamp": "2026-09-30T10:00:00Z",
@@ -14,15 +14,15 @@
   },
   "tool": {
     "name": "cyclonedx",
-    "capabilities": [
+    "techniques": [
       "sca"
     ]
   },
   "assets": [
     {
-      "id": "sbom-pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
-      "type": "container",
-      "value": "pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
+      "id": "container_image-registry.example.com/shop/shop-api@sha256:0000000000000000000000000000000000000000000000000000000000000001",
+      "type": "container_image",
+      "value": "registry.example.com/shop/shop-api@sha256:0000000000000000000000000000000000000000000000000000000000000001",
       "name": "registry.example.com/shop/shop-api",
       "properties": {
         "component_type": "container",
@@ -39,30 +39,8 @@
       "severity": "high",
       "rule_id": "CVE-2022-24999",
       "rule_name": "CVE-2022-24999",
-      "asset_ref": "sbom-pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
+      "asset_ref": "container_image-registry.example.com/shop/shop-api@sha256:0000000000000000000000000000000000000000000000000000000000000001",
       "vulnerability": {
-        "cve_id": "CVE-2022-24999",
-        "cve_ids": [
-          "CVE-2022-24999"
-        ],
-        "cwe_ids": [
-          "CWE-1321"
-        ],
-        "cwe_id": "CWE-1321",
-        "cvss_version": "3.1",
-        "cvss_score": 7.5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-        "cvss_source": "nvd",
-        "package": "qs",
-        "purl": "pkg:npm/qs@6.7.0",
-        "affected_version": "6.7.0",
-        "ecosystem": "npm",
-        "published_at": "2022-11-26T22:15:00Z",
-        "modified_at": "2023-01-10T00:00:00Z",
-        "data_source": {
-          "name": "NVD",
-          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24999"
-        },
         "ids": [
           {
             "type": "cve",
@@ -72,7 +50,19 @@
             "type": "ghsa",
             "id": "GHSA-hrpp-h998-j3pp"
           }
-        ]
+        ],
+        "cwe_ids": [
+          "CWE-1321"
+        ],
+        "package_name": "qs",
+        "purl": "pkg:npm/qs@6.7.0",
+        "installed_version": "6.7.0",
+        "published_at": "2022-11-26T22:15:00Z",
+        "modified_at": "2023-01-10T00:00:00Z",
+        "data_source": {
+          "name": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24999"
+        }
       },
       "remediation": {
         "recommendation": "Upgrade qs to 6.7.3 or later."
@@ -105,22 +95,17 @@
       "severity": "medium",
       "rule_id": "GHSA-rv95-896h-c2vc",
       "rule_name": "GHSA-rv95-896h-c2vc",
-      "asset_ref": "sbom-pkg:oci/shop-api@sha256%3A0000000000000000000000000000000000000000000000000000000000000001",
+      "asset_ref": "container_image-registry.example.com/shop/shop-api@sha256:0000000000000000000000000000000000000000000000000000000000000001",
       "vulnerability": {
-        "cvss_version": "3.1",
-        "cvss_score": 6.1,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
-        "cvss_source": "vendor",
-        "package": "express",
-        "purl": "pkg:npm/express@4.17.1",
-        "affected_version": "4.17.1",
-        "ecosystem": "npm",
         "ids": [
           {
             "type": "ghsa",
             "id": "GHSA-rv95-896h-c2vc"
           }
-        ]
+        ],
+        "package_name": "express",
+        "purl": "pkg:npm/express@4.17.1",
+        "installed_version": "4.17.1"
       },
       "native": {
         "scheme": "other",
@@ -151,8 +136,8 @@
       "name": "express",
       "version": "4.17.1",
       "type": "library",
-      "ecosystem": "npm",
       "purl": "pkg:npm/express@4.17.1",
+      "source_id": "pkg:npm/express@4.17.1",
       "licenses": [
         "MIT"
       ],
@@ -160,6 +145,7 @@
       "depends_on": [
         "pkg:npm/qs@6.7.0"
       ],
+      "asset_ref": "container_image-registry.example.com/shop/shop-api@sha256:0000000000000000000000000000000000000000000000000000000000000001",
       "properties": {
         "hash_sha-512": "0000000000000000000000000000000000000000000000000000000000000000"
       }
@@ -169,21 +155,23 @@
       "name": "qs",
       "version": "6.7.0",
       "type": "library",
-      "ecosystem": "npm",
       "purl": "pkg:npm/qs@6.7.0",
+      "source_id": "pkg:npm/qs@6.7.0",
       "licenses": [
         "BSD-3-Clause"
       ],
-      "relationship": "indirect"
+      "relationship": "transitive",
+      "asset_ref": "container_image-registry.example.com/shop/shop-api@sha256:0000000000000000000000000000000000000000000000000000000000000001"
     },
     {
-      "id": "pkg:deb/debian/openssl@3.0.11-1~deb12u1?arch=amd64&distro=debian-12",
+      "id": "dep-h349e2cf48430efc4b985eea5",
       "name": "openssl",
       "version": "3.0.11-1~deb12u1",
       "type": "library",
-      "ecosystem": "deb",
       "purl": "pkg:deb/debian/openssl@3.0.11-1~deb12u1?arch=amd64&distro=debian-12",
-      "relationship": "direct"
+      "source_id": "pkg:deb/debian/openssl@3.0.11-1~deb12u1?arch=amd64&distro=debian-12",
+      "relationship": "direct",
+      "asset_ref": "container_image-registry.example.com/shop/shop-api@sha256:0000000000000000000000000000000000000000000000000000000000000001"
     }
   ]
 }

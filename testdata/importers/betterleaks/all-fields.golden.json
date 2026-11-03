@@ -1,16 +1,16 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "betterleaks",
     "vendor": "Betterleaks",
     "info_url": "https://github.com/betterleaks/betterleaks",
-    "capabilities": [
+    "techniques": [
       "secret"
     ]
   },
@@ -38,10 +38,15 @@
         "start_column": 15,
         "end_column": 34,
         "snippet": "AWS_ACCESS_KEY_ID=AKIA********",
-        "commit_sha": "0123456789abcdef0123456789abcdef01234567"
+        "commit": {
+          "sha": "0123456789abcdef0123456789abcdef01234567",
+          "author": "Dev Example",
+          "author_email": "dev@example.com",
+          "committed_at": "2026-09-30T12:00:00Z"
+        }
       },
       "secret": {
-        "secret_type": "aws_key",
+        "type": "aws_key",
         "service": "aws",
         "masked_value": "AKIA********",
         "length": 20,
@@ -53,10 +58,9 @@
         "aws",
         "key"
       ],
-      "fingerprint": "0123456789abcdef0123456789abcdef01234567:deploy/prod.env:aws-access-key:4",
-      "author": "Dev Example",
-      "author_email": "dev@example.com",
-      "commit_date": "2026-09-30T12:00:00Z",
+      "partial_fingerprints": {
+        "leaksFingerprint/v1": "0123456789abcdef0123456789abcdef01234567:deploy/prod.env:aws-access-key:4"
+      },
       "native": {
         "scheme": "other",
         "vuln_id": "aws-access-key",

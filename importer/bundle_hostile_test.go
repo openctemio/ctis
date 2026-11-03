@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/openctemio/ctis/v2"
 )
 
 // Hostile bundles. Every case must fail closed, or keep going without the
@@ -287,7 +289,7 @@ func TestBundle_HostileLines(t *testing.T) {
 	}
 	hosts := map[string]bool{}
 	for _, a := range res.Report.Assets {
-		if a.Type != "http_service" {
+		if a.Type != ctis.AssetTypeWebOrigin {
 			hosts[a.Value] = true
 		}
 	}
@@ -345,14 +347,14 @@ func TestBundle_HTTPXHostile(t *testing.T) {
 	}
 	var svc []string
 	for _, a := range res.Report.Assets {
-		if a.Type == "http_service" {
+		if a.Type == ctis.AssetTypeWebOrigin {
 			svc = append(svc, a.Value)
-			if title, _ := a.Properties["title"].(string); len(title) > 600 {
-				t.Errorf("a title of %d bytes was kept", len(title))
-			}
-			if c, ok := a.Properties["status_code"]; ok && c != 0 {
-				if n, _ := c.(int); n > 599 {
-					t.Errorf("status %v kept", c)
+			if h := a.Technical; h != nil && h.HTTP != nil {
+				if len(h.HTTP.Title) > 600 {
+					t.Errorf("a title of %d bytes was kept", len(h.HTTP.Title))
+				}
+				if h.HTTP.StatusCode > 599 {
+					t.Errorf("status %v kept", h.HTTP.StatusCode)
 				}
 			}
 		}
@@ -375,7 +377,8 @@ func TestBundle_OutOfScopeHostsAreCandidates(t *testing.T) {
 	}
 	scope := map[string]string{}
 	for _, a := range res.Report.Assets {
-		scope[a.Value], _ = a.Properties["import_scope"].(string)
+		v, _ := a.Extensions.Get(ctis.OpenCTEMNamespace, "import_scope")
+		scope[a.Value], _ = v.(string)
 	}
 	want := map[string]string{"www.example.com": "in_target", "example.com.evil.net": "outside_target", "evilexample.com": "outside_target", "other.org": "outside_target"}
 	for h, w := range want {
@@ -392,7 +395,8 @@ func TestBundle_OutOfScopeHostsAreCandidates(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, a := range res.Report.Assets {
-		got, _ := a.Properties["import_scope"].(string)
+		gv, _ := a.Extensions.Get(ctis.OpenCTEMNamespace, "import_scope")
+		got, _ := gv.(string)
 		if a.Value == "other.org" && got != "in_target" || a.Value == "www.example.com" && got != "outside_target" {
 			t.Errorf("%s: import_scope %q with ScopeDomains", a.Value, got)
 		}
@@ -442,8 +446,8 @@ func TestBundle_ReportJSON(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !res.Report.Metadata.Timestamp.Equal(fixedNow) {
-			t.Errorf("timestamp %v", res.Report.Metadata.Timestamp)
+		if !res.Report.Metadata.GeneratedAt.Equal(fixedNow) {
+			t.Errorf("timestamp %v", res.Report.Metadata.GeneratedAt)
 		}
 	})
 	t.Run("hostile domain is dropped", func(t *testing.T) {
@@ -451,8 +455,10 @@ func TestBundle_ReportJSON(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if s := res.Report.Metadata.Scope; s != nil && strings.ContainsAny(s.Name, "/\r\n") {
-			t.Errorf("scope %q", s.Name)
+		for _, r := range res.Report.Metadata.SourceRefs {
+			if strings.ContainsAny(r.ID, "/\r\n") {
+				t.Errorf("source ref %q", r.ID)
+			}
 		}
 	})
 	t.Run("malformed report is an issue", func(t *testing.T) {
@@ -486,8 +492,8 @@ func TestBundle_NucleiFiles(t *testing.T) {
 			asset = a.Value
 		}
 	}
-	if asset != "www.example.com" {
-		t.Errorf("the finding is on %q, not on the bundle's host asset", asset)
+	if asset != "https://www.example.com" {
+		t.Errorf("the finding is on %q, not on the bundle's web origin asset", asset)
 	}
 	if len(res.Issues) == 0 {
 		t.Error("the broken nuclei lines are not reported")

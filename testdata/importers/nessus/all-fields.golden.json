@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "scan_name": "Cloud agents"
     }
@@ -12,7 +12,7 @@
   "tool": {
     "name": "nessus",
     "vendor": "Tenable",
-    "capabilities": [
+    "techniques": [
       "va"
     ]
   },
@@ -22,28 +22,35 @@
       "type": "host",
       "value": "web02.example.com",
       "name": "web02.example.com",
+      "first_seen_at": "2025-10-05T09:00:00Z",
       "identity_hints": {
         "fqdn": "web02.example.com",
         "os_cpe": "cpe:/o:microsoft:windows_server_2022",
         "cloud_resource_id": "00000000-0000-4000-8000-0000000000aa",
         "agent_id": "b2c3d4e5-0000-4000-8000-000000000002"
-      },
-      "properties": {
-        "fqdn": "web02.example.com",
-        "scan_started_at": "2025-10-05T09:00:00Z"
       }
     },
     {
-      "id": "host-203.0.113.30",
+      "id": "service-web02.example.com:443/tcp",
+      "type": "service",
+      "value": "web02.example.com:443/tcp",
+      "name": "web02.example.com:443/tcp",
+      "technical": {
+        "service": {
+          "port": 443,
+          "transport": "tcp",
+          "app_protocol": "www"
+        }
+      }
+    },
+    {
+      "id": "ip_address-203.0.113.30",
       "type": "ip_address",
       "value": "203.0.113.30",
       "name": "203.0.113.30",
       "identity_hints": {
         "cloud_resource_id": "1234567890123456789",
         "agent_id": "c3d4e5f6-0000-4000-8000-000000000003"
-      },
-      "properties": {
-        "ip_address": "203.0.113.30"
       }
     }
   ],
@@ -59,23 +66,23 @@
       "rule_name": "Café Web Server < 2.1 Multiple Vulnerabilities",
       "asset_ref": "host-web02.example.com",
       "network": {
-        "host": "web02.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "www"
+        "transport": "tcp",
+        "app_protocol": "www"
       },
-      "evidence": "Installed version : 2.0\nFixed version     : 2.1",
       "vulnerability": {
-        "cvss_version": "4.0",
-        "cvss_score": 6.9,
-        "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
-        "cvss_source": "vendor",
-        "in_cisa_kev": true,
         "ids": [
           {
             "type": "vendor",
             "id": "OSVDB-12345",
             "source": "osvdb"
+          }
+        ],
+        "threat_signals": [
+          {
+            "type": "kev",
+            "source": "cisa",
+            "due_on": "2025-01-01"
           }
         ]
       },
@@ -154,9 +161,20 @@
         "vendor_unpatched": "false",
         "xref": "OSVDB:12345\nRHSA:2025:0001"
       },
-      "properties": {
-        "cvss_v2_vector": "CVSS2#AV:N/AC:L/Au:N/C:P/I:N/A:N"
-      }
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "plugin_output",
+          "text": "Installed version : 2.0\nFixed version     : 2.1"
+        }
+      ],
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "900001"
+        }
+      ]
     },
     {
       "type": "vulnerability",
@@ -167,18 +185,28 @@
       "category": "General",
       "rule_id": "900002",
       "rule_name": "Low finding",
-      "asset_ref": "host-203.0.113.30",
-      "network": {
-        "host": "203.0.113.30",
-        "protocol": "tcp"
-      },
+      "asset_ref": "ip_address-203.0.113.30",
+      "network": {},
       "native": {
         "scheme": "nessus",
         "vuln_id": "900002",
         "family": "General",
         "severity": "1",
         "raw_ref": "ReportHost[203.0.113.30]/ReportItem[pluginID=900002,port=0,protocol=tcp]"
-      }
+      },
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "900002"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "exposes",
+      "from_ref": "host-web02.example.com",
+      "to_ref": "service-web02.example.com:443/tcp"
     }
   ]
 }

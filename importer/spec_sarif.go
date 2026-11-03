@@ -16,7 +16,7 @@ var _ = registerSpec(Spec{
 	Rules: []string{
 		"The conversion is the module's FromSARIF (sarif.go); the importer adds the input limits and chooses the asset.",
 		"Asset: Options.Repository (a receiver sets it from a verified identity); else the first repository a run names in versionControlProvenance (repositoryUri without user info, branch, revisionId); else Options.DefaultAsset or an unclassified asset named after the tool, with an issue.",
-		"Severity: the security-severity score (result, then rule), else the result level, else the rule's default level, else medium. Type: the rule's tags, a CVE/GHSA rule id, else the tool name. Options.ToolType (sast, sca, secret, iac, web3), when set, decides the type and the tool capabilities instead.",
+		"Severity: the security-severity score (result, then rule), else the result level, else the rule's default level, else medium. Type: the rule's tags, a CVE/GHSA rule id, else the tool name. Options.ToolType (sast, sca, secret, iac, web3), when set, decides the type and the tool techniques instead.",
 		"A secret scanner's region snippet is masked (ctis.MaskSecretMatch), and the raw value and each secret-looking word of it are masked in every other field: title, description, message, properties, tags and fingerprints.",
 		"Fingerprint: the result's fingerprints entry with the lowest key (hashed above 64 characters); partialFingerprints pass through.",
 		"Data flow: the first threadFlow with a location, of the first 10 codeFlows (10 threadFlows each), becomes findings[].data_flow; at most ctis.MaxDataFlowSteps steps, in order. A step's role comes from its kinds (source, sink, sanitizer), else its message (starts with Source, Sink or Propagator; says sanitized), else its position: the first unmarked step is the source and the last the sink when no step is marked so. A malformed trace leaves the finding without a data flow and never fails it.",
@@ -29,7 +29,7 @@ var _ = registerSpec(Spec{
 		{Path: sfRun, Target: Container},
 		{Path: sfRun + "/tool", Target: Container},
 		{Path: sfRun + "/tool/driver", Target: Container},
-		{Path: sfRun + "/tool/driver/name", Target: "tool.name, findings[].properties.sarif_tool (several runs)"},
+		{Path: sfRun + "/tool/driver/name", Target: "tool.name, findings[].tool (several runs)"},
 		{Path: sfRun + "/tool/driver/version", Target: "tool.version"},
 		{Path: sfRun + "/tool/driver/semanticVersion", Target: "tool.version (when no version)"},
 		{Path: sfRun + "/tool/driver/informationUri", Target: "tool.info_url"},

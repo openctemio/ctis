@@ -44,13 +44,13 @@ func TestSARIF_ToolTypeAndConfidence(t *testing.T) {
 			t.Errorf("type = %q, want misconfiguration", f.Type)
 		}
 	}
-	if !slices.Equal(res.Report.Tool.Capabilities, []string{"misconfiguration"}) {
-		t.Errorf("capabilities = %v", res.Report.Tool.Capabilities)
+	if !slices.Equal(res.Report.Tool.Techniques, []ctis.Technique{ctis.TechniqueIaC}) {
+		t.Errorf("techniques = %v", res.Report.Tool.Techniques)
 	}
 
-	// A named tool keeps the capabilities of its type.
+	// A named tool keeps the techniques of its type.
 	res = parse(Options{ToolName: "custom", ToolType: "secret"})
-	if res.Report.Tool.Name != "custom" || !slices.Equal(res.Report.Tool.Capabilities, []string{"secret"}) {
+	if res.Report.Tool.Name != "custom" || !slices.Equal(res.Report.Tool.Techniques, []ctis.Technique{ctis.TechniqueSecret}) {
 		t.Errorf("tool = %+v", res.Report.Tool)
 	}
 

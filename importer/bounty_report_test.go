@@ -2,8 +2,6 @@ package importer
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 func brParse(t *testing.T, in string, opts Options) *Result {
@@ -31,7 +30,8 @@ func brParse(t *testing.T, in string, opts Options) *Result {
 
 func brProps(t *testing.T, f ctis.Finding) map[string]any {
 	t.Helper()
-	m, ok := f.Properties["bounty_report"].(map[string]any)
+	v, _ := f.Extensions.Get(ctis.OpenCTEMNamespace, "bounty_report")
+	m, ok := v.(map[string]any)
 	if !ok {
 		t.Fatalf("no bounty_report properties on %q", f.Title)
 	}
@@ -98,8 +98,8 @@ func TestBountyReport_PropertiesContract(t *testing.T) {
 		}
 		res, _ := runFixture(t, fx)
 		for _, f := range res.Report.Findings {
-			if len(f.Properties) != 1 {
-				t.Errorf("%s: properties has keys beyond bounty_report: %v", f.Title, f.Properties)
+			if len(f.Properties) != 0 || len(f.Extensions) != 1 || len(f.Extensions[ctis.OpenCTEMNamespace]) != 1 {
+				t.Errorf("%s: properties %v or extensions %v hold more than bounty_report", f.Title, f.Properties, f.Extensions)
 			}
 			if f.Tags != nil || f.References != nil {
 				t.Errorf("%s: tags or references set", f.Title)
@@ -154,7 +154,7 @@ func TestBountyReport_Mapping(t *testing.T) {
 	if fs[0].Title != "A title" || fs[0].Severity != ctis.SeverityInfo || fs[0].Native.Severity != "NONE" || fs[0].Native.Status != "Not-Applicable" {
 		t.Errorf("finding = %+v native %+v", fs[0], fs[0].Native)
 	}
-	if res.Report.Assets[0].Value != "example.com" || res.Report.Assets[0].Type != ctis.AssetTypeDomain {
+	if res.Report.Assets[0].Value != "example.com" || res.Report.Assets[0].Type != ctis.AssetTypeDomainName {
 		t.Errorf("asset = %+v", res.Report.Assets[0])
 	}
 	// The default intake and a severity the source does not know.
@@ -194,9 +194,8 @@ func TestBountyReport_FingerprintAndIntake(t *testing.T) {
 	if fa != fb || fa == fc {
 		t.Errorf("fingerprints %s %s %s", fa, fb, fc)
 	}
-	sum := sha256.Sum256([]byte("import\x00X"))
-	if fa != "bounty_report:v1:"+hex.EncodeToString(sum[:]) {
-		t.Errorf("fingerprint %s", fa)
+	if want := fingerprint.V2Generic("bounty_report:import:X", "", 0, 0); fa != want || !strings.HasPrefix(fa, fingerprint.Prefix) {
+		t.Errorf("fingerprint %s, want %s", fa, want)
 	}
 	if _, err := Parse(context.Background(), strings.NewReader(`{"bounty_reports":[]}`), Options{Format: FormatBountyReport, BountyIntake: "Bad Intake!"}); err == nil {
 		t.Error("an invalid Options.BountyIntake was accepted")

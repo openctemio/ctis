@@ -17,7 +17,7 @@ import (
 
 func init() {
 	parsers[FormatVuls] = parseVuls
-	tools[FormatVuls] = ctis.Tool{Name: "vuls", Vendor: "future-architect", InfoURL: "https://vuls.io", Capabilities: []string{"va"}}
+	tools[FormatVuls] = ctis.Tool{Name: "vuls", Vendor: "future-architect", InfoURL: "https://vuls.io", Techniques: []ctis.Technique{ctis.TechniqueVA}}
 }
 
 type vulsPackage struct {
@@ -152,6 +152,11 @@ func parseVuls(b *builder, r io.Reader) error {
 	if err != nil {
 		return err
 	}
+	if assetID == "" {
+		b.res.Stats.Records = len(cves)
+		b.res.Stats.Skipped = len(cves)
+		return nil
+	}
 	for _, key := range sortedKeysOf(rep.Packages) {
 		p := rep.Packages[key]
 		// vuls keys packages by name; the key stands in for an empty name.
@@ -164,11 +169,11 @@ func parseVuls(b *builder, r io.Reader) error {
 			continue
 		}
 		if err := b.dependency(ctis.Dependency{
-			Name:      name,
-			Version:   line(vulsVersion(p), 128),
-			Type:      "os",
-			Ecosystem: vulsEcosystem(rep.Family),
-			PURL:      sanePURL(vulsPURL(rep.Family, rep.Release, name, vulsVersion(p), p.Arch)),
+			Name:     name,
+			Version:  line(vulsVersion(p), 128),
+			Type:     ctis.DependencyTypeLibrary,
+			PURL:     sanePURL(vulsPURL(rep.Family, rep.Release, name, vulsVersion(p), p.Arch)),
+			AssetRef: assetID,
 		}); err != nil {
 			return err
 		}
@@ -194,7 +199,7 @@ func parseVuls(b *builder, r io.Reader) error {
 
 func vulsAsset(rep *vulsReport) (ctis.Asset, bool) {
 	name := line(rep.ServerName, capShort)
-	a := ctis.Asset{ID: "host-1", Type: ctis.AssetTypeHost, Name: name}
+	a := ctis.Asset{Type: ctis.AssetTypeHost, Name: name}
 	for _, ip := range rep.ScannedIPv4 {
 		if p := net.ParseIP(strings.TrimSpace(ip)); p != nil {
 			a.Value = p.String()
@@ -283,38 +288,30 @@ func vulsFinding(cve *vulsCVE, rep *vulsReport, assetID string) (ctis.Finding, b
 	}
 	vd := &ctis.VulnerabilityDetails{}
 	addVulnID(vd, id)
+	bestScore := 0.0
 	if c != nil {
 		if t := line(c.Title, capTitle); t != "" {
 			f.Title = t
 		}
 		f.Description = text(c.Summary, capDescription)
 		switch {
-		case c.Cvss40Score > 0:
-			vd.CVSSScore, vd.CVSSVector, vd.CVSSVersion = c.Cvss40Score, line(c.Cvss40Vector, ctis.MaxScoreVectorLen), "4.0"
-		case c.Cvss3Score > 0:
-			vd.CVSSScore, vd.CVSSVector, vd.CVSSVersion = c.Cvss3Score, line(c.Cvss3Vector, ctis.MaxScoreVectorLen), "3.1"
-			if v := ctis.CVSSVersionOfVector(c.Cvss3Vector); v != "" {
-				vd.CVSSVersion = v
-			}
-		case c.Cvss2Score > 0:
-			vd.CVSSScore, vd.CVSSVector, vd.CVSSVersion = c.Cvss2Score, line(c.Cvss2Vector, ctis.MaxScoreVectorLen), "2.0"
-		}
-		if vd.CVSSScore > 10 {
-			vd.CVSSScore, vd.CVSSVector, vd.CVSSVersion = 0, "", ""
+		case c.Cvss40Score > 0 && c.Cvss40Score <= 10:
+			bestScore = c.Cvss40Score
+		case c.Cvss3Score > 0 && c.Cvss3Score <= 10:
+			bestScore = c.Cvss3Score
+		case c.Cvss2Score > 0 && c.Cvss2Score <= 10:
+			bestScore = c.Cvss2Score
 		}
 		for _, cw := range c.CweIDs {
 			if cid := cweID(cw); cid != "" {
 				vd.CWEIDs = appendUnique(vd.CWEIDs, cid)
 			}
 		}
-		if len(vd.CWEIDs) > 0 {
-			vd.CWEID = vd.CWEIDs[0]
-		}
 		vd.PublishedAt = parseTime(c.Published)
 		vd.ModifiedAt = parseTime(c.LastModified)
-		f.References = addRefs(f.References, c.SourceLink)
+		f.References = addWebRefs(f.References, c.SourceLink)
 		for _, ref := range c.References {
-			f.References = addRefs(f.References, ref.Link)
+			f.References = addWebRefs(f.References, ref.Link)
 		}
 	}
 	// Every source's scores, in source order.
@@ -340,36 +337,38 @@ func vulsFinding(cve *vulsCVE, rep *vulsReport, assetID string) (ctis.Finding, b
 	}
 	if len(cve.AffectedPackages) > 0 {
 		ap := cve.AffectedPackages[0]
-		vd.Package = line(ap.Name, capShort)
-		vd.FixedVersion = line(ap.FixedIn, 256)
+		vd.PackageName = line(ap.Name, capShort)
+		if fi := line(ap.FixedIn, 256); fi != "" {
+			vd.FixedVersions = []string{fi}
+		}
 		if p, ok := rep.Packages[ap.Name]; ok {
 			ver := vulsVersion(p)
-			vd.AffectedVersion = line(ver, 128)
+			vd.InstalledVersion = line(ver, 128)
 			vd.PURL = sanePURL(vulsPURL(rep.Family, rep.Release, ap.Name, ver, p.Arch))
 		}
 		switch {
 		case ap.FixedIn != "":
-			f.Remediation = &ctis.Remediation{Recommendation: line("Update "+ap.Name+" to version "+ap.FixedIn, capRemediation), FixAvailable: true, SolutionType: ctis.SolutionTypeUpgrade}
+			f.Remediation = &ctis.Remediation{Recommendation: line("Update "+ap.Name+" to version "+ap.FixedIn, capRemediation), IsFixAvailable: ctis.Bool(true), SolutionType: ctis.SolutionTypeUpgrade}
 		case ap.NotFixedYet:
-			f.Remediation = &ctis.Remediation{Recommendation: "No fix available yet. Consider mitigation or alternative packages.", SolutionType: ctis.SolutionTypeNoFix}
+			f.Remediation = &ctis.Remediation{Recommendation: "No fix available yet. Consider mitigation or alternative packages.", IsFixAvailable: ctis.Bool(false), SolutionType: ctis.SolutionTypeNoneAvailable}
 		}
 		if ap.FixState != "" {
 			extra(&f, "fix_state", ap.FixState)
 		}
 	}
 	f.Vulnerability = vd
-	f.Severity = vulsSeverity(vd.CVSSScore)
+	f.Severity = vulsSeverity(bestScore)
 	if len(cve.Confidences) > 0 {
 		if s := cve.Confidences[0].Score; s >= 0 && s <= 100 {
 			f.Confidence = s
 		}
 		extra(&f, "detection_method", cve.Confidences[0].DetectionMethod)
 	}
-	if vd.Package != "" {
-		f.Fingerprint = fingerprint.GenerateSCA(vd.Package, vd.AffectedVersion, cve.CveID)
-	} else {
-		f.Fingerprint = fingerprint.GenerateSCA(rep.ServerName, "", cve.CveID)
+	pkgRef := vd.PURL
+	if pkgRef == "" {
+		pkgRef = vulsEcosystem(rep.Family) + "/" + firstNonEmpty(vd.PackageName, rep.ServerName)
 	}
+	f.Fingerprint = fingerprint.V2SCA(pkgRef, cve.CveID)
 	return f, true
 }
 

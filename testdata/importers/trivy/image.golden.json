@@ -1,25 +1,26 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "trivy",
     "vendor": "Aqua Security",
-    "capabilities": [
+    "techniques": [
       "sca",
-      "misconfiguration",
+      "iac",
+      "container",
       "secret"
     ]
   },
   "assets": [
     {
       "id": "asset-1",
-      "type": "container",
-      "value": "alpine:3.18.0",
+      "type": "container_image",
+      "value": "docker.io/library/alpine",
       "name": "alpine:3.18.0",
       "properties": {
         "source": "trivy_artifact"
@@ -38,32 +39,25 @@
         "path": "lib/apk/db/installed"
       },
       "vulnerability": {
-        "cve_id": "CVE-2023-1234",
-        "cve_ids": [
-          "CVE-2023-1234"
-        ],
-        "cwe_ids": [
-          "CWE-120"
-        ],
-        "cwe_id": "CWE-120",
-        "cvss_version": "3.1",
-        "cvss_score": 7.5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-        "cvss_source": "nvd",
-        "package": "openssl",
-        "affected_version": "1.1.1",
-        "fixed_version": "1.1.2",
         "ids": [
           {
             "type": "cve",
             "id": "CVE-2023-1234"
           }
+        ],
+        "cwe_ids": [
+          "CWE-120"
+        ],
+        "package_name": "openssl",
+        "installed_version": "1.1.1",
+        "fixed_versions": [
+          "1.1.2"
         ]
       },
       "remediation": {
         "recommendation": "Upgrade openssl to 1.1.2",
-        "fix_available": true,
-        "solution_type": "upgrade"
+        "solution_type": "upgrade",
+        "is_fix_available": true
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2023-1234",
@@ -74,7 +68,7 @@
         "trivy",
         "alpine:3.18.0 (alpine 3.18.0)"
       ],
-      "fingerprint": "2ee4c378f8358de39903d44d5e1516f7926ae5ccf0a158fc4984871d6995d3f3",
+      "fingerprint": "ctis-fp/2:33ee62fce81c57115b76682d3b46cfa7cc3c1ee218b559a812ac400b457979f9",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2023-1234",
@@ -101,21 +95,14 @@
       "rule_id": "CVE-2023-5678",
       "asset_ref": "asset-1",
       "vulnerability": {
-        "cve_id": "CVE-2023-5678",
-        "cve_ids": [
-          "CVE-2023-5678"
-        ],
-        "cvss_version": "3.1",
-        "cvss_score": 9.8,
-        "cvss_source": "nvd",
-        "package": "curl",
-        "affected_version": "7.88.0",
         "ids": [
           {
             "type": "cve",
             "id": "CVE-2023-5678"
           }
-        ]
+        ],
+        "package_name": "curl",
+        "installed_version": "7.88.0"
       },
       "references": [
         "https://avd.aquasec.com/nvd/cve-2023-5678"
@@ -124,7 +111,7 @@
         "trivy",
         "alpine:3.18.0 (alpine 3.18.0)"
       ],
-      "fingerprint": "0436bec0c401532cfb64a7c85f20ec4190393c707e0205eadefb6632db49867a",
+      "fingerprint": "ctis-fp/2:937cca57eadd27a517c271e7c3e356aa4510ae5a9c02e4627e43a51b315aa716",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2023-5678",
@@ -156,9 +143,9 @@
         "end_line": 1
       },
       "misconfiguration": {
-        "policy_id": "DS002",
+        "policy_id": "AVD-DS-0002",
         "policy_name": "Image user should not be 'root'",
-        "avd_id": "AVD-DS-0002",
+        "resource_type": "dockerfile",
         "provider": "Dockerfile",
         "service": "general",
         "namespace": "builtin.dockerfile.DS002"
@@ -172,14 +159,13 @@
         "misconfiguration",
         "Dockerfile"
       ],
-      "fingerprint": "bcbe3e15b4d82ec248d2a08ce9c88e058d24879d9c7c67662a672d8b2ce04cae",
+      "fingerprint": "ctis-fp/2:047fc26112043556c4611d5d06576ba797bbaa45128f619ae3f0ff55cfb0c62b",
       "native": {
         "scheme": "other",
         "vuln_id": "DS002",
         "severity": "HIGH"
       },
       "source_extra": {
-        "misconfig_type": "dockerfile",
         "target": "Dockerfile"
       }
     }

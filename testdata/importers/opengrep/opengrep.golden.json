@@ -1,20 +1,17 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
-    "scope": {
-      "name": "github.com/example/shop"
-    }
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "opengrep",
     "version": "1.30.2",
     "vendor": "Opengrep",
     "info_url": "https://github.com/opengrep/opengrep",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -33,18 +30,16 @@
   ],
   "findings": [
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "User input reaches a shell command.",
       "message": "User input reaches a shell command.",
       "severity": "high",
       "confidence": 90,
-      "impact": "high",
-      "likelihood": "medium",
       "category": "security",
-      "vulnerability_class": [
+      "vulnerability_classes": [
         "Command Injection"
       ],
-      "subcategory": [
+      "subcategories": [
         "vuln"
       ],
       "rule_id": "example.python.command-injection",
@@ -62,9 +57,8 @@
         "cwe_ids": [
           "CWE-78"
         ],
-        "cwe_id": "CWE-78",
         "owasp_ids": [
-          "A03:2021 - Injection"
+          "A03:2021"
         ]
       },
       "references": [
@@ -74,7 +68,7 @@
         "python",
         "opengrep"
       ],
-      "fingerprint": "82ff551a6a8cd4d8b829f46fd12fb6675d11b9c22b198a2fa1097efb08612dfa",
+      "fingerprint": "ctis-fp/2:87435c5440a12cbad8835a4671bacdc2030d5f80caab86a5aab77d43edc661ba",
       "partial_fingerprints": {
         "matchBasedId/v1": "a9853132551d74e3b2b749e33763ec950c6e7d1bec5b5cd04bf7a6414c935a88102a7c9d6dff7893e2cae2de826455fbf37b2d672893e51257bbe7ec67df308d_0"
       },
@@ -116,7 +110,7 @@
             "type": "sink"
           }
         ],
-        "tainted": true
+        "is_tainted": true
       },
       "native": {
         "scheme": "other",
@@ -126,12 +120,14 @@
       },
       "source_extra": {
         "engine_kind": "OSS",
+        "impact": "HIGH",
+        "likelihood": "MEDIUM",
         "rule_license": "MIT",
         "validation_state": "NO_VALIDATOR"
       }
     },
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "MD5 is a weak hash.",
       "message": "MD5 is a weak hash.",
       "severity": "medium",
@@ -151,18 +147,17 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-328"
-        ],
-        "cwe_id": "CWE-328"
+        ]
       },
       "remediation": {
         "recommendation": "Apply the suggested fix code.",
-        "fix_available": true,
+        "is_fix_available": true,
         "fix_code": "hashlib.sha256($...ARGS)"
       },
       "tags": [
         "opengrep"
       ],
-      "fingerprint": "0f069b45b56fa89f349d921941968ac51606dab3304d0da7c161ee1b5e9f40c8",
+      "fingerprint": "ctis-fp/2:b6cd199281ef4daeea3e6689f0ba035bf57f1a9720467032ef5cf78ef5cb33d1",
       "partial_fingerprints": {
         "matchBasedId/v1": "8c77dd9e299774b1ac641f3a5c47be9a995a6f8bccc97740f0994849bb42156d10bc66e6bf21ff43dfe9ce41974fbc2e0ac2de8c3d1ea75aad33f8a83959d28c_0"
       },
@@ -178,7 +173,7 @@
       }
     },
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "A script is loaded over plain HTTP.",
       "message": "A script is loaded over plain HTTP.",
       "severity": "low",
@@ -198,7 +193,7 @@
       "tags": [
         "opengrep"
       ],
-      "fingerprint": "454f12cf0a3c1c6332126e7183baa4dd14077b8dcbd884f22036e475cb99ffbe",
+      "fingerprint": "ctis-fp/2:779b98587bbdab7c70c92f02aa1567913f02863d49867da0d0391df0da0dfc10",
       "partial_fingerprints": {
         "matchBasedId/v1": "68976b71a25f5c508e28b769371917e412ba8dbce51f976d735967f5e769849b10395650dc800d60d655c7abbff475e01057524b702b16cf079daf32f56fb800_0"
       },

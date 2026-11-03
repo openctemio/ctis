@@ -43,7 +43,7 @@ type openvexStatement struct {
 	Justification   string            `json:"justification"`
 	ImpactStatement string            `json:"impact_statement"`
 	ActionStatement string            `json:"action_statement"`
-	Timestamp       string            `json:"timestamp"`
+	TS              string            `json:"timestamp"`
 	LastUpdated     string            `json:"last_updated"`
 }
 
@@ -51,7 +51,7 @@ type openvexDoc struct {
 	Context     string             `json:"@context"`
 	ID          string             `json:"@id"`
 	Author      string             `json:"author"`
-	Timestamp   string             `json:"timestamp"`
+	TS          string             `json:"timestamp"`
 	LastUpdated string             `json:"last_updated"`
 	Version     json.Number        `json:"version"`
 	Tooling     string             `json:"tooling"`
@@ -76,7 +76,9 @@ func parseOpenVEX(b *builder, r io.Reader) error {
 	}
 
 	meta := &b.res.Report.Metadata
-	meta.SourceRef = line(d.ID, capShort)
+	if id := line(d.ID, capShort); id != "" {
+		meta.SourceRefs = []ctis.SourceRef{{System: "openvex", ID: id}}
+	}
 	props := ctis.Properties{}
 	for k, v := range map[string]string{"author": d.Author, "document_version": d.Version.String(), "tooling": d.Tooling, "openvex_context": d.Context} {
 		if v = line(v, capShort); v != "" {
@@ -94,7 +96,7 @@ func parseOpenVEX(b *builder, r io.Reader) error {
 			source = a
 		}
 	}
-	docTime := parseTime(firstNonEmpty(d.LastUpdated, d.Timestamp))
+	docTime := parseTime(firstNonEmpty(d.LastUpdated, d.TS))
 
 	for si := range d.Statements {
 		if err := b.tick(); err != nil {
@@ -158,7 +160,7 @@ func parseOpenVEX(b *builder, r io.Reader) error {
 				text = n
 			}
 		}
-		asOf := parseTime(firstNonEmpty(s.LastUpdated, s.Timestamp))
+		asOf := parseTime(firstNonEmpty(s.LastUpdated, s.TS))
 		if asOf == nil {
 			asOf = docTime
 		}

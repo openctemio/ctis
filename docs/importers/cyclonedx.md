@@ -8,10 +8,10 @@ Generated from `importer/spec_cyclonedx.go`; do not edit. Regenerate with `go te
 
 ## Rules
 
-- The subject (metadata.component) is the asset: value is its purl, else name@version; type container for a container, host for an operating system, device, firmware or platform, else repository. Without a subject, an unclassified asset named after the serial number holds the components and findings, and an issue says so. A BOM without components or findings (a pure VEX) creates no asset.
-- Every other component, at any nesting depth, is a dependency of the subject: id is its bom-ref (else purl, else name@version); a second component with a used bom-ref is skipped with an issue. depends_on keeps only refs that name a component; relationship is direct when the subject depends on it, indirect when the BOM has a dependency graph.
+- The subject (metadata.component) is the asset: value is its purl, else name@version; a container with an image reference is a container_image, a component with a package URL is a package, anything else is unclassified. Without a subject, an unclassified asset named after the serial number holds the components and findings, and an issue says so. A BOM without components or findings (a pure VEX) creates no asset.
+- Every other component, at any nesting depth, is a dependency of the subject: id is its bom-ref (else purl, else name@version); a second component with a used bom-ref is skipped with an issue. depends_on keeps only refs that name a component; relationship is direct when the subject depends on it, transitive when the BOM has a dependency graph.
 - One finding per vulnerability and affected component of this BOM (affects[].ref naming a component, or the subject). A ref that is a package URL outside the BOM is a VEX product but no finding.
-- Severity: the severity word of the newest CVSS rating (else the first rating with one; a CVSS score without a word is banded 9/7/4/0.1); without any, medium with a note in source_extra. Every rating goes to scores (CVSSv2/v3/v31/v4 as cvss with version, SSVC as ssvc, others as vendor). The legacy cvss_* members take the newest CVSS rating.
+- Severity: the severity word of the newest CVSS rating (else the first rating with one; a CVSS score without a word is banded 9/7/4/0.1); without any, medium with a note in source_extra. Every rating goes to scores (CVSSv2/v3/v31/v4 as cvss with version, SSVC as ssvc, others as vendor).
 - analysis maps through ctis.NormalizeVEXStatus and NormalizeVEXJustification. It becomes finding.vex and one VEX statement per vulnerability whose products are the affected components (purl, cpe, name, version). A not_affected analysis without a known justification or a detail is refused (issue). No finding is made for not_affected, resolved, resolved_with_pedigree and false_positive; they count as skipped.
 - The VEX source is the BOM serial number.
 - People's names and contacts (authors, credits, supplier contacts, annotations) are not read. Proof-of-concept material is not copied.
@@ -65,12 +65,12 @@ Generated from `importer/spec_cyclonedx.go`; do not edit. Regenerate with `go te
 | `/components[]` | `dependencies[]` |  |
 | `/components[]/bom-ref` | `dependencies[].id, vulnerabilities[].affects[].ref resolution` |  |
 | `/components[]/type` | `dependencies[].type` |  |
-| `/components[]/group` | `dependencies[].properties.group, findings[].vulnerability.package (group/name)` |  |
-| `/components[]/name` | `dependencies[].name, findings[].vulnerability.package` |  |
-| `/components[]/version` | `dependencies[].version, findings[].vulnerability.affected_version` |  |
+| `/components[]/group` | `dependencies[].properties.group, findings[].vulnerability.package_name (group/name)` |  |
+| `/components[]/name` | `dependencies[].name, findings[].vulnerability.package_name` |  |
+| `/components[]/version` | `dependencies[].version, findings[].vulnerability.installed_version` |  |
 | `/components[]/description` | `dependencies[].properties.description` |  |
 | `/components[]/scope` | `dependencies[].properties.scope` |  |
-| `/components[]/purl` | `dependencies[].purl, dependencies[].ecosystem (purl type), findings[].vulnerability.purl, ecosystem` |  |
+| `/components[]/purl` | `dependencies[].purl, findings[].vulnerability.purl` |  |
 | `/components[]/cpe` | `dependencies[].properties.cpe, findings[].vulnerability.cpe` |  |
 | `/components[]/hashes` | (container) |  |
 | `/components[]/hashes[]` | (container) |  |
@@ -129,7 +129,7 @@ Generated from `importer/spec_cyclonedx.go`; do not edit. Regenerate with `go te
 | `/vulnerabilities` | (container) |  |
 | `/vulnerabilities[]` | `findings[] (one per affected component of this BOM), vex[] (with an analysis)` |  |
 | `/vulnerabilities[]/bom-ref` | `findings[].native.instance_id` |  |
-| `/vulnerabilities[]/id` | `findings[].rule_id, native.vuln_id, vulnerability.ids, cve_id; vex[].vulnerability_ids` |  |
+| `/vulnerabilities[]/id` | `findings[].rule_id, native.vuln_id, vulnerability.ids; vex[].vulnerability_ids` |  |
 | `/vulnerabilities[]/source` | (container) |  |
 | `/vulnerabilities[]/source/name` | `findings[].vulnerability.data_source.name` |  |
 | `/vulnerabilities[]/source/url` | `findings[].vulnerability.data_source.url, references` |  |
@@ -144,10 +144,10 @@ Generated from `importer/spec_cyclonedx.go`; do not edit. Regenerate with `go te
 | `/vulnerabilities[]/ratings[]/source` | (container) |  |
 | `/vulnerabilities[]/ratings[]/source/name` | `findings[].scores[].source` |  |
 | `/vulnerabilities[]/ratings[]/source/url` |  | the source name is kept |
-| `/vulnerabilities[]/ratings[]/score` | `findings[].scores[].value, vulnerability.cvss_score, severity (when no severity word)` |  |
+| `/vulnerabilities[]/ratings[]/score` | `findings[].scores[].value, scores[] (cvss), severity (when no severity word)` |  |
 | `/vulnerabilities[]/ratings[]/severity` | `findings[].severity (from the newest CVSS rating), native.severity, scores[].label` |  |
 | `/vulnerabilities[]/ratings[]/method` | `findings[].scores[].system and version (CVSSv2, CVSSv3, CVSSv31, CVSSv4, SSVC; others vendor)` |  |
-| `/vulnerabilities[]/ratings[]/vector` | `findings[].scores[].vector, vulnerability.cvss_vector` |  |
+| `/vulnerabilities[]/ratings[]/vector` | `findings[].scores[].vector, scores[] (cvss)` |  |
 | `/vulnerabilities[]/ratings[]/justification` | `findings[].source_extra.rating_justification:<source>:<method>` |  |
 | `/vulnerabilities[]/cwes` | (container) |  |
 | `/vulnerabilities[]/cwes[]` | `findings[].vulnerability.cwe_ids` |  |
@@ -177,7 +177,7 @@ Generated from `importer/spec_cyclonedx.go`; do not edit. Regenerate with `go te
 | `/vulnerabilities[]/analysis/lastUpdated` | `findings[].vex.as_of` |  |
 | `/vulnerabilities[]/affects` | (container) |  |
 | `/vulnerabilities[]/affects[]` | `findings[] (one per affected component), vex[].products` |  |
-| `/vulnerabilities[]/affects[]/ref` | `findings[].vulnerability.package/purl/affected_version (the component), vex[].products` |  |
+| `/vulnerabilities[]/affects[]/ref` | `findings[].vulnerability.package_name, purl, installed_version (the component), vex[].products` |  |
 | `/vulnerabilities[]/affects[]/versions` | (container) |  |
 | `/vulnerabilities[]/affects[]/versions[]` | `findings[].source_extra.affects_versions` |  |
 | `/vulnerabilities[]/affects[]/versions[]/version` | `findings[].source_extra.affects_versions` |  |

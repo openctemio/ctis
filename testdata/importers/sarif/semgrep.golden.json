@@ -1,15 +1,15 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "Semgrep OSS",
     "version": "1.85.0",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -24,7 +24,7 @@
   "findings": [
     {
       "id": "finding-1",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "User-controlled data from a request is passed to 'execute()'. This could lead to a SQL injection.",
       "description": "Semgrep Finding: python.django.security.injection.sql.sql-injection-db-cursor-execute",
       "severity": "medium",
@@ -44,7 +44,6 @@
         "cwe_ids": [
           "CWE-89"
         ],
-        "cwe_id": "CWE-89",
         "owasp_ids": [
           "A01:2017",
           "A03:2021"
@@ -64,7 +63,7 @@
     },
     {
       "id": "finding-2",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "AWS Access Key ID Value detected.",
       "description": "Semgrep Finding: generic.secrets.security.detected-aws-access-key-id-value",
       "severity": "high",
@@ -83,7 +82,6 @@
         "cwe_ids": [
           "CWE-798"
         ],
-        "cwe_id": "CWE-798",
         "owasp_ids": [
           "A07:2021"
         ]

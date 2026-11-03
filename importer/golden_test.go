@@ -18,7 +18,7 @@ var update = flag.Bool("update", false, "rewrite the golden files and the mappin
 
 // fixtureRoot holds one directory per format. The golden reports live under
 // the module's testdata so the schema check (scripts/validate_schemas.py)
-// validates them against schemas/v1.
+// validates them against schemas/v2.
 const fixtureRoot = "../testdata/importers"
 
 var fixedNow = time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
@@ -39,7 +39,7 @@ func stem(p string) string { return strings.TrimSuffix(p, filepath.Ext(p)) }
 
 func isCompanion(name string) bool {
 	return strings.HasSuffix(name, ".golden.json") || strings.HasSuffix(name, ".result.json") || strings.HasSuffix(name, ".kb.xml") ||
-		strings.HasSuffix(name, ".options.json") || strings.HasSuffix(name, ".legacy.json")
+		strings.HasSuffix(name, ".options.json")
 }
 
 // fixtures lists every input fixture, by format directory.
@@ -86,7 +86,7 @@ func runFixture(t *testing.T, fx fixture) (*Result, []string) {
 		t.Fatal(err)
 	}
 	defer func() { _ = in.Close() }()
-	opts := Options{Now: fixedNow, ReportID: "import-test"}
+	opts := Options{Now: fixedNow, ReportID: testReportID}
 	// <stem>.options.json sets the repository a code report is filed on.
 	if b, err := os.ReadFile(stem(fx.path) + ".options.json"); err == nil {
 		var o struct {

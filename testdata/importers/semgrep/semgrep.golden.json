@@ -1,19 +1,16 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
-    "scope": {
-      "name": "github.com/example/shop"
-    }
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "semgrep",
     "version": "1.50.0",
     "vendor": "Semgrep, Inc.",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -32,18 +29,16 @@
   ],
   "findings": [
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "SQL injection vulnerability detected. User input is used directly in a SQL query without sanitization.",
       "message": "SQL injection vulnerability detected. User input is used directly in a SQL query without sanitization.",
       "severity": "high",
       "confidence": 90,
-      "impact": "high",
-      "likelihood": "high",
       "category": "security",
-      "vulnerability_class": [
+      "vulnerability_classes": [
         "SQL Injection"
       ],
-      "subcategory": [
+      "subcategories": [
         "vuln"
       ],
       "rule_id": "python.lang.security.injection.sql-injection",
@@ -61,7 +56,6 @@
         "cwe_ids": [
           "CWE-89"
         ],
-        "cwe_id": "CWE-89",
         "owasp_ids": [
           "A03:2021"
         ]
@@ -75,16 +69,23 @@
         "django",
         "semgrep"
       ],
-      "fingerprint": "abc123def456",
+      "fingerprint": "ctis-fp/2:b90b98f912280ec862295e1235c1025d82eedce8d15203636445a4bf194a4816",
+      "partial_fingerprints": {
+        "matchBasedId/v1": "abc123def456"
+      },
       "native": {
         "scheme": "other",
         "vuln_id": "python.lang.security.injection.sql-injection",
         "severity": "ERROR",
         "raw_ref": "/results/0"
+      },
+      "source_extra": {
+        "impact": "HIGH",
+        "likelihood": "HIGH"
       }
     },
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "Avoid using pickle for deserialization. Pickle is known to be insecure.",
       "message": "Avoid using pickle for deserialization. Pickle is known to be insecure.",
       "severity": "medium",
@@ -104,8 +105,7 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-502"
-        ],
-        "cwe_id": "CWE-502"
+        ]
       },
       "references": [
         "https://docs.python.org/3/library/pickle.html"
@@ -113,7 +113,7 @@
       "tags": [
         "semgrep"
       ],
-      "fingerprint": "55fdab4f06546761da8b68ad20c61673eb1a8ec7b4f8985c28e4e780c89ea14b",
+      "fingerprint": "ctis-fp/2:bf482d1b1a208b8a4a683ad85a83610dc2bb4f92e82b91fd1a17dfa34c8d1934",
       "native": {
         "scheme": "other",
         "vuln_id": "python.lang.security.deserialization.avoid-pickle",
@@ -122,7 +122,7 @@
       }
     },
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "Use lazy logging format instead of f-string.",
       "message": "Use lazy logging format instead of f-string.",
       "severity": "low",
@@ -142,7 +142,7 @@
       "tags": [
         "semgrep"
       ],
-      "fingerprint": "bcc37e7b26a404f875e74ae1c53fb62c43d00d0c853b3252f15ec11e74974d2a",
+      "fingerprint": "ctis-fp/2:667ca18377922b71e572d6826724c9b3958f5004b34e18f2dbcd58e06c8a04d8",
       "native": {
         "scheme": "other",
         "vuln_id": "python.lang.best-practice.logging-format",

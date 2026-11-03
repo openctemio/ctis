@@ -1,10 +1,10 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
     "properties": {
       "description": "Synthetic sample: example.com hosts and made-up findings.",
       "scan_type": "Generic Findings Import"
@@ -16,14 +16,14 @@
   },
   "assets": [
     {
-      "id": "host-shop.example.com",
-      "type": "domain",
+      "id": "domain_name-shop.example.com",
+      "type": "domain_name",
       "value": "shop.example.com",
       "name": "shop.example.com"
     },
     {
-      "id": "host-www.example.com",
-      "type": "domain",
+      "id": "domain_name-www.example.com",
+      "type": "domain_name",
       "value": "www.example.com",
       "name": "www.example.com"
     },
@@ -34,7 +34,7 @@
       "name": "example-pentest-tool-import"
     },
     {
-      "id": "host-203.0.113.40",
+      "id": "ip_address-203.0.113.40",
       "type": "ip_address",
       "value": "203.0.113.40",
       "name": "203.0.113.40"
@@ -48,23 +48,17 @@
       "severity": "high",
       "rule_id": "xss-reflected",
       "rule_name": "Reflected cross-site scripting in search",
-      "asset_ref": "host-shop.example.com",
+      "asset_ref": "domain_name-shop.example.com",
       "network": {
         "host": "shop.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "https"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "<script>alert(1)</script>",
       "vulnerability": {
         "cwe_ids": [
           "CWE-79"
-        ],
-        "cwe_id": "CWE-79",
-        "cvss_version": "3.1",
-        "cvss_score": 6.1,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
-        "cvss_source": "vendor"
+        ]
       },
       "remediation": {
         "recommendation": "Encode output in the HTML body context.",
@@ -99,7 +93,7 @@
         }
       ],
       "source_lifecycle": {
-        "first_found": "2025-09-01T00:00:00Z",
+        "first_found_at": "2025-09-01T00:00:00Z",
         "state": "active"
       },
       "source_extra": {
@@ -115,7 +109,15 @@
         "static_finding": "false",
         "steps_to_reproduce": "1. Open /search?q=<script>alert(1)</script>",
         "under_review": "false"
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "payload",
+          "text": "<script>alert(1)</script>"
+        }
+      ]
     },
     {
       "type": "vulnerability",
@@ -124,23 +126,17 @@
       "severity": "high",
       "rule_id": "xss-reflected",
       "rule_name": "Reflected cross-site scripting in search",
-      "asset_ref": "host-www.example.com",
+      "asset_ref": "domain_name-www.example.com",
       "network": {
         "host": "www.example.com",
         "port": 443,
-        "protocol": "tcp",
-        "service": "https"
+        "transport": "tcp",
+        "app_protocol": "https"
       },
-      "evidence": "<script>alert(1)</script>",
       "vulnerability": {
         "cwe_ids": [
           "CWE-79"
-        ],
-        "cwe_id": "CWE-79",
-        "cvss_version": "3.1",
-        "cvss_score": 6.1,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
-        "cvss_source": "vendor"
+        ]
       },
       "remediation": {
         "recommendation": "Encode output in the HTML body context.",
@@ -175,7 +171,7 @@
         }
       ],
       "source_lifecycle": {
-        "first_found": "2025-09-01T00:00:00Z",
+        "first_found_at": "2025-09-01T00:00:00Z",
         "state": "active"
       },
       "source_extra": {
@@ -191,10 +187,18 @@
         "static_finding": "false",
         "steps_to_reproduce": "1. Open /search?q=<script>alert(1)</script>",
         "under_review": "false"
-      }
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "payload",
+          "text": "<script>alert(1)</script>"
+        }
+      ]
     },
     {
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "SQL injection in report export",
       "description": "User input reaches a SQL string.",
       "severity": "critical",
@@ -208,8 +212,7 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "first_seen_at": "2025-08-15T00:00:00Z",
       "status": "open",
@@ -221,7 +224,7 @@
         "raw_ref": "/findings/1"
       },
       "source_lifecycle": {
-        "first_found": "2025-08-15T00:00:00Z",
+        "first_found_at": "2025-08-15T00:00:00Z",
         "state": "active"
       },
       "source_extra": {
@@ -240,20 +243,6 @@
       "severity": "medium",
       "asset_ref": "unclassified-example-pentest-tool-import",
       "vulnerability": {
-        "cve_id": "CVE-2020-8203",
-        "cve_ids": [
-          "CVE-2020-8203"
-        ],
-        "cvss_version": "4.0",
-        "cvss_score": 7.7,
-        "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:L/VA:H/SC:N/SI:N/SA:N",
-        "cvss_source": "vendor",
-        "package": "lodash",
-        "affected_version": "4.17.15",
-        "fixed_version": "4.17.19",
-        "published_at": "2020-07-15T00:00:00Z",
-        "epss_score": 0.0123,
-        "epss_percentile": 0.851,
         "ids": [
           {
             "type": "cve",
@@ -263,10 +252,16 @@
             "type": "ghsa",
             "id": "GHSA-p6mc-m468-83gw"
           }
-        ]
+        ],
+        "package_name": "lodash",
+        "installed_version": "4.17.15",
+        "fixed_versions": [
+          "4.17.19"
+        ],
+        "published_at": "2020-07-15T00:00:00Z"
       },
       "remediation": {
-        "fix_available": true
+        "is_fix_available": true
       },
       "status": "open",
       "native": {
@@ -296,9 +291,6 @@
       ],
       "source_lifecycle": {
         "state": "active"
-      },
-      "source_extra": {
-        "ransomware_used": "Unknown"
       }
     },
     {
@@ -306,15 +298,20 @@
       "title": "Outdated TLS configuration",
       "description": "TLS 1.0 is enabled.",
       "severity": "low",
-      "asset_ref": "host-203.0.113.40",
+      "asset_ref": "ip_address-203.0.113.40",
       "network": {
         "host": "203.0.113.40",
         "port": 8443,
-        "protocol": "tcp"
+        "transport": "tcp"
       },
       "vulnerability": {
-        "exploit_available": true,
-        "in_cisa_kev": true
+        "threat_signals": [
+          {
+            "type": "kev",
+            "source": "defectdojo",
+            "as_of": "2024-01-01T00:00:00Z"
+          }
+        ]
       },
       "status": "false_positive",
       "native": {
@@ -324,10 +321,9 @@
         "raw_ref": "/findings/3"
       },
       "source_lifecycle": {
-        "last_fixed": "2025-09-20T10:00:00Z"
+        "last_fixed_at": "2025-09-20T10:00:00Z"
       },
       "source_extra": {
-        "kev_date": "2024-01-01",
         "mitigated": "2025-09-20T10:00:00Z"
       }
     },

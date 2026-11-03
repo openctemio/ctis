@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // osv-scanner JSON results: the packages found in each scanned source
@@ -18,7 +19,7 @@ import (
 
 func init() {
 	parsers[FormatOSV] = parseOSV
-	tools[FormatOSV] = ctis.Tool{Name: "osv-scanner", Capabilities: []string{"sca"}}
+	tools[FormatOSV] = ctis.Tool{Name: "osv-scanner", Techniques: []ctis.Technique{ctis.TechniqueSCA}}
 }
 
 type osvOutput struct {
@@ -127,16 +128,22 @@ func parseOSV(b *builder, r io.Reader) error {
 				continue
 			}
 			if assetID == "" {
-				a := ctis.Asset{ID: "osv-" + label, Type: ctis.AssetTypeRepository, Value: label, Name: label}
+				// A lockfile or directory path is no repository.
+				a := ctis.Asset{Type: ctis.AssetTypeUnclassified, Value: label, Name: label}
 				if t := line(res.Source.Type, 32); t != "" {
 					a.Properties = ctis.Properties{"source_type": t}
 				}
 				if assetID, err = b.asset(a); err != nil {
 					return err
 				}
+				if assetID == "" {
+					b.res.Stats.Skipped += max(len(p.Groups), len(p.Vulnerabilities))
+					continue
+				}
 			}
 			dep := osvDependency(p, label)
-			if !depIDs[dep.ID] {
+			dep.AssetRef = assetID
+			if dep.ID != "" && !depIDs[dep.ID] {
 				depIDs[dep.ID] = true
 				if err := b.dependency(dep); err != nil {
 					return err
@@ -159,11 +166,12 @@ func osvDependency(p *osvPackage, label string) ctis.Dependency {
 	if key == "" {
 		key = eco + ":" + nameVersion(name, version)
 	}
-	d := ctis.Dependency{ID: line(label+"|"+key, capShort*2), Name: name, Version: version, PURL: purl, Path: label}
-	if e := vulnEcosystem(eco); e != "" {
-		d.Ecosystem = e
-	} else {
-		d.Ecosystem = strings.ToLower(eco)
+	if _, _, err := ctis.CanonicalPurl(purl); err != nil {
+		purl = purlOf(eco, name, version)
+	}
+	d := ctis.Dependency{ID: docRef("dep", label+"|"+key), Name: name, Version: version, PURL: purl, Type: ctis.DependencyTypeLibrary}
+	if label != "osv-scanner" {
+		d.Locations = []ctis.DependencyLocation{{Path: label}}
 	}
 	for _, l := range p.Licenses {
 		if l = line(l, capShort); l != "" && len(d.Licenses) < 16 {
@@ -280,9 +288,8 @@ func (b *builder) osvFinding(p *osvPackage, g *osvGroup, assetID string) ctis.Fi
 		Native:   &ctis.NativeIdentity{Scheme: ctis.NativeSchemeOther, VulnID: pid, RawRef: line(osvPackageRef(p)+"/"+pid, ctis.MaxRawRefLen)},
 	}
 	vuln := &ctis.VulnerabilityDetails{
-		Package:         name,
-		AffectedVersion: version,
-		Ecosystem:       vulnEcosystem(eco),
+		PackageName:      name,
+		InstalledVersion: version,
 	}
 	for _, id := range g.ids {
 		addVulnID(vuln, id)
@@ -311,11 +318,12 @@ func (b *builder) osvFinding(p *osvPackage, g *osvGroup, assetID string) ctis.Fi
 			if u == "" {
 				continue
 			}
+			if webURL(u) == "" {
+				continue
+			}
 			f.References = addRefs(f.References, u)
 			if strings.EqualFold(ref.Type, "ADVISORY") {
-				if f.Remediation == nil {
-					f.Remediation = &ctis.Remediation{}
-				}
+				ensureRemediation(&f)
 				if len(f.Remediation.Advisories) < ctis.MaxAdvisories && len(u) <= ctis.MaxAdvisoryURLLen {
 					f.Remediation.Advisories = append(f.Remediation.Advisories, ctis.Advisory{URL: u, Source: osvSource(rec.ID)})
 				}
@@ -332,7 +340,7 @@ func (b *builder) osvFinding(p *osvPackage, g *osvGroup, assetID string) ctis.Fi
 					if version != "" && !strings.Contains(pu, "@") {
 						pu += "@" + version
 					}
-					vuln.PURL = cleanPURL(pu)
+					vuln.PURL = goodPURL(pu)
 				}
 			}
 			osvScores(&f, a.Severity, osvSource(rec.ID))
@@ -366,25 +374,24 @@ func (b *builder) osvFinding(p *osvPackage, g *osvGroup, assetID string) ctis.Fi
 		}
 	}
 	if vuln.PURL == "" {
-		vuln.PURL = cleanPURL(p.Package.PURL)
+		vuln.PURL = goodPURL(p.Package.PURL)
 	}
-	if vuln.Ecosystem == "" {
-		vuln.Ecosystem = vulnEcosystem(purlType(vuln.PURL))
+	if vuln.PURL == "" {
+		vuln.PURL = purlOf(eco, name, version)
 	}
 	vuln.PublishedAt, vuln.ModifiedAt = published, modified
 	if len(vuln.FixedVersions) > 0 {
-		vuln.FixedVersion = vuln.FixedVersions[0]
-		if f.Remediation == nil {
-			f.Remediation = &ctis.Remediation{}
-		}
-		f.Remediation.FixAvailable = true
-		f.Remediation.SolutionType = ctis.SolutionTypeUpgrade
-		f.Remediation.Recommendation = line(fmt.Sprintf("Upgrade %s to %s or later.", name, vuln.FixedVersion), capRemediation)
-	}
-	if len(vuln.CWEIDs) > 0 {
-		vuln.CWEID = vuln.CWEIDs[0]
+		rem := ensureRemediation(&f)
+		rem.IsFixAvailable = ctis.Bool(true)
+		rem.SolutionType = ctis.SolutionTypeUpgrade
+		rem.Recommendation = line(fmt.Sprintf("Upgrade %s to %s or later.", name, vuln.FixedVersions[0]), capRemediation)
 	}
 	f.Vulnerability = vuln
+	pkgRef := vuln.PURL
+	if pkgRef == "" {
+		pkgRef = strings.ToLower(firstNonEmpty(eco, "generic")) + "/" + name
+	}
+	f.Fingerprint = fingerprint.V2SCA(pkgRef, pid)
 
 	// Severity: the group's highest CVSS score, else the database's word.
 	nativeSev := g.maxSeverity
@@ -398,7 +405,6 @@ func (b *builder) osvFinding(p *osvPackage, g *osvGroup, assetID string) ctis.Fi
 		extra(&f, "severity_note", "no max_severity or database severity; kept as medium")
 	}
 	f.Native.Severity = line(nativeSev, ctis.MaxNativeValueLen)
-	setLegacyCVSS(&f)
 
 	desc := text(primary.Summary, capDescription)
 	if det := text(primary.Details, capDescription); det != "" {

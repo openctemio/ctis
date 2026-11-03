@@ -1,5 +1,5 @@
 {
-  "apiVersion": "openctem.io/mapping/v1",
+  "apiVersion": "openctem.io/mapping/v2",
   "source": "json",
   "each": "/scan/results",
   "notes": "A TLS checker that writes one JSON document with a list of results.",
@@ -10,10 +10,10 @@
       "set": {
         "type": {"const": "certificate"},
         "value": {"path": "/cert/sha256", "lower": true},
-        "technical.certificate.fingerprint": {"path": "/cert/sha256", "lower": true},
+        "technical.certificate.sha256_fingerprint": {"path": "/cert/sha256", "lower": true},
         "technical.certificate.issuer_cn": "/cert/issuer",
         "technical.certificate.not_after": "/cert/not_after",
-        "technical.certificate.sans": {"path": "/cert/names", "split": ","},
+        "technical.certificate.subject_alt_names": {"path": "/cert/names", "split": ","},
         "properties.served_by": {"template": "{host}:{port}", "vars": {"host": "/host", "port": "/port"}}
       }
     },
@@ -30,7 +30,7 @@
         "severity": {"path": "/grade", "map": {"C": "low", "D": "medium", "F": "high"}, "default": "info"},
         "network.host": "/host",
         "network.port": {"path": "/port", "as": "integer"},
-        "network.protocol": {"const": "tcp"},
+        "network.transport": {"const": "tcp"},
         "evidence": {"path": "/issues", "join": "\n", "max_bytes": 65536},
         "tags": {"const": ["tls"]}
       }

@@ -1,5 +1,5 @@
 {
-  "apiVersion": "openctem.io/mapping/v1",
+  "apiVersion": "openctem.io/mapping/v2",
   "source": "jsonl",
   "notes": "A template scanner that writes one JSON line per match.",
   "records": [
@@ -13,9 +13,9 @@
         "asset_value": "/host",
         "network.host": "/ip",
         "network.port": {"path": "/port", "as": "integer"},
-        "network.protocol": {"const": "tcp"},
+        "network.transport": {"const": "tcp"},
         "evidence": {"path": "/extracted-results", "join": "\n", "max_bytes": 65536},
-        "vulnerability.cve_id": {"path": "/info/classification/cve-id[0]", "upper": true},
+        "vulnerability.ids": {"path": "/info/classification/cve-id[0]", "upper": true},
         "vulnerability.cwe_ids": {"path": "/info/classification/cwe-id", "upper": true},
         "tags": "/info/tags",
         "references": "/info/reference",

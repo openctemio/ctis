@@ -166,7 +166,9 @@ func parseCSAF(b *builder, r io.Reader) error {
 	}
 
 	meta := &b.res.Report.Metadata
-	meta.SourceRef = line(d.Document.Tracking.ID, capShort)
+	if id := line(d.Document.Tracking.ID, capShort); id != "" {
+		meta.SourceRefs = []ctis.SourceRef{{System: "csaf", ID: id}}
+	}
 	props := ctis.Properties{}
 	setProp := func(k, v string) {
 		if v = line(v, capShort); v != "" {

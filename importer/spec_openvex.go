@@ -19,7 +19,7 @@ var _ = registerSpec(Spec{
 	},
 	Fields: []Field{
 		{Path: "/@context", Target: "metadata.properties.openvex_context (format check)"},
-		{Path: "/@id", Target: "metadata.source_ref, vex[].vex.source"},
+		{Path: "/@id", Target: "metadata.source_refs[], vex[].vex.source"},
 		{Path: "/author", Target: "vex[].vex.source, metadata.properties.author"},
 		{Path: "/role", Ignored: "the author's role (prose)"},
 		{Path: "/timestamp", Target: "vex[].vex.as_of (when the statement has none)"},

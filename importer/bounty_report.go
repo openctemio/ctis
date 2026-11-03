@@ -2,9 +2,7 @@ package importer
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/csv"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +18,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/openctemio/ctis/v2"
+	"github.com/openctemio/ctis/v2/fingerprint"
 )
 
 // Generic bug-bounty / disclosure report: {"bounty_reports": [...]} as JSON,
@@ -422,11 +421,10 @@ func (b *builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string
 	}
 	seen[key] = true
 
-	sum := sha256.Sum256([]byte(key))
 	f := ctis.Finding{
 		Type:        ctis.FindingTypeVulnerability,
 		Title:       title,
-		Fingerprint: "bounty_report:v1:" + hex.EncodeToString(sum[:]),
+		Fingerprint: fingerprint.V2Generic("bounty_report:"+intake+":"+ref, "", 0, 0),
 		Native:      &ctis.NativeIdentity{Scheme: ctis.NativeSchemeOther, InstanceID: ref, RawRef: ptr},
 	}
 	props := map[string]any{"intake": intake, "ref": ref}
@@ -492,7 +490,7 @@ func (b *builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string
 			t = t.UTC()
 			props["submitted_at"] = t.Format(time.RFC3339)
 			f.FirstSeenAt = &t
-			f.SourceLifecycle = &ctis.SourceLifecycle{FirstFound: &t}
+			f.SourceLifecycle = &ctis.SourceLifecycle{FirstFoundAt: &t}
 		} else {
 			iss("submitted_at is not an RFC 3339 time: dropped")
 		}
@@ -503,7 +501,7 @@ func (b *builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string
 	if w := rec.Weakness.String(); w != "" {
 		if brCWERE.MatchString(w) {
 			props["weakness"] = w
-			vuln.CWEID, vuln.CWEIDs = w, []string{w}
+			vuln.CWEIDs = []string{w}
 		} else {
 			iss("weakness is not of the form CWE-<n>: dropped")
 		}
@@ -515,7 +513,7 @@ func (b *builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string
 			iss("cvss_vector is not a CVSS 3.0, 3.1 or 4.0 vector: dropped")
 		}
 	}
-	if vuln.CWEID != "" {
+	if len(vuln.CWEIDs) > 0 {
 		f.Vulnerability = vuln
 	}
 
@@ -545,10 +543,13 @@ func (b *builder) brFinding(rec *brRecord, defIntake, ptr string, at func(string
 	if path != "" {
 		props["endpoint_path"] = path
 	}
-	f.Properties = ctis.Properties{"bounty_report": props}
+	f.Extensions.Set(ctis.OpenCTEMNamespace, "bounty_report", props)
 	id, err := b.asset(a)
 	if err != nil {
 		return err
+	}
+	if id == "" {
+		return skip("record's asset has no canonical value: skipped")
 	}
 	f.AssetRef = id
 	return b.finding(f)
@@ -645,11 +646,11 @@ func brAsset(raw string, iss func(string)) (a ctis.Asset, path string, ok bool) 
 		if h == "" || len(h) > capShort {
 			return ctis.Asset{}, false
 		}
-		t := ctis.AssetTypeDomain
+		t := ctis.AssetTypeDomainName
 		if net.ParseIP(h) != nil {
 			t = ctis.AssetTypeIPAddress
 		}
-		return ctis.Asset{ID: "host-" + h, Type: t, Value: h, Name: h}, true
+		return ctis.Asset{Type: t, Value: h, Name: h}, true
 	}
 	low := strings.ToLower(s)
 	if strings.HasPrefix(low, "http://") || strings.HasPrefix(low, "https://") {
@@ -682,5 +683,5 @@ func brAsset(raw string, iss func(string)) (a ctis.Asset, path string, ok bool) 
 		return a, "", false
 	}
 	v := brLine(s, capShort)
-	return ctis.Asset{ID: "app-" + v, Type: ctis.AssetTypeWebApplication, Value: v, Name: v}, "", true
+	return ctis.Asset{Type: ctis.AssetTypeWebApplication, Value: v, Name: v}, "", true
 }

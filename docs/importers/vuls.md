@@ -19,7 +19,7 @@ Generated from `importer/spec_vuls.go`; do not edit. Regenerate with `go test ./
 | `/jsonVersion` | `format check` |  |
 | `/serverName` | `assets[].value or name, findings[].tags` |  |
 | `/serverUUID` |  | vuls-internal server id |
-| `/family` | `assets[].tags, properties.os_family, dependencies[].ecosystem, purl type` |  |
+| `/family` | `assets[].tags, properties.os_family, purl type` |  |
 | `/release` | `assets[].tags, properties.os_release, purl distro` |  |
 | `/container` |  | container of a container scan (vuls container mode) |
 | `/container/**` |  | container of a container scan |
@@ -67,15 +67,15 @@ Generated from `importer/spec_vuls.go`; do not edit. Regenerate with `go test ./
 | `/srcPackages/**` |  | source packages; binary packages are kept |
 | `/scannedCves` | (container) |  |
 | `/scannedCves/*` | `findings[]` |  |
-| `/scannedCves/*/cveID` | `findings[].rule_id, native.vuln_id, vulnerability.ids, cve_id` |  |
+| `/scannedCves/*/cveID` | `findings[].rule_id, native.vuln_id, vulnerability.ids` |  |
 | `/scannedCves/*/confidences` | (container) |  |
 | `/scannedCves/*/confidences[]` | (container) |  |
 | `/scannedCves/*/confidences[]/score` | `findings[].confidence (the first)` |  |
 | `/scannedCves/*/confidences[]/detectionMethod` | `findings[].source_extra.detection_method` |  |
 | `/scannedCves/*/affectedPackages` | (container) |  |
 | `/scannedCves/*/affectedPackages[]` | (container) |  |
-| `/scannedCves/*/affectedPackages[]/name` | `findings[].vulnerability.package, purl, affected_version (the first)` |  |
-| `/scannedCves/*/affectedPackages[]/fixedIn` | `findings[].vulnerability.fixed_version, remediation` |  |
+| `/scannedCves/*/affectedPackages[]/name` | `findings[].vulnerability.package_name, purl, installed_version (the first)` |  |
+| `/scannedCves/*/affectedPackages[]/fixedIn` | `findings[].vulnerability.fixed_versions, remediation` |  |
 | `/scannedCves/*/affectedPackages[]/notFixedYet` | `findings[].remediation.solution_type no_fix` |  |
 | `/scannedCves/*/affectedPackages[]/fixState` | `findings[].source_extra.fix_state` |  |
 | `/scannedCves/*/cveContents` | (container) |  |
@@ -85,13 +85,13 @@ Generated from `importer/spec_vuls.go`; do not edit. Regenerate with `go test ./
 | `/scannedCves/*/cveContents/*[]/cveID` |  | duplicate of the CVE id |
 | `/scannedCves/*/cveContents/*[]/title` | `findings[].title` |  |
 | `/scannedCves/*/cveContents/*[]/summary` | `findings[].description` |  |
-| `/scannedCves/*/cveContents/*[]/cvss3Score` | `findings[].scores[] (cvss 3.x, every source), vulnerability.cvss_score` |  |
-| `/scannedCves/*/cveContents/*[]/cvss3Vector` | `findings[].scores[].vector, vulnerability.cvss_vector` |  |
+| `/scannedCves/*/cveContents/*[]/cvss3Score` | `findings[].scores[] (cvss 3.x, every source), scores[] (cvss)` |  |
+| `/scannedCves/*/cveContents/*[]/cvss3Vector` | `findings[].scores[].vector, scores[] (cvss)` |  |
 | `/scannedCves/*/cveContents/*[]/cvss3Severity` |  | label of the cvss3 score |
-| `/scannedCves/*/cveContents/*[]/cvss2Score` | `findings[].scores[] (cvss 2.0), vulnerability.cvss_score (when no v3/v4)` |  |
+| `/scannedCves/*/cveContents/*[]/cvss2Score` | `findings[].scores[] (cvss 2.0), scores[] (cvss)` |  |
 | `/scannedCves/*/cveContents/*[]/cvss2Vector` | `findings[].scores[].vector` |  |
 | `/scannedCves/*/cveContents/*[]/cvss2Severity` |  | label of the cvss2 score |
-| `/scannedCves/*/cveContents/*[]/cvss40Score` | `findings[].scores[] (cvss 4.0), vulnerability.cvss_score` |  |
+| `/scannedCves/*/cveContents/*[]/cvss40Score` | `findings[].scores[] (cvss 4.0), scores[] (cvss)` |  |
 | `/scannedCves/*/cveContents/*[]/cvss40Vector` | `findings[].scores[].vector` |  |
 | `/scannedCves/*/cveContents/*[]/cweIDs` | (container) |  |
 | `/scannedCves/*/cveContents/*[]/cweIDs[]` | `findings[].vulnerability.cwe_ids` |  |
@@ -114,15 +114,15 @@ Generated from `importer/spec_vuls.go`; do not edit. Regenerate with `go test ./
 | `/scannedCves/*/*` |  | other per-CVE data (exploits, metasploit modules, KEV, CTI): vuls enrichment kept out of this mapping |
 | `/scannedCves/*/*/**` |  | other per-CVE data |
 | `/scannedCves[]` | `findings[]` |  |
-| `/scannedCves[]/cveID` | `findings[].rule_id, native.vuln_id, vulnerability.ids, cve_id` |  |
+| `/scannedCves[]/cveID` | `findings[].rule_id, native.vuln_id, vulnerability.ids` |  |
 | `/scannedCves[]/confidences` | (container) |  |
 | `/scannedCves[]/confidences[]` | (container) |  |
 | `/scannedCves[]/confidences[]/score` | `findings[].confidence (the first)` |  |
 | `/scannedCves[]/confidences[]/detectionMethod` | `findings[].source_extra.detection_method` |  |
 | `/scannedCves[]/affectedPackages` | (container) |  |
 | `/scannedCves[]/affectedPackages[]` | (container) |  |
-| `/scannedCves[]/affectedPackages[]/name` | `findings[].vulnerability.package, purl, affected_version (the first)` |  |
-| `/scannedCves[]/affectedPackages[]/fixedIn` | `findings[].vulnerability.fixed_version, remediation` |  |
+| `/scannedCves[]/affectedPackages[]/name` | `findings[].vulnerability.package_name, purl, installed_version (the first)` |  |
+| `/scannedCves[]/affectedPackages[]/fixedIn` | `findings[].vulnerability.fixed_versions, remediation` |  |
 | `/scannedCves[]/affectedPackages[]/notFixedYet` | `findings[].remediation.solution_type no_fix` |  |
 | `/scannedCves[]/affectedPackages[]/fixState` | `findings[].source_extra.fix_state` |  |
 | `/scannedCves[]/cveContents` | (container) |  |
@@ -132,13 +132,13 @@ Generated from `importer/spec_vuls.go`; do not edit. Regenerate with `go test ./
 | `/scannedCves[]/cveContents/*[]/cveID` |  | duplicate of the CVE id |
 | `/scannedCves[]/cveContents/*[]/title` | `findings[].title` |  |
 | `/scannedCves[]/cveContents/*[]/summary` | `findings[].description` |  |
-| `/scannedCves[]/cveContents/*[]/cvss3Score` | `findings[].scores[] (cvss 3.x, every source), vulnerability.cvss_score` |  |
-| `/scannedCves[]/cveContents/*[]/cvss3Vector` | `findings[].scores[].vector, vulnerability.cvss_vector` |  |
+| `/scannedCves[]/cveContents/*[]/cvss3Score` | `findings[].scores[] (cvss 3.x, every source), scores[] (cvss)` |  |
+| `/scannedCves[]/cveContents/*[]/cvss3Vector` | `findings[].scores[].vector, scores[] (cvss)` |  |
 | `/scannedCves[]/cveContents/*[]/cvss3Severity` |  | label of the cvss3 score |
-| `/scannedCves[]/cveContents/*[]/cvss2Score` | `findings[].scores[] (cvss 2.0), vulnerability.cvss_score (when no v3/v4)` |  |
+| `/scannedCves[]/cveContents/*[]/cvss2Score` | `findings[].scores[] (cvss 2.0), scores[] (cvss)` |  |
 | `/scannedCves[]/cveContents/*[]/cvss2Vector` | `findings[].scores[].vector` |  |
 | `/scannedCves[]/cveContents/*[]/cvss2Severity` |  | label of the cvss2 score |
-| `/scannedCves[]/cveContents/*[]/cvss40Score` | `findings[].scores[] (cvss 4.0), vulnerability.cvss_score` |  |
+| `/scannedCves[]/cveContents/*[]/cvss40Score` | `findings[].scores[] (cvss 4.0), scores[] (cvss)` |  |
 | `/scannedCves[]/cveContents/*[]/cvss40Vector` | `findings[].scores[].vector` |  |
 | `/scannedCves[]/cveContents/*[]/cweIDs` | (container) |  |
 | `/scannedCves[]/cveContents/*[]/cweIDs[]` | `findings[].vulnerability.cwe_ids` |  |

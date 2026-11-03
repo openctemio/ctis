@@ -1,19 +1,16 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual",
-    "scope": {
-      "name": "github.com/example/shop"
-    }
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "betterleaks",
     "vendor": "Betterleaks",
     "info_url": "https://github.com/betterleaks/betterleaks",
-    "capabilities": [
+    "techniques": [
       "secret"
     ]
   },
@@ -46,10 +43,15 @@
         "start_column": 1,
         "end_column": 20,
         "snippet": "AKIA********",
-        "commit_sha": "abc123def456"
+        "commit": {
+          "sha": "abc123def456",
+          "author": "dev@example.com",
+          "author_email": "dev@example.com",
+          "committed_at": "2023-01-15T10:30:00Z"
+        }
       },
       "secret": {
-        "secret_type": "aws_key",
+        "type": "aws_key",
         "service": "aws",
         "masked_value": "AKIA********",
         "length": 20,
@@ -59,10 +61,9 @@
         "betterleaks",
         "secret"
       ],
-      "fingerprint": "config.yml:aws-access-key-id:10",
-      "author": "dev@example.com",
-      "author_email": "dev@example.com",
-      "commit_date": "2023-01-15T10:30:00Z",
+      "partial_fingerprints": {
+        "leaksFingerprint/v1": "config.yml:aws-access-key-id:10"
+      },
       "native": {
         "scheme": "other",
         "vuln_id": "aws-access-key-id",
@@ -87,10 +88,14 @@
         "start_column": 10,
         "end_column": 50,
         "snippet": "api_key = \"sk_l********\"",
-        "commit_sha": "def789abc012"
+        "commit": {
+          "sha": "def789abc012",
+          "author": "admin@example.com",
+          "author_email": "admin@example.com"
+        }
       },
       "secret": {
-        "secret_type": "api_key",
+        "type": "api_key",
         "masked_value": "sk_l********",
         "length": 27,
         "entropy": 4.2
@@ -99,9 +104,9 @@
         "betterleaks",
         "secret"
       ],
-      "fingerprint": "src/config.py:generic-api-key:25",
-      "author": "admin@example.com",
-      "author_email": "admin@example.com",
+      "partial_fingerprints": {
+        "leaksFingerprint/v1": "src/config.py:generic-api-key:25"
+      },
       "native": {
         "scheme": "other",
         "vuln_id": "generic-api-key",
@@ -123,10 +128,14 @@
         "start_column": 1,
         "end_column": 40,
         "snippet": "ghp_********",
-        "commit_sha": "111222333444"
+        "commit": {
+          "sha": "111222333444",
+          "author": "dev2@example.com",
+          "author_email": "dev2@example.com"
+        }
       },
       "secret": {
-        "secret_type": "generic_secret",
+        "type": "generic_secret",
         "service": "github",
         "masked_value": "ghp_********",
         "length": 40
@@ -137,9 +146,9 @@
         "github",
         "pat"
       ],
-      "fingerprint": ".env:github-pat:5",
-      "author": "dev2@example.com",
-      "author_email": "dev2@example.com",
+      "partial_fingerprints": {
+        "leaksFingerprint/v1": ".env:github-pat:5"
+      },
       "native": {
         "scheme": "other",
         "vuln_id": "github-pat",
@@ -160,10 +169,12 @@
         "end_line": 3,
         "start_column": 1,
         "end_column": 30,
-        "commit_sha": "aaa111bbb222"
+        "commit": {
+          "sha": "aaa111bbb222"
+        }
       },
       "secret": {
-        "secret_type": "api_key",
+        "type": "api_key",
         "service": "stripe",
         "masked_value": "sk_t********",
         "length": 20
@@ -172,7 +183,9 @@
         "betterleaks",
         "secret"
       ],
-      "fingerprint": "payment.js:stripe-api-key:3",
+      "partial_fingerprints": {
+        "leaksFingerprint/v1": "payment.js:stripe-api-key:3"
+      },
       "native": {
         "scheme": "other",
         "vuln_id": "stripe-api-key",

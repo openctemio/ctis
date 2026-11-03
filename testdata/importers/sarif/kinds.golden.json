@@ -1,18 +1,18 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "checkov",
     "version": "3.2.255",
     "info_url": "https://www.checkov.io/",
-    "capabilities": [
-      "vulnerability",
-      "misconfiguration"
+    "techniques": [
+      "sca",
+      "iac"
     ]
   },
   "assets": [
@@ -40,8 +40,9 @@
       },
       "baseline_state": "new",
       "kind": "fail",
-      "properties": {
-        "sarif_tool": "checkov"
+      "tool": {
+        "name": "checkov",
+        "version": "3.2.255"
       }
     },
     {
@@ -60,8 +61,9 @@
       },
       "baseline_state": "unchanged",
       "kind": "review",
-      "properties": {
-        "sarif_tool": "checkov"
+      "tool": {
+        "name": "checkov",
+        "version": "3.2.255"
       }
     },
     {
@@ -79,8 +81,9 @@
         "end_line": 8
       },
       "kind": "not_applicable",
-      "properties": {
-        "sarif_tool": "checkov"
+      "tool": {
+        "name": "checkov",
+        "version": "3.2.255"
       }
     },
     {
@@ -99,8 +102,9 @@
       },
       "baseline_state": "absent",
       "kind": "pass",
-      "properties": {
-        "sarif_tool": "checkov"
+      "tool": {
+        "name": "checkov",
+        "version": "3.2.255"
       }
     },
     {
@@ -112,8 +116,8 @@
       "rule_id": "X1",
       "asset_ref": "unclassified-checkov-import",
       "kind": "open",
-      "properties": {
-        "sarif_tool": "custom-linter"
+      "tool": {
+        "name": "custom-linter"
       }
     },
     {
@@ -126,8 +130,8 @@
       "asset_ref": "unclassified-checkov-import",
       "baseline_state": "updated",
       "kind": "informational",
-      "properties": {
-        "sarif_tool": "custom-linter"
+      "tool": {
+        "name": "custom-linter"
       }
     },
     {
@@ -138,8 +142,8 @@
       "confidence": 90,
       "rule_id": "X1",
       "asset_ref": "unclassified-checkov-import",
-      "properties": {
-        "sarif_tool": "custom-linter"
+      "tool": {
+        "name": "custom-linter"
       }
     },
     {
@@ -150,8 +154,8 @@
       "confidence": 90,
       "rule_id": "X1",
       "asset_ref": "unclassified-checkov-import",
-      "properties": {
-        "sarif_tool": "custom-linter"
+      "tool": {
+        "name": "custom-linter"
       }
     }
   ]

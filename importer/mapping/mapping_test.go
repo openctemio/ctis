@@ -16,7 +16,7 @@ func doc(source, each, rule string) string {
 	if each != "" {
 		e = fmt.Sprintf(`"each": %q,`, each)
 	}
-	return fmt.Sprintf(`{"apiVersion": "openctem.io/mapping/v1", "source": %q, %s "records": [%s]}`, source, e, rule)
+	return fmt.Sprintf(`{"apiVersion": "openctem.io/mapping/v2", "source": %q, %s "records": [%s]}`, source, e, rule)
 }
 
 const assetRule = `{"kind": "asset", "set": {"type": {"const": "ip_address"}, "value": "/ip"}}`
@@ -74,7 +74,7 @@ func TestLoadRefusals(t *testing.T) {
 		"too big":              {big, "bytes, more than"},
 		"too deep":             {strings.Repeat("[", 40), "nested deeper"},
 		"not json":             {"{", "mapping:"},
-		"unknown member":       {`{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": [], "x": 1}`, "unknown field"},
+		"unknown member":       {`{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "records": [], "x": 1}`, "unknown field"},
 		"trailing":             {doc("jsonl", "", assetRule) + " {}", "trailing data"},
 		"api version":          {`{"apiVersion": "v2", "source": "jsonl", "records": [` + assetRule + `]}`, "apiVersion"},
 		"source":               {doc("yaml", "", assetRule), "source \"yaml\""},
@@ -85,7 +85,7 @@ func TestLoadRefusals(t *testing.T) {
 		"each on csv":          {doc("csv", "/a", assetRule), "each is for source json or xml"},
 		"each on jsonl":        {doc("jsonl", "/a", assetRule), "each is for source json or xml"},
 		"each malformed":       {doc("json", "a", assetRule), "starts with /"},
-		"no records":           {`{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": []}`, "records is empty"},
+		"no records":           {`{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "records": []}`, "records is empty"},
 		"too many rules":       {doc("jsonl", "", strings.Join(rules, ",")), "records rules"},
 		"kind":                 {doc("jsonl", "", `{"kind": "event", "set": {"x": "/x"}}`), "kind \"event\""},
 		"empty set":            {doc("jsonl", "", `{"kind": "asset", "set": {}}`), "set is empty"},
@@ -101,8 +101,8 @@ func TestLoadRefusals(t *testing.T) {
 		"forbidden link":       {doc("jsonl", "", `{"kind": "finding", "set": {"title": "/t", "severity": "/s", "asset_ref": "/a"}}`), "set by the report builder"},
 		"metadata":             {setRule(`"metadata.source_type": "/x"`), "no member"},
 		"object target":        {setRule(`"technical.domain": "/x"`), "members of an object"},
-		"list of objects":      {setRule(`"services": "/x"`), "lists of strings"},
-		"below list":           {setRule(`"services.port": "/x"`), "below a slice"},
+		"list of objects":      {setRule(`"owners": "/x"`), "lists of strings"},
+		"below list":           {setRule(`"owners.ref": "/x"`), "below a slice"},
 		"map two levels":       {setRule(`"properties.a.b": "/x"`), "one key below"},
 		"map no key":           {setRule(`"properties": "/x"`), "one key below"},
 		"overlap":              {doc("jsonl", "", `{"kind": "finding", "set": {"title": "/t", "severity": "/s", "network": "/n", "network.host": "/h"}}`), "members of an object"},
@@ -156,8 +156,8 @@ func TestLoadRefusals(t *testing.T) {
 }
 
 func TestDigestIsCanonical(t *testing.T) {
-	a := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": [{"kind": "asset", "set": {"value": "/ip", "type": {"const": "ip_address"}}}]}`)
-	b := mustLoad(t, "{\n  \"records\": [{\"set\": {\"type\": {\"const\": \"ip_address\"},\n \"value\": \"/ip\"}, \"kind\": \"asset\"}],\n  \"source\": \"jsonl\", \"apiVersion\": \"openctem.io/mapping/v1\"}")
+	a := mustLoad(t, `{"apiVersion": "openctem.io/mapping/v2", "source": "jsonl", "records": [{"kind": "asset", "set": {"value": "/ip", "type": {"const": "ip_address"}}}]}`)
+	b := mustLoad(t, "{\n  \"records\": [{\"set\": {\"type\": {\"const\": \"ip_address\"},\n \"value\": \"/ip\"}, \"kind\": \"asset\"}],\n  \"source\": \"jsonl\", \"apiVersion\": \"openctem.io/mapping/v2\"}")
 	if a.Digest() != b.Digest() || !strings.HasPrefix(a.Digest(), "sha256:") || len(a.Digest()) != 71 {
 		t.Fatalf("%s vs %s", a.Digest(), b.Digest())
 	}
@@ -202,7 +202,7 @@ func TestTransforms(t *testing.T) {
 		"tags":        strings.Join(a.Tags, ",") == "alpha,beta",
 		"description": a.Description == "one | 2 |",
 		"confidence":  a.Confidence == 75,
-		"public":      a.IsInternetAccessible,
+		"public":      a.IsInternetAccessible != nil && *a.IsInternetAccessible,
 		"criticality": a.Criticality == "low",
 		"single":      p["single"] == "s",
 		"as_string":   p["as_string"] == "12",
@@ -263,9 +263,9 @@ func TestPredicates(t *testing.T) {
 	m := mustLoad(t, doc("jsonl", "", `
 		{"when": {"path": "/kind", "equals": "host"}, "kind": "asset", "set": {"type": {"const": "host"}, "value": "/v"}},
 		{"when": [{"path": "/n", "in": [1, 2]}, {"path": "/up", "equals": true}], "kind": "asset", "set": {"type": {"const": "ip_address"}, "value": "/v"}},
-		{"when": {"path": "/v", "matches": "^[a-z]+\\.example\\.com$"}, "kind": "asset", "set": {"type": {"const": "domain"}, "value": "/v"}},
-		{"when": {"path": "/gone", "exists": false}, "kind": "asset", "set": {"type": {"const": "subdomain"}, "value": "/v"}},
-		{"when": {"path": "/obj", "equals": "x"}, "kind": "asset", "set": {"type": {"const": "network"}, "value": "/v"}}`))
+		{"when": {"path": "/v", "matches": "^[a-z]+\\.example\\.com$"}, "kind": "asset", "set": {"type": {"const": "domain_name"}, "value": "/v"}},
+		{"when": {"path": "/gone", "exists": false}, "kind": "asset", "set": {"type": {"const": "domain_name"}, "value": "/v"}},
+		{"when": {"path": "/obj", "equals": "x"}, "kind": "asset", "set": {"type": {"const": "ip_range"}, "value": "/v"}}`))
 	in := strings.Join([]string{
 		`{"kind": "host", "v": "h1", "gone": 1}`,
 		`{"n": 2, "up": true, "v": "192.0.2.1", "gone": null}`,
@@ -279,7 +279,8 @@ func TestPredicates(t *testing.T) {
 	for _, a := range r.Assets {
 		got = append(got, string(a.Type)+"="+a.Value)
 	}
-	want := "host=h1,ip_address=192.0.2.1,subdomain=192.0.2.1,domain=a.example.com,subdomain=a.example.com"
+	// The same name from two rules is one asset; an address is no domain name.
+	want := "host=h1,ip_address=192.0.2.1,domain_name=a.example.com"
 	if strings.Join(got, ",") != want {
 		t.Fatalf("got %v (stats %+v)", got, st)
 	}
@@ -308,12 +309,12 @@ func TestHostileInput(t *testing.T) {
 	in := `{"t": "a\u0000b\u001b[2Jc\nd e", "e": "x\ty\nz\u0007", "r": "` + strings.Repeat("r", 5000) + `"}`
 	r, _ := apply(t, m, in, Options{})
 	f := r.Findings[0]
-	if f.Title != "ab[2Jc de" || f.Evidence != "x\ty\nz" || len(f.RuleID) != shortTextBytes {
-		t.Fatalf("%q %q %d", f.Title, f.Evidence, len(f.RuleID))
+	if f.Title != "ab[2Jc de" || evidenceText(f) != "x\ty\nz" || len(f.RuleID) != shortTextBytes {
+		t.Fatalf("%q %q %d", f.Title, evidenceText(f), len(f.RuleID))
 	}
 	long := mustLoad(t, doc("jsonl", "", `{"kind": "finding", "set": {"title": {"const": "t"}, "severity": {"const": "low"}, "evidence": "/e"}}`))
 	r, _ = apply(t, long, `{"e": "`+strings.Repeat("é", 40000)+`"}`, Options{})
-	if e := r.Findings[0].Evidence; len(e) > longTextBytes || !strings.HasPrefix(e, "éé") || strings.ContainsRune(e, '�') {
+	if e := evidenceText(r.Findings[0]); len(e) > longTextBytes || !strings.HasPrefix(e, "éé") || strings.ContainsRune(e, '�') {
 		t.Fatalf("evidence %d bytes", len(e))
 	}
 	// A deep line is skipped, the next one is read.
@@ -323,8 +324,8 @@ func TestHostileInput(t *testing.T) {
 		t.Fatalf("%+v", st)
 	}
 	// Issue messages are one clean bounded line even when they quote input.
-	when := mustLoad(t, doc("jsonl", "", `{"kind": "asset", "set": {"type": {"const": "certificate"}, "value": "/v", "discovered_at": "/d"}}`))
-	_, st = apply(t, when, `{"v": "x", "d": "\u001b[31m`+strings.Repeat("\\n", 400)+`"}`, Options{})
+	when := mustLoad(t, doc("jsonl", "", `{"kind": "asset", "set": {"type": {"const": "ip_address"}, "value": "/v", "first_seen_at": "/d"}}`))
+	_, st = apply(t, when, `{"v": "192.0.2.1", "d": "\u001b[31m`+strings.Repeat("\\n", 400)+`"}`, Options{})
 	if msg := st.Issues[0].Message; len(msg) > 300 || strings.ContainsAny(msg, "\n\x1b") {
 		t.Fatalf("issue %q", msg)
 	}
@@ -399,10 +400,10 @@ func TestJSONSource(t *testing.T) {
 
 func TestToolIsFromOptionsOnly(t *testing.T) {
 	m := mustLoad(t, doc("jsonl", "", assetRule))
-	tool := &ctis.Tool{Name: "acme", Capabilities: []string{"scan.ports@1"}}
+	tool := &ctis.Tool{Name: "acme", Techniques: []ctis.Technique{ctis.TechniqueEASM}}
 	r, _ := apply(t, m, `{"ip": "192.0.2.1", "tool": "other"}`, Options{Tool: tool})
-	tool.Capabilities[0] = "changed"
-	if r.Tool == nil || r.Tool.Name != "acme" || r.Tool.Capabilities[0] != "scan.ports@1" {
+	tool.Techniques[0] = ctis.TechniqueDAST
+	if r.Tool == nil || r.Tool.Name != "acme" || r.Tool.Techniques[0] != ctis.TechniqueEASM {
 		t.Fatalf("%+v", r.Tool)
 	}
 	if r2, _ := apply(t, m, `{"ip": "192.0.2.1"}`, Options{}); r2.Tool != nil {
@@ -413,13 +414,13 @@ func TestToolIsFromOptionsOnly(t *testing.T) {
 func TestDependenciesAndDecodeFailures(t *testing.T) {
 	m := mustLoad(t, doc("jsonl", "", `{"kind": "dependency", "set": {"name": "/n", "version": "/v", "licenses": "/l"}},
 		{"kind": "finding", "set": {"title": {"const": "t"}, "severity": "/sev", "confidence": "/c"}},
-		{"kind": "asset", "set": {"type": {"const": "ip_address"}, "value": "/n", "confidence": "/c"}}`))
+		{"kind": "asset", "set": {"type": {"const": "unclassified"}, "value": "/n", "confidence": "/c"}}`))
 	r, st := apply(t, m, `{"n": "lodash", "v": "4.17.0", "l": ["MIT"], "sev": "high", "c": 50}
 {"n": " ", "sev": "nope", "c": "x"}
 {"n": "a", "l": "MIT", "sev": "low", "c": 500}`, Options{})
 	// One license as a string is a one-item list: the third dependency is
 	// kept.
-	if len(r.Dependencies) != 2 || len(r.Findings) != 1 || len(r.Assets) != 1 || st.Skipped != 5 {
+	if len(r.Dependencies) != 2 || len(r.Findings) != 1 || len(r.Assets) != 2 || st.Skipped != 5 {
 		t.Fatalf("%+v %+v", r, st)
 	}
 	if s := st.Issues[0].String(); !strings.Contains(s, "record 2, rule 0") {
@@ -449,5 +450,53 @@ func TestPathGet(t *testing.T) {
 		if _, got := pp.get(rec); got != ok {
 			t.Errorf("%s: %v", p, got)
 		}
+	}
+}
+
+// evidenceText is the text of the raw_text evidence items of a finding.
+func evidenceText(f ctis.Finding) string {
+	var parts []string
+	for _, it := range f.EvidenceItems {
+		if it.Kind == ctis.EvidenceKindRawText {
+			parts = append(parts, it.Text)
+		}
+	}
+	return strings.Join(parts, "\n")
+}
+
+func TestV1MappingIsRefused(t *testing.T) {
+	_, err := Load([]byte(`{"apiVersion": "openctem.io/mapping/v1", "source": "jsonl", "records": [` + assetRule + `]}`))
+	if err == nil || !strings.Contains(err.Error(), "rewrite the mapping for CTIS 2.0") {
+		t.Fatalf("v1 mapping: %v", err)
+	}
+}
+
+func TestFindingAssetAndIDs(t *testing.T) {
+	m := mustLoad(t, doc("jsonl", "", `{"kind": "finding", "set": {"title": "/t", "severity": {"const": "low"}, "asset_value": "/a", "asset_type": {"path": "/k", "default": ""}, "vulnerability.ids": "/ids"}}`))
+	in := `{"t": "x", "a": "Host.Example.com.", "k": "", "ids": ["cve-2024-0001", "GHSA-cfgh-jmpq-rvwx", "RHSA-2024:1"]}` + "\n" +
+		`{"t": "y", "a": "Host.Example.com", "k": "ip_address"}` + "\n" +
+		`{"t": "z", "a": "bad value with spaces", "k": "domain_name"}` + "\n" +
+		`{"t": "w"}` + "\n"
+	r, st := apply(t, m, in, Options{ReportID: "0192f0a0-0000-7000-8000-000000000001"})
+	if len(r.Findings) != 2 || st.Skipped != 2 {
+		t.Fatalf("findings %d, stats %+v", len(r.Findings), st)
+	}
+	f := r.Findings[0]
+	if len(r.Assets) != 2 || r.Assets[0].Type != ctis.AssetTypeDomainName || r.Assets[0].Value != "host.example.com" || f.AssetRef != r.Assets[0].ID {
+		t.Fatalf("assets %+v, finding asset_ref %q", r.Assets, f.AssetRef)
+	}
+	if f.Vulnerability == nil || len(f.Vulnerability.IDs) != 3 || ctis.CVEs(f.Vulnerability)[0] != "CVE-2024-0001" {
+		t.Fatalf("ids %+v", f.Vulnerability)
+	}
+	if r.Metadata.ID != "0192f0a0-0000-7000-8000-000000000001" {
+		t.Fatalf("metadata.id %q", r.Metadata.ID)
+	}
+	// Findings that name no asset go to the default asset.
+	d, _ := apply(t, mustLoad(t, doc("jsonl", "", `{"kind": "finding", "set": {"title": "/t", "severity": {"const": "low"}}}`)), `{"t": "x"}`, Options{DefaultAsset: &ctis.Asset{Type: ctis.AssetTypeRepository, Value: "github.com/example/app"}})
+	if len(d.Assets) != 1 || d.Assets[0].Value != "github.com/example/app" || d.Findings[0].AssetRef != d.Assets[0].ID {
+		t.Fatalf("default asset: %+v", d.Assets)
+	}
+	if _, _, err := m.Apply(context.Background(), strings.NewReader(in), Options{Now: fixedNow, ReportID: "not-a-uuid"}); err == nil {
+		t.Error("an invalid ReportID was accepted")
 	}
 }

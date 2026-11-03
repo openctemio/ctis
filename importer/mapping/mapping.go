@@ -2,7 +2,7 @@
 // into a CTIS report through a declarative mapping file, so a tool or an
 // export needs no parser code.
 //
-// A mapping is a JSON document (apiVersion "openctem.io/mapping/v1"). Each
+// A mapping is a JSON document (apiVersion "openctem.io/mapping/v2"). Each
 // rule selects input records with closed predicates and sets CTIS members
 // from source paths with a closed set of transforms. The language has no
 // expressions, loops, code or I/O: it cannot read files, reach the network
@@ -27,8 +27,13 @@ import (
 	"github.com/openctemio/ctis/v2"
 )
 
-// APIVersion is the only mapping format version this package reads.
-const APIVersion = "openctem.io/mapping/v1"
+// APIVersion is the only mapping format version this package reads. Version
+// 1 mappings name the members of CTIS 1.x and are refused: rewrite them for
+// CTIS 2.0 (docs/mapping.md).
+const APIVersion = "openctem.io/mapping/v2"
+
+// apiVersionV1 is the version of the mappings written for CTIS 1.x.
+const apiVersionV1 = "openctem.io/mapping/v1"
 
 // Bounds on a mapping file.
 const (
@@ -281,6 +286,9 @@ func (v ValueSpec) isConstant() bool {
 
 func (m *Mapping) compile() error {
 	d := m.doc
+	if d.APIVersion == apiVersionV1 {
+		return fmt.Errorf("mapping: apiVersion %q is for CTIS 1.x; rewrite the mapping for CTIS 2.0 (member names are in docs/migration-2.0.md) and set apiVersion %q", d.APIVersion, APIVersion)
+	}
 	if d.APIVersion != APIVersion {
 		return fmt.Errorf("mapping: apiVersion %q, want %q", d.APIVersion, APIVersion)
 	}
@@ -423,9 +431,37 @@ var kindTypes = map[string]reflect.Type{
 // Members a mapping may never set: identifiers and links the report
 // builder owns, so a tool output cannot forge references between records.
 var forbiddenTargets = map[string]map[string]bool{
-	KindAsset:      {"id": true, "related_assets": true},
-	KindFinding:    {"id": true, "asset_ref": true, "related_locations": true, "stacks": true, "attachments": true, "data_flow": true},
-	KindDependency: {"id": true, "depends_on": true},
+	KindAsset:      {"id": true},
+	KindFinding:    {"id": true, "asset_ref": true, "dependency_ref": true, "related_locations": true, "stacks": true, "attachments": true, "data_flow": true},
+	KindDependency: {"id": true, "depends_on": true, "asset_ref": true},
+}
+
+// Members of a finding rule that are not CTIS members: the mapping names
+// the finding's asset by type and value and the applier builds the asset and
+// the asset_ref (CTIS 2.0 has no asset_value or asset_type on a finding),
+// and the free text of the finding's evidence, which the applier files as a
+// raw_text evidence item.
+const (
+	TargetAssetType  = "asset_type"
+	TargetAssetValue = "asset_value"
+	TargetEvidence   = "evidence"
+	// TargetVulnIDs is a list of raw vulnerability ids ("CVE-2024-1234",
+	// "GHSA-...", a vendor advisory number); the applier files each as a
+	// typed vulnerability.ids entry (CVE, GHSA, OSV or vendor by its form).
+	TargetVulnIDs = "vulnerability.ids"
+)
+
+// pseudoTarget reports whether segs is one of the mapping-level members of a
+// finding rule.
+func pseudoTarget(kind string, segs []string) bool {
+	if kind != KindFinding {
+		return false
+	}
+	switch strings.Join(segs, ".") {
+	case TargetAssetType, TargetAssetValue, TargetEvidence, TargetVulnIDs:
+		return true
+	}
+	return false
 }
 
 // Members a rule must set.
@@ -507,6 +543,9 @@ func checkTarget(t reflect.Type, kind string, segs []string) (list bool, err err
 		if !targetSegRE.MatchString(s) {
 			return false, fmt.Errorf("segment %q", s)
 		}
+	}
+	if pseudoTarget(kind, segs) {
+		return strings.Join(segs, ".") == TargetVulnIDs, nil
 	}
 	if forbiddenTargets[kind][segs[0]] {
 		return false, fmt.Errorf("%q is set by the report builder, not by a mapping", segs[0])

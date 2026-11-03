@@ -1,25 +1,25 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "nuclei",
     "vendor": "ProjectDiscovery",
     "info_url": "https://github.com/projectdiscovery/nuclei",
-    "capabilities": [
+    "techniques": [
       "dast"
     ]
   },
   "assets": [
     {
-      "id": "asset-1",
-      "type": "domain",
-      "value": "app.example.com",
-      "name": "app.example.com",
+      "id": "web_origin-https://app.example.com:8443",
+      "type": "web_origin",
+      "value": "https://app.example.com:8443",
+      "name": "https://app.example.com:8443",
       "properties": {
         "ip_address": "203.0.113.50"
       }
@@ -34,34 +34,27 @@
       "severity": "high",
       "confidence": 90,
       "rule_id": "CVE-2024-0001",
-      "asset_ref": "asset-1",
+      "asset_ref": "web_origin-https://app.example.com:8443",
       "network": {
-        "host": "app.example.com",
         "port": 8443,
-        "protocol": "tcp",
-        "service": "https"
+        "transport": "tcp",
+        "app_protocol": "https"
+      },
+      "web": {
+        "url": "https://app.example.com:8443/download?file=",
+        "method": "GET"
       },
       "vulnerability": {
-        "cve_id": "CVE-2024-0001",
-        "cve_ids": [
-          "CVE-2024-0001"
-        ],
-        "cwe_ids": [
-          "CWE-22"
-        ],
-        "cwe_id": "CWE-22",
-        "cvss_version": "3.1",
-        "cvss_score": 7.5,
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
-        "epss_score": 0.42,
-        "epss_percentile": 0.97,
-        "cpe": "cpe:2.3:a:example:app:*:*:*:*:*:*:*:*",
         "ids": [
           {
             "type": "cve",
             "id": "CVE-2024-0001"
           }
-        ]
+        ],
+        "cwe_ids": [
+          "CWE-22"
+        ],
+        "cpe": "cpe:2.3:a:example:app:*:*:*:*:*:*:*:*"
       },
       "remediation": {
         "recommendation": "Upgrade Example App to 2.0."
@@ -76,7 +69,7 @@
         "nuclei",
         "http"
       ],
-      "fingerprint": "3344e0612628b6c52804ebd527c6eb46e7e2afa6d1032b35a628e86d1116b397",
+      "fingerprint": "ctis-fp/2:a1faeaf6a0d87e35597d601b361ad43103dc8b9b8299e54b0834e1a4856fc986",
       "native": {
         "scheme": "other",
         "vuln_id": "CVE-2024-0001",
@@ -95,6 +88,11 @@
           "system": "epss",
           "value": 0.42,
           "source": "first"
+        },
+        {
+          "system": "epss_percentile",
+          "value": 0.97,
+          "source": "first"
         }
       ],
       "source_extra": {
@@ -106,10 +104,6 @@
         "template_metadata": "max-request=1\nvendor=\"example\"",
         "template_path": "/home/scanner/nuclei-templates/http/cves/2024/CVE-2024-0001.yaml",
         "timestamp": "2026-10-05T10:00:00.000000000Z"
-      },
-      "web": {
-        "url": "https://app.example.com:8443/download?file=",
-        "method": "GET"
       },
       "evidence_items": [
         {

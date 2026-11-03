@@ -1,36 +1,36 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "bounty_report"
   },
   "assets": [
     {
-      "id": "host-app.example.com",
-      "type": "domain",
+      "id": "domain_name-app.example.com",
+      "type": "domain_name",
       "value": "app.example.com",
       "name": "app.example.com"
     },
     {
-      "id": "host-203.0.113.7",
+      "id": "ip_address-203.0.113.7",
       "type": "ip_address",
       "value": "203.0.113.7",
       "name": "203.0.113.7"
     },
     {
-      "id": "app-acme-mobile-ios",
+      "id": "web_application-acme-mobile-ios",
       "type": "web_application",
       "value": "acme-mobile-ios",
       "name": "acme-mobile-ios"
     },
     {
-      "id": "host-api.example.com",
-      "type": "domain",
+      "id": "domain_name-api.example.com",
+      "type": "domain_name",
       "value": "api.example.com",
       "name": "api.example.com"
     }
@@ -41,14 +41,13 @@
       "title": "Stored XSS in profile bio",
       "description": "The **bio** field is rendered unescaped.\n\n<script>alert(1)</script>\n\n## Steps to reproduce\n\n1. Open the profile.\n2. Save the payload.\n\n## Impact\n\nSession theft of any visitor.",
       "severity": "high",
-      "asset_ref": "host-app.example.com",
+      "asset_ref": "domain_name-app.example.com",
       "vulnerability": {
         "cwe_ids": [
           "CWE-79"
-        ],
-        "cwe_id": "CWE-79"
+        ]
       },
-      "fingerprint": "bounty_report:v1:d543782f08f020a7ca3b588fc1f6cd3d86f0435decfae3d9fb59eaf14fd2fb8e",
+      "fingerprint": "ctis-fp/2:bcc33e39eac2b76f93bd617e9b4daafefcf0b39a40aad23dd72bd5fd520c7361",
       "first_seen_at": "2026-09-01T03:30:00Z",
       "native": {
         "scheme": "other",
@@ -66,29 +65,31 @@
         }
       ],
       "source_lifecycle": {
-        "first_found": "2026-09-01T03:30:00Z"
+        "first_found_at": "2026-09-01T03:30:00Z"
       },
-      "properties": {
-        "bounty_report": {
-          "disclosure": {
-            "agreed_date": "2026-12-01",
-            "state": "coordinated"
-          },
-          "endpoint_path": "/profile/edit",
-          "intake": "acme-program",
-          "parameter": "bio",
-          "ref": "RPT-1001",
-          "reported_severity": "high",
-          "researcher": "alice_sec",
-          "reward": {
-            "amount": "1500.50",
-            "currency": "USD",
-            "status": "paid"
-          },
-          "state": "not_applicable",
-          "submitted_at": "2026-09-01T03:30:00Z",
-          "url": "https://app.example.com/profile/edit?x=1",
-          "weakness": "CWE-79"
+      "extensions": {
+        "io.openctem": {
+          "bounty_report": {
+            "disclosure": {
+              "agreed_date": "2026-12-01",
+              "state": "coordinated"
+            },
+            "endpoint_path": "/profile/edit",
+            "intake": "acme-program",
+            "parameter": "bio",
+            "ref": "RPT-1001",
+            "reported_severity": "high",
+            "researcher": "alice_sec",
+            "reward": {
+              "amount": "1500.50",
+              "currency": "USD",
+              "status": "paid"
+            },
+            "state": "not_applicable",
+            "submitted_at": "2026-09-01T03:30:00Z",
+            "url": "https://app.example.com/profile/edit?x=1",
+            "weakness": "CWE-79"
+          }
         }
       }
     },
@@ -97,8 +98,8 @@
       "title": "Open admin panel",
       "description": "The panel needs no login.",
       "severity": "critical",
-      "asset_ref": "host-203.0.113.7",
-      "fingerprint": "bounty_report:v1:4a4dbe5e49dec72ea5d7c86b19b2cec1950789a524e629baf3671503cb2c0a22",
+      "asset_ref": "ip_address-203.0.113.7",
+      "fingerprint": "ctis-fp/2:1c1a282bae25c18b3f9ca05bc05b59e85edd299472a44d8c63aeec925017e21c",
       "first_seen_at": "2026-09-02T00:00:00Z",
       "native": {
         "scheme": "other",
@@ -108,20 +109,22 @@
         "raw_ref": "/bounty_reports/1"
       },
       "source_lifecycle": {
-        "first_found": "2026-09-02T00:00:00Z"
+        "first_found_at": "2026-09-02T00:00:00Z"
       },
-      "properties": {
-        "bounty_report": {
-          "intake": "import",
-          "ref": "RPT-1002",
-          "reported_severity": "critical",
-          "reward": {
-            "amount": "500",
-            "currency": "EUR",
-            "status": "pending"
-          },
-          "state": "triaged",
-          "submitted_at": "2026-09-02T00:00:00Z"
+      "extensions": {
+        "io.openctem": {
+          "bounty_report": {
+            "intake": "import",
+            "ref": "RPT-1002",
+            "reported_severity": "critical",
+            "reward": {
+              "amount": "500",
+              "currency": "EUR",
+              "status": "pending"
+            },
+            "state": "triaged",
+            "submitted_at": "2026-09-02T00:00:00Z"
+          }
         }
       }
     },
@@ -129,14 +132,13 @@
       "type": "vulnerability",
       "title": "Mobile app leaks token to logs",
       "severity": "info",
-      "asset_ref": "app-acme-mobile-ios",
+      "asset_ref": "web_application-acme-mobile-ios",
       "vulnerability": {
         "cwe_ids": [
           "CWE-532"
-        ],
-        "cwe_id": "CWE-532"
+        ]
       },
-      "fingerprint": "bounty_report:v1:c8ef5c898273e922b600c0d7c52d557baf591cea4962363d903e1eeb0716f7f3",
+      "fingerprint": "ctis-fp/2:399f048fbe137c0c917be283c66029b78c734a115e6595135d0ea2463272901e",
       "native": {
         "scheme": "other",
         "instance_id": "PLT-77",
@@ -144,16 +146,18 @@
         "status": "resolved",
         "raw_ref": "/bounty_reports/2"
       },
-      "properties": {
-        "bounty_report": {
-          "disclosure": {
-            "state": "disclosed"
-          },
-          "intake": "platform.acme",
-          "ref": "PLT-77",
-          "reported_severity": "info",
-          "state": "resolved",
-          "weakness": "CWE-532"
+      "extensions": {
+        "io.openctem": {
+          "bounty_report": {
+            "disclosure": {
+              "state": "disclosed"
+            },
+            "intake": "platform.acme",
+            "ref": "PLT-77",
+            "reported_severity": "info",
+            "state": "resolved",
+            "weakness": "CWE-532"
+          }
         }
       }
     },
@@ -161,8 +165,8 @@
       "type": "vulnerability",
       "title": "Password reset poisoning",
       "severity": "medium",
-      "asset_ref": "host-api.example.com",
-      "fingerprint": "bounty_report:v1:c2ce3ad1fe50d5dbe2cf668fc80c1604cdb87ab994bf84016fa13db4f2491845",
+      "asset_ref": "domain_name-api.example.com",
+      "fingerprint": "ctis-fp/2:8e6fe86e73a5178ead5b9c73edc3c87d007a2bfa4f8e59821733c4fd3d66729a",
       "native": {
         "scheme": "other",
         "instance_id": "RPT-1003",
@@ -170,12 +174,14 @@
         "status": "in progress",
         "raw_ref": "/bounty_reports/3"
       },
-      "properties": {
-        "bounty_report": {
-          "endpoint_path": "/v1/reset",
-          "intake": "import",
-          "ref": "RPT-1003",
-          "researcher": "bob"
+      "extensions": {
+        "io.openctem": {
+          "bounty_report": {
+            "endpoint_path": "/v1/reset",
+            "intake": "import",
+            "ref": "RPT-1003",
+            "researcher": "bob"
+          }
         }
       }
     }

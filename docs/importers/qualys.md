@@ -13,7 +13,7 @@ Generated from `importer/spec_qualys.go`; do not edit. Regenerate with `go test 
 - Severity: SEVERITY 1-5 through ctis.NormalizeNativeSeverity (1 info, 2 low, 3 medium, 4 high, 5 critical); native.severity keeps it.
 - TYPE Confirmed / Potential / Info goes to native.detection_type; a Potential detection gets confidence 50.
 - STATUS New / Active / Re-Opened / Fixed goes to native.status, the normalized finding status and source_lifecycle.state. FIRST_FOUND, LAST_FOUND, LAST_FIXED and TIMES_FOUND go to source_lifecycle (and first_seen_at / last_seen_at).
-- RESULTS go to evidence after credential redaction (account lines, passwords, tokens, community strings become [redacted]); the passwords, tokens and community strings found there are also masked wherever any other field of the finding repeats them.
+- RESULTS go to raw_text evidence items after credential redaction (account lines, passwords, tokens, community strings become [redacted]); the passwords, tokens and community strings found there are also masked wherever any other field of the finding repeats them.
 - Host owner, comments and user-defined fields are never read; asset criticality and risk scores are kept as properties and do not set the CTIS criticality.
 
 ## Fields
@@ -27,27 +27,27 @@ Generated from `importer/spec_qualys.go`; do not edit. Regenerate with `go test 
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/WARNING/**` |  | pagination notice (code, text, next-page URL) |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST` | (container) |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST` | `assets[]` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/ID` | `assets[].properties.qualys_host_id` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/ASSET_ID` | `assets[].properties.qualys_asset_id` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/IP` | `assets[].value (when no DNS name), properties.ip_address` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/IPV6` | `assets[].value (when no DNS name or IPv4), properties.ipv6_address` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/ID` | `assets[].source_refs[] (qualys)` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/ASSET_ID` | `assets[].source_refs[] (qualys)` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/IP` | `assets[].value (when no DNS name)` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/IPV6` | `assets[].value (when no DNS name or IPv4)` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/TRACKING_METHOD` | `assets[].properties.tracking_method` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/NETWORK_ID` | `assets[].properties.network_id` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/OS` | `assets[].properties.os` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/OS` | `assets[].technologies[] (operating-system)` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/OS_CPE` | `assets[].identity_hints.os_cpe` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DNS` | `assets[].value, identity_hints.fqdn (when no DNS_DATA/FQDN)` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DNS_DATA` | (container) |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DNS_DATA/HOSTNAME` | `assets[].properties.dns_hostname` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DNS_DATA/DOMAIN` | `assets[].properties.dns_domain` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DNS_DATA/FQDN` | `assets[].value, identity_hints.fqdn, properties.fqdn` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DNS_DATA/FQDN` | `assets[].value, identity_hints.fqdn` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/NETBIOS` | `assets[].identity_hints.netbios_name` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/CLOUD_PROVIDER` | `assets[].properties.cloud_provider` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/CLOUD_SERVICE` | `assets[].properties.cloud_service` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/CLOUD_RESOURCE_ID` | `assets[].identity_hints.cloud_resource_id` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/EC2_INSTANCE_ID` | `assets[].identity_hints.cloud_resource_id (when no CLOUD_RESOURCE_ID)` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/QG_HOSTID` | `assets[].identity_hints.agent_id` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/LAST_SCAN_DATETIME` | `assets[].properties.last_scan_at` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/LAST_VM_SCANNED_DATE` | `assets[].properties.last_vm_scanned_at` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/LAST_SCAN_DATETIME` | `assets[].last_seen_at` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/LAST_VM_SCANNED_DATE` | `assets[].first_seen_at` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/LAST_VM_SCANNED_DURATION` | `assets[].properties.last_vm_scan_duration_s` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/LAST_VM_AUTH_SCANNED_DATE` | `assets[].properties.last_vm_auth_scanned_at` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/LAST_VM_AUTH_SCANNED_DURATION` |  | scan bookkeeping |
@@ -77,22 +77,22 @@ Generated from `importer/spec_qualys.go`; do not edit. Regenerate with `go test 
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/TYPE` | `findings[].native.detection_type, confidence, source_extra.type` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/SEVERITY` | `findings[].severity, native.severity` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/PORT` | `findings[].network.port` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/PROTOCOL` | `findings[].network.protocol` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/PROTOCOL` | `findings[].network.transport` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/FQDN` | `findings[].network.host` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/SSL` | `findings[].source_extra.ssl` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/INSTANCE` | `findings[].source_extra.instance` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/RESULTS` | `findings[].evidence (credentials redacted)` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/RESULTS` | `findings[].evidence_items[raw_text] (credentials redacted)` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/STATUS` | `findings[].status, native.status, source_lifecycle.state` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/FIRST_FOUND_DATETIME` | `findings[].source_lifecycle.first_found, first_seen_at` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/LAST_FOUND_DATETIME` | `findings[].source_lifecycle.last_found, last_seen_at` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/FIRST_FOUND_DATETIME` | `findings[].source_lifecycle.first_found_at, first_seen_at` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/LAST_FOUND_DATETIME` | `findings[].source_lifecycle.last_found_at, last_seen_at` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/TIMES_FOUND` | `findings[].source_lifecycle.times_found` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/LAST_FIXED_DATETIME` | `findings[].source_lifecycle.last_fixed` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/LAST_FIXED_DATETIME` | `findings[].source_lifecycle.last_fixed_at` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/LAST_TEST_DATETIME` | `findings[].source_extra.last_test_datetime` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/LAST_UPDATE_DATETIME` | `findings[].source_extra.last_update_datetime` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/FIRST_REOPENED_DATETIME` | `findings[].source_extra.first_reopened_datetime` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/LAST_REOPENED_DATETIME` | `findings[].source_extra.last_reopened_datetime` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/TIMES_REOPENED` | `findings[].source_extra.times_reopened` |  |
-| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/SERVICE` | `findings[].network.service` |  |
+| `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/SERVICE` | `findings[].network.app_protocol` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/IS_IGNORED` | `findings[].source_extra.is_ignored` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/IS_DISABLED` | `findings[].source_extra.is_disabled` |  |
 | `/HOST_LIST_VM_DETECTION_OUTPUT/RESPONSE/HOST_LIST/HOST/DETECTION_LIST/DETECTION/AFFECT_RUNNING_KERNEL` | `findings[].source_extra.affect_running_kernel` |  |

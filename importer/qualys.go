@@ -23,7 +23,7 @@ import (
 
 func init() {
 	parsers[FormatQualys] = parseQualys
-	tools[FormatQualys] = ctis.Tool{Name: "qualys", Vendor: "Qualys", Capabilities: []string{"va"}}
+	tools[FormatQualys] = ctis.Tool{Name: "qualys", Vendor: "Qualys", Techniques: []ctis.Technique{ctis.TechniqueVA}}
 }
 
 type qText struct {
@@ -196,7 +196,7 @@ func (b *builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error
 		b.res.Stats.Skipped += len(h.Detections)
 		return nil
 	}
-	asset := ctis.Asset{ID: "host-" + value, Type: ctis.AssetTypeHost, Value: value, Name: value}
+	asset := ctis.Asset{Type: ctis.AssetTypeHost, Value: value, Name: value}
 	if net.ParseIP(value) != nil {
 		asset.Type = ctis.AssetTypeIPAddress
 	}
@@ -206,17 +206,10 @@ func (b *builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error
 			ap[k] = v
 		}
 	}
-	set("ip_address", h.IP)
-	set("ipv6_address", h.IPv6)
-	set("fqdn", fqdn)
-	set("os", h.OS)
-	set("qualys_host_id", h.ID)
-	set("qualys_asset_id", h.AssetID)
 	set("tracking_method", h.TrackingMethod)
 	set("network_id", h.NetworkID)
 	set("cloud_provider", h.CloudProvider)
 	set("cloud_service", h.CloudService)
-	set("last_scan_at", qualysTime(h.LastScan))
 	set("last_vm_scanned_at", qualysTime(h.LastVMScanned))
 	set("last_vm_scan_duration_s", h.LastVMScanDuration)
 	set("last_vm_auth_scanned_at", qualysTime(h.LastVMAuthScanned))
@@ -229,6 +222,18 @@ func (b *builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error
 	if len(ap) > 0 {
 		asset.Properties = ap
 	}
+	if os := line(h.OS, capShort); os != "" {
+		asset.Technologies = []ctis.Technology{{Name: os, Categories: []string{"operating-system"}}}
+	}
+	for _, id := range [][2]string{{"host_id", h.ID}, {"asset_id", h.AssetID}} {
+		if v := line(id[1], ctis.MaxSourceRefIDLen); v != "" {
+			asset.SourceRefs = append(asset.SourceRefs, ctis.SourceRef{System: "qualys", ID: id[0] + ":" + v})
+		}
+	}
+	if id := line(firstNonEmpty(h.CloudResourceID, h.EC2InstanceID), ctis.MaxIdentityHintLen); id != "" {
+		asset.Identifiers = &ctis.AssetIdentifiers{CloudResourceID: id}
+	}
+	asset.LastSeenAt = parseTime(h.LastScan)
 	for _, t := range h.Tags {
 		asset.Tags = addTags(asset.Tags, t.Name)
 	}
@@ -246,6 +251,11 @@ func (b *builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error
 	if err != nil {
 		return err
 	}
+	if assetID == "" {
+		b.res.Stats.Records += len(h.Detections)
+		b.res.Stats.Skipped += len(h.Detections)
+		return nil
+	}
 	for i := range h.Detections {
 		b.res.Stats.Records++
 		if err := b.tick(); err != nil {
@@ -256,6 +266,9 @@ func (b *builder) qualysHost(h *qHost, lineNo int, byQID map[string][]int) error
 		if !ok {
 			b.res.Stats.Skipped++
 			continue
+		}
+		if n := f.Network; n != nil {
+			b.service(assetID, n.Port, n.Transport, n.AppProtocol)
 		}
 		n := len(b.res.Report.Findings)
 		if err := b.finding(f); err != nil {
@@ -282,11 +295,12 @@ func (b *builder) qualysFinding(d *qDetection, assetID, assetValue string, lineN
 		sev = ctis.SeverityMedium
 	}
 	f := ctis.Finding{
-		Type:     ctis.FindingTypeVulnerability,
-		Title:    "Qualys QID " + qid,
-		Severity: sev,
-		RuleID:   qid,
-		AssetRef: assetID,
+		Type:       ctis.FindingTypeVulnerability,
+		Title:      "Qualys QID " + qid,
+		Severity:   sev,
+		RuleID:     qid,
+		AssetRef:   assetID,
+		SourceRefs: []ctis.SourceRef{sourceRef("qualys", qid)},
 		Native: &ctis.NativeIdentity{
 			Scheme:     ctis.NativeSchemeQualys,
 			VulnID:     qid,
@@ -305,35 +319,32 @@ func (b *builder) qualysFinding(d *qDetection, assetID, assetValue string, lineN
 	if status, state, ok := ctis.NormalizeNativeStatus(ctis.NativeSchemeQualys, d.Status); ok {
 		f.Status = status
 		lc := &ctis.SourceLifecycle{
-			FirstFound: parseTime(d.FirstFound),
-			LastFound:  parseTime(d.LastFound),
-			LastFixed:  parseTime(d.LastFixed),
-			State:      state,
+			FirstFoundAt: parseTime(d.FirstFound),
+			LastFoundAt:  parseTime(d.LastFound),
+			LastFixedAt:  parseTime(d.LastFixed),
+			State:        state,
 		}
 		if n, err := strconv.Atoi(strings.TrimSpace(d.TimesFound)); err == nil && n > 0 && n <= ctis.MaxTimesFound {
 			lc.TimesFound = n
 		}
 		f.SourceLifecycle = lc
 	} else {
-		f.SourceLifecycle = &ctis.SourceLifecycle{FirstFound: parseTime(d.FirstFound), LastFound: parseTime(d.LastFound), LastFixed: parseTime(d.LastFixed)}
+		f.SourceLifecycle = &ctis.SourceLifecycle{FirstFoundAt: parseTime(d.FirstFound), LastFoundAt: parseTime(d.LastFound), LastFixedAt: parseTime(d.LastFixed)}
 		if n, err := strconv.Atoi(strings.TrimSpace(d.TimesFound)); err == nil && n > 0 && n <= ctis.MaxTimesFound {
 			f.SourceLifecycle.TimesFound = n
 		}
 	}
-	f.FirstSeenAt = f.SourceLifecycle.FirstFound
-	f.LastSeenAt = f.SourceLifecycle.LastFound
+	f.FirstSeenAt = f.SourceLifecycle.FirstFoundAt
+	f.LastSeenAt = f.SourceLifecycle.LastFoundAt
 
-	host := assetValue
-	if fq := line(d.FQDN, capShort); fq != "" {
-		host = strings.ToLower(fq)
-	}
 	port, _ := strconv.Atoi(strings.TrimSpace(d.Port))
-	if port > 0 && port <= 65535 {
-		f.Network = &ctis.NetworkLocation{Host: host, Port: port, Protocol: strings.ToLower(line(d.Protocol, 16)), Service: line(d.Service, capShort)}
+	if tr := transportOf(d.Protocol); port > 0 && port <= 65535 && tr != "" {
+		f.Network = &ctis.NetworkLocation{Port: port, Transport: tr, AppProtocol: ianaName(d.Service)}
+		if fq, err := ctis.CanonicalAssetValue(ctis.AssetTypeHost, line(d.FQDN, capShort)); err == nil && fq != assetValue {
+			f.Network.Host = fq
+		}
 	}
-	if out := redactCredentials(d.Results); strings.TrimSpace(out) != "" {
-		f.Evidence = text(out, capEvidence)
-	}
+	rawTextEvidence(&f, "results", redactCredentials(d.Results), "")
 	if d.QDS != nil {
 		if v, err := strconv.ParseFloat(strings.TrimSpace(d.QDS.Value), 64); err == nil && v >= 0 && v <= 100 {
 			vc := v
@@ -521,12 +532,13 @@ func (b *builder) qualysKnowledgeBase(r io.Reader, byQID map[string][]int) error
 	return nil
 }
 
-// qualysThreatExploit are THREAT_INTELLIGENCE values that mean exploit code
-// exists.
-var qualysThreatExploit = map[string]bool{
-	"exploit_public": true, "easy_exploit": true, "active_attacks": true, "malware": true,
-	"exploit_kit": true, "wormable": true, "predicted_high_risk": false, "cisa_known_exploited_vulns": true,
-	"ransomware": true,
+// qualysThreatSignal maps THREAT_INTELLIGENCE values to the threat signal
+// they assert.
+var qualysThreatSignal = map[string]ctis.ThreatSignalType{
+	"exploit_public": ctis.ThreatSignalPublicExploit, "easy_exploit": ctis.ThreatSignalPublicExploit,
+	"active_attacks": ctis.ThreatSignalExploitedInWild, "malware": ctis.ThreatSignalExploitedInWild,
+	"exploit_kit": ctis.ThreatSignalWeaponized, "wormable": ctis.ThreatSignalWeaponized,
+	"cisa_known_exploited_vulns": ctis.ThreatSignalKEV, "ransomware": ctis.ThreatSignalRansomwareUse,
 }
 
 func (b *builder) qualysEnrich(f *ctis.Finding, v *qVuln) {
@@ -551,15 +563,15 @@ func (b *builder) qualysEnrich(f *ctis.Finding, v *qVuln) {
 	}
 	for _, c := range v.CVEs {
 		addVulnID(vuln, c.ID)
-		f.References = addRefs(f.References, c.URL)
+		f.References = addWebRefs(f.References, c.URL)
 	}
 	for _, bt := range v.Bugtraq {
 		addVendorID(vuln, prefixed("BID", bt.ID), "bid")
-		f.References = addRefs(f.References, bt.URL)
+		f.References = addWebRefs(f.References, bt.URL)
 	}
 	for _, vr := range v.VendorRefs {
 		addAdvisory(f, vr.ID, "vendor")
-		if n := len(f.Remediation.Advisories); n > 0 && f.Remediation.Advisories[n-1].ID == line(vr.ID, ctis.MaxNativeIDLen) && validURL(vr.URL) {
+		if n := len(f.Remediation.Advisories); n > 0 && f.Remediation.Advisories[n-1].ID == line(vr.ID, ctis.MaxVulnerabilityIDLen) && validURL(vr.URL) {
 			f.Remediation.Advisories[n-1].URL = line(vr.URL, ctis.MaxAdvisoryURLLen)
 		}
 	}
@@ -588,9 +600,6 @@ func (b *builder) qualysEnrich(f *ctis.Finding, v *qVuln) {
 		if ver == "2.0" {
 			vec = cvss2Base(strings.TrimPrefix(vec, "CVSS:2.0/"))
 		}
-		if vuln.CVSSVersion == "" {
-			vuln.CVSSScore, vuln.CVSSVersion, vuln.CVSSVector, vuln.CVSSSource = val, ver, line(vec, ctis.MaxScoreVectorLen), "vendor"
-		}
 		vc := val
 		addScore(f, ctis.Score{System: ctis.ScoreSystemCVSS, Version: ver, Vector: line(vec, ctis.MaxScoreVectorLen), Value: &vc, Source: firstNonEmpty(strings.ToLower(c.c.Base.Source), "qualys")})
 		if tmp := strings.TrimSpace(c.c.Temporal); tmp != "" {
@@ -600,21 +609,16 @@ func (b *builder) qualysEnrich(f *ctis.Finding, v *qVuln) {
 	for _, ti := range v.ThreatIntel {
 		name := strings.ToLower(strings.TrimSpace(ti.Value))
 		f.Tags = addTags(f.Tags, name)
-		if qualysThreatExploit[name] {
-			vuln.ExploitAvailable = true
-		}
-		if name == "cisa_known_exploited_vulns" {
-			vuln.InCISAKEV = true
+		if typ, ok := qualysThreatSignal[name]; ok {
+			addSignal(vuln, typ, "qualys", nil)
 		}
 	}
 	var exploits []string
 	for _, src := range v.ExploitSources {
 		for _, e := range src.Exploits {
-			vuln.ExploitAvailable = true
+			addSignal(vuln, ctis.ThreatSignalPublicExploit, "qualys", nil)
 			exploits = append(exploits, line(src.Name, 64)+": "+line(firstNonEmpty(e.Ref, e.Desc), 256))
-			if validURL(e.Link) {
-				f.References = addRefs(f.References, e.Link)
-			}
+			f.References = addWebRefs(f.References, e.Link)
 		}
 	}
 	if len(exploits) > 0 {
@@ -629,21 +633,19 @@ func (b *builder) qualysEnrich(f *ctis.Finding, v *qVuln) {
 	if len(malware) > 0 {
 		extra(f, "malware", strings.Join(malware, "\n"))
 	}
-	if vuln.CVEID != "" || len(vuln.IDs) > 0 || vuln.CVSSScore > 0 || vuln.PublishedAt != nil || vuln.ExploitAvailable {
+	if len(vuln.IDs) > 0 || vuln.PublishedAt != nil || len(vuln.ThreatSignals) > 0 {
 		f.Vulnerability = vuln
 	}
 
 	sol := text(qualysHTML(v.Solution), capRemediation)
 	patch := parseTime(v.PatchPublished)
 	if sol != "" || patch != nil || truthy(v.Patchable) || f.Remediation != nil {
-		if f.Remediation == nil {
-			f.Remediation = &ctis.Remediation{}
-		}
-		f.Remediation.Recommendation = sol
-		f.Remediation.PatchPublishedAt = patch
+		rem := ensureRemediation(f)
+		rem.Recommendation = sol
+		rem.PatchPublishedAt = patch
 		if truthy(v.Patchable) {
-			f.Remediation.FixAvailable = true
-			f.Remediation.SolutionType = ctis.SolutionTypePatch
+			rem.IsFixAvailable = ctis.Bool(true)
+			rem.SolutionType = ctis.SolutionTypeVendorFix
 		}
 	}
 	if truthy(v.PCIFlag) {

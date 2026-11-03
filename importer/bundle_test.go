@@ -73,7 +73,7 @@ func parseZipBundle(t *testing.T, z []byte, opts Options) (*Result, []string, er
 	return parseBundle(context.Background(), files, opts)
 }
 
-func bundleOpts() Options { return Options{Now: fixedNow, ReportID: "import-test"} }
+func bundleOpts() Options { return Options{Now: fixedNow, ReportID: testReportID} }
 
 // bundleLayouts are the fixture directories and the spec each is read with.
 var bundleLayouts = map[string]Format{"v4": FormatReconFTW, "v3": formatReconFTWv3}

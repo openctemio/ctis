@@ -1,21 +1,21 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "osv-scanner",
-    "capabilities": [
+    "techniques": [
       "sca"
     ]
   },
   "assets": [
     {
-      "id": "osv-app/requirements.txt",
-      "type": "repository",
+      "id": "unclassified-app/requirements.txt",
+      "type": "unclassified",
       "value": "app/requirements.txt",
       "name": "app/requirements.txt",
       "properties": {
@@ -32,30 +32,8 @@
       "severity": "medium",
       "rule_id": "PYSEC-2021-66",
       "rule_name": "PYSEC-2021-66",
-      "asset_ref": "osv-app/requirements.txt",
+      "asset_ref": "unclassified-app/requirements.txt",
       "vulnerability": {
-        "cve_id": "CVE-2020-28493",
-        "cve_ids": [
-          "CVE-2020-28493"
-        ],
-        "cwe_ids": [
-          "CWE-400"
-        ],
-        "cwe_id": "CWE-400",
-        "cvss_version": "4.0",
-        "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
-        "cvss_source": "vendor",
-        "package": "jinja2",
-        "purl": "pkg:pypi/jinja2@2.11.2",
-        "affected_version": "2.11.2",
-        "affected_version_range": ">=2.0, <=2.11.2 || <3.0.0 || <2.11.3",
-        "fixed_version": "2.11.3",
-        "fixed_versions": [
-          "2.11.3"
-        ],
-        "ecosystem": "pip",
-        "published_at": "2021-02-01T20:15:00Z",
-        "modified_at": "2024-02-01T00:00:00Z",
         "ids": [
           {
             "type": "osv",
@@ -69,12 +47,24 @@
             "type": "ghsa",
             "id": "GHSA-g3rq-g295-4j3m"
           }
-        ]
+        ],
+        "cwe_ids": [
+          "CWE-400"
+        ],
+        "package_name": "jinja2",
+        "purl": "pkg:pypi/jinja2@2.11.2",
+        "installed_version": "2.11.2",
+        "affected_version_range": ">=2.0, <=2.11.2 || <3.0.0 || <2.11.3",
+        "fixed_versions": [
+          "2.11.3"
+        ],
+        "published_at": "2021-02-01T20:15:00Z",
+        "modified_at": "2024-02-01T00:00:00Z"
       },
       "remediation": {
         "recommendation": "Upgrade jinja2 to 2.11.3 or later.",
-        "fix_available": true,
         "solution_type": "upgrade",
+        "is_fix_available": true,
         "advisories": [
           {
             "url": "https://osv.example.com/PYSEC-2021-66",
@@ -86,6 +76,7 @@
         "https://osv.example.com/PYSEC-2021-66",
         "https://www.example.com/jinja-redos"
       ],
+      "fingerprint": "ctis-fp/2:75b245c65da7c1b00d0f269c11efeebf8d1a376ed1fe47878a438425c99a1702",
       "native": {
         "scheme": "other",
         "vuln_id": "PYSEC-2021-66",
@@ -140,19 +131,19 @@
       "severity": "medium",
       "rule_id": "PYSEC-0000-1",
       "rule_name": "PYSEC-0000-1",
-      "asset_ref": "osv-app/requirements.txt",
+      "asset_ref": "unclassified-app/requirements.txt",
       "vulnerability": {
-        "package": "jinja2",
-        "purl": "pkg:pypi/jinja2@2.11.2",
-        "affected_version": "2.11.2",
-        "ecosystem": "pip",
         "ids": [
           {
             "type": "osv",
             "id": "PYSEC-0000-1"
           }
-        ]
+        ],
+        "package_name": "jinja2",
+        "purl": "pkg:pypi/jinja2@2.11.2",
+        "installed_version": "2.11.2"
       },
+      "fingerprint": "ctis-fp/2:40fde6f1c645751b4d5ba84f6b3203448ad6b6534953991e59767bb0e8671875",
       "native": {
         "scheme": "other",
         "vuln_id": "PYSEC-0000-1",
@@ -170,18 +161,19 @@
       "severity": "medium",
       "rule_id": "GHSA-j8r2-6x86-q33q",
       "rule_name": "GHSA-j8r2-6x86-q33q",
-      "asset_ref": "osv-app/requirements.txt",
+      "asset_ref": "unclassified-app/requirements.txt",
       "vulnerability": {
-        "package": "requests",
-        "affected_version": "2.25.0",
-        "ecosystem": "pip",
         "ids": [
           {
             "type": "ghsa",
             "id": "GHSA-j8r2-6x86-q33q"
           }
-        ]
+        ],
+        "package_name": "requests",
+        "purl": "pkg:pypi/requests@2.25.0",
+        "installed_version": "2.25.0"
       },
+      "fingerprint": "ctis-fp/2:5fd515eb3e4ddcd3d86628b909f59a621be4c17e02813292b2a697742acfc045",
       "native": {
         "scheme": "other",
         "vuln_id": "GHSA-j8r2-6x86-q33q",
@@ -195,26 +187,37 @@
   ],
   "dependencies": [
     {
-      "id": "app/requirements.txt|pkg:pypi/jinja2@2.11.2",
+      "id": "dep-hf3b958bfd7c92bdad892c36c",
       "name": "jinja2",
       "version": "2.11.2",
-      "ecosystem": "pip",
+      "type": "library",
       "purl": "pkg:pypi/jinja2@2.11.2",
       "licenses": [
         "BSD-3-Clause"
       ],
-      "path": "app/requirements.txt",
+      "locations": [
+        {
+          "path": "app/requirements.txt"
+        }
+      ],
+      "asset_ref": "unclassified-app/requirements.txt",
       "properties": {
         "commit": "0000000000000000000000000000000000000000",
         "dependency_groups": "main,docs"
       }
     },
     {
-      "id": "app/requirements.txt|PyPI:requests@2.25.0",
+      "id": "dep-hf21ed56d0830a95032c6d597",
       "name": "requests",
       "version": "2.25.0",
-      "ecosystem": "pip",
-      "path": "app/requirements.txt"
+      "type": "library",
+      "purl": "pkg:pypi/requests@2.25.0",
+      "locations": [
+        {
+          "path": "app/requirements.txt"
+        }
+      ],
+      "asset_ref": "unclassified-app/requirements.txt"
     }
   ]
 }

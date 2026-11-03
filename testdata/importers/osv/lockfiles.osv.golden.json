@@ -1,21 +1,21 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "osv-scanner",
-    "capabilities": [
+    "techniques": [
       "sca"
     ]
   },
   "assets": [
     {
-      "id": "osv-services/api/go.mod",
-      "type": "repository",
+      "id": "unclassified-services/api/go.mod",
+      "type": "unclassified",
       "value": "services/api/go.mod",
       "name": "services/api/go.mod",
       "properties": {
@@ -23,8 +23,8 @@
       }
     },
     {
-      "id": "osv-web/package-lock.json",
-      "type": "repository",
+      "id": "unclassified-web/package-lock.json",
+      "type": "unclassified",
       "value": "web/package-lock.json",
       "name": "web/package-lock.json",
       "properties": {
@@ -41,30 +41,8 @@
       "severity": "high",
       "rule_id": "GO-2024-2687",
       "rule_name": "GO-2024-2687",
-      "asset_ref": "osv-services/api/go.mod",
+      "asset_ref": "unclassified-services/api/go.mod",
       "vulnerability": {
-        "cve_id": "CVE-2023-45288",
-        "cve_ids": [
-          "CVE-2023-45288"
-        ],
-        "cwe_ids": [
-          "CWE-400"
-        ],
-        "cwe_id": "CWE-400",
-        "cvss_version": "3.1",
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-        "cvss_source": "ghsa",
-        "package": "golang.org/x/net",
-        "purl": "pkg:golang/golang.org/x/net@0.17.0",
-        "affected_version": "0.17.0",
-        "affected_version_range": "<0.23.0",
-        "fixed_version": "0.23.0",
-        "fixed_versions": [
-          "0.23.0"
-        ],
-        "ecosystem": "go",
-        "published_at": "2024-04-03T21:12:01Z",
-        "modified_at": "2024-06-01T00:00:00Z",
         "ids": [
           {
             "type": "osv",
@@ -78,12 +56,24 @@
             "type": "cve",
             "id": "CVE-2023-45288"
           }
-        ]
+        ],
+        "cwe_ids": [
+          "CWE-400"
+        ],
+        "package_name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net@0.17.0",
+        "installed_version": "0.17.0",
+        "affected_version_range": "<0.23.0",
+        "fixed_versions": [
+          "0.23.0"
+        ],
+        "published_at": "2024-04-03T21:12:01Z",
+        "modified_at": "2024-06-01T00:00:00Z"
       },
       "remediation": {
         "recommendation": "Upgrade golang.org/x/net to 0.23.0 or later.",
-        "fix_available": true,
         "solution_type": "upgrade",
+        "is_fix_available": true,
         "advisories": [
           {
             "url": "https://github.com/advisories/GHSA-4v7x-pqxf-cx7m",
@@ -96,6 +86,7 @@
         "https://go.dev/cl/576155",
         "https://github.com/advisories/GHSA-4v7x-pqxf-cx7m"
       ],
+      "fingerprint": "ctis-fp/2:75b1770fa6081ddeab77a45293652c0b4a8dab688faae3b4437797f17590e6db",
       "native": {
         "scheme": "other",
         "vuln_id": "GO-2024-2687",
@@ -125,31 +116,8 @@
       "severity": "high",
       "rule_id": "GHSA-35jh-r3h4-6jhm",
       "rule_name": "GHSA-35jh-r3h4-6jhm",
-      "asset_ref": "osv-web/package-lock.json",
+      "asset_ref": "unclassified-web/package-lock.json",
       "vulnerability": {
-        "cve_id": "CVE-2021-23337",
-        "cve_ids": [
-          "CVE-2021-23337"
-        ],
-        "cwe_ids": [
-          "CWE-77",
-          "CWE-94"
-        ],
-        "cwe_id": "CWE-77",
-        "cvss_version": "3.1",
-        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
-        "cvss_source": "ghsa",
-        "package": "lodash",
-        "purl": "pkg:npm/lodash@4.17.20",
-        "affected_version": "4.17.20",
-        "affected_version_range": "<4.17.21",
-        "fixed_version": "4.17.21",
-        "fixed_versions": [
-          "4.17.21"
-        ],
-        "ecosystem": "npm",
-        "published_at": "2021-05-06T16:05:51Z",
-        "modified_at": "2024-01-01T00:00:00Z",
         "ids": [
           {
             "type": "ghsa",
@@ -159,12 +127,25 @@
             "type": "cve",
             "id": "CVE-2021-23337"
           }
-        ]
+        ],
+        "cwe_ids": [
+          "CWE-77",
+          "CWE-94"
+        ],
+        "package_name": "lodash",
+        "purl": "pkg:npm/lodash@4.17.20",
+        "installed_version": "4.17.20",
+        "affected_version_range": "<4.17.21",
+        "fixed_versions": [
+          "4.17.21"
+        ],
+        "published_at": "2021-05-06T16:05:51Z",
+        "modified_at": "2024-01-01T00:00:00Z"
       },
       "remediation": {
         "recommendation": "Upgrade lodash to 4.17.21 or later.",
-        "fix_available": true,
         "solution_type": "upgrade",
+        "is_fix_available": true,
         "advisories": [
           {
             "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-23337",
@@ -175,6 +156,7 @@
       "references": [
         "https://nvd.nist.gov/vuln/detail/CVE-2021-23337"
       ],
+      "fingerprint": "ctis-fp/2:6abe56893ec68996754ad41a6ca062a6ac511f282e22919ce5896d1809ef6af8",
       "native": {
         "scheme": "other",
         "vuln_id": "GHSA-35jh-r3h4-6jhm",
@@ -197,25 +179,43 @@
   ],
   "dependencies": [
     {
-      "id": "services/api/go.mod|Go:golang.org/x/net@0.17.0",
+      "id": "dep-h727614532db02846899695c9",
       "name": "golang.org/x/net",
       "version": "0.17.0",
-      "ecosystem": "go",
-      "path": "services/api/go.mod"
+      "type": "library",
+      "purl": "pkg:golang/golang.org/x/net@0.17.0",
+      "locations": [
+        {
+          "path": "services/api/go.mod"
+        }
+      ],
+      "asset_ref": "unclassified-services/api/go.mod"
     },
     {
-      "id": "services/api/go.mod|Go:github.com/google/uuid@1.6.0",
+      "id": "dep-hc04dca19c1cf214221834c39",
       "name": "github.com/google/uuid",
       "version": "1.6.0",
-      "ecosystem": "go",
-      "path": "services/api/go.mod"
+      "type": "library",
+      "purl": "pkg:golang/github.com/google/uuid@1.6.0",
+      "locations": [
+        {
+          "path": "services/api/go.mod"
+        }
+      ],
+      "asset_ref": "unclassified-services/api/go.mod"
     },
     {
-      "id": "web/package-lock.json|npm:lodash@4.17.20",
+      "id": "dep-h7c2530538f77b0544896bece",
       "name": "lodash",
       "version": "4.17.20",
-      "ecosystem": "npm",
-      "path": "web/package-lock.json",
+      "type": "library",
+      "purl": "pkg:npm/lodash@4.17.20",
+      "locations": [
+        {
+          "path": "web/package-lock.json"
+        }
+      ],
+      "asset_ref": "unclassified-web/package-lock.json",
       "properties": {
         "dependency_groups": "prod"
       }

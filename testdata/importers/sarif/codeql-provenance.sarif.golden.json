@@ -1,15 +1,15 @@
 {
-  "version": "1.6",
-  "$schema": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/v1/report.json",
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
   "metadata": {
-    "id": "import-test",
-    "timestamp": "2026-10-05T12:00:00Z",
-    "source_type": "manual"
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
   },
   "tool": {
     "name": "CodeQL",
     "version": "2.15.0",
-    "capabilities": [
+    "techniques": [
       "sast"
     ]
   },
@@ -17,8 +17,8 @@
     {
       "id": "asset-1",
       "type": "repository",
-      "value": "https://github.com/example/shop",
-      "name": "https://github.com/example/shop",
+      "value": "github.com/example/shop",
+      "name": "github.com/example/shop",
       "properties": {
         "branch": "refs/heads/main",
         "commit_sha": "3f1c2a9e0b7d4c5a8e6f1d2b3c4a5e6f7a8b9c0d",
@@ -29,7 +29,7 @@
   "findings": [
     {
       "id": "finding-1",
-      "type": "vulnerability",
+      "type": "weakness",
       "title": "This query depends on a user-provided value.",
       "description": "Database query built from user-controlled sources",
       "severity": "high",
@@ -46,8 +46,7 @@
       "vulnerability": {
         "cwe_ids": [
           "CWE-89"
-        ],
-        "cwe_id": "CWE-89"
+        ]
       },
       "tags": [
         "security",
