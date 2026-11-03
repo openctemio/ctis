@@ -6,9 +6,9 @@ The record has two parts. Items marked **1.7** are additive, so they fit a minor
 
 **Decision (maintainers, 2026-11-03).** The plan is adopted:
 
-- 1.6.x patch releases fix the defects found in the review and add conformance vectors and a validator CLI;
-- 1.7 adds the items marked 1.7, additive only;
-- 2.0 is planned, not scheduled. The items marked 2.0 are kept as a design and an execution plan. The decision to cut 2.0 is taken at the first of: a submission of CTIS to a foundation, or the OpenCTEM 1.0 release. When it is cut, it is one breaking release with no aliases on the wire, and the Go module ships a receiver-side 1.x to 2.0 upgrader that receivers may run for one release train, so producers can move over without a flag day;
+- 1.6.x patch releases fix the defects found in the review and add conformance vectors and a validator CLI. 1.6.x stays the maintenance line for producers already deployed;
+- the items marked 1.7 are not released as a separate minor: they ship inside 2.0, so producers and receivers change once;
+- 2.0 is cut now, as one breaking release, while CTIS has no outside implementers. There are no aliases on the wire. The Go module ships a receiver-side 1.x to 2.0 upgrader that receivers run for one release train, so deployed producers keep working until they are upgraded;
 - contributions to this repository are made under the Developer Certificate of Origin (P10).
 
 ## P1. Receiver-neutral specification (1.7, text only)
