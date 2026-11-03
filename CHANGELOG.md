@@ -26,6 +26,15 @@ Every member is optional, so a report without them is unchanged. `SchemaVersion`
 - CTIS is expanded as "CTEM Interchange Schema" in the spec, the package documentation and the schema descriptions; the report schema description is receiver-neutral.
 - The spec states that receivers SHOULD NOT give meaning to `properties`.
 
+### Added (ships in 2.0): fingerprint recipe v2 and the correlation key
+
+- Recipe v2 (`ctis-fp/2`): the canonical input is the recipe name and the parts, each written as `<byte length>:<bytes>` and joined with `0x1F`, so no content can shift into a neighbouring part (recipe v1 joined with `:` and merged `a:b`@`c` with `a`@`b:c`). File paths keep their case, hosts are lowercase, no recipe reads a message, and line numbers appear only in the line-based `sast` and `generic` recipes.
+- Go API in package `fingerprint`: `V2SAST`, `V2SASTContent`, `V2SCA`, `V2Secret`, `V2Misconfiguration`, `V2Web`, `V2Container`, `V2VA`, `V2Compliance`, `V2Web3`, `V2Generic`, `V2Generate`, `V2Auto`/`V2Detect`, `ImageIdentity`, `VersionlessPURL`. New recipes for network vulnerability assessment (`va`) and compliance.
+- Secrets enter a fingerprint only as `HMAC-SHA256(producer_key, secret)` (`NewSecretDigest`, `SecretDigest`); there is no unsalted path.
+- `CorrelationKey` / `CorrelationKeyForTool` (`ctis-ck/1`): asset key, preferred vulnerability id or `rule:<tool>/<rule_id>`, `LocationKey`, with the same length-prefixed encoding.
+- Normative text in `docs/fingerprints.md`; vectors in `conformance/v2/fingerprint/` and `conformance/v2/correlation/`.
+- Recipe v1 stays in the Go package, deprecated, only so a receiver can compute old and new values when it migrates stored data. v2 is not compatible with v1 values: there is no bridge in the format.
+
 ## [1.6.7] - 2026-11-03
 
 Patch release: bug fixes in the receiver-side keys and normalisation, conformance vectors, and the `ctis` command line tool. No report format change.
