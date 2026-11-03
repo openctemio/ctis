@@ -102,8 +102,8 @@ type Input struct {
 //
 // The recipes below are recipe v1 (CTIS 1.x) and are frozen: receivers store
 // the values, so no change may alter an output (TestRecipeV1Pinned pins
-// them). Two known weaknesses are replaced by recipe v2 ("ctis-fp/2", CTIS 2.0), never changed in v1, at
-// CTIS 2.0, never in v1:
+// them). Two known weaknesses are never changed in v1; recipe v2
+// ("ctis-fp/2", CTIS 2.0) replaces them:
 //
 //   - Joiner ambiguity: most recipes join their fields with ":", and a field
 //     that itself contains ":" (a maven package name such as
