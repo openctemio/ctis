@@ -80,10 +80,13 @@ func (r *Report) Validate() error {
 		validateDependency(i, &r.Dependencies[i], assetIDs, depIDs, add)
 	}
 
+	ruleIDs := validateRules(r.Rules, add)
+
 	findingIDs := make(map[string]bool, len(r.Findings))
 	for i := range r.Findings {
 		f := &r.Findings[i]
 		validateFindingCore(i, f, assetIDs, add)
+		validateRuleRef(i, f, ruleIDs, add)
 		if f.ID != "" {
 			if findingIDs[f.ID] {
 				add("findings[%d]: duplicate id %q", i, truncateForError(f.ID))

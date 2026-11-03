@@ -1,0 +1,34 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7000-8000-000000000001",
+    "generated_at": "2026-11-03T00:00:00Z"
+  },
+  "assets": [
+    {
+      "id": "a",
+      "type": "host",
+      "value": "web01.example.com"
+    }
+  ],
+  "rules": [
+    {
+      "id": "r-1",
+      "rule_id": "py.sqli"
+    },
+    {
+      "id": "r-1",
+      "rule_id": "py.sqli"
+    }
+  ],
+  "findings": [
+    {
+      "type": "weakness",
+      "title": "t",
+      "severity": "high",
+      "rule_id": "py.sqli",
+      "rule_ref": "r-1",
+      "asset_ref": "a"
+    }
+  ]
+}
