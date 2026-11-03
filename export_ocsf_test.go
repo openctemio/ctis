@@ -216,7 +216,7 @@ func TestExportOCSFRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			ExportCheckGolden(t, "export/ocsf/"+name+".golden.json", out)
+			ExportCheckGolden(t, "export/ocsf/"+name+".golden.ocsf.json", out)
 			want := make([]Finding, len(r.Findings))
 			got := make([]Finding, len(events))
 			for i := range events {

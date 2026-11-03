@@ -140,7 +140,7 @@ Every finding is one event of the Findings category (`category_uid` 2). Vulnerab
 
 Accepted losses: everything not in the table. The full list, with reasons, is in `testdata/export/ocsf/*.losses.json`. In short: identity and lifecycle members (`id`, `native`, `source_lifecycle`, `source_extra`, `partial_fingerprints`, suppression details, `vex`), the code context (`data_flow`, columns, snippet, logical location, commit), `evidence`, exposure and business impact, most misconfiguration, secret and remediation details, non-CVE vulnerability ids, `exploit_maturity`, `in_cisa_kev`, `is_direct`, `owasp_ids`, `fixed_versions`, `affected_version_range`, and the CVSS source. Scores of a finding without a CVE have no OCSF place.
 
-OCSF has no importer in this module. The round-trip test reads the events back with a test-only reverse mapper (`ocsfToCTIS` in `export_ocsf_test.go`). The mapped members of the examples `vulnerability-sca`, `network-vulnerability-interop`, `sast`, `secret`, `compliance` and `misconfiguration` must come back equal. Golden files: `testdata/export/ocsf/<example>.golden.json`.
+OCSF has no importer in this module. The round-trip test reads the events back with a test-only reverse mapper (`ocsfToCTIS` in `export_ocsf_test.go`). The mapped members of the examples `vulnerability-sca`, `network-vulnerability-interop`, `sast`, `secret`, `compliance` and `misconfiguration` must come back equal. Golden files: `testdata/export/ocsf/<example>.golden.ocsf.json` (not `*.golden.json`, which the schema check validates as CTIS reports).
 
 ## Testing
 
