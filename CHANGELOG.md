@@ -4,7 +4,7 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
-## 2.0.0 (draft)
+## [2.0.0] - 2026-11-03
 
 CTIS 2.0 is a one-time breaking cleanup of the format: one name per concept, one shape per object, no receiver identifiers, canonical asset identity and a receiver-neutral specification. Module path `github.com/openctemio/ctis/v2`, schemas `schemas/v2` (JSON Schema 2020-12), `SchemaVersion = "2.0"`.
 
