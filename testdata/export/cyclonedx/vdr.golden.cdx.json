@@ -1,0 +1,216 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 3,
+  "metadata": {
+    "timestamp": "2026-02-01T09:30:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "cyclonedx"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "sbom-pkg:generic/shop-api@4.2.0",
+      "name": "shop-api",
+      "version": "4.2.0",
+      "purl": "pkg:generic/shop-api@4.2.0"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/lodash@4.17.20",
+      "supplier": {
+        "name": "OpenJS Foundation"
+      },
+      "name": "lodash",
+      "version": "4.17.20",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a5b0c7f1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "purl": "pkg:npm/lodash@4.17.20",
+      "properties": [
+        {
+          "name": "build:origin",
+          "value": "registry"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.example/parser@1.0.0",
+      "group": "org.example",
+      "name": "parser",
+      "version": "1.0.0",
+      "description": "Document parser",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        },
+        {
+          "license": {
+            "name": "Example Custom License"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.example/parser@1.0.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/minimist@1.2.5",
+      "name": "minimist",
+      "version": "1.2.5",
+      "cpe": "cpe:2.3:a:minimist_project:minimist:1.2.5:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/minimist@1.2.5"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "sbom-pkg:generic/shop-api@4.2.0",
+      "dependsOn": [
+        "pkg:npm/lodash@4.17.20",
+        "pkg:maven/org.example/parser@1.0.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/lodash@4.17.20",
+      "dependsOn": [
+        "pkg:npm/minimist@1.2.5"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.example/parser@1.0.0"
+    },
+    {
+      "ref": "pkg:npm/minimist@1.2.5"
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "bom-ref": "vuln-1",
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "source": {
+        "name": "Example Advisory Database",
+        "url": "https://advisories.example.org/GHSA-35jh-r3h4-6jhm"
+      },
+      "references": [
+        {
+          "id": "CVE-2021-23337"
+        }
+      ],
+      "ratings": [
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 7.2,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "source": {
+            "name": "ghsa"
+          },
+          "score": 6.8,
+          "severity": "medium",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+          "justification": "vendor reassessment"
+        }
+      ],
+      "cwes": [
+        77,
+        94
+      ],
+      "description": "Command injection in template.",
+      "detail": "The template function evaluates a user-controlled sourceURL.",
+      "recommendation": "Upgrade lodash to 4.17.21.",
+      "workaround": "Do not pass user input to template.",
+      "advisories": [
+        {
+          "title": "GHSA-35jh-r3h4-6jhm",
+          "url": "https://advisories.example.org/GHSA-35jh-r3h4-6jhm"
+        }
+      ],
+      "created": "2021-02-15T00:00:00Z",
+      "published": "2021-02-15T13:15:00Z",
+      "updated": "2022-09-13T21:25:00Z",
+      "analysis": {
+        "state": "exploitable",
+        "response": [
+          "update",
+          "workaround_available"
+        ],
+        "detail": "Reachable from the report endpoint.",
+        "lastUpdated": "2026-01-20T08:00:00Z"
+      },
+      "affects": [
+        {
+          "ref": "pkg:npm/lodash@4.17.20",
+          "versions": [
+            {
+              "range": "vers:npm/\u003c4.17.21",
+              "status": "affected"
+            },
+            {
+              "version": "4.17.21",
+              "status": "unaffected"
+            }
+          ]
+        }
+      ],
+      "properties": [
+        {
+          "name": "triage:owner",
+          "value": "platform-team"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2021-44906",
+      "ratings": [
+        {
+          "score": 9.8,
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "description": "Prototype pollution.",
+      "analysis": {
+        "state": "in_triage"
+      },
+      "affects": [
+        {
+          "ref": "pkg:npm/minimist@1.2.5"
+        },
+        {
+          "ref": "pkg:maven/org.example/parser@1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "OSV-2024-1",
+      "description": "An issue without a rating.",
+      "affects": [
+        {
+          "ref": "pkg:maven/org.example/parser@1.0.0"
+        }
+      ]
+    }
+  ]
+}
