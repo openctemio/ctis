@@ -29,7 +29,7 @@ The Go module adds `ctis.Decode`, which returns the report and the list of ignor
 
 ## P3. Extensions instead of reserved properties (1.7, then 2.0)
 
-**Status: the additive part is done**: `extensions` on report, metadata, asset, finding, dependency, endpoint and relationship (spec section 4.14), `schemas/extensions/io.openctem/1.json`. Moving the converters and importers off `properties` is open: receivers read both places for one release train.
+**Status: the additive part is done**: `extensions` on report, metadata, asset, finding, dependency, endpoint and relationship (spec section 4.14), `schemas/extensions/io.openctem/1.json`. Moving the converters and importers off `properties` onto typed members and namespaces is open.
 
 Several receivers and converters give meaning to keys inside `properties`. Producers in other projects cannot discover them. Proposal:
 

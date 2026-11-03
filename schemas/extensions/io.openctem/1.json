@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/openctemio/ctis/main/schemas/extensions/io.openctem/1.json",
   "title": "OpenCTEM extension namespace, revision 1",
-  "description": "Informative. The value of extensions[\"io.openctem\"] on a report, metadata, asset or finding. These keys are what OpenCTEM converters and importers carry in properties today; receivers read both places for one release train, then only this namespace. A receiver that does not know the namespace ignores it.",
+  "description": "Informative. The value of extensions[\"io.openctem\"] on a report, metadata, asset or finding. These keys are what OpenCTEM converters and importers carry in properties today; they move to this namespace in a follow-up change. A receiver that does not know the namespace ignores it.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
