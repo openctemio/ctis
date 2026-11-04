@@ -16,7 +16,8 @@ paths = [
     '''(^|/)conformance/v2/(fingerprint|correlation)/[^/]+\.json$''',
     '''\.test\.[jt]sx?$''',
     # Vendored upstream schemas: unmodified official files, sha256-pinned in interop/upstreams.json.
-    '''^v2/interop/[a-z]+/schemas/''',
+    # Optional v2/: the full-history scan on main still sees them at their first path (interop/).
+    '''^(v2/)?interop/[a-z]+/schemas/''',
     '''(^|/)(go\.sum|package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$''',
 ]
 # Obvious placeholders in docs and examples (matched against the secret only).
