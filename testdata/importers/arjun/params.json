@@ -1,0 +1,24 @@
+{
+    "https://www.example.com/search": {
+        "headers": {
+            "Cookie": "session=SECRETCOOKIE",
+            "User-Agent": "Mozilla/5.0"
+        },
+        "method": "GET",
+        "params": [
+            "q",
+            "page",
+            "debug"
+        ]
+    },
+    "https://api.example.com/v1/login": {
+        "headers": {
+            "Authorization": "Bearer SECRETTOKEN"
+        },
+        "method": "JSON",
+        "params": [
+            "username",
+            "remember"
+        ]
+    }
+}

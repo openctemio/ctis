@@ -1,0 +1,20 @@
+{
+  "format": "ffuf",
+  "stats": {
+    "records": 3,
+    "assets": 1,
+    "findings": 0,
+    "components": 0,
+    "statements": 0,
+    "endpoints": 2,
+    "skipped": 1
+  },
+  "issues": [
+    {
+      "line": 1,
+      "column": 764,
+      "path": "/results/2",
+      "message": "result without a usable http(s) URL: skipped"
+    }
+  ]
+}

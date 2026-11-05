@@ -1,0 +1,84 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "arjun",
+    "info_url": "https://github.com/s0md3v/Arjun",
+    "techniques": [
+      "dast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "web_origin-https://api.example.com",
+      "type": "web_origin",
+      "value": "https://api.example.com",
+      "name": "https://api.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "web_origin-https://www.example.com",
+      "type": "web_origin",
+      "value": "https://www.example.com",
+      "name": "https://www.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    }
+  ],
+  "endpoints": [
+    {
+      "origin": "https://api.example.com",
+      "origin_ref": "web_origin-https://api.example.com",
+      "method": "POST",
+      "path": "/v1/login",
+      "template": "/v1/login",
+      "kind": "page",
+      "source": "import",
+      "params": [
+        {
+          "location": "json",
+          "name": "username"
+        },
+        {
+          "location": "json",
+          "name": "remember"
+        }
+      ]
+    },
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "web_origin-https://www.example.com",
+      "method": "GET",
+      "path": "/search",
+      "template": "/search",
+      "kind": "page",
+      "source": "import",
+      "params": [
+        {
+          "location": "query",
+          "name": "q"
+        },
+        {
+          "location": "query",
+          "name": "page"
+        },
+        {
+          "location": "query",
+          "name": "debug"
+        }
+      ]
+    }
+  ]
+}

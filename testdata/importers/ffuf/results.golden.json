@@ -1,0 +1,59 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "ffuf",
+    "info_url": "https://github.com/ffuf/ffuf",
+    "techniques": [
+      "dast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "web_origin-https://www.example.com",
+      "type": "web_origin",
+      "value": "https://www.example.com",
+      "name": "https://www.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    }
+  ],
+  "endpoints": [
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "web_origin-https://www.example.com",
+      "method": "GET",
+      "path": "/admin",
+      "template": "/admin",
+      "kind": "page",
+      "source": "import",
+      "status_code": 301,
+      "content_type": "text/html"
+    },
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "web_origin-https://www.example.com",
+      "method": "GET",
+      "path": "/api/v1/users",
+      "template": "/api/v1/users",
+      "kind": "page",
+      "source": "import",
+      "status_code": 200,
+      "content_type": "application/json",
+      "params": [
+        {
+          "location": "query",
+          "name": "id"
+        }
+      ]
+    }
+  ]
+}
