@@ -1,0 +1,137 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "trivy",
+    "version": "0.56.2",
+    "vendor": "Aqua Security",
+    "techniques": [
+      "sca"
+    ]
+  },
+  "assets": [
+    {
+      "id": "repo",
+      "type": "repository",
+      "value": "github.com/example/shop",
+      "technical": {
+        "repository": {
+          "platform": "github",
+          "owner": "example",
+          "name": "shop",
+          "default_branch": "main",
+          "visibility": "private"
+        }
+      },
+      "identifiers": {
+        "scm_repo_id": "712345678"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "f-1",
+      "type": "vulnerability",
+      "title": "log4j-core: remote code execution via JNDI lookup (Log4Shell)",
+      "severity": "critical",
+      "confidence": 95,
+      "rule_id": "CVE-2021-44228",
+      "asset_ref": "repo",
+      "location": {
+        "path": "pom.xml",
+        "start_line": 31,
+        "end_line": 35
+      },
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2021-44228"
+          }
+        ],
+        "cwe_ids": [
+          "CWE-502",
+          "CWE-917"
+        ],
+        "package_name": "org.apache.logging.log4j:log4j-core",
+        "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+        "installed_version": "2.14.1",
+        "affected_version_range": ">=2.0-beta9, <2.15.0",
+        "fixed_versions": [
+          "2.15.0",
+          "2.12.2",
+          "2.3.1"
+        ],
+        "is_direct": true,
+        "threat_signals": [
+          {
+            "type": "kev",
+            "source": "trivy"
+          },
+          {
+            "type": "weaponized",
+            "source": "trivy"
+          }
+        ]
+      },
+      "remediation": {
+        "recommendation": "Upgrade log4j-core to 2.17.1 or later.",
+        "is_fix_available": true,
+        "advisories": [
+          {
+            "url": "https://logging.apache.org/log4j/2.x/security.html"
+          }
+        ]
+      },
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
+      ],
+      "fingerprint": "5d3b2f1a0c9e8d7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f",
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+          "value": 10,
+          "source": "nvd"
+        },
+        {
+          "system": "epss",
+          "value": 0.97565
+        },
+        {
+          "system": "epss_percentile",
+          "value": 0.99996
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "dep-log4j",
+      "name": "org.apache.logging.log4j:log4j-core",
+      "version": "2.14.1",
+      "type": "library",
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+      "licenses": [
+        "Apache-2.0"
+      ],
+      "relationship": "direct",
+      "locations": [
+        {
+          "path": "pom.xml",
+          "start_line": 31,
+          "end_line": 35
+        },
+        {
+          "path": "pom.xml"
+        }
+      ]
+    }
+  ]
+}

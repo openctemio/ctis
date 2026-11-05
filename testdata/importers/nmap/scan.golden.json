@@ -1,0 +1,249 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "nmap",
+    "version": "7.95",
+    "info_url": "https://nmap.org",
+    "techniques": [
+      "easm"
+    ]
+  },
+  "assets": [
+    {
+      "id": "ip_address-192.0.2.10",
+      "type": "ip_address",
+      "value": "192.0.2.10",
+      "name": "192.0.2.10",
+      "first_seen_at": "2026-11-01T12:00:01Z",
+      "last_seen_at": "2026-11-01T12:01:00Z",
+      "technical": {
+        "ip_address": {
+          "version": 4
+        }
+      },
+      "identifiers": {
+        "mac_addresses": [
+          "00:1a:2b:3c:4d:5e"
+        ]
+      },
+      "technologies": [
+        {
+          "name": "Linux 5.0 - 6.2",
+          "categories": [
+            "operating-system"
+          ],
+          "confidence": 95
+        }
+      ],
+      "properties": {
+        "mac_vendor": "Example Networks",
+        "ptr_names": [
+          "host-10.provider.example.net"
+        ]
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "domain_name-www.example.com",
+      "type": "domain_name",
+      "value": "www.example.com",
+      "name": "www.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "service-192.0.2.10:22/tcp",
+      "type": "service",
+      "value": "192.0.2.10:22/tcp",
+      "name": "192.0.2.10:22/tcp",
+      "technical": {
+        "service": {
+          "port": 22,
+          "transport": "tcp",
+          "app_protocol": "ssh",
+          "state": "open",
+          "product": "OpenSSH",
+          "version": "9.6p1 Ubuntu 3ubuntu13.5",
+          "cpe": "cpe:2.3:a:openbsd:openssh:9.6p1:*:*:*:*:*:*:*",
+          "extra_info": "Ubuntu Linux; protocol 2.0",
+          "details": {
+            "detection_method": "probed"
+          }
+        }
+      },
+      "technologies": [
+        {
+          "name": "OpenSSH",
+          "version": "9.6p1 Ubuntu 3ubuntu13.5",
+          "cpe": "cpe:2.3:a:openbsd:openssh:9.6p1:*:*:*:*:*:*:*",
+          "confidence": 100
+        }
+      ]
+    },
+    {
+      "id": "service-192.0.2.10:80/tcp",
+      "type": "service",
+      "value": "192.0.2.10:80/tcp",
+      "name": "192.0.2.10:80/tcp",
+      "technical": {
+        "service": {
+          "port": 80,
+          "transport": "tcp",
+          "app_protocol": "http",
+          "state": "open",
+          "product": "nginx",
+          "version": "1.24.0",
+          "cpe": "cpe:2.3:a:igor_sysoev:nginx:1.24.0:*:*:*:*:*:*:*",
+          "details": {
+            "detection_method": "probed"
+          }
+        }
+      },
+      "technologies": [
+        {
+          "name": "nginx",
+          "version": "1.24.0",
+          "cpe": "cpe:2.3:a:igor_sysoev:nginx:1.24.0:*:*:*:*:*:*:*",
+          "confidence": 100
+        }
+      ]
+    },
+    {
+      "id": "service-192.0.2.10:443/tcp",
+      "type": "service",
+      "value": "192.0.2.10:443/tcp",
+      "name": "192.0.2.10:443/tcp",
+      "technical": {
+        "service": {
+          "port": 443,
+          "transport": "tcp",
+          "app_protocol": "https",
+          "state": "open",
+          "product": "nginx",
+          "version": "1.24.0",
+          "cpe": "cpe:2.3:a:igor_sysoev:nginx:1.24.0:*:*:*:*:*:*:*",
+          "is_tls": true,
+          "details": {
+            "detection_method": "probed"
+          }
+        }
+      },
+      "technologies": [
+        {
+          "name": "nginx",
+          "version": "1.24.0",
+          "cpe": "cpe:2.3:a:igor_sysoev:nginx:1.24.0:*:*:*:*:*:*:*",
+          "confidence": 100
+        }
+      ]
+    },
+    {
+      "id": "ip_address-2001:db8::20",
+      "type": "ip_address",
+      "value": "2001:db8::20",
+      "name": "2001:db8::20",
+      "first_seen_at": "2026-11-01T12:00:01Z",
+      "last_seen_at": "2026-11-01T12:01:10Z",
+      "technical": {
+        "ip_address": {
+          "version": 6
+        }
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "service-hab6abc7ddf07c5aa910e578b",
+      "type": "service",
+      "value": "[2001:db8::20]:53/udp",
+      "name": "[2001:db8::20]:53/udp",
+      "technical": {
+        "service": {
+          "port": 53,
+          "transport": "udp",
+          "app_protocol": "domain",
+          "state": "open",
+          "product": "ISC BIND",
+          "version": "9.18.28",
+          "cpe": "cpe:2.3:a:isc:bind:9.18.28:*:*:*:*:*:*:*",
+          "details": {
+            "detection_method": "probed"
+          }
+        }
+      },
+      "technologies": [
+        {
+          "name": "ISC BIND",
+          "version": "9.18.28",
+          "cpe": "cpe:2.3:a:isc:bind:9.18.28:*:*:*:*:*:*:*",
+          "confidence": 100
+        }
+      ]
+    },
+    {
+      "id": "service-hd83fc39d642a64d549531cb0",
+      "type": "service",
+      "value": "[2001:db8::20]:3389/tcp",
+      "name": "[2001:db8::20]:3389/tcp",
+      "technical": {
+        "service": {
+          "port": 3389,
+          "transport": "tcp",
+          "app_protocol": "ms-wbt-server",
+          "state": "open",
+          "details": {
+            "detection_method": "table"
+          }
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "type": "resolves_to",
+      "from_ref": "domain_name-www.example.com",
+      "to_ref": "ip_address-192.0.2.10"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-192.0.2.10",
+      "to_ref": "service-192.0.2.10:22/tcp"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-192.0.2.10",
+      "to_ref": "service-192.0.2.10:80/tcp"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-192.0.2.10",
+      "to_ref": "service-192.0.2.10:443/tcp"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-2001:db8::20",
+      "to_ref": "service-hab6abc7ddf07c5aa910e578b"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-2001:db8::20",
+      "to_ref": "service-hd83fc39d642a64d549531cb0"
+    }
+  ]
+}

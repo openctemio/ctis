@@ -1,0 +1,19 @@
+{
+  "format": "testssl",
+  "stats": {
+    "records": 1,
+    "assets": 3,
+    "findings": 1,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 1
+    }
+  },
+  "issues": [
+    {
+      "message": "3 checks passed or were informational (OK, INFO, DEBUG): not findings"
+    }
+  ]
+}

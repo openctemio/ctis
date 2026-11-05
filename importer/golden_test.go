@@ -23,6 +23,9 @@ const fixtureRoot = "../testdata/importers"
 
 var fixedNow = time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
 
+// inventoryFormats report assets and endpoints only, never findings.
+var inventoryFormats = map[Format]bool{FormatNmap: true, FormatLines: true}
+
 type fixture struct {
 	format Format
 	path   string // input file
@@ -90,15 +93,18 @@ func runFixture(t *testing.T, fx fixture) (*Result, []string) {
 	// <stem>.options.json sets the repository a code report is filed on.
 	if b, err := os.ReadFile(stem(fx.path) + ".options.json"); err == nil {
 		var o struct {
-			Format     Format `json:"format"`
-			Repository string `json:"repository"`
-			Branch     string `json:"branch"`
-			CommitSHA  string `json:"commit_sha"`
+			Format       Format   `json:"format"`
+			Repository   string   `json:"repository"`
+			Branch       string   `json:"branch"`
+			CommitSHA    string   `json:"commit_sha"`
+			LinesAs      string   `json:"lines_as"`
+			ScopeDomains []string `json:"scope_domains"`
 		}
 		if err := json.Unmarshal(b, &o); err != nil {
 			t.Fatal(err)
 		}
 		opts.Repository, opts.Branch, opts.CommitSHA = o.Repository, o.Branch, o.CommitSHA
+		opts.LinesAs, opts.ScopeDomains = o.LinesAs, o.ScopeDomains
 		if o.Format != "" {
 			opts.Format = o.Format
 		}
@@ -141,7 +147,13 @@ func TestImporters_Golden(t *testing.T) {
 					t.Errorf("finding %d (%s) has no asset_ref", i, f.Title)
 				}
 			}
-			if len(res.Report.Findings) == 0 && len(res.VEX) == 0 && len(res.Report.Dependencies) == 0 {
+			// An inventory format (hosts, services, endpoints) has no
+			// findings by design; it must still produce assets.
+			produced := len(res.Report.Findings) + len(res.VEX) + len(res.Report.Dependencies) + len(res.Report.Endpoints)
+			if inventoryFormats[fx.format] {
+				produced = len(res.Report.Assets)
+			}
+			if produced == 0 {
 				t.Fatal("fixture produced nothing: the case proves nothing")
 			}
 			compareGolden(t, fx.golden(), res.Report)

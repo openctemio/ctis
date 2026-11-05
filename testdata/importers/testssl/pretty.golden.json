@@ -1,0 +1,108 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "testssl.sh",
+    "version": "3.2.1",
+    "info_url": "https://testssl.sh",
+    "techniques": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "ip_address-198.51.100.25",
+      "type": "ip_address",
+      "value": "198.51.100.25",
+      "name": "198.51.100.25",
+      "technical": {
+        "ip_address": {
+          "version": 4
+        }
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "domain_name-mail.example.org",
+      "type": "domain_name",
+      "value": "mail.example.org",
+      "name": "mail.example.org",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "service-mail.example.org:465/tcp",
+      "type": "service",
+      "value": "mail.example.org:465/tcp",
+      "name": "mail.example.org:465/tcp",
+      "technical": {
+        "service": {
+          "port": 465,
+          "transport": "tcp",
+          "state": "open",
+          "is_tls": true
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "TLS check SSLv3: offered",
+      "message": "offered",
+      "severity": "high",
+      "category": "tls",
+      "rule_id": "SSLv3",
+      "asset_ref": "service-mail.example.org:465/tcp",
+      "network": {
+        "port": 465,
+        "transport": "tcp"
+      },
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2014-3566"
+          }
+        ],
+        "cwe_ids": [
+          "CWE-757"
+        ]
+      },
+      "remediation": {
+        "recommendation": "Disable SSLv3 on the server."
+      },
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "SSLv3",
+        "severity": "HIGH",
+        "raw_ref": "/scanResult/0/protocols/0"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "type": "resolves_to",
+      "from_ref": "domain_name-mail.example.org",
+      "to_ref": "ip_address-198.51.100.25"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "domain_name-mail.example.org",
+      "to_ref": "service-mail.example.org:465/tcp"
+    }
+  ]
+}

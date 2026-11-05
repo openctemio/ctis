@@ -1,0 +1,11 @@
+{
+  "format": "nmap",
+  "stats": {
+    "records": 3,
+    "assets": 8,
+    "findings": 0,
+    "components": 0,
+    "statements": 0,
+    "skipped": 1
+  }
+}

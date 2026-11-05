@@ -1,0 +1,73 @@
+[
+          {
+               "id"           : "engine_problem",
+               "ip"           : "www.example.com/192.0.2.10",
+               "port"         : "443",
+               "severity"     : "WARN",
+               "finding"      : "No engine or GOST support via engine with your /usr/bin/openssl"
+          },
+          {
+               "id"           : "service",
+               "ip"           : "www.example.com/192.0.2.10",
+               "port"         : "443",
+               "severity"     : "INFO",
+               "finding"      : "HTTP"
+          },
+          {
+               "id"           : "TLS1",
+               "ip"           : "www.example.com/192.0.2.10",
+               "port"         : "443",
+               "severity"     : "LOW",
+               "cwe"          : "CWE-327",
+               "finding"      : "offered (deprecated)"
+          },
+          {
+               "id"           : "TLS1_3",
+               "ip"           : "www.example.com/192.0.2.10",
+               "port"         : "443",
+               "severity"     : "OK",
+               "finding"      : "offered with final"
+          },
+          {
+               "id"           : "BREACH",
+               "ip"           : "www.example.com/192.0.2.10",
+               "port"         : "443",
+               "severity"     : "MEDIUM",
+               "cve"          : "CVE-2013-3587",
+               "cwe"          : "CWE-310",
+               "hint"         : "Disable HTTP compression for pages with secrets, or mask the secrets per request.",
+               "finding"      : "potentially VULNERABLE, gzip HTTP compression detected  - only supplied '/' tested"
+          },
+          {
+               "id"           : "SWEET32",
+               "ip"           : "www.example.com/192.0.2.11",
+               "port"         : "443",
+               "severity"     : "LOW",
+               "cve"          : "CVE-2016-2183 CVE-2016-6329",
+               "cwe"          : "CWE-327",
+               "finding"      : "uses 64 bit block ciphers"
+          },
+          {
+               "id"           : "SWEET32",
+               "ip"           : "www.example.com/192.0.2.10",
+               "port"         : "443",
+               "severity"     : "LOW",
+               "cve"          : "CVE-2016-2183 CVE-2016-6329",
+               "cwe"          : "CWE-327",
+               "finding"      : "uses 64 bit block ciphers"
+          },
+          {
+               "id"           : "cert_expirationStatus",
+               "ip"           : "198.51.100.7/198.51.100.7",
+               "port"         : "8443",
+               "severity"     : "CRITICAL",
+               "finding"      : "expired"
+          },
+          {
+               "id"           : "scanTime",
+               "ip"           : "www.example.com/192.0.2.10",
+               "port"         : "443",
+               "severity"     : "INFO",
+               "finding"      : "61"
+          }
+]

@@ -1,0 +1,157 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "lines",
+    "techniques": [
+      "easm"
+    ]
+  },
+  "assets": [
+    {
+      "id": "web_origin-https://www.example.com",
+      "type": "web_origin",
+      "value": "https://www.example.com",
+      "name": "https://www.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "in_target"
+        }
+      }
+    },
+    {
+      "id": "web_origin-http://shop.example.com:8080",
+      "type": "web_origin",
+      "value": "http://shop.example.com:8080",
+      "name": "http://shop.example.com:8080",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "in_target"
+        }
+      }
+    },
+    {
+      "id": "web_origin-https://admin.example.com",
+      "type": "web_origin",
+      "value": "https://admin.example.com",
+      "name": "https://admin.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "in_target"
+        }
+      }
+    },
+    {
+      "id": "domain_name-www.example.com",
+      "type": "domain_name",
+      "value": "www.example.com",
+      "name": "www.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "in_target"
+        }
+      }
+    },
+    {
+      "id": "ip_address-192.0.2.10",
+      "type": "ip_address",
+      "value": "192.0.2.10",
+      "name": "192.0.2.10",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "ip_range-198.51.100.0/24",
+      "type": "ip_range",
+      "value": "198.51.100.0/24",
+      "name": "198.51.100.0/24",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "domain_name-api.example.com",
+      "type": "domain_name",
+      "value": "api.example.com",
+      "name": "api.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "in_target"
+        }
+      }
+    }
+  ],
+  "endpoints": [
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "web_origin-https://www.example.com",
+      "method": "GET",
+      "path": "/",
+      "template": "/",
+      "kind": "page",
+      "source": "import"
+    },
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "web_origin-https://www.example.com",
+      "method": "GET",
+      "path": "/search",
+      "template": "/search",
+      "kind": "page",
+      "source": "import",
+      "params": [
+        {
+          "location": "query",
+          "name": "page"
+        },
+        {
+          "location": "query",
+          "name": "q"
+        }
+      ]
+    },
+    {
+      "origin": "https://www.example.com",
+      "origin_ref": "web_origin-https://www.example.com",
+      "method": "GET",
+      "path": "/users/{email}/profile",
+      "template": "/users/{email}/profile",
+      "kind": "page",
+      "source": "import"
+    },
+    {
+      "origin": "http://shop.example.com:8080",
+      "origin_ref": "web_origin-http://shop.example.com:8080",
+      "method": "GET",
+      "path": "/cart",
+      "template": "/cart",
+      "kind": "page",
+      "source": "import",
+      "params": [
+        {
+          "location": "query",
+          "name": "item"
+        }
+      ]
+    },
+    {
+      "origin": "https://admin.example.com",
+      "origin_ref": "web_origin-https://admin.example.com",
+      "method": "GET",
+      "path": "/login",
+      "template": "/login",
+      "kind": "page",
+      "source": "import"
+    }
+  ]
+}

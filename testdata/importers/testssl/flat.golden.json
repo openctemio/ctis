@@ -1,0 +1,243 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "testssl.sh",
+    "info_url": "https://testssl.sh",
+    "techniques": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "ip_address-192.0.2.10",
+      "type": "ip_address",
+      "value": "192.0.2.10",
+      "name": "192.0.2.10",
+      "technical": {
+        "ip_address": {
+          "version": 4
+        }
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "domain_name-www.example.com",
+      "type": "domain_name",
+      "value": "www.example.com",
+      "name": "www.example.com",
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "service-www.example.com:443/tcp",
+      "type": "service",
+      "value": "www.example.com:443/tcp",
+      "name": "www.example.com:443/tcp",
+      "technical": {
+        "service": {
+          "port": 443,
+          "transport": "tcp",
+          "state": "open",
+          "is_tls": true
+        }
+      }
+    },
+    {
+      "id": "ip_address-192.0.2.11",
+      "type": "ip_address",
+      "value": "192.0.2.11",
+      "name": "192.0.2.11",
+      "technical": {
+        "ip_address": {
+          "version": 4
+        }
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "ip_address-198.51.100.7",
+      "type": "ip_address",
+      "value": "198.51.100.7",
+      "name": "198.51.100.7",
+      "technical": {
+        "ip_address": {
+          "version": 4
+        }
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "service-198.51.100.7:8443/tcp",
+      "type": "service",
+      "value": "198.51.100.7:8443/tcp",
+      "name": "198.51.100.7:8443/tcp",
+      "technical": {
+        "service": {
+          "port": 8443,
+          "transport": "tcp",
+          "state": "open",
+          "is_tls": true
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "misconfiguration",
+      "title": "TLS check TLS1: offered (deprecated)",
+      "message": "offered (deprecated)",
+      "severity": "low",
+      "category": "tls",
+      "rule_id": "TLS1",
+      "asset_ref": "service-www.example.com:443/tcp",
+      "network": {
+        "port": 443,
+        "transport": "tcp"
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-327"
+        ]
+      },
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "TLS1",
+        "severity": "LOW",
+        "raw_ref": "/2"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "TLS check BREACH: potentially VULNERABLE, gzip HTTP compression detected - only supplied '/' tested",
+      "message": "potentially VULNERABLE, gzip HTTP compression detected - only supplied '/' tested",
+      "severity": "medium",
+      "category": "tls",
+      "rule_id": "BREACH",
+      "asset_ref": "service-www.example.com:443/tcp",
+      "network": {
+        "port": 443,
+        "transport": "tcp"
+      },
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2013-3587"
+          }
+        ],
+        "cwe_ids": [
+          "CWE-310"
+        ]
+      },
+      "remediation": {
+        "recommendation": "Disable HTTP compression for pages with secrets, or mask the secrets per request."
+      },
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "BREACH",
+        "severity": "MEDIUM",
+        "raw_ref": "/4"
+      }
+    },
+    {
+      "type": "vulnerability",
+      "title": "TLS check SWEET32: uses 64 bit block ciphers",
+      "message": "uses 64 bit block ciphers",
+      "severity": "low",
+      "category": "tls",
+      "rule_id": "SWEET32",
+      "asset_ref": "service-www.example.com:443/tcp",
+      "network": {
+        "port": 443,
+        "transport": "tcp"
+      },
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2016-2183"
+          },
+          {
+            "type": "cve",
+            "id": "CVE-2016-6329"
+          }
+        ],
+        "cwe_ids": [
+          "CWE-327"
+        ]
+      },
+      "occurrence_count": 2,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "SWEET32",
+        "severity": "LOW",
+        "raw_ref": "/5"
+      }
+    },
+    {
+      "type": "misconfiguration",
+      "title": "TLS check cert_expirationStatus: expired",
+      "message": "expired",
+      "severity": "critical",
+      "category": "tls",
+      "rule_id": "cert_expirationStatus",
+      "asset_ref": "service-198.51.100.7:8443/tcp",
+      "network": {
+        "port": 8443,
+        "transport": "tcp"
+      },
+      "occurrence_count": 1,
+      "native": {
+        "scheme": "other",
+        "vuln_id": "cert_expirationStatus",
+        "severity": "CRITICAL",
+        "raw_ref": "/7"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "type": "resolves_to",
+      "from_ref": "domain_name-www.example.com",
+      "to_ref": "ip_address-192.0.2.10"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "domain_name-www.example.com",
+      "to_ref": "service-www.example.com:443/tcp"
+    },
+    {
+      "type": "resolves_to",
+      "from_ref": "domain_name-www.example.com",
+      "to_ref": "ip_address-192.0.2.11"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-198.51.100.7",
+      "to_ref": "service-198.51.100.7:8443/tcp"
+    }
+  ]
+}
