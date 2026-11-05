@@ -24,7 +24,7 @@ const fixtureRoot = "../testdata/importers"
 var fixedNow = time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
 
 // inventoryFormats report assets and endpoints only, never findings.
-var inventoryFormats = map[Format]bool{FormatNmap: true, FormatLines: true}
+var inventoryFormats = map[Format]bool{FormatNmap: true, FormatLines: true, FormatFfuf: true, FormatArjun: true}
 
 type fixture struct {
 	format Format

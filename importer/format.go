@@ -71,6 +71,15 @@ const (
 	// profile's extensions (io.openctem) are removed: a document cannot
 	// say it is in scope.
 	FormatCTIS Format = "ctis"
+	// ffuf JSON output (-of json): the URLs that answered, as endpoints.
+	// No findings; the command line and configuration are never read.
+	FormatFfuf Format = "ffuf"
+	// S3Scanner JSON lines (-json): storage buckets and the permissions
+	// they grant to everyone or to every authenticated user.
+	FormatS3Scanner Format = "s3scanner"
+	// arjun JSON output (-oJ): URLs and the parameter names found on them.
+	// No findings; the request headers are never read.
+	FormatArjun Format = "arjun"
 )
 
 // AllFormats returns every format Parse reads, sorted.
@@ -108,7 +117,14 @@ func Detect(head []byte) (Format, bool) {
 	case '<':
 		return detectXML(trimmed)
 	case '{', '[':
-		return detectJSON(trimmed)
+		if f, ok := detectJSON(trimmed); ok {
+			return f, ok
+		}
+		// S3Scanner starts with log lines; a later line names a bucket.
+		if trimmed[0] == '{' && bytes.Contains(trimmed, []byte(`"bucket":{"name":`)) && bytes.Contains(trimmed, []byte(`"msg":`)) {
+			return FormatS3Scanner, true
+		}
+		return "", false
 	}
 	return "", false
 }
@@ -251,6 +267,21 @@ func detectJSON(head []byte) (Format, bool) {
 			return FormatCTIS, true
 		}
 	}
+	if _, ok := top["commandline"]; ok {
+		if _, res := top["results"]; res {
+			return FormatFfuf, true
+		}
+	}
+	if _, ok := top["bucket"]; ok {
+		_, lvl := top["level"]
+		_, msg := top["msg"]
+		if lvl && msg {
+			return FormatS3Scanner, true
+		}
+	}
+	if arjunKeys(top) {
+		return FormatArjun, true
+	}
 	if _, ok := top["scanResult"]; ok {
 		if _, inv := top["Invocation"]; inv {
 			return FormatTestssl, true
@@ -322,6 +353,20 @@ func detectJSON(head []byte) (Format, bool) {
 func testsslKeys(top map[string]string) bool {
 	for _, k := range []string{"id", "ip", "port", "severity", "finding"} {
 		if _, ok := top[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// arjunKeys reports whether every top-level member is named by an http(s)
+// URL, as in an arjun JSON file.
+func arjunKeys(top map[string]string) bool {
+	if len(top) == 0 {
+		return false
+	}
+	for k := range top {
+		if !strings.HasPrefix(k, "https://") && !strings.HasPrefix(k, "http://") {
 			return false
 		}
 	}

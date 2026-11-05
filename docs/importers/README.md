@@ -9,10 +9,12 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 
 | Format | Spec | Mapped | Ignored | Spec coverage | Fixture paths | Fixture coverage |
 |---|---|---|---|---|---|---|
+| `arjun` | [arjun JSON output](arjun.md) | 3 | 2 | 60% | 11 | 55% |
 | `betterleaks` | [betterleaks JSON report](betterleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `bounty_report` | [Bug-bounty / disclosure reports (JSON and CSV)](bounty_report.md) | 21 | 0 | 100% | 21 | 100% |
 | `ctis` | [CTIS report](ctis.md) | 21 | 15 | 58% | 273 | 90% |
 | `defectdojo` | [DefectDojo Generic Findings Import JSON](defectdojo.md) | 65 | 8 | 89% | 74 | 88% |
+| `ffuf` | [ffuf JSON output](ffuf.md) | 4 | 16 | 20% | 26 | 15% |
 | `gitleaks` | [gitleaks JSON report](gitleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `grype` | [grype JSON output](grype.md) | 84 | 49 | 63% | 155 | 54% |
 | `lines` | [Line list](lines.md) | 1 | 0 | 100% | 1 | 100% |
@@ -25,6 +27,7 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | `qualys_kb` | [Qualys KnowledgeBase XML](qualys_kb.md) | 53 | 30 | 64% | 97 | 61% |
 | `reconftw` | [reconFTW results directory (v4)](reconftw.md) | 52 | 51 | 50% | 78 | 68% |
 | `reconftw_v3` | [reconFTW results directory (v3)](reconftw_v3.md) | 49 | 47 | 51% | 70 | 71% |
+| `s3scanner` | [S3Scanner JSON lines](s3scanner.md) | 15 | 13 | 54% | 28 | 54% |
 | `semgrep` | [semgrep JSON output](semgrep.md) | 52 | 23 | 69% | 173 | 47% |
 | `testssl` | [testssl.sh JSON](testssl.md) | 22 | 7 | 76% | 46 | 85% |
 | `trivy` | [trivy JSON](trivy.md) | 81 | 25 | 76% | 126 | 77% |

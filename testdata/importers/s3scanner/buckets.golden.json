@@ -1,0 +1,98 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "s3scanner",
+    "info_url": "https://github.com/sa7mon/S3Scanner",
+    "techniques": [
+      "cspm"
+    ]
+  },
+  "assets": [
+    {
+      "id": "storage-example-assets.s3.amazonaws.com",
+      "type": "storage",
+      "value": "example-assets.s3.amazonaws.com",
+      "name": "example-assets.s3.amazonaws.com",
+      "properties": {
+        "region": "us-east-1",
+        "storage_provider": "aws"
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    },
+    {
+      "id": "storage-example-logs.nyc3.digitaloceanspaces.com",
+      "type": "storage",
+      "value": "example-logs.nyc3.digitaloceanspaces.com",
+      "name": "example-logs.nyc3.digitaloceanspaces.com",
+      "properties": {
+        "region": "nyc3",
+        "storage_provider": "digitalocean"
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "unknown"
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "misconfiguration",
+      "title": "Storage bucket writable by anyone",
+      "severity": "critical",
+      "category": "storage",
+      "rule_id": "s3scanner:public-write",
+      "asset_ref": "storage-example-assets.s3.amazonaws.com",
+      "remediation": {
+        "recommendation": "Remove the grant to everyone or to all authenticated users from the bucket policy and ACL, and turn on the provider's public access block."
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "s3scanner:public-write",
+        "raw_ref": "line 2"
+      }
+    },
+    {
+      "type": "misconfiguration",
+      "title": "Storage bucket readable by anyone",
+      "severity": "high",
+      "category": "storage",
+      "rule_id": "s3scanner:public-read",
+      "asset_ref": "storage-example-assets.s3.amazonaws.com",
+      "remediation": {
+        "recommendation": "Remove the grant to everyone or to all authenticated users from the bucket policy and ACL, and turn on the provider's public access block."
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "s3scanner:public-read",
+        "raw_ref": "line 2"
+      }
+    },
+    {
+      "type": "misconfiguration",
+      "title": "Storage bucket readable by every authenticated user of the provider",
+      "severity": "medium",
+      "category": "storage",
+      "rule_id": "s3scanner:authenticated-read",
+      "asset_ref": "storage-example-logs.nyc3.digitaloceanspaces.com",
+      "remediation": {
+        "recommendation": "Remove the grant to everyone or to all authenticated users from the bucket policy and ACL, and turn on the provider's public access block."
+      },
+      "native": {
+        "scheme": "other",
+        "vuln_id": "s3scanner:authenticated-read",
+        "raw_ref": "line 3"
+      }
+    }
+  ]
+}
