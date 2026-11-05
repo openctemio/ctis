@@ -13,8 +13,14 @@ Language-neutral CTIS: every behaviour that was Go code now has normative text a
 - [conformance/PROTOCOL.md](conformance/PROTOCOL.md): a line protocol (one JSON request per line on standard input, one answer per line) with an operation per vector family; `scripts/conformance_harness.py` (standard library only) walks the vectors, drives any implementation through it and reports per operation; `ctis conformance --serve` implements it with the Go reference, and CI runs the harness against it.
 - [docs/porting.md](docs/porting.md) ("Porting CTIS to a new language") and [`bindings/`](bindings/README.md), reserved for other languages.
 
+### Added: importers for the output of tools a person runs
+
+- `importer` formats `nmap` (nmap XML `-oX`: addresses, the names asked for, open ports as services with product, version and CPE; no findings), `testssl` (testssl.sh `--jsonfile` and `--jsonfile-pretty`: checks of severity LOW and above as findings on the TLS service), `lines` (one name, address, CIDR block or URL per line, `Options.LinesAs`; never detected) and `ctis` (a CTIS 2.0 report read strictly and passed through; the `io.openctem` receiver-profile extensions and finding `validation` are removed, the report's own id, channel and metadata are not kept). Each has a mapping spec, golden fixtures and hostile tests; `docs/importers/` lists them.
+- `Options.ScopeDomains` now also applies to these formats: every host-bearing asset carries `extensions[io.openctem].import_scope` (`in_target`, `outside_target`, or `unknown` for an address or without scope domains), so a receiver judges each imported host against the organization's scope.
+
 ### Fixed
 
+- The importer's record guard validated a finding without the endpoint its `web.endpoint_ref` names, so such findings were left out; the endpoint is now part of the check, and a reference to an endpoint that was left out is cleared.
 - Spec section 2.2 lists the fallback `other` of `technical.network_device.kind`, which decoding has always applied.
 
 ## [2.0.1] - 2026-11-03

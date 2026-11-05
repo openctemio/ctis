@@ -2,7 +2,9 @@
 // 1.4 reports: Nessus v2 XML, Qualys host detection XML (joined with the
 // Qualys KnowledgeBase), CycloneDX and SPDX SBOMs, OSV records, CSAF 2.0 and
 // OpenVEX documents, DefectDojo Generic Findings JSON, SARIF 2.1.0, and the
-// native JSON of trivy, nuclei, semgrep, betterleaks and vuls. It is the one
+// native JSON of trivy, nuclei, semgrep, betterleaks and vuls, nmap XML,
+// testssl.sh JSON, line lists (FormatLines) and CTIS reports (FormatCTIS,
+// passed through without the receiver profile's extensions). It is the one
 // conversion entry point: a receiver's upload and CI endpoints and a
 // sensor's parser tool all call Parse.
 //

@@ -71,6 +71,12 @@ func (b *Builder) guard() error {
 			assetsByID[a.ID] = a
 		}
 	}
+	endpointsByID := map[string]ctis.Endpoint{}
+	for _, e := range rep.Endpoints {
+		if e.ID != "" {
+			endpointsByID[e.ID] = e
+		}
+	}
 	for _, f := range rep.Findings {
 		p := probe()
 		a, ok := assetsByID[f.AssetRef]
@@ -89,6 +95,14 @@ func (b *Builder) guard() error {
 		}
 		pf := f
 		pf.DependencyRef = ""
+		// A web location may name an endpoint of the report: the probe
+		// holds it (without its origin link, checked with the endpoints).
+		if f.Web != nil && f.Web.EndpointRef != "" {
+			if e, ok := endpointsByID[f.Web.EndpointRef]; ok {
+				e.OriginRef = ""
+				p.Endpoints = []ctis.Endpoint{e}
+			}
+		}
 		p.Findings = []ctis.Finding{pf}
 		if err := p.Validate(); err != nil || (f.ID != "" && findingIDs[f.ID]) {
 			droppedFindings++
@@ -123,6 +137,17 @@ func (b *Builder) guard() error {
 		keptEndpoints = append(keptEndpoints, e)
 	}
 	rep.Endpoints = keptEndpoints
+	keptEndpointIDs := map[string]bool{}
+	for _, e := range keptEndpoints {
+		if e.ID != "" {
+			keptEndpointIDs[e.ID] = true
+		}
+	}
+	for i := range rep.Findings {
+		if w := rep.Findings[i].Web; w != nil && w.EndpointRef != "" && !keptEndpointIDs[w.EndpointRef] {
+			w.EndpointRef = ""
+		}
+	}
 
 	// Dependencies, one by one, unique ids. An asset_ref to an asset that
 	// was dropped is cleared; depends_on is checked against the whole report

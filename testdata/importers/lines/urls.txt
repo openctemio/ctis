@@ -1,0 +1,11 @@
+# gau example.com
+https://www.example.com/
+https://www.example.com/search?q=shoes&page=2
+https://www.example.com/users/alice@example.com/profile
+http://shop.example.com:8080/cart?item=1
+https://user:secret@admin.example.com/login
+javascript:alert(1)
+www.example.com
+192.0.2.10
+198.51.100.0/24
+api.example.com. A 192.0.2.40

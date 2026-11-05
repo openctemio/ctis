@@ -57,6 +57,20 @@ const (
 	// JSON, or one report per CSV row. Detect names the JSON shape only; CSV
 	// is read when Options.Format forces this format.
 	FormatBountyReport Format = "bounty_report"
+	// nmap XML output (-oX), also written by masscan -oX and other
+	// nmap-compatible scanners: hosts, addresses, names and open ports
+	// with their services. No findings.
+	FormatNmap Format = "nmap"
+	// testssl.sh JSON (--jsonfile, flat, or --jsonfile-pretty): TLS and
+	// HTTP header checks of each endpoint.
+	FormatTestssl Format = "testssl"
+	// A line list: one name, address, CIDR block or URL per line
+	// (Options.LinesAs). Never detected: choose it with Options.Format.
+	FormatLines Format = "lines"
+	// A CTIS 2.0 report, read strictly and passed through. The receiver
+	// profile's extensions (io.openctem) are removed: a document cannot
+	// say it is in scope.
+	FormatCTIS Format = "ctis"
 )
 
 // AllFormats returns every format Parse reads, sorted.
@@ -124,6 +138,8 @@ func detectXML(head []byte) (Format, bool) {
 			return FormatQualysKB, true
 		case "OWASPZAPReport":
 			return FormatZAP, true
+		case "nmaprun":
+			return FormatNmap, true
 		}
 		return "", false
 	}
@@ -223,7 +239,22 @@ func detectJSON(head []byte) (Format, bool) {
 				return FormatNuclei, true
 			}
 		}
+		if testsslKeys(top) {
+			return FormatTestssl, true
+		}
 		return "", false
+	}
+	// A CTIS report names its version and metadata at the top; its
+	// "findings" would otherwise read as a DefectDojo file.
+	if _, ok := top["metadata"]; ok && strings.HasPrefix(top["version"], "2.") {
+		if strings.Contains(strings.ToLower(top["$schema"]), "ctis") || top["$schema"] == "" {
+			return FormatCTIS, true
+		}
+	}
+	if _, ok := top["scanResult"]; ok {
+		if _, inv := top["Invocation"]; inv {
+			return FormatTestssl, true
+		}
 	}
 	if _, ok := top["bounty_reports"]; ok {
 		return FormatBountyReport, true
@@ -284,4 +315,15 @@ func detectJSON(head []byte) (Format, bool) {
 		return FormatDefectDojo, true
 	}
 	return "", false
+}
+
+// testsslKeys reports whether the members of a record are those of a
+// testssl.sh flat JSON finding.
+func testsslKeys(top map[string]string) bool {
+	for _, k := range []string{"id", "ip", "port", "severity", "finding"} {
+		if _, ok := top[k]; !ok {
+			return false
+		}
+	}
+	return true
 }

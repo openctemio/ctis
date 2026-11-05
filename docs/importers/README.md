@@ -11,10 +11,13 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 |---|---|---|---|---|---|---|
 | `betterleaks` | [betterleaks JSON report](betterleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `bounty_report` | [Bug-bounty / disclosure reports (JSON and CSV)](bounty_report.md) | 21 | 0 | 100% | 21 | 100% |
+| `ctis` | [CTIS report](ctis.md) | 21 | 15 | 58% | 273 | 90% |
 | `defectdojo` | [DefectDojo Generic Findings Import JSON](defectdojo.md) | 65 | 8 | 89% | 74 | 88% |
 | `gitleaks` | [gitleaks JSON report](gitleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `grype` | [grype JSON output](grype.md) | 84 | 49 | 63% | 155 | 54% |
+| `lines` | [Line list](lines.md) | 1 | 0 | 100% | 1 | 100% |
 | `nessus` | [Nessus v2 XML (.nessus)](nessus.md) | 128 | 40 | 76% | 162 | 80% |
+| `nmap` | [nmap XML](nmap.md) | 26 | 60 | 30% | 115 | 23% |
 | `nuclei` | [nuclei JSON lines](nuclei.md) | 43 | 10 | 81% | 49 | 90% |
 | `opengrep` | [opengrep JSON output](opengrep.md) | 52 | 23 | 69% | 116 | 70% |
 | `osv` | [osv-scanner JSON results (OSV records)](osv.md) | 43 | 13 | 77% | 78 | 72% |
@@ -23,6 +26,7 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | `reconftw` | [reconFTW results directory (v4)](reconftw.md) | 52 | 51 | 50% | 78 | 68% |
 | `reconftw_v3` | [reconFTW results directory (v3)](reconftw_v3.md) | 49 | 47 | 51% | 70 | 71% |
 | `semgrep` | [semgrep JSON output](semgrep.md) | 52 | 23 | 69% | 173 | 47% |
+| `testssl` | [testssl.sh JSON](testssl.md) | 22 | 7 | 76% | 46 | 85% |
 | `trivy` | [trivy JSON](trivy.md) | 81 | 25 | 76% | 126 | 77% |
 | `vuls` | [vuls JSON scan result](vuls.md) | 62 | 58 | 52% | 135 | 60% |
 | `zap` | [ZAP traditional report (JSON and XML)](zap.md) | 72 | 13 | 85% | 90 | 81% |

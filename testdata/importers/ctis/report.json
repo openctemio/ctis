@@ -1,0 +1,123 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "id": "019a2b3c-4d5e-7ede-9f59-abaa8f9477a8",
+    "generated_at": "2026-10-02T12:00:00Z",
+    "channel": "integration",
+    "source_refs": [
+      {
+        "system": "nessus",
+        "id": "tenable-scan-8812"
+      }
+    ]
+  },
+  "tool": {
+    "name": "nessus",
+    "version": "10.8.3",
+    "vendor": "Tenable",
+    "techniques": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "web01",
+      "type": "host",
+      "value": "web01.example.com",
+      "criticality": "high",
+      "identifiers": {
+        "machine_id": "4c4c4544004235108051b4c04f4e4d32",
+        "mac_addresses": [
+          "00:1a:2b:3c:4d:5e"
+        ]
+      },
+      "technical": {
+        "ip_address": {
+          "version": 4,
+          "hostname": "web01.example.com"
+        }
+      },
+      "extensions": {
+        "io.openctem": {
+          "import_scope": "in_target",
+          "candidate_exposure": "none"
+        },
+        "org.example.scanner": {
+          "site": "dc1"
+        }
+      }
+    },
+    {
+      "id": "web01-443-tcp",
+      "type": "service",
+      "value": "web01.example.com:443/tcp",
+      "technical": {
+        "service": {
+          "port": 443,
+          "transport": "tcp",
+          "app_protocol": "https",
+          "state": "open",
+          "product": "nginx",
+          "version": "1.18.0",
+          "is_tls": true,
+          "tls_version": "tls1.2"
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "f-1",
+      "type": "vulnerability",
+      "title": "nginx < 1.20.1 1-Byte Memory Overwrite RCE",
+      "severity": "high",
+      "rule_id": "nessus-151131",
+      "asset_ref": "web01",
+      "network": {
+        "host": "203.0.113.10",
+        "port": 443,
+        "transport": "tcp",
+        "app_protocol": "https"
+      },
+      "vulnerability": {
+        "ids": [
+          {
+            "type": "cve",
+            "id": "CVE-2021-23017"
+          }
+        ]
+      },
+      "first_seen_at": "2026-06-01T00:00:00Z",
+      "last_seen_at": "2026-10-02T12:00:00Z",
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "text": "Installed version : 1.18.0\nFixed version     : 1.20.1"
+        }
+      ],
+      "scores": [
+        {
+          "system": "cvss",
+          "version": "3.1",
+          "value": 7.7
+        },
+        {
+          "system": "vendor",
+          "value": 6.7,
+          "source": "tenable"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "exposes",
+      "from_ref": "web01",
+      "to_ref": "web01-443-tcp"
+    }
+  ],
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "properties": {
+    "producer_note": "kept out"
+  }
+}

@@ -83,10 +83,19 @@ type Options struct {
 	// DefaultBundleLimits.
 	Bundle BundleLimits
 
-	// ParseBundle only. Domains the importing organization treats as its
-	// own. A host of the bundle at or below one of them is marked
-	// import_scope=in_target. Empty: the target domain the bundle names.
+	// Domains the importing organization treats as its own. A host of a
+	// bundle or of a network format (nmap, testssl, lines, ctis) at or below
+	// one of them is marked import_scope=in_target, any other name
+	// outside_target, and an address unknown. Empty: a bundle uses the
+	// target domain it names; a network format marks every host unknown.
+	// The verdict is a hint: a receiver judges scope itself.
 	ScopeDomains []string
+
+	// FormatLines only: what each line names. One of LinesAsAuto (the
+	// default: a URL, an address, a CIDR block or a DNS name, by its form),
+	// LinesAsHost (a DNS name or an address), LinesAsDomain, LinesAsIP (an
+	// address or a CIDR block) or LinesAsURL.
+	LinesAs string
 
 	// NoPassthrough: the standard-format adapters leave out the members
 	// their mapping does not list. By default they keep them under

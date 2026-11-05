@@ -1,0 +1,50 @@
+{
+          "Invocation"  : "testssl.sh --jsonfile-pretty pretty.json mail.example.org:465",
+          "at"          : "scanner:/usr/bin/openssl",
+          "version"     : "3.2.1 ",
+          "openssl"     : "OpenSSL 3.0.13 from Wed Nov  4 12:00:00 2026",
+          "startTime"   : "1793534400",
+          "scanResult"  : [
+                    {
+                    "targetHost"  : "mail.example.org",
+                    "ip"          : "198.51.100.25",
+                    "port"        : "465",
+                    "rDNS"        : "mx.provider.example.net.",
+                    "service"     : "SMTP",
+                    "pretest"     : [
+                         {
+                         "id"           : "pre_128cipher",
+                         "severity"     : "INFO",
+                         "finding"      : "No 128 cipher limit bug"
+                         }
+                    ],
+                    "protocols"   : [
+                         {
+                         "id"           : "SSLv3",
+                         "severity"     : "HIGH",
+                         "cve"          : "CVE-2014-3566",
+                         "cwe"          : "CWE-757",
+                         "hint"         : "Disable SSLv3 on the server.",
+                         "finding"      : "offered"
+                         }
+                    ],
+                    "vulnerabilities"   : [
+                         {
+                         "id"           : "heartbleed",
+                         "severity"     : "OK",
+                         "cve"          : "CVE-2014-0160",
+                         "cwe"          : "CWE-119",
+                         "finding"      : "not vulnerable, no heartbeat extension"
+                         }
+                    ],
+                    "rating"   : [
+                         {
+                         "id"           : "overall_grade",
+                         "severity"     : "CRITICAL",
+                         "finding"      : "T"
+                         }
+                    ]
+                    }
+          ],
+          "scanTime"  : 42
+}

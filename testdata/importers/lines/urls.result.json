@@ -1,0 +1,18 @@
+{
+  "format": "lines",
+  "stats": {
+    "records": 9,
+    "assets": 7,
+    "findings": 0,
+    "components": 0,
+    "statements": 0,
+    "endpoints": 5,
+    "skipped": 2
+  },
+  "issues": [
+    {
+      "path": "/line",
+      "message": "2 lines skipped: 0 longer than 65536 bytes, 0 with invalid UTF-8 or control characters, 2 not usable"
+    }
+  ]
+}

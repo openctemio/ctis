@@ -1,0 +1,25 @@
+{
+  "format": "testssl",
+  "stats": {
+    "records": 5,
+    "assets": 6,
+    "findings": 4,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "critical": 1,
+      "low": 2,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "path": "/0",
+      "message": "testssl warn engine_problem: No engine or GOST support via engine with your /usr/bin/openssl"
+    },
+    {
+      "message": "3 checks passed or were informational (OK, INFO, DEBUG): not findings"
+    }
+  ]
+}

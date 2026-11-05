@@ -1,0 +1,139 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual"
+  },
+  "tool": {
+    "name": "semgrep",
+    "version": "1.85.0",
+    "techniques": [
+      "sast"
+    ]
+  },
+  "assets": [
+    {
+      "id": "repo",
+      "type": "repository",
+      "value": "github.com/example/shop"
+    }
+  ],
+  "rules": [
+    {
+      "id": "r-sqli",
+      "rule_id": "python.django.security.injection.sql.sql-injection-db-cursor-execute",
+      "name": "SQL injection through a database cursor",
+      "short_description": "Request data reaches a raw SQL query.",
+      "help": "Use parameterized queries (cursor.execute(sql, params)) or the ORM.",
+      "help_uri": "https://cwe.mitre.org/data/definitions/89.html",
+      "default_severity": "high",
+      "tags": [
+        "security",
+        "injection"
+      ],
+      "cwe_ids": [
+        "CWE-89"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "f-1",
+      "type": "weakness",
+      "title": "SQL query built from request data",
+      "message": "User-controlled data from a request is passed to 'execute()'.",
+      "severity": "high",
+      "confidence": 95,
+      "category": "security",
+      "vulnerability_classes": [
+        "SQL Injection"
+      ],
+      "rule_id": "python.django.security.injection.sql.sql-injection-db-cursor-execute",
+      "rule_ref": "r-sqli",
+      "asset_ref": "repo",
+      "location": {
+        "path": "app/views.py",
+        "start_line": 42,
+        "end_line": 42,
+        "start_column": 9,
+        "end_column": 61,
+        "snippet": "cursor.execute(\"SELECT * FROM users WHERE id = \" + uid)",
+        "commit": {
+          "author": "Jane Developer",
+          "author_email": "jane@example.com",
+          "committed_at": "2026-09-30T14:22:00Z"
+        },
+        "logical_location": {
+          "fully_qualified_name": "app.views.user_detail",
+          "name": "user_detail",
+          "kind": "function"
+        }
+      },
+      "vulnerability": {
+        "cwe_ids": [
+          "CWE-89"
+        ],
+        "owasp_ids": [
+          "A03:2021"
+        ]
+      },
+      "remediation": {
+        "recommendation": "Use parameterised queries.",
+        "is_auto_fixable": true,
+        "fix_code": "cursor.execute(\"SELECT * FROM users WHERE id = %s\", [uid])"
+      },
+      "fingerprint": "0e1d2c3b4a5f69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "partial_fingerprints": {
+        "primaryLocationLineHash": "39fa2ee980eb94b0:1"
+      },
+      "data_flow": {
+        "sources": [
+          {
+            "path": "app/views.py",
+            "line": 40,
+            "content": "uid = request.GET['id']",
+            "label": "uid",
+            "type": "source",
+            "taint_state": "tainted"
+          }
+        ],
+        "sinks": [
+          {
+            "path": "app/views.py",
+            "line": 42,
+            "index": 1,
+            "type": "sink",
+            "called_function": "cursor.execute"
+          }
+        ],
+        "is_tainted": true,
+        "taint_type": "user_input",
+        "summary": "uid (user_input) flows from app/views.py:40 to cursor.execute() at line 42"
+      }
+    },
+    {
+      "id": "f-2",
+      "type": "weakness",
+      "title": "Use of weak hash function MD5",
+      "severity": "low",
+      "rule_id": "python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-md5",
+      "asset_ref": "repo",
+      "location": {
+        "path": "tests/fixtures.py",
+        "start_line": 8
+      },
+      "status": "suppressed",
+      "suppression": {
+        "kind": "in_source",
+        "status": "accepted",
+        "reason": "test_code",
+        "justification": "Fixture data only; never used for security.",
+        "suppressed_by": "jane@example.com",
+        "suppressed_at": "2026-09-01T10:00:00Z",
+        "expires_at": "2027-09-01T00:00:00Z"
+      }
+    }
+  ]
+}

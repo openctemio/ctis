@@ -1,0 +1,14 @@
+{
+  "format": "ctis",
+  "stats": {
+    "records": 1,
+    "assets": 2,
+    "findings": 1,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "high": 1
+    }
+  }
+}

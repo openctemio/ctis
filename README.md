@@ -121,7 +121,7 @@ A port is a `service` asset (`host:port/transport`) linked from its host by an `
 
 ## Importing other tools' exports
 
-The `importer` package converts exported files to CTIS 2.0: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, osv-scanner, the ZAP report, generic bug-bounty reports, and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls. The standard formats CycloneDX, SPDX, CSAF, OpenVEX and SARIF 2.1.0 are read through the same `Parse` once their adapter module is imported (`import _ "github.com/openctemio/ctis/v2/interop/cyclonedx"`). `Detect` names the format from the first bytes; `Parse` converts the file:
+The `importer` package converts exported files to CTIS 2.0: Nessus, Qualys (with the KnowledgeBase), DefectDojo Generic JSON, osv-scanner, the ZAP report, generic bug-bounty reports, and the native JSON of trivy, grype, nuclei, semgrep, opengrep, betterleaks, gitleaks and vuls, nmap XML, testssl.sh JSON, line lists of names, addresses or URLs (`lines`) and CTIS reports themselves (`ctis`). The standard formats CycloneDX, SPDX, CSAF, OpenVEX and SARIF 2.1.0 are read through the same `Parse` once their adapter module is imported (`import _ "github.com/openctemio/ctis/v2/interop/cyclonedx"`). `Detect` names the format from the first bytes; `Parse` converts the file:
 
 ```go
 res, err := importer.Parse(ctx, file, importer.Options{})

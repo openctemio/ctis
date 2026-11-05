@@ -591,7 +591,15 @@ func (r *bundleRun) readFile(rel, rowPath string) error {
 // reports whether it used it. Lines that are too long, not clean text, or
 // refused by fn are counted and reported in one issue.
 func (r *bundleRun) eachLine(rel string, rd io.Reader, fn func(line string) bool) error {
-	br := bufio.NewReaderSize(rd, r.bl.MaxLineBytes+2)
+	return eachTextLine(r.b, rel, rd, r.bl.MaxLineBytes, r.bl.MaxLines, fn)
+}
+
+// eachTextLine calls fn for every non-empty line of rd, trimmed. A line
+// longer than maxLineBytes, with invalid UTF-8 or a control character, or
+// that fn refuses (returns false) is skipped and counted; one issue at rel
+// sums them up. At most maxLines lines are read.
+func eachTextLine(b *Builder, rel string, rd io.Reader, maxLineBytes, maxLines int, fn func(line string) bool) error {
+	br := bufio.NewReaderSize(rd, maxLineBytes+2)
 	var tooLong, unclean, refused, n int
 	first := true
 	for {
@@ -616,11 +624,11 @@ func (r *bundleRun) eachLine(rel string, rd io.Reader, fn func(line string) bool
 			chunk = bytes.TrimPrefix(chunk, utf8BOM)
 			first = false
 		}
-		if n++; n > r.bl.MaxLines {
-			r.b.issue(Issue{Path: rel, Message: fmt.Sprintf("more than %d lines: the rest of the file is not read", r.bl.MaxLines)})
+		if n++; n > maxLines {
+			b.issue(Issue{Path: rel, Message: fmt.Sprintf("more than %d lines: the rest of the file is not read", maxLines)})
 			break
 		}
-		if e := r.b.tick(); e != nil {
+		if e := b.tick(); e != nil {
 			return e
 		}
 		raw := bytes.TrimSpace(bytes.TrimRight(chunk, "\r\n"))
@@ -631,7 +639,7 @@ func (r *bundleRun) eachLine(rel string, rd io.Reader, fn func(line string) bool
 			case !fn(string(raw)):
 				refused++
 			default:
-				r.b.res.Stats.Records++
+				b.res.Stats.Records++
 			}
 		}
 		if errors.Is(err, io.EOF) {
@@ -639,8 +647,8 @@ func (r *bundleRun) eachLine(rel string, rd io.Reader, fn func(line string) bool
 		}
 	}
 	if tooLong+unclean+refused > 0 {
-		r.b.res.Stats.Skipped += tooLong + unclean + refused
-		r.b.issue(Issue{Path: rel, Message: fmt.Sprintf("%d lines skipped: %d longer than %d bytes, %d with invalid UTF-8 or control characters, %d not usable", tooLong+unclean+refused, tooLong, r.bl.MaxLineBytes, unclean, refused)})
+		b.res.Stats.Skipped += tooLong + unclean + refused
+		b.issue(Issue{Path: rel, Message: fmt.Sprintf("%d lines skipped: %d longer than %d bytes, %d with invalid UTF-8 or control characters, %d not usable", tooLong+unclean+refused, tooLong, maxLineBytes, unclean, refused)})
 	}
 	return nil
 }
