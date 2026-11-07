@@ -1,0 +1,135 @@
+<?xml version="1.0" ?>
+<!-- Synthetic sample: documentation addresses (RFC 5737), example.com names, made-up products and packages. -->
+<NessusClientData_v2 xmlns:cm="http://www.nessus.org/cm">
+<Report name="Inventory sample">
+<ReportHost name="192.0.2.10"><HostProperties>
+<tag name="host-ip">192.0.2.10</tag>
+<tag name="host-fqdn">app1.example.com</tag>
+<tag name="operating-system">Linux Kernel 6.8.0 on Ubuntu 24.04</tag>
+<tag name="Credentialed_Scan">true</tag>
+<tag name="cpe-0">cpe:/o:canonical:ubuntu_linux:24.04 -> Canonical Ubuntu Linux 24.04</tag>
+<tag name="cpe-1">cpe:/a:examplevendor:example_server:2.4.1 -> Examplevendor Example Server 2.4.1</tag>
+<tag name="cpe-2">cpe:/a:acme:widget_daemon:1.0 -> Acme Widget Daemon</tag>
+<tag name="cpe-3">cpe:/a:examplevendor:example_server:2.4.1 -> Examplevendor Example Server 2.4.1</tag>
+<tag name="cpe-4">x-cpe:/a:acme:internal_agent:3.2 -> Acme Internal Agent</tag>
+<tag name="cpe-5">cpe:/h:acme:example_board -> Acme Example Board</tag>
+<tag name="cpe-6">not a cpe</tag>
+<tag name="ssh-fingerprint">ssh-ed25519 SHA256:AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcdefg
+ssh-rsa 0a:1b:2c:3d:4e:5f:60:71:82:93:a4:b5:c6:d7:e8:f9
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8=
+not-a-key xyz</tag>
+<tag name="netstat-listen-tcp4-0">0.0.0.0:22</tag>
+<tag name="netstat-listen-tcp4-1">127.0.0.1:5432</tag>
+<tag name="netstat-listen-tcp4-2">192.0.2.10:8443 (2211/exampled)</tag>
+<tag name="netstat-listen-tcp6-0">[::]:22</tag>
+<tag name="netstat-listen-tcp6-1">[::1]:6379</tag>
+<tag name="netstat-listen-udp4-0">0.0.0.0:5353</tag>
+<tag name="netstat-established-tcp4-0">192.0.2.10:22-198.51.100.9:50122</tag>
+</HostProperties>
+<ReportItem port="22" svc_name="ssh" protocol="tcp" severity="0" pluginID="10267" pluginName="SSH Server Type and Version Information" pluginFamily="Service detection">
+<description>It is possible to obtain information about the remote SSH server.</description>
+<plugin_output>SSH version : SSH-2.0-ExampleSSH_1.0</plugin_output>
+</ReportItem>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="0" pluginID="22869" pluginName="Software Enumeration (SSH)" pluginFamily="General">
+<description>Lists the software installed on the remote host.</description>
+<plugin_output>
+Here is the list of packages installed on the remote Ubuntu Linux system :
+
+  ii  examplepkg                      2.4.1-1ubuntu2       amd64        Example server package
+  ii  libexample1:amd64               0.9.3-4              amd64        Example library
+  ii  acme-tools                      1:3.0~rc1-2          all          Acme command line tools
+  rc  removedpkg                      1.0-1                amd64        Removed, config files left
+  ii  examplepkg                      2.4.1-1ubuntu2       amd64        Example server package
+</plugin_output>
+</ReportItem>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="2" pluginID="21157" pluginName="Unix Compliance Checks" pluginFamily="Policy Compliance">
+<compliance>true</compliance>
+<description>"1.1.1 Ensure the example service is configured" : [FAILED]
+
+The example service must be configured so only administrators change it.
+
+Reference: 800-53|CM-6,CSCv8|4.1,PCI-DSSv3.2.1|2.2,ISO/IEC-27001|A.12.1.2,HIPAA|164.308(a)(1),LEVEL|1A,800-53|CM-6
+
+Policy Value: expect: ^owner=root
+Actual Value: see below</description>
+<cm:compliance-check-name>1.1.1 Ensure the example service is configured</cm:compliance-check-name>
+<cm:compliance-check-id>0123456789abcdef0123456789abcdef</cm:compliance-check-id>
+<cm:compliance-result>FAILED</cm:compliance-result>
+<cm:compliance-info>The example service must be configured so only administrators change it.</cm:compliance-info>
+<cm:compliance-reference>800-53|CM-6,CSCv8|4.1,PCI-DSSv3.2.1|2.2,ISO/IEC-27001|A.12.1.2,HIPAA|164.308(a)(1),LEVEL|1A,800-53|CM-6</cm:compliance-reference>
+<cm:compliance-informational-id>abcdef0123456789</cm:compliance-informational-id>
+<cm:compliance-policy-value>expect: ^owner=root</cm:compliance-policy-value>
+<cm:compliance-actual-value>The command script with multiple expectations returned :
+
+------------------------------------------------------------------------
+PASSED - Example file has the expected owner
+File: /etc/example/example.conf
+Regex: ^owner=root
+Matched lines:
+  owner=root
+------------------------------------------------------------------------
+FAILED - Example setting is enabled
+File: /etc/example/example.conf
+Regex: ^enabled=yes
+No matching lines
+------------------------------------------------------------------------
+WARNING - Example item needs review
+Manual review needed</cm:compliance-actual-value>
+<cm:compliance-benchmark-name>CIS Example Linux Benchmark</cm:compliance-benchmark-name>
+</ReportItem>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="1" pluginID="21157" pluginName="Unix Compliance Checks" pluginFamily="Policy Compliance">
+<compliance>true</compliance>
+<cm:compliance-check-name>1.1.2 Ensure the example audit log exists</cm:compliance-check-name>
+<cm:compliance-check-id>fedcba9876543210fedcba9876543210</cm:compliance-check-id>
+<cm:compliance-result>ERROR</cm:compliance-result>
+<cm:compliance-error>The file /var/log/example/audit.log could not be read</cm:compliance-error>
+<cm:compliance-benchmark-name>CIS Example Linux Benchmark</cm:compliance-benchmark-name>
+</ReportItem>
+</ReportHost>
+<ReportHost name="192.0.2.20"><HostProperties>
+<tag name="host-ip">192.0.2.20</tag>
+<tag name="operating-system">Red Hat Enterprise Linux 9.4</tag>
+</HostProperties>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="0" pluginID="22869" pluginName="Software Enumeration (SSH)" pluginFamily="General">
+<description>Lists the software installed on the remote host.</description>
+<plugin_output>
+Here is the list of packages installed on the remote Red Hat Linux system :
+
+  examplepkg-2.4.1-3.el9|(none)|Thu 01 Feb 2024 10:00:00 AM UTC|Example Vendor
+  libexample-0.9.3-1.el9.x86_64|2|Thu 01 Feb 2024 10:00:00 AM UTC|Example Vendor
+  gpg-pubkey-00000000-00000000|(none)
+</plugin_output>
+</ReportItem>
+</ReportHost>
+<ReportHost name="192.0.2.30"><HostProperties>
+<tag name="host-ip">192.0.2.30</tag>
+<tag name="operating-system">Microsoft Windows Server 2022 Standard</tag>
+</HostProperties>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="0" pluginID="20811" pluginName="Microsoft Windows Installed Software Enumeration (credentialed check)" pluginFamily="Windows">
+<description>Lists the software installed on the remote host.</description>
+<plugin_output>
+The following software are installed on the remote host :
+
+Example Office Suite  [version 16.0.1]  [installed on 2024/01/15]
+Acme Runtime Library - 14.29.1  [version 14.29.1]
+Example Agent  [version 5.2]  [publisher Example Corp]
+Something without a version
+</plugin_output>
+</ReportItem>
+</ReportHost>
+<ReportHost name="192.0.2.40"><HostProperties>
+<tag name="host-ip">192.0.2.40</tag>
+<tag name="operating-system">Alpine Linux 3.19</tag>
+</HostProperties>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="0" pluginID="22869" pluginName="Software Enumeration (SSH)" pluginFamily="General">
+<description>Lists the software installed on the remote host.</description>
+<plugin_output>
+Here is the list of packages installed on the remote Alpine Linux system :
+
+  examplepkg-2.4.1-r0
+  libexample-0.9.3-r2
+</plugin_output>
+</ReportItem>
+</ReportHost>
+</Report>
+</NessusClientData_v2>

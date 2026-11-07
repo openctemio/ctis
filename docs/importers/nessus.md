@@ -4,7 +4,7 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 
 - Format: `nessus`
 - Source versions: NessusClientData_v2 as written by Nessus 10.x and Tenable.sc 6.x
-- Fields: 128 mapped, 40 ignored on purpose (76% mapped)
+- Fields: 132 mapped, 40 ignored on purpose (77% mapped)
 
 ## Rules
 
@@ -15,6 +15,12 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 - Every CVSS version goes to finding.scores with source tenable. VPR is a vendor score with source tenable; exploit and KEV data become vulnerability.threat_signals (source tenable or cisa).
 - plugin_output and compliance-actual-value go to raw_text evidence items after credential redaction: account lines (User:, Login:, Account:) and account labels inside a line, `as '<account>'`, and password, secret, token, API key and community values become [redacted]. The passwords, tokens and community strings found there are also masked (ctis.MaskSecretMatch) wherever any other field of the finding repeats them.
 - The Policy element (server and plugin preferences, which hold scan credentials and account names) is skipped whole, and smb-login-used, ssh-login-used and compliance-uname are never read.
+- Application and hardware CPEs of the cpe-N host properties ("cpe:/a:vendor:product:version -> Name") become assets[].technologies[] on the host, CPE 2.3 canonical (ctis.CanonicalCPE), distinct by CPE, category application or hardware, at most 100 per asset (ctis.MaxTechnologies) with an issue beyond; the display name after -> is the name. The first operating-system CPE becomes the cpe (and version) of the operating-system technology. x-cpe values (the scanner's own names outside the CPE dictionary) keep name and version without a CPE.
+- Installed packages: the plugin output of Software Enumeration (SSH) (plugin 22869: dpkg, rpm and apk lists) and Microsoft Windows Installed Software Enumeration (plugin 20811) becomes dependencies[] with asset_ref the host: deb, rpm or apk purls with the distribution of operating-system as namespace and arch, epoch and distro qualifiers; pkg:generic when the distribution is unknown and for Windows software (with the publisher as namespace when given). Distinct per host by purl, at most 10,000 per host, lines over 1 KiB and names or versions that are not package tokens skipped; the plugin output stays the finding's raw_text evidence.
+- Listening sockets of the netstat-listen-{tcp,udp}{4,6}-N host properties become service assets exposed by the host with technical.service.details observed_from host (seen only from inside the host) or network (the scanner also reached the port), bind_address (any or the address) and process when given. Sockets bound to a loopback address only are not kept (nothing off the host reaches them): an issue counts them. At most 1,024 per host.
+- ssh-fingerprint: each "<key type> <fingerprint>" line (MD5 colon-hex, SHA256:<base64>, or the base64 public key, whose SHA-256 fingerprint is computed) goes to assets[].properties.ssh_host_key_fingerprints, at most 8; CTIS identity_hints has no SSH host key member.
+- Compliance results: compliance-error becomes findings[].message and source_extra.compliance-error (CTIS has no error member); compliance-reference is also parsed into source_extra.compliance-mappings, one "<framework>|<version>|<control>" per line (framework in the CTIS registry where one fits: 800-53 nist_800_53, CSCv7/CSCv8 cis, PCI-DSS pci_dss, ISO 27001 iso27001, CSF nist_csf; any other name lowercase), at most 64, because a compliance object holds one framework. A multi-check compliance-actual-value (blocks of a dashed line, then "PASSED|FAILED|WARNING|ERROR - title", then file, regex and matched lines) becomes source_extra.compliance-subchecks (a JSON array of {result, title, detail}, at most 32, 4 KiB) and compliance-subcheck-counts. The description loses its trailing Reference, Policy Value, Actual Value, Solution and See Also sections, which have their own members; the original text is source_extra.compliance-description-original.
+- A file whose plugin results carry none of the members of a full export (description, synopsis, solution, risk_factor, plugin dates, CVEs, CVSS) gets the issue "export lacks plugin details; re-export with full plugin attributes" (NessusNoDetailsMessage); it replaces the last issue when Issues is full.
 - Values are cleaned of control characters and cut to the CTIS receiver caps (title 500, description 32 KiB, evidence 64 KiB, remediation 16 KiB).
 
 ## Fields
@@ -41,7 +47,7 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[os]` |  | OS family word (linux, windows); operating-system is kept |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[system-type]` | `assets[].properties.system_type` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[cpe]` | `assets[].identity_hints.os_cpe (an OS CPE)` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[cpe-*]` | `assets[].identity_hints.os_cpe (the first OS CPE)` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[cpe-*]` | `assets[].identity_hints.os_cpe (the first OS CPE), assets[].technologies[] (application and hardware CPEs; the OS CPE on the operating-system technology)` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[bios-uuid]` | `assets[].identifiers.bios_uuid` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[aws-instance-instanceId]` | `assets[].identity_hints.cloud_resource_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[azure-instance-id]` | `assets[].identity_hints.cloud_resource_id` |  |
@@ -61,7 +67,9 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[smb-login-used]` |  | the account the scan logged in with |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[ssh-login-used]` |  | the account the scan logged in with |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[ssh-auth-meth]` |  | how the scan authenticated (scan operation detail) |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[ssh-fingerprint]` |  | SSH host key fingerprint seen by the scanner; not an asset identity CTIS defines |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[ssh-fingerprint]` | `assets[].properties.ssh_host_key_fingerprints` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[netstat-listen-*]` | `service assets (technical.service.details observed_from, bind_address, process) exposed by the host` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[netstat-established-*]` |  | established connections name peer addresses, not services of the host |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[LastAuthenticatedResults]` |  | scan bookkeeping time |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[LastUnauthenticatedResults]` |  | scan bookkeeping time |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[policy-used]` |  | scan policy name (scan operation detail) |
@@ -86,9 +94,9 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/@pluginFamily` | `findings[].category, findings[].native.family` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_name` | `findings[].title (when no pluginName)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/synopsis` | `findings[].message, findings[].description` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/description` | `findings[].description` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/description` | `findings[].description (a compliance result without its repeated sections; the original in source_extra.compliance-description-original)` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/solution` | `findings[].remediation.recommendation` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_output` | `findings[].evidence_items[raw_text] (credentials redacted)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/plugin_output` | `findings[].evidence_items[raw_text] (credentials redacted); dependencies[] for plugins 22869 and 20811` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/see_also` | `findings[].references` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/risk_factor` | `findings[].severity (fallback), findings[].source_extra.risk_factor` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/cve` | `findings[].vulnerability.ids[] (cve)` |  |
@@ -165,11 +173,13 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-control-id` | `findings[].compliance.control_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-result` | `findings[].compliance.result, source_extra.compliance-result` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-info` | `findings[].compliance.control_description` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-actual-value` | `findings[].evidence_items[raw_text] (credentials redacted)` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-actual-value` | `findings[].evidence_items[raw_text] (credentials redacted), source_extra.compliance-subchecks, source_extra.compliance-subcheck-counts` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-error` | `findings[].message, source_extra.compliance-error` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-informational-id` | `findings[].source_extra.compliance-informational-id` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-policy-value` | `findings[].source_extra.compliance-policy-value` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-solution` | `findings[].remediation.recommendation` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-see-also` | `findings[].references` |  |
-| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-reference` | `findings[].source_extra.compliance-reference` |  |
+| `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-reference` | `findings[].source_extra.compliance-reference, source_extra.compliance-mappings` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-audit-file` | `findings[].source_extra.compliance-audit-file` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-benchmark-name` | `findings[].compliance.framework (cis, nist, pci-dss, ... from the name), source_extra.compliance-benchmark-name` |  |
 | `/NessusClientData_v2/Report/ReportHost/ReportItem/compliance-benchmark-version` | `findings[].compliance.framework_version` |  |

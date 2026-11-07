@@ -1,0 +1,122 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
+    "properties": {
+      "scan_name": "No details sample"
+    }
+  },
+  "tool": {
+    "name": "nessus",
+    "vendor": "Tenable",
+    "techniques": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "ip_address-198.51.100.5",
+      "type": "ip_address",
+      "value": "198.51.100.5",
+      "name": "198.51.100.5"
+    },
+    {
+      "id": "service-198.51.100.5:22/tcp",
+      "type": "service",
+      "value": "198.51.100.5:22/tcp",
+      "name": "198.51.100.5:22/tcp",
+      "technical": {
+        "service": {
+          "port": 22,
+          "transport": "tcp",
+          "app_protocol": "ssh"
+        }
+      }
+    },
+    {
+      "id": "service-198.51.100.5:443/tcp",
+      "type": "service",
+      "value": "198.51.100.5:443/tcp",
+      "name": "198.51.100.5:443/tcp",
+      "technical": {
+        "service": {
+          "port": 443,
+          "transport": "tcp",
+          "app_protocol": "www"
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "SSH Server Type and Version Information",
+      "severity": "info",
+      "category": "Service detection",
+      "rule_id": "10267",
+      "rule_name": "SSH Server Type and Version Information",
+      "asset_ref": "ip_address-198.51.100.5",
+      "network": {
+        "port": 22,
+        "transport": "tcp",
+        "app_protocol": "ssh"
+      },
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "10267",
+        "family": "Service detection",
+        "severity": "0",
+        "detection_type": "info",
+        "raw_ref": "ReportHost[198.51.100.5]/ReportItem[pluginID=10267,port=22,protocol=tcp]"
+      },
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "10267"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "SSL Certificate Cannot Be Trusted",
+      "severity": "medium",
+      "category": "General",
+      "rule_id": "51192",
+      "rule_name": "SSL Certificate Cannot Be Trusted",
+      "asset_ref": "ip_address-198.51.100.5",
+      "network": {
+        "port": 443,
+        "transport": "tcp",
+        "app_protocol": "www"
+      },
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "51192",
+        "family": "General",
+        "severity": "2",
+        "raw_ref": "ReportHost[198.51.100.5]/ReportItem[pluginID=51192,port=443,protocol=tcp]"
+      },
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "51192"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-198.51.100.5",
+      "to_ref": "service-198.51.100.5:22/tcp"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-198.51.100.5",
+      "to_ref": "service-198.51.100.5:443/tcp"
+    }
+  ]
+}

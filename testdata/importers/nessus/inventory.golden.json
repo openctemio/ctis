@@ -1,0 +1,574 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
+    "properties": {
+      "scan_name": "Inventory sample"
+    }
+  },
+  "tool": {
+    "name": "nessus",
+    "vendor": "Tenable",
+    "techniques": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "host-app1.example.com",
+      "type": "host",
+      "value": "app1.example.com",
+      "name": "app1.example.com",
+      "identity_hints": {
+        "fqdn": "app1.example.com",
+        "os_cpe": "cpe:/o:canonical:ubuntu_linux:24.04"
+      },
+      "technologies": [
+        {
+          "name": "Linux Kernel 6.8.0 on Ubuntu 24.04",
+          "version": "24.04",
+          "cpe": "cpe:2.3:o:canonical:ubuntu_linux:24.04:*:*:*:*:*:*:*",
+          "categories": [
+            "operating-system"
+          ]
+        },
+        {
+          "name": "Examplevendor Example Server",
+          "version": "2.4.1",
+          "cpe": "cpe:2.3:a:examplevendor:example_server:2.4.1:*:*:*:*:*:*:*",
+          "categories": [
+            "application"
+          ]
+        },
+        {
+          "name": "Acme Widget Daemon",
+          "version": "1.0",
+          "cpe": "cpe:2.3:a:acme:widget_daemon:1.0:*:*:*:*:*:*:*",
+          "categories": [
+            "application"
+          ]
+        },
+        {
+          "name": "Acme Internal Agent",
+          "version": "3.2",
+          "categories": [
+            "application"
+          ]
+        },
+        {
+          "name": "Acme Example Board",
+          "cpe": "cpe:2.3:h:acme:example_board:*:*:*:*:*:*:*:*",
+          "categories": [
+            "hardware"
+          ]
+        }
+      ],
+      "properties": {
+        "ssh_host_key_fingerprints": [
+          "ecdsa-sha2-nistp256 SHA256:17a+fuunjZQrIDLqs1+f5w5HaPf8Rl98tm/GpCZNIs0",
+          "ssh-ed25519 SHA256:AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcdefg",
+          "ssh-rsa MD5:0a:1b:2c:3d:4e:5f:60:71:82:93:a4:b5:c6:d7:e8:f9"
+        ]
+      }
+    },
+    {
+      "id": "service-app1.example.com:22/tcp",
+      "type": "service",
+      "value": "app1.example.com:22/tcp",
+      "name": "app1.example.com:22/tcp",
+      "technical": {
+        "service": {
+          "port": 22,
+          "transport": "tcp",
+          "app_protocol": "ssh",
+          "details": {
+            "bind_address": "any",
+            "observed_from": "network"
+          }
+        }
+      }
+    },
+    {
+      "id": "service-app1.example.com:8443/tcp",
+      "type": "service",
+      "value": "app1.example.com:8443/tcp",
+      "name": "app1.example.com:8443/tcp",
+      "technical": {
+        "service": {
+          "port": 8443,
+          "transport": "tcp",
+          "details": {
+            "bind_address": "192.0.2.10",
+            "observed_from": "host",
+            "process": "exampled"
+          }
+        }
+      }
+    },
+    {
+      "id": "service-app1.example.com:5353/udp",
+      "type": "service",
+      "value": "app1.example.com:5353/udp",
+      "name": "app1.example.com:5353/udp",
+      "technical": {
+        "service": {
+          "port": 5353,
+          "transport": "udp",
+          "details": {
+            "bind_address": "any",
+            "observed_from": "host"
+          }
+        }
+      }
+    },
+    {
+      "id": "ip_address-192.0.2.20",
+      "type": "ip_address",
+      "value": "192.0.2.20",
+      "name": "192.0.2.20",
+      "technologies": [
+        {
+          "name": "Red Hat Enterprise Linux 9.4",
+          "categories": [
+            "operating-system"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ip_address-192.0.2.30",
+      "type": "ip_address",
+      "value": "192.0.2.30",
+      "name": "192.0.2.30",
+      "technologies": [
+        {
+          "name": "Microsoft Windows Server 2022 Standard",
+          "categories": [
+            "operating-system"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ip_address-192.0.2.40",
+      "type": "ip_address",
+      "value": "192.0.2.40",
+      "name": "192.0.2.40",
+      "technologies": [
+        {
+          "name": "Alpine Linux 3.19",
+          "categories": [
+            "operating-system"
+          ]
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "SSH Server Type and Version Information",
+      "description": "It is possible to obtain information about the remote SSH server.",
+      "severity": "info",
+      "category": "Service detection",
+      "rule_id": "10267",
+      "rule_name": "SSH Server Type and Version Information",
+      "asset_ref": "host-app1.example.com",
+      "network": {
+        "port": 22,
+        "transport": "tcp",
+        "app_protocol": "ssh"
+      },
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "10267",
+        "family": "Service detection",
+        "severity": "0",
+        "detection_type": "info",
+        "is_credentialed": true,
+        "raw_ref": "ReportHost[app1.example.com]/ReportItem[pluginID=10267,port=22,protocol=tcp]"
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "plugin_output",
+          "text": "SSH version : SSH-2.0-ExampleSSH_1.0"
+        }
+      ],
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "10267"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "Software Enumeration (SSH)",
+      "description": "Lists the software installed on the remote host.",
+      "severity": "info",
+      "category": "General",
+      "rule_id": "22869",
+      "rule_name": "Software Enumeration (SSH)",
+      "asset_ref": "host-app1.example.com",
+      "network": {},
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "22869",
+        "family": "General",
+        "severity": "0",
+        "detection_type": "info",
+        "is_credentialed": true,
+        "raw_ref": "ReportHost[app1.example.com]/ReportItem[pluginID=22869,port=0,protocol=tcp]"
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "plugin_output",
+          "text": "Here is the list of packages installed on the remote Ubuntu Linux system :\n\n  ii  examplepkg                      2.4.1-1ubuntu2       amd64        Example server package\n  ii  libexample1:amd64               0.9.3-4              amd64        Example library\n  ii  acme-tools                      1:3.0~rc1-2          all          Acme command line tools\n  rc  removedpkg                      1.0-1                amd64        Removed, config files left\n  ii  examplepkg                      2.4.1-1ubuntu2       amd64        Example server package"
+        }
+      ],
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "22869"
+        }
+      ]
+    },
+    {
+      "type": "compliance",
+      "title": "1.1.1 Ensure the example service is configured",
+      "description": "\"1.1.1 Ensure the example service is configured\" : [FAILED]\n\nThe example service must be configured so only administrators change it.",
+      "severity": "medium",
+      "category": "Policy Compliance",
+      "rule_id": "0123456789abcdef0123456789abcdef",
+      "rule_name": "1.1.1 Ensure the example service is configured",
+      "asset_ref": "host-app1.example.com",
+      "network": {},
+      "compliance": {
+        "framework": "cis",
+        "control_id": "0123456789abcdef0123456789abcdef",
+        "control_name": "1.1.1 Ensure the example service is configured",
+        "control_description": "The example service must be configured so only administrators change it."
+      },
+      "kind": "fail",
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "21157",
+        "instance_id": "0123456789abcdef0123456789abcdef",
+        "family": "Policy Compliance",
+        "severity": "2",
+        "is_credentialed": true,
+        "raw_ref": "ReportHost[app1.example.com]/ReportItem[pluginID=21157,port=0,protocol=tcp]"
+      },
+      "source_extra": {
+        "compliance-benchmark-name": "CIS Example Linux Benchmark",
+        "compliance-check-id": "0123456789abcdef0123456789abcdef",
+        "compliance-description-original": "\"1.1.1 Ensure the example service is configured\" : [FAILED]\n\nThe example service must be configured so only administrators change it.\n\nReference: 800-53|CM-6,CSCv8|4.1,PCI-DSSv3.2.1|2.2,ISO/IEC-27001|A.12.1.2,HIPAA|164.308(a)(1),LEVEL|1A,800-53|CM-6\n\nPolicy Value: expect: ^owner=root\nActual Value: see below",
+        "compliance-informational-id": "abcdef0123456789",
+        "compliance-mappings": "nist_800_53||CM-6\ncis|controls v8|4.1\npci_dss|3.2.1|2.2\niso27001||A.12.1.2\nhipaa||164.308(a)(1)\nlevel||1A",
+        "compliance-policy-value": "expect: ^owner=root",
+        "compliance-reference": "800-53|CM-6,CSCv8|4.1,PCI-DSSv3.2.1|2.2,ISO/IEC-27001|A.12.1.2,HIPAA|164.308(a)(1),LEVEL|1A,800-53|CM-6",
+        "compliance-result": "FAILED",
+        "compliance-subcheck-counts": "pass=1 fail=1 review=1",
+        "compliance-subchecks": "[{\"result\":\"pass\",\"title\":\"Example file has the expected owner\",\"detail\":\"File: /etc/example/example.conf; Regex: ^owner=root; Matched lines:; owner=root\"},{\"result\":\"fail\",\"title\":\"Example setting is enabled\",\"detail\":\"File: /etc/example/example.conf; Regex: ^enabled=yes; No matching lines\"},{\"result\":\"review\",\"title\":\"Example item needs review\",\"detail\":\"Manual review needed\"}]"
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "compliance-actual-value",
+          "text": "The command script with multiple expectations returned :\n\n------------------------------------------------------------------------\nPASSED - Example file has the expected owner\nFile: /etc/example/example.conf\nRegex: ^owner=root\nMatched lines:\n  owner=root\n------------------------------------------------------------------------\nFAILED - Example setting is enabled\nFile: /etc/example/example.conf\nRegex: ^enabled=yes\nNo matching lines\n------------------------------------------------------------------------\nWARNING - Example item needs review\nManual review needed"
+        }
+      ],
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "21157"
+        }
+      ]
+    },
+    {
+      "type": "compliance",
+      "title": "1.1.2 Ensure the example audit log exists",
+      "message": "The file /var/log/example/audit.log could not be read",
+      "severity": "low",
+      "category": "Policy Compliance",
+      "rule_id": "fedcba9876543210fedcba9876543210",
+      "rule_name": "1.1.2 Ensure the example audit log exists",
+      "asset_ref": "host-app1.example.com",
+      "network": {},
+      "compliance": {
+        "framework": "cis",
+        "control_id": "fedcba9876543210fedcba9876543210",
+        "control_name": "1.1.2 Ensure the example audit log exists"
+      },
+      "kind": "not_applicable",
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "21157",
+        "instance_id": "fedcba9876543210fedcba9876543210",
+        "family": "Policy Compliance",
+        "severity": "1",
+        "is_credentialed": true,
+        "raw_ref": "ReportHost[app1.example.com]/ReportItem[pluginID=21157,port=0,protocol=tcp]"
+      },
+      "source_extra": {
+        "compliance-benchmark-name": "CIS Example Linux Benchmark",
+        "compliance-check-id": "fedcba9876543210fedcba9876543210",
+        "compliance-error": "The file /var/log/example/audit.log could not be read",
+        "compliance-result": "ERROR"
+      },
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "21157"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "Software Enumeration (SSH)",
+      "description": "Lists the software installed on the remote host.",
+      "severity": "info",
+      "category": "General",
+      "rule_id": "22869",
+      "rule_name": "Software Enumeration (SSH)",
+      "asset_ref": "ip_address-192.0.2.20",
+      "network": {},
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "22869",
+        "family": "General",
+        "severity": "0",
+        "detection_type": "info",
+        "raw_ref": "ReportHost[192.0.2.20]/ReportItem[pluginID=22869,port=0,protocol=tcp]"
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "plugin_output",
+          "text": "Here is the list of packages installed on the remote Red Hat Linux system :\n\n  examplepkg-2.4.1-3.el9|(none)|Thu 01 Feb 2024 10:00:00 AM UTC|Example Vendor\n  libexample-0.9.3-1.el9.x86_64|2|Thu 01 Feb 2024 10:00:00 AM UTC|Example Vendor\n  gpg-pubkey-00000000-00000000|(none)"
+        }
+      ],
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "22869"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "Microsoft Windows Installed Software Enumeration (credentialed check)",
+      "description": "Lists the software installed on the remote host.",
+      "severity": "info",
+      "category": "Windows",
+      "rule_id": "20811",
+      "rule_name": "Microsoft Windows Installed Software Enumeration (credentialed check)",
+      "asset_ref": "ip_address-192.0.2.30",
+      "network": {},
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "20811",
+        "family": "Windows",
+        "severity": "0",
+        "detection_type": "info",
+        "raw_ref": "ReportHost[192.0.2.30]/ReportItem[pluginID=20811,port=0,protocol=tcp]"
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "plugin_output",
+          "text": "The following software are installed on the remote host :\n\nExample Office Suite  [version 16.0.1]  [installed on 2024/01/15]\nAcme Runtime Library - 14.29.1  [version 14.29.1]\nExample Agent  [version 5.2]  [publisher Example Corp]\nSomething without a version"
+        }
+      ],
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "20811"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "Software Enumeration (SSH)",
+      "description": "Lists the software installed on the remote host.",
+      "severity": "info",
+      "category": "General",
+      "rule_id": "22869",
+      "rule_name": "Software Enumeration (SSH)",
+      "asset_ref": "ip_address-192.0.2.40",
+      "network": {},
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "22869",
+        "family": "General",
+        "severity": "0",
+        "detection_type": "info",
+        "raw_ref": "ReportHost[192.0.2.40]/ReportItem[pluginID=22869,port=0,protocol=tcp]"
+      },
+      "evidence_items": [
+        {
+          "kind": "raw_text",
+          "version": 1,
+          "label": "plugin_output",
+          "text": "Here is the list of packages installed on the remote Alpine Linux system :\n\n  examplepkg-2.4.1-r0\n  libexample-0.9.3-r2"
+        }
+      ],
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "22869"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "pkg-hf6c856faf00b5d9daf6a9e9b",
+      "name": "examplepkg",
+      "version": "2.4.1-1ubuntu2",
+      "type": "library",
+      "purl": "pkg:deb/ubuntu/examplepkg@2.4.1-1ubuntu2?arch=amd64&distro=ubuntu-24.04",
+      "asset_ref": "host-app1.example.com",
+      "properties": {
+        "package_manager": "deb",
+        "source_plugin": "22869"
+      }
+    },
+    {
+      "id": "pkg-h12c0c22c607a789eb220a659",
+      "name": "libexample1",
+      "version": "0.9.3-4",
+      "type": "library",
+      "purl": "pkg:deb/ubuntu/libexample1@0.9.3-4?arch=amd64&distro=ubuntu-24.04",
+      "asset_ref": "host-app1.example.com",
+      "properties": {
+        "package_manager": "deb",
+        "source_plugin": "22869"
+      }
+    },
+    {
+      "id": "pkg-h01926e0bcff2b55e3224114e",
+      "name": "acme-tools",
+      "version": "1:3.0~rc1-2",
+      "type": "library",
+      "purl": "pkg:deb/ubuntu/acme-tools@1:3.0~rc1-2?arch=all&distro=ubuntu-24.04",
+      "asset_ref": "host-app1.example.com",
+      "properties": {
+        "package_manager": "deb",
+        "source_plugin": "22869"
+      }
+    },
+    {
+      "id": "pkg-h0bed81354ab64aa8b31dbd42",
+      "name": "examplepkg",
+      "version": "2.4.1-3.el9",
+      "type": "library",
+      "purl": "pkg:rpm/redhat/examplepkg@2.4.1-3.el9?distro=rhel-9.4",
+      "asset_ref": "ip_address-192.0.2.20",
+      "properties": {
+        "package_manager": "rpm",
+        "source_plugin": "22869"
+      }
+    },
+    {
+      "id": "pkg-h93db164d7e7a40fff3011cc4",
+      "name": "libexample",
+      "version": "0.9.3-1.el9",
+      "type": "library",
+      "purl": "pkg:rpm/redhat/libexample@0.9.3-1.el9?arch=x86_64&distro=rhel-9.4&epoch=2",
+      "asset_ref": "ip_address-192.0.2.20",
+      "properties": {
+        "package_manager": "rpm",
+        "source_plugin": "22869"
+      }
+    },
+    {
+      "id": "pkg-hfefeaaba07310a0ba5293214",
+      "name": "Example Office Suite",
+      "version": "16.0.1",
+      "type": "application",
+      "purl": "pkg:generic/Example%20Office%20Suite@16.0.1",
+      "asset_ref": "ip_address-192.0.2.30",
+      "properties": {
+        "package_manager": "windows",
+        "source_plugin": "20811"
+      }
+    },
+    {
+      "id": "pkg-h6d901fc486c39c75010eea0a",
+      "name": "Acme Runtime Library",
+      "version": "14.29.1",
+      "type": "application",
+      "purl": "pkg:generic/Acme%20Runtime%20Library@14.29.1",
+      "asset_ref": "ip_address-192.0.2.30",
+      "properties": {
+        "package_manager": "windows",
+        "source_plugin": "20811"
+      }
+    },
+    {
+      "id": "pkg-h002f7c9922aec8a712304270",
+      "name": "Example Agent",
+      "version": "5.2",
+      "type": "application",
+      "purl": "pkg:generic/Example%20Corp/Example%20Agent@5.2",
+      "asset_ref": "ip_address-192.0.2.30",
+      "properties": {
+        "package_manager": "windows",
+        "source_plugin": "20811",
+        "vendor": "Example Corp"
+      }
+    },
+    {
+      "id": "pkg-ha21e7d65c38ec208bdf62270",
+      "name": "examplepkg",
+      "version": "2.4.1-r0",
+      "type": "library",
+      "purl": "pkg:apk/alpine/examplepkg@2.4.1-r0",
+      "asset_ref": "ip_address-192.0.2.40",
+      "properties": {
+        "package_manager": "apk",
+        "source_plugin": "22869"
+      }
+    },
+    {
+      "id": "pkg-h79e8d93d564dfbe66333acd6",
+      "name": "libexample",
+      "version": "0.9.3-r2",
+      "type": "library",
+      "purl": "pkg:apk/alpine/libexample@0.9.3-r2",
+      "asset_ref": "ip_address-192.0.2.40",
+      "properties": {
+        "package_manager": "apk",
+        "source_plugin": "22869"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "type": "exposes",
+      "from_ref": "host-app1.example.com",
+      "to_ref": "service-app1.example.com:22/tcp"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "host-app1.example.com",
+      "to_ref": "service-app1.example.com:8443/tcp"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "host-app1.example.com",
+      "to_ref": "service-app1.example.com:5353/udp"
+    }
+  ]
+}
