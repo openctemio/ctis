@@ -205,6 +205,8 @@ type Builder struct {
 	byKey  map[string]string // asset key -> asset id
 	rels   map[string]bool
 	ops    int
+
+	nessusDetails nessusDetailCount
 }
 
 func newBuilder(ctx context.Context, format Format, opts Options) *Builder {

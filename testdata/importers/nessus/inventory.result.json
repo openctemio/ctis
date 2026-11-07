@@ -1,0 +1,23 @@
+{
+  "format": "nessus",
+  "stats": {
+    "records": 7,
+    "assets": 7,
+    "findings": 7,
+    "components": 10,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "info": 5,
+      "low": 1,
+      "medium": 1
+    }
+  },
+  "issues": [
+    {
+      "line": 5,
+      "path": "/NessusClientData_v2/Report/ReportHost/HostProperties/tag",
+      "message": "host app1.example.com: 2 listening sockets bound to loopback only were not kept as services"
+    }
+  ]
+}

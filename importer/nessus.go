@@ -117,6 +117,7 @@ func parseNessus(b *Builder, r io.Reader) error {
 	if !sawRoot {
 		return &ParseError{Format: FormatNessus, Msg: "no NessusClientData_v2 element", Err: ErrMalformed}
 	}
+	b.nessusReport()
 	return nil
 }
 
@@ -174,6 +175,17 @@ func (b *Builder) nessusHost(h *nessusHost, lineNo int) error {
 		}
 		asset.Technologies = []ctis.Technology{t}
 	}
+	var osTech *ctis.Technology
+	if len(asset.Technologies) > 0 {
+		osTech = &asset.Technologies[0]
+	}
+	for _, t := range nessusCPETechnologies(h.Tags, osTech) {
+		if len(asset.Technologies) >= ctis.MaxTechnologies {
+			b.issue(Issue{Line: lineNo, Path: nsTag, Message: fmt.Sprintf("host %s: more than %d technologies from cpe tags, the rest left out", value, ctis.MaxTechnologies)})
+			break
+		}
+		asset.Technologies = append(asset.Technologies, t)
+	}
 	if u := line(props.get("bios-uuid"), ctis.MaxIdentityHintLen); u != "" {
 		asset.Identifiers = &ctis.AssetIdentifiers{BIOSUUID: u}
 	}
@@ -196,6 +208,11 @@ func (b *Builder) nessusHost(h *nessusHost, lineNo int) error {
 	setProp("system_type", props.get("system-type"))
 	setProp("os_method", props.get("operating-system-method"))
 	setProp("local_checks_protocol", props.get("local-checks-proto"))
+	if keys := nessusSSHFingerprints(props.get("ssh-fingerprint")); len(keys) > 0 {
+		// CTIS identity_hints has no SSH host key member: the keys go to
+		// properties, for a receiver that matches hosts by them.
+		ap["ssh_host_key_fingerprints"] = keys
+	}
 	if len(ap) > 0 {
 		asset.Properties = ap
 	}
@@ -245,24 +262,82 @@ func (b *Builder) nessusHost(h *nessusHost, lineNo int) error {
 		credentialed = &f
 	}
 
+	reached := map[string]bool{}
+	packages := map[string]bool{}
+	osName := props.get("operating-system")
 	for i := range h.Items {
 		b.res.Stats.Records++
 		if err := b.tick(); err != nil {
 			return err
 		}
-		f, ok := b.nessusFinding(&h.Items[i], assetID, value, credentialed, lineNo)
+		it := &h.Items[i]
+		b.nessusDetails.note(it)
+		f, ok := b.nessusFinding(it, assetID, value, credentialed, lineNo)
 		if !ok {
 			b.res.Stats.Skipped++
 			continue
 		}
 		if f.Network != nil && f.Network.Port > 0 && f.Network.Transport != "" {
 			b.service(assetID, f.Network.Port, f.Network.Transport, f.Network.AppProtocol)
+			reached[fmt.Sprintf("%d/%s", f.Network.Port, f.Network.Transport)] = true
+		}
+		if kind := nessusInventoryKind(it); kind != "" {
+			b.nessusInventory(it, kind, assetID, osName, packages, lineNo)
 		}
 		if err := b.finding(f); err != nil {
 			return err
 		}
 	}
+	b.nessusLocalServices(h.Tags, assetID, reached, lineNo)
 	return nil
+}
+
+// nessusDetailCount tells a file exported without plugin details: plugin
+// results that carry none of the members a full export writes.
+type nessusDetailCount struct {
+	plugin, detailed int
+}
+
+// nessusDetailMembers are the members only an export with plugin details
+// writes on a plugin result.
+var nessusDetailMembers = map[string]bool{
+	"description": true, "synopsis": true, "solution": true, "risk_factor": true,
+	"plugin_type": true, "plugin_publication_date": true, "cve": true, "cvss3_base_score": true, "cvss_base_score": true,
+}
+
+func (c *nessusDetailCount) note(it *nessusItem) {
+	for _, f := range it.Fields {
+		if strings.HasPrefix(f.XMLName.Local, "compliance") {
+			return // a compliance result carries its own members
+		}
+	}
+	c.plugin++
+	for _, f := range it.Fields {
+		if nessusDetailMembers[f.XMLName.Local] {
+			c.detailed++
+			return
+		}
+	}
+}
+
+// NessusNoDetailsMessage is the issue of a file whose plugin results carry
+// no plugin details (an export without plugin attributes): no CVE, score or
+// description can be imported from it.
+const NessusNoDetailsMessage = "export lacks plugin details; re-export with full plugin attributes"
+
+// nessusReport adds the file-level issues once every host is read. The
+// issue is kept even when Issues is full: it replaces the last one.
+func (b *Builder) nessusReport() {
+	c := b.nessusDetails
+	if c.plugin == 0 || c.detailed > 0 {
+		return
+	}
+	is := Issue{Path: nsRoot, Message: fmt.Sprintf("%s (%d plugin results without description, solution or scores)", NessusNoDetailsMessage, c.plugin)}
+	if n := len(b.res.Issues); n >= b.lim.MaxIssues && n > 0 {
+		b.res.Issues[n-1] = is
+		return
+	}
+	b.issue(is)
 }
 
 // firstLine returns the first line of a multi-line value (Nessus lists
@@ -468,11 +543,31 @@ func (b *Builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 			f.Remediation = &ctis.Remediation{Recommendation: sol}
 		}
 		f.References = addWebRefs(f.References, splitLines(first(v, "compliance-see-also"))...)
-		for _, k := range []string{"compliance-benchmark-name", "compliance-result", "compliance-policy-value", "compliance-audit-file", "compliance-benchmark-profile", "compliance-full-id", "compliance-functional-id", "compliance-reference", "compliance-check-id", "compliance-uname", "compliance-source"} {
+		for _, k := range []string{"compliance-benchmark-name", "compliance-result", "compliance-policy-value", "compliance-audit-file", "compliance-benchmark-profile", "compliance-full-id", "compliance-functional-id", "compliance-informational-id", "compliance-reference", "compliance-check-id", "compliance-uname", "compliance-source"} {
 			if k == "compliance-uname" {
 				continue // the account the check ran as
 			}
 			extra(&f, k, first(v, k))
+		}
+		if m := nessusComplianceMappings(first(v, "compliance-reference")); m != "" {
+			extra(&f, "compliance-mappings", m)
+		}
+		if e := line(redactCredentials(first(v, "compliance-error")), 4<<10); e != "" {
+			// CTIS has no error member on a compliance result: the
+			// message is the finding's message and kept in source_extra.
+			extra(&f, "compliance-error", e)
+			f.Message = e
+		}
+		if subs := nessusSubChecks(redactCredentials(first(v, "compliance-actual-value"))); len(subs) > 0 {
+			nessusSetSubChecks(&f, subs)
+		}
+		// The description of a compliance result repeats the reference,
+		// policy value and actual value that have their own members: only
+		// the prose before them is kept as the description, the original
+		// text in source_extra.
+		if d, cut := nessusComplianceDescription(f.Description); cut {
+			extra(&f, "compliance-description-original", redactCredentials(f.Description))
+			f.Description = d
 		}
 	}
 
