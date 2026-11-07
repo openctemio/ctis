@@ -19,5 +19,37 @@
       "path": "/NessusClientData_v2/Report/ReportHost/HostProperties/tag",
       "message": "host app1.example.com: 2 listening sockets bound to loopback only were not kept as services"
     }
-  ]
+  ],
+  "coverage": {
+    "complete": false,
+    "reasons": [
+      "no_policy"
+    ],
+    "hosts": [
+      {
+        "asset_ref": "host-app1.example.com",
+        "finished": false,
+        "credentialed": true,
+        "local_checks": true
+      },
+      {
+        "asset_ref": "ip_address-192.0.2.20",
+        "finished": false,
+        "credentialed": false,
+        "local_checks": false
+      },
+      {
+        "asset_ref": "ip_address-192.0.2.30",
+        "finished": false,
+        "credentialed": false,
+        "local_checks": false
+      },
+      {
+        "asset_ref": "ip_address-192.0.2.40",
+        "finished": false,
+        "credentialed": false,
+        "local_checks": false
+      }
+    ]
+  }
 }

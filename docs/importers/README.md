@@ -18,7 +18,7 @@ Each importer converts one exported format to CTIS. Its spec lists every source 
 | `gitleaks` | [gitleaks JSON report](gitleaks.md) | 20 | 1 | 95% | 21 | 95% |
 | `grype` | [grype JSON output](grype.md) | 84 | 49 | 63% | 155 | 54% |
 | `lines` | [Line list](lines.md) | 1 | 0 | 100% | 1 | 100% |
-| `nessus` | [Nessus v2 XML (.nessus)](nessus.md) | 132 | 40 | 77% | 177 | 81% |
+| `nessus` | [Nessus v2 XML (.nessus)](nessus.md) | 137 | 39 | 78% | 174 | 85% |
 | `nmap` | [nmap XML](nmap.md) | 26 | 60 | 30% | 115 | 23% |
 | `nuclei` | [nuclei JSON lines](nuclei.md) | 43 | 10 | 81% | 49 | 90% |
 | `opengrep` | [opengrep JSON output](opengrep.md) | 52 | 23 | 69% | 116 | 70% |

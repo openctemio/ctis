@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<!-- Synthetic sample: what a re-scan proves (documentation addresses, RFC 5737). -->
+<NessusClientData_v2 xmlns:cm="http://www.nessus.org/cm">
+<Policy><policyName>Weekly credentialed</policyName>
+<Preferences><ServerPreferences>
+<preference><name>plugin_set</name><value>10267;22869;51192</value></preference>
+<preference><name>TARGET</name><value>192.0.2.71,192.0.2.72,192.0.2.73</value></preference>
+</ServerPreferences>
+<PluginsPreferences>
+<item><pluginName>SSH settings</pluginName><pluginId>14273</pluginId><preferenceName>SSH password (unsafe!) :</preferenceName><selectedValue>not-a-real-password-7</selectedValue></item>
+</PluginsPreferences>
+</Preferences>
+<FamilySelection>
+<FamilyItem><FamilyName>Ubuntu Local Security Checks</FamilyName><Status>enabled</Status></FamilyItem>
+<FamilyItem><FamilyName>General</FamilyName><Status>mixed</Status></FamilyItem>
+<FamilyItem><FamilyName>Windows</FamilyName><Status>disabled</Status></FamilyItem>
+</FamilySelection>
+<IndividualPluginSelection>
+<PluginItem><PluginId>57582</PluginId><PluginName>SSL Self-Signed Certificate</PluginName><Family>General</Family><Status>enabled</Status></PluginItem>
+<PluginItem><PluginId>99999</PluginId><PluginName>Example disabled check</PluginName><Family>General</Family><Status>disabled</Status></PluginItem>
+</IndividualPluginSelection>
+</Policy>
+<Report name="Weekly credentialed">
+<ReportHost name="192.0.2.71"><HostProperties>
+<tag name="host-ip">192.0.2.71</tag>
+<tag name="Credentialed_Scan">true</tag>
+<tag name="HOST_START_TIMESTAMP">1762412400</tag>
+<tag name="HOST_END_TIMESTAMP">1762416000</tag>
+</HostProperties>
+<ReportItem port="443" svc_name="www" protocol="tcp" severity="2" pluginID="57582" pluginName="SSL Self-Signed Certificate" pluginFamily="General"><synopsis>Self-signed.</synopsis><plugin_type>remote</plugin_type></ReportItem>
+</ReportHost>
+<ReportHost name="192.0.2.72"><HostProperties>
+<tag name="host-ip">192.0.2.72</tag>
+<tag name="Credentialed_Scan">false</tag>
+<tag name="HOST_START_TIMESTAMP">1762412400</tag>
+<tag name="HOST_END_TIMESTAMP">1762416600</tag>
+</HostProperties>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="0" pluginID="21745" pluginName="OS Security Patch Assessment Failed" pluginFamily="Settings"><synopsis>Local checks did not run.</synopsis><plugin_type>summary</plugin_type></ReportItem>
+</ReportHost>
+<ReportHost name="192.0.2.73"><HostProperties>
+<tag name="host-ip">192.0.2.73</tag>
+<tag name="Credentialed_Scan">true</tag>
+<tag name="HOST_START_TIMESTAMP">1762412400</tag>
+</HostProperties>
+<ReportItem port="22" svc_name="ssh" protocol="tcp" severity="0" pluginID="10267" pluginName="SSH Server Type and Version Information" pluginFamily="Service detection"><synopsis>SSH.</synopsis></ReportItem>
+</ReportHost>
+</Report>
+</NessusClientData_v2>

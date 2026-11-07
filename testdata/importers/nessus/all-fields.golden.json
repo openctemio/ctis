@@ -107,6 +107,7 @@
           }
         ]
       },
+      "last_seen_at": "2025-10-05T09:00:00Z",
       "native": {
         "scheme": "nessus",
         "vuln_id": "900001",

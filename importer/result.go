@@ -40,6 +40,10 @@ type Result struct {
 	// single file.
 	Layout string `json:"layout,omitempty"`
 
+	// What the file proves about the findings it does not hold (which
+	// hosts and checks ran); nil when the format declares nothing, and
+	// then nothing may be closed by absence. See ImportCoverage.
+	Coverage *ImportCoverage `json:"coverage,omitempty"`
 	// Files of a bundle that were deliberately not opened or not read, each
 	// with the reason (people and credential data, images, files over the
 	// read limit). Every other file the importer did not read is in

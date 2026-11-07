@@ -1,0 +1,51 @@
+{
+  "format": "nessus",
+  "stats": {
+    "records": 3,
+    "assets": 5,
+    "findings": 3,
+    "components": 0,
+    "statements": 0,
+    "skipped": 0,
+    "by_severity": {
+      "info": 2,
+      "medium": 1
+    }
+  },
+  "coverage": {
+    "complete": true,
+    "families": [
+      "Ubuntu Local Security Checks"
+    ],
+    "plugins": [
+      "10267",
+      "22869",
+      "51192",
+      "57582"
+    ],
+    "hosts": [
+      {
+        "asset_ref": "ip_address-192.0.2.71",
+        "observed_at": "2025-11-06T08:00:00Z",
+        "finished": true,
+        "credentialed": true,
+        "local_checks": true
+      },
+      {
+        "asset_ref": "ip_address-192.0.2.72",
+        "observed_at": "2025-11-06T08:10:00Z",
+        "finished": true,
+        "credentialed": false,
+        "local_checks": false,
+        "auth_issue": "21745"
+      },
+      {
+        "asset_ref": "ip_address-192.0.2.73",
+        "observed_at": "2025-11-06T07:00:00Z",
+        "finished": false,
+        "credentialed": true,
+        "local_checks": true
+      }
+    ]
+  }
+}

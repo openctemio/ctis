@@ -158,12 +158,13 @@ func TestImporters_Golden(t *testing.T) {
 			}
 			compareGolden(t, fx.golden(), res.Report)
 			compareGolden(t, fx.result(), struct {
-				Format   Format         `json:"format"`
-				VEX      []VEXStatement `json:"vex,omitempty"`
-				Stats    Stats          `json:"stats"`
-				Issues   []Issue        `json:"issues,omitempty"`
-				Unmapped []string       `json:"unmapped,omitempty"`
-			}{res.Format, res.VEX, res.Stats, res.Issues, res.Unmapped})
+				Format   Format          `json:"format"`
+				VEX      []VEXStatement  `json:"vex,omitempty"`
+				Stats    Stats           `json:"stats"`
+				Issues   []Issue         `json:"issues,omitempty"`
+				Unmapped []string        `json:"unmapped,omitempty"`
+				Coverage *ImportCoverage `json:"coverage,omitempty"`
+			}{res.Format, res.VEX, res.Stats, res.Issues, res.Unmapped, res.Coverage})
 		})
 	}
 }

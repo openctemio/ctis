@@ -206,7 +206,9 @@ type Builder struct {
 	rels   map[string]bool
 	ops    int
 
-	nessusDetails nessusDetailCount
+	nessusDetails  nessusDetailCount
+	nessusCoverage *ImportCoverage
+	nessusPolicy   bool
 }
 
 func newBuilder(ctx context.Context, format Format, opts Options) *Builder {

@@ -122,6 +122,7 @@
       "rule_name": "Nessus Scan Information",
       "asset_ref": "host-app01.example.com",
       "network": {},
+      "last_seen_at": "2025-10-05T08:00:00Z",
       "native": {
         "scheme": "nessus",
         "vuln_id": "19506",
@@ -213,6 +214,7 @@
       "references": [
         "https://ubuntu.com/security/notices/USN-6560-1"
       ],
+      "last_seen_at": "2025-10-05T08:00:00Z",
       "native": {
         "scheme": "nessus",
         "vuln_id": "187201",
@@ -311,6 +313,7 @@
         "https://workbench.cisecurity.org/files/0000"
       ],
       "kind": "fail",
+      "last_seen_at": "2025-10-05T08:00:00Z",
       "native": {
         "scheme": "nessus",
         "vuln_id": "21157",
@@ -438,6 +441,7 @@
         "https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010",
         "https://www.example.com/wannacry-analysis"
       ],
+      "last_seen_at": "2025-10-05T08:10:00Z",
       "native": {
         "scheme": "nessus",
         "vuln_id": "97833",
