@@ -4,6 +4,8 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-11-07
+
 Language-neutral CTIS: every behaviour that was Go code now has normative text and conformance vectors, and one harness tests any implementation through a line protocol, so a binding in another language is generated from the schemas and tested rather than ported by hand. The format, the Go module path and the Go API are unchanged.
 
 ### Added
