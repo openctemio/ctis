@@ -85,9 +85,10 @@ func parseNessus(b *Builder, r io.Reader) error {
 		case "Policy":
 			// The scan policy: server and plugin preferences, which hold
 			// the scan's credentials (masked or not) and account names.
-			// Nothing of it is read.
-			if err := dec.Skip(); err != nil {
-				return asParseError(err, FormatNessus)
+			// Only the plugin selection is read (nessusPolicy): which
+			// families and plugins ran.
+			if err := b.nessusReadPolicy(dec, &se); err != nil {
+				return err
 			}
 		case "Report":
 			if name := line(attrValue(se, "name"), capShort); name != "" {
@@ -118,6 +119,7 @@ func parseNessus(b *Builder, r io.Reader) error {
 		return &ParseError{Format: FormatNessus, Msg: "no NessusClientData_v2 element", Err: ErrMalformed}
 	}
 	b.nessusReport()
+	b.nessusFinishCoverage()
 	return nil
 }
 
@@ -277,6 +279,10 @@ func (b *Builder) nessusHost(h *nessusHost, lineNo int) error {
 			b.res.Stats.Skipped++
 			continue
 		}
+		// The finding was observed when its host's scan ran.
+		if seen := firstTime(asset.LastSeenAt, asset.FirstSeenAt); seen != nil {
+			f.LastSeenAt = seen
+		}
 		if f.Network != nil && f.Network.Port > 0 && f.Network.Transport != "" {
 			b.service(assetID, f.Network.Port, f.Network.Transport, f.Network.AppProtocol)
 			reached[fmt.Sprintf("%d/%s", f.Network.Port, f.Network.Transport)] = true
@@ -289,6 +295,7 @@ func (b *Builder) nessusHost(h *nessusHost, lineNo int) error {
 		}
 	}
 	b.nessusLocalServices(h.Tags, assetID, reached, lineNo)
+	b.nessusHostCoverage(h, assetID, asset.FirstSeenAt, asset.LastSeenAt, credentialed)
 	return nil
 }
 

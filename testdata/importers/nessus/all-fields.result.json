@@ -11,5 +11,26 @@
       "low": 1,
       "medium": 1
     }
+  },
+  "coverage": {
+    "complete": false,
+    "reasons": [
+      "no_policy"
+    ],
+    "hosts": [
+      {
+        "asset_ref": "host-web02.example.com",
+        "observed_at": "2025-10-05T09:00:00Z",
+        "finished": false,
+        "credentialed": false,
+        "local_checks": false
+      },
+      {
+        "asset_ref": "ip_address-203.0.113.30",
+        "finished": false,
+        "credentialed": false,
+        "local_checks": false
+      }
+    ]
   }
 }

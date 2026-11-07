@@ -25,6 +25,11 @@ Language-neutral CTIS: every behaviour that was Go code now has normative text a
 - Compliance results: `compliance-error` is the finding's message and `source_extra.compliance-error`; `compliance-informational-id` is kept; `compliance-reference` is also parsed into `source_extra.compliance-mappings` (one framework, version and control per line, CTIS framework names where one fits); a multi-check actual value becomes `source_extra.compliance-subchecks` ({result, title, detail}, at most 32) and `compliance-subcheck-counts`; the description no longer repeats the reference, policy value and actual value sections (the original text is `source_extra.compliance-description-original`).
 - A `.nessus` file exported without plugin details gets the issue "export lacks plugin details; re-export with full plugin attributes" (`importer.NessusNoDetailsMessage`).
 
+### Added: what an import proves (`importer.ImportCoverage`)
+
+- `Result.Coverage` says what a file proves about the findings it does not hold, so a receiver closes only those: the hosts with their scan end (`observed_at`), `finished`, `credentialed` and `local_checks` (false after an authentication failure or "local checks not available": Nessus plugins 21745, 104410, 110385, 117885, 110723, 117886), the plugin families run whole and the plugins run. `ImportCoverage.Covers` answers per finding; a nil or incomplete coverage (`no_policy`, `no_plugin_details`, `no_hosts`) closes nothing, compliance results never close by absence, and a finding seen after the host's scan is never closed by it.
+- The Nessus importer fills it from the plugin selection of the Policy element (`plugin_set`, enabled families, individually enabled plugins); every other policy value is still dropped. Each Nessus finding has `last_seen_at` its host's scan end.
+
 ### Fixed
 
 - The importer's record guard validated a finding without the endpoint its `web.endpoint_ref` names, so such findings were left out; the endpoint is now part of the check, and a reference to an endpoint that was left out is cleared.

@@ -4,7 +4,7 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 
 - Format: `nessus`
 - Source versions: NessusClientData_v2 as written by Nessus 10.x and Tenable.sc 6.x
-- Fields: 132 mapped, 40 ignored on purpose (77% mapped)
+- Fields: 137 mapped, 39 ignored on purpose (78% mapped)
 
 ## Rules
 
@@ -14,7 +14,9 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 - Severity: the severity attribute (0-4) through ctis.NormalizeNativeSeverity (0 info, 1 low, 2 medium, 3 high, 4 critical); risk_factor when the attribute is unusable. native.severity keeps the attribute; severity 0 sets native.detection_type info.
 - Every CVSS version goes to finding.scores with source tenable. VPR is a vendor score with source tenable; exploit and KEV data become vulnerability.threat_signals (source tenable or cisa).
 - plugin_output and compliance-actual-value go to raw_text evidence items after credential redaction: account lines (User:, Login:, Account:) and account labels inside a line, `as '<account>'`, and password, secret, token, API key and community values become [redacted]. The passwords, tokens and community strings found there are also masked (ctis.MaskSecretMatch) wherever any other field of the finding repeats them.
-- The Policy element (server and plugin preferences, which hold scan credentials and account names) is skipped whole, and smb-login-used, ssh-login-used and compliance-uname are never read.
+- Of the Policy element only the plugin selection is read: the plugin_set server preference (ids of every enabled plugin), the families with Status enabled and the individually enabled plugins. Every other preference (server and plugin preferences hold scan credentials and account names) is dropped as it is decoded; smb-login-used, ssh-login-used and compliance-uname are never read.
+- Result.Coverage (ImportCoverage) says what the file proves about findings it does not hold: per host its scan end (HOST_END, else HOST_START) as observed_at, finished (HOST_END present), credentialed (Credentialed_Scan) and local_checks (credentialed and none of the plugins 21745, 104410, 110385, 117885, 110723, 117886, which report an authentication failure or local checks not available); the families run whole and the plugins run. It is complete only with a plugin selection, plugin details and a host (reasons no_policy, no_plugin_details, no_hosts). ImportCoverage.Covers answers whether an absent finding may close: complete file, finished host, a plugin that ran, a local check only where local checks ran, never a compliance result, never a finding seen after the host's scan.
+- Every finding of a host has last_seen_at the host's scan end (HOST_END, else HOST_START).
 - Application and hardware CPEs of the cpe-N host properties ("cpe:/a:vendor:product:version -> Name") become assets[].technologies[] on the host, CPE 2.3 canonical (ctis.CanonicalCPE), distinct by CPE, category application or hardware, at most 100 per asset (ctis.MaxTechnologies) with an issue beyond; the display name after -> is the name. The first operating-system CPE becomes the cpe (and version) of the operating-system technology. x-cpe values (the scanner's own names outside the CPE dictionary) keep name and version without a CPE.
 - Installed packages: the plugin output of Software Enumeration (SSH) (plugin 22869: dpkg, rpm and apk lists) and Microsoft Windows Installed Software Enumeration (plugin 20811) becomes dependencies[] with asset_ref the host: deb, rpm or apk purls with the distribution of operating-system as namespace and arch, epoch and distro qualifiers; pkg:generic when the distribution is unknown and for Windows software (with the publisher as namespace when given). Distinct per host by purl, at most 10,000 per host, lines over 1 KiB and names or versions that are not package tokens skipped; the plugin output stays the finding's raw_text evidence.
 - Listening sockets of the netstat-listen-{tcp,udp}{4,6}-N host properties become service assets exposed by the host with technical.service.details observed_from host (seen only from inside the host) or network (the scanner also reached the port), bind_address (any or the address) and process when given. Sockets bound to a loopback address only are not kept (nothing off the host reaches them): an issue counts them. At most 1,024 per host.
@@ -28,7 +30,20 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | Source field | CTIS | Ignored because |
 |---|---|---|
 | `/NessusClientData_v2` | (container) |  |
-| `/NessusClientData_v2/Policy` |  | scan policy: preferences hold credentials and account names |
+| `/NessusClientData_v2/Policy` | (container) |  |
+| `/NessusClientData_v2/Policy/FamilySelection` | (container) |  |
+| `/NessusClientData_v2/Policy/FamilySelection/FamilyItem` | (container) |  |
+| `/NessusClientData_v2/Policy/FamilySelection/FamilyItem/FamilyName` | `Result.coverage.families (Status enabled)` |  |
+| `/NessusClientData_v2/Policy/FamilySelection/FamilyItem/Status` | `Result.coverage.families (enabled: the family ran whole)` |  |
+| `/NessusClientData_v2/Policy/IndividualPluginSelection` | (container) |  |
+| `/NessusClientData_v2/Policy/IndividualPluginSelection/PluginItem` | (container) |  |
+| `/NessusClientData_v2/Policy/IndividualPluginSelection/PluginItem/PluginId` | `Result.coverage.plugins (Status enabled)` |  |
+| `/NessusClientData_v2/Policy/IndividualPluginSelection/PluginItem/Status` | `Result.coverage.plugins (enabled)` |  |
+| `/NessusClientData_v2/Policy/Preferences` | (container) |  |
+| `/NessusClientData_v2/Policy/Preferences/ServerPreferences` | (container) |  |
+| `/NessusClientData_v2/Policy/Preferences/ServerPreferences/preference` | (container) |  |
+| `/NessusClientData_v2/Policy/Preferences/ServerPreferences/preference/name` | (container) |  |
+| `/NessusClientData_v2/Policy/Preferences/ServerPreferences/preference/value` | `Result.coverage.plugins (the plugin_set preference only; every other value is dropped)` |  |
 | `/NessusClientData_v2/Policy/**` |  | scan policy: preferences hold credentials and account names |
 | `/NessusClientData_v2/Report` | (container) |  |
 | `/NessusClientData_v2/Report/@name` | `metadata.properties.scan_name` |  |
@@ -58,11 +73,11 @@ Generated from `importer/spec_nessus.go`; do not edit. Regenerate with `go test 
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[nessus-agent-uuid]` | `assets[].identity_hints.agent_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[tenable-agent-uuid]` | `assets[].identity_hints.agent_id` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[agent-uuid]` | `assets[].identity_hints.agent_id` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[Credentialed_Scan]` | `findings[].native.credentialed` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START]` | `assets[].first_seen_at` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START_TIMESTAMP]` | `assets[].first_seen_at` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END]` | `assets[].last_seen_at` |  |
-| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END_TIMESTAMP]` | `assets[].last_seen_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[Credentialed_Scan]` | `findings[].native.credentialed, Result.coverage.hosts[].credentialed` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START]` | `assets[].first_seen_at, findings[].last_seen_at, Result.coverage.hosts[].observed_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_START_TIMESTAMP]` | `assets[].first_seen_at, findings[].last_seen_at, Result.coverage.hosts[].observed_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END]` | `assets[].last_seen_at, findings[].last_seen_at, Result.coverage.hosts[].observed_at` |  |
+| `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[HOST_END_TIMESTAMP]` | `assets[].last_seen_at, findings[].last_seen_at, Result.coverage.hosts[].observed_at` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[local-checks-proto]` | `assets[].properties.local_checks_protocol` |  |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[smb-login-used]` |  | the account the scan logged in with |
 | `/NessusClientData_v2/Report/ReportHost/HostProperties/tag[ssh-login-used]` |  | the account the scan logged in with |

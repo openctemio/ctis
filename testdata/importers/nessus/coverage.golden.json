@@ -1,0 +1,181 @@
+{
+  "version": "2.0",
+  "$schema": "https://schemas.openctem.io/ctis/2.0/report.json",
+  "metadata": {
+    "id": "0192f0a0-0000-7000-8000-000000000001",
+    "generated_at": "2026-10-05T12:00:00Z",
+    "channel": "manual",
+    "properties": {
+      "scan_name": "Weekly credentialed"
+    }
+  },
+  "tool": {
+    "name": "nessus",
+    "vendor": "Tenable",
+    "techniques": [
+      "va"
+    ]
+  },
+  "assets": [
+    {
+      "id": "ip_address-192.0.2.71",
+      "type": "ip_address",
+      "value": "192.0.2.71",
+      "name": "192.0.2.71",
+      "first_seen_at": "2025-11-06T07:00:00Z",
+      "last_seen_at": "2025-11-06T08:00:00Z"
+    },
+    {
+      "id": "service-192.0.2.71:443/tcp",
+      "type": "service",
+      "value": "192.0.2.71:443/tcp",
+      "name": "192.0.2.71:443/tcp",
+      "technical": {
+        "service": {
+          "port": 443,
+          "transport": "tcp",
+          "app_protocol": "www"
+        }
+      }
+    },
+    {
+      "id": "ip_address-192.0.2.72",
+      "type": "ip_address",
+      "value": "192.0.2.72",
+      "name": "192.0.2.72",
+      "first_seen_at": "2025-11-06T07:00:00Z",
+      "last_seen_at": "2025-11-06T08:10:00Z"
+    },
+    {
+      "id": "ip_address-192.0.2.73",
+      "type": "ip_address",
+      "value": "192.0.2.73",
+      "name": "192.0.2.73",
+      "first_seen_at": "2025-11-06T07:00:00Z"
+    },
+    {
+      "id": "service-192.0.2.73:22/tcp",
+      "type": "service",
+      "value": "192.0.2.73:22/tcp",
+      "name": "192.0.2.73:22/tcp",
+      "technical": {
+        "service": {
+          "port": 22,
+          "transport": "tcp",
+          "app_protocol": "ssh"
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "type": "vulnerability",
+      "title": "SSL Self-Signed Certificate",
+      "description": "Self-signed.",
+      "message": "Self-signed.",
+      "severity": "medium",
+      "category": "General",
+      "rule_id": "57582",
+      "rule_name": "SSL Self-Signed Certificate",
+      "asset_ref": "ip_address-192.0.2.71",
+      "network": {
+        "port": 443,
+        "transport": "tcp",
+        "app_protocol": "www"
+      },
+      "last_seen_at": "2025-11-06T08:00:00Z",
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "57582",
+        "family": "General",
+        "severity": "2",
+        "is_credentialed": true,
+        "raw_ref": "ReportHost[192.0.2.71]/ReportItem[pluginID=57582,port=443,protocol=tcp]"
+      },
+      "source_extra": {
+        "plugin_type": "remote"
+      },
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "57582"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "OS Security Patch Assessment Failed",
+      "description": "Local checks did not run.",
+      "message": "Local checks did not run.",
+      "severity": "info",
+      "category": "Settings",
+      "rule_id": "21745",
+      "rule_name": "OS Security Patch Assessment Failed",
+      "asset_ref": "ip_address-192.0.2.72",
+      "network": {},
+      "last_seen_at": "2025-11-06T08:10:00Z",
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "21745",
+        "family": "Settings",
+        "severity": "0",
+        "detection_type": "info",
+        "is_credentialed": false,
+        "raw_ref": "ReportHost[192.0.2.72]/ReportItem[pluginID=21745,port=0,protocol=tcp]"
+      },
+      "source_extra": {
+        "plugin_type": "summary"
+      },
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "21745"
+        }
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "title": "SSH Server Type and Version Information",
+      "description": "SSH.",
+      "message": "SSH.",
+      "severity": "info",
+      "category": "Service detection",
+      "rule_id": "10267",
+      "rule_name": "SSH Server Type and Version Information",
+      "asset_ref": "ip_address-192.0.2.73",
+      "network": {
+        "port": 22,
+        "transport": "tcp",
+        "app_protocol": "ssh"
+      },
+      "last_seen_at": "2025-11-06T07:00:00Z",
+      "native": {
+        "scheme": "nessus",
+        "vuln_id": "10267",
+        "family": "Service detection",
+        "severity": "0",
+        "detection_type": "info",
+        "is_credentialed": true,
+        "raw_ref": "ReportHost[192.0.2.73]/ReportItem[pluginID=10267,port=22,protocol=tcp]"
+      },
+      "source_refs": [
+        {
+          "system": "nessus",
+          "id": "10267"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-192.0.2.71",
+      "to_ref": "service-192.0.2.71:443/tcp"
+    },
+    {
+      "type": "exposes",
+      "from_ref": "ip_address-192.0.2.73",
+      "to_ref": "service-192.0.2.73:22/tcp"
+    }
+  ]
+}

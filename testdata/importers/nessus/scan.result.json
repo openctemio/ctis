@@ -13,5 +13,31 @@
       "info": 1,
       "medium": 1
     }
+  },
+  "coverage": {
+    "complete": true,
+    "families": [
+      "Ubuntu Local Security Checks"
+    ],
+    "plugins": [
+      "10180",
+      "19506"
+    ],
+    "hosts": [
+      {
+        "asset_ref": "host-app01.example.com",
+        "observed_at": "2025-10-05T08:00:00Z",
+        "finished": true,
+        "credentialed": true,
+        "local_checks": true
+      },
+      {
+        "asset_ref": "ip_address-198.51.100.7",
+        "observed_at": "2025-10-05T08:10:00Z",
+        "finished": true,
+        "credentialed": false,
+        "local_checks": false
+      }
+    ]
   }
 }

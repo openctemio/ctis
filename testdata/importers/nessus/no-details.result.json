@@ -17,5 +17,20 @@
       "path": "/NessusClientData_v2",
       "message": "export lacks plugin details; re-export with full plugin attributes (2 plugin results without description, solution or scores)"
     }
-  ]
+  ],
+  "coverage": {
+    "complete": false,
+    "reasons": [
+      "no_policy",
+      "no_plugin_details"
+    ],
+    "hosts": [
+      {
+        "asset_ref": "ip_address-198.51.100.5",
+        "finished": false,
+        "credentialed": false,
+        "local_checks": false
+      }
+    ]
+  }
 }
