@@ -4,6 +4,14 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-11-08
+
+No library code changed; the format, the Go API and the CTIS spec version (2.0) are unchanged.
+
+### Fixed
+
+- Release: the `ctis` command binaries and `SHA256SUMS` were not built for v2.0.1 to v2.0.3, because `v2/cmd/ctis/go.mod` still required core v2.0.0 (no `conformance.Serve`). The command module now requires core v2.0.3, and the release build compiles the command against the tagged core through a temporary modfile, so a lagging pin cannot break a release again. The binaries are also written to the repository-root `dist/` as the checksum and upload steps expect.
+
 ## [2.0.3] - 2026-11-08
 
 ### Fixed
