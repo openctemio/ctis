@@ -4,6 +4,8 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-11-08
+
 ### Fixed
 
 - `importer` format `nessus`: a compliance result of ERROR (the check could not run) was folded into kind `not_applicable` like SKIPPED, so the error was lost. Both stay kind `not_applicable` (SARIF has no error kind) and now carry `extensions["io.openctem"].compliance_outcome`: `error` or `skipped`. A multi-check actual value keeps a sub-check that could not run as result `error` (also counted in `compliance-subcheck-counts`).
