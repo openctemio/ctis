@@ -101,7 +101,7 @@ func TestTestssl_SeverityAndMinimum(t *testing.T) {
 }
 
 func TestLines_Kinds(t *testing.T) {
-	in := "www.example.com\n192.0.2.1\nhttps://u:p@app.example.com/a?token=abc\n198.51.100.0/24\nother.example.org.\n"
+	in := "www.example.com\n192.0.2.1\nhttps://u:p@app.example.com/a?token=qv-leak-marker\n198.51.100.0/24\nother.example.org.\n"
 	cases := map[string]struct {
 		as   string
 		want map[ctis.AssetType]int
@@ -126,7 +126,7 @@ func TestLines_Kinds(t *testing.T) {
 				t.Fatalf("assets = %v, want %v", got, c.want)
 			}
 			raw := mustJSON(t, res.Report)
-			if strings.Contains(raw, "u:p@") || strings.Contains(raw, "abc") {
+			if strings.Contains(raw, "u:p@") || strings.Contains(raw, "qv-leak-marker") {
 				t.Fatalf("credentials or a query value reached the report: %s", raw)
 			}
 		})
