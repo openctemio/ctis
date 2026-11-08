@@ -544,7 +544,11 @@ func (b *Builder) nessusFinding(it *nessusItem, assetID, assetValue string, cred
 			ControlName:        line(check, capShort),
 			ControlDescription: text(first(v, "compliance-info"), 4<<10),
 		}
-		f.Kind = nessusComplianceResult(first(v, "compliance-result"))
+		kind, outcome := nessusComplianceResult(first(v, "compliance-result"))
+		f.Kind = kind
+		if outcome != "" {
+			f.Extensions.Set(ctis.OpenCTEMNamespace, ComplianceOutcomeKey, outcome)
+		}
 		rawTextEvidence(&f, "compliance-actual-value", redactCredentials(first(v, "compliance-actual-value")), "")
 		if sol := text(first(v, "compliance-solution"), capRemediation); sol != "" {
 			f.Remediation = &ctis.Remediation{Recommendation: sol}
@@ -777,19 +781,33 @@ func addAdvisory(f *ctis.Finding, id, source string) {
 	f.Remediation.Advisories = append(f.Remediation.Advisories, ctis.Advisory{ID: id, Source: line(source, ctis.MaxScoreSourceLen)})
 }
 
-func nessusComplianceResult(s string) string {
+// nessusComplianceResult maps a Nessus compliance result to the finding's
+// kind and, for a check that was not evaluated, why: ERROR (the check could
+// not run) and SKIPPED are kind not_applicable with the outcome error or
+// skipped, so a receiver can keep an error as its own state.
+func nessusComplianceResult(s string) (kind, outcome string) {
 	switch strings.ToUpper(strings.TrimSpace(s)) {
 	case "PASSED":
-		return "pass"
+		return "pass", ""
 	case "FAILED":
-		return "fail"
+		return "fail", ""
 	case "WARNING":
-		return "review"
-	case "ERROR", "SKIPPED":
-		return "not_applicable"
+		return "review", ""
+	case "ERROR":
+		return "not_applicable", ComplianceOutcomeError
+	case "SKIPPED":
+		return "not_applicable", ComplianceOutcomeSkipped
 	}
-	return ""
+	return "", ""
 }
+
+// The outcomes of a compliance result that was not evaluated, in
+// extensions["io.openctem"].compliance_outcome.
+const (
+	ComplianceOutcomeKey     = "compliance_outcome"
+	ComplianceOutcomeError   = "error"
+	ComplianceOutcomeSkipped = "skipped"
+)
 
 // complianceFramework names the framework of a benchmark in the CTIS
 // registry (pci_dss, hipaa, soc2, cis, nist_800_53, iso27001, gdpr, fedramp), or

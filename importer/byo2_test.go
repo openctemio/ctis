@@ -64,13 +64,13 @@ func TestFfufArjun_SecretsNeverKept(t *testing.T) {
 }
 
 func TestFfuf_HostileResults(t *testing.T) {
-	in := `{"commandline":"x","results":[{"url":"javascript:alert(1)"},{"url":"https://u:p@www.example.com/a?token=abc","status":200},{"url":7}],"config":{}}`
+	in := `{"commandline":"x","results":[{"url":"javascript:alert(1)"},{"url":"https://u:p@www.example.com/a?token=qv-leak-marker","status":200},{"url":7}],"config":{}}`
 	res, err := parseString(t, in, Options{Format: FormatFfuf, ScopeDomains: []string{"example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	raw := mustJSON(t, res.Report)
-	if strings.Contains(raw, "u:p@") || strings.Contains(raw, "abc") {
+	if strings.Contains(raw, "u:p@") || strings.Contains(raw, "qv-leak-marker") {
 		t.Fatalf("credentials or a query value reached the report: %s", raw)
 	}
 	if res.Stats.Skipped != 2 || len(res.Report.Endpoints) != 1 {

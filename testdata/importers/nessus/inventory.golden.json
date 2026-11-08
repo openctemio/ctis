@@ -329,7 +329,12 @@
           "system": "nessus",
           "id": "21157"
         }
-      ]
+      ],
+      "extensions": {
+        "io.openctem": {
+          "compliance_outcome": "error"
+        }
+      }
     },
     {
       "type": "vulnerability",

@@ -110,7 +110,7 @@ func nessusSubChecks(actual string) []nessusSubCheck {
 			}
 		}
 		out = append(out, nessusSubCheck{
-			Result: nessusComplianceResult(m[1]),
+			Result: nessusSubCheckResult(m[1]),
 			Title:  line(m[2], nessusMaxSubTitle),
 			Detail: line(strings.Join(detail, "; "), nessusMaxSubDetail),
 		})
@@ -143,12 +143,23 @@ func nessusSetSubChecks(f *ctis.Finding, subs []nessusSubCheck) {
 		}
 	}
 	var c []string
-	for _, r := range []string{"pass", "fail", "review", "not_applicable"} {
+	for _, r := range []string{"pass", "fail", "review", "error", "not_applicable"} {
 		if counts[r] > 0 {
 			c = append(c, r+"="+itoa(counts[r]))
 		}
 	}
 	extra(f, "compliance-subcheck-counts", strings.Join(c, " "))
+}
+
+// nessusSubCheckResult is a sub-check's result: the finding's kinds, and
+// error for a sub-check that could not run (never folded into
+// not_applicable).
+func nessusSubCheckResult(s string) string {
+	kind, outcome := nessusComplianceResult(s)
+	if outcome == ComplianceOutcomeError {
+		return ComplianceOutcomeError
+	}
+	return kind
 }
 
 func itoa(n int) string {

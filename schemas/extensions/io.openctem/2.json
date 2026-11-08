@@ -52,6 +52,14 @@
         }
       }
     },
+    "compliance_outcome": {
+      "type": "string",
+      "enum": [
+        "error",
+        "skipped"
+      ],
+      "description": "On a compliance finding of kind not_applicable: why the check was not evaluated. error: the check could not run (its message is the finding's message); skipped: the scanner skipped it. A receiver keeps an error as its own state, never as not applicable."
+    },
     "web_content": {
       "type": "array",
       "maxItems": 200,
