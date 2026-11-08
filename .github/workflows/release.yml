@@ -100,13 +100,21 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           mkdir dist
+          # The command's go.mod must name released versions (go install
+          # refuses replace directives), so it can lag the core it ships
+          # with. Build it against THIS tag's core through a temporary
+          # modfile; the committed go.mod is untouched.
+          MODDIR="$(mktemp -d)"
+          cp v2/cmd/ctis/go.mod "$MODDIR/ctis.mod"
+          cp v2/cmd/ctis/go.sum "$MODDIR/ctis.sum"
+          go mod edit -modfile="$MODDIR/ctis.mod" -replace "github.com/openctemio/ctis/v2=$GITHUB_WORKSPACE"
           for GOOS in linux darwin windows; do
             for GOARCH in amd64 arm64; do
               EXT=""; [ "$GOOS" = "windows" ] && EXT=".exe"
               OUT="dist/ctis_${TAG}_${GOOS}_${GOARCH}${EXT}"
               echo "Building $OUT"
               (cd v2/cmd/ctis && CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH \
-                go build -trimpath -ldflags "-s -w -X main.version=$TAG" -o "../../$OUT" .)
+                go build -modfile="$MODDIR/ctis.mod" -trimpath -ldflags "-s -w -X main.version=$TAG" -o "$GITHUB_WORKSPACE/$OUT" .)
             done
           done
           (cd dist && sha256sum ctis_* > SHA256SUMS && cat SHA256SUMS)
