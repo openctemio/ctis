@@ -60,6 +60,59 @@
       ],
       "description": "On a compliance finding of kind not_applicable: why the check was not evaluated. error: the check could not run (its message is the finding's message); skipped: the scanner skipped it. A receiver keeps an error as its own state, never as not applicable."
     },
+    "verification_hold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reasons"
+      ],
+      "description": "On a finding: the producer's screen of the matched response says the match may be the target's throttling or block answer, not the application. The receiver keeps the finding, holds it out of scores, SLA, notifications and tickets until it is checked, and never drops it. reasons: edge_block_page (a challenge, block or rate-limit page), throttled_response (429 or 503, or a Retry-After), soft_404 (resembles the origin's not-found answer), target_throttled (the target throttled or blocked the scan around the match), timing_based (the check decides on response time), oob_weak (a DNS-only, late or resolver-sourced out-of-band interaction). status, edge, edge_vendor and similarity are the screen's inputs; nothing of the response body is carried.",
+      "properties": {
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "edge_block_page",
+              "throttled_response",
+              "soft_404",
+              "target_throttled",
+              "timing_based",
+              "oob_weak"
+            ]
+          }
+        },
+        "status": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599,
+          "description": "HTTP status of the matched response."
+        },
+        "edge": {
+          "type": "string",
+          "enum": [
+            "challenged",
+            "blocked"
+          ],
+          "description": "How an edge protection answered in the origin's place."
+        },
+        "edge_vendor": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9_.-]*$",
+          "description": "An open token naming the edge protection, shown as text only."
+        },
+        "similarity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Similarity of the matched response to the origin's not-found answer (1: the same)."
+        }
+      }
+    },
     "web_content": {
       "type": "array",
       "maxItems": 200,

@@ -4,6 +4,10 @@ All notable changes to CTIS. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added
+
+- `extensions["io.openctem"].verification_hold` on a finding: the producer's screen of the matched response says the match may be the target's throttling or block answer, not the application. `reasons` (at least one of `edge_block_page`, `throttled_response`, `soft_404`, `target_throttled`, `timing_based`, `oob_weak`) and the screen's inputs (`status`, `edge`, `edge_vendor`, `similarity`); never the response body. Go: `VerificationHold`, `Finding.SetVerificationHold` (validated) and `Finding.VerificationHold` (a value outside the schema is an error, never "not held"). Additive: a receiver that does not know the key ignores it; the format and the spec version (2.0) are unchanged.
+
 ## [2.0.4] - 2026-11-08
 
 No library code changed; the format, the Go API and the CTIS spec version (2.0) are unchanged.
