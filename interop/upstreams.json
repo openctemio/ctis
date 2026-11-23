@@ -206,6 +206,27 @@
               "sha256": "a215c87386b2d42bdbed4cfa76ce0e07e95b6d3832fd1da2ef212e6f34a84753"
             }
           ]
+        },
+        {
+          "version": "1.10.0",
+          "ref": "v1.10.0",
+          "files": [
+            {
+              "path": "version.json",
+              "file": "version.json",
+              "sha256": "b5cd57172739905f6cb12788728f7447d3ca7053a2c39b28a1adc4c7984a2fc5"
+            },
+            {
+              "path": "events/findings/vulnerability_finding.json",
+              "file": "vulnerability_finding.json",
+              "sha256": "a48d985620295660de826f2fe4ba375f49aaea22ae20633e39c1dbd96f2810a3"
+            },
+            {
+              "path": "events/findings/compliance_finding.json",
+              "file": "compliance_finding.json",
+              "sha256": "c265ef3fdfcd3ef4170d54e852c62356d5261aed268d9b95dd94e56d7e54d183"
+            }
+          ]
         }
       ]
     }
